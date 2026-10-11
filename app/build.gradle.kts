@@ -38,8 +38,12 @@ android {
         ?: (project.findProperty("PHONE_KEY_PASSWORD") as? String)
         ?: System.getenv("KEY_PASSWORD")
 
-      if (!keystorePath.isNullOrEmpty() && file(keystorePath).exists() &&
-          !keystorePassword.isNullOrEmpty() && !keyAliasVal.isNullOrEmpty() && !keyPasswordVal.isNullOrEmpty()) {
+      val hasSigningConfig = !keystorePath.isNullOrEmpty() &&
+          !keystorePassword.isNullOrEmpty() &&
+          !keyAliasVal.isNullOrEmpty() &&
+          !keyPasswordVal.isNullOrEmpty()
+
+      if (hasSigningConfig) {
         storeFile = file(keystorePath)
         storePassword = keystorePassword
         keyAlias = keyAliasVal
