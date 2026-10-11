@@ -61,64 +61,110 @@ jobs:
       - name: Keystore Decode & Pre-build Diagnostics
         shell: bash
         env:
-          KEYSTORE_BASE64: ${{ secrets.PHONE_KEYSTORE_BASE64 }}
-          CLEAN_STORE_PASS: ${{ secrets.PHONE_KEYSTORE_PASSWORD }}
-          TARGET_ALIAS: ${{ secrets.PHONE_KEY_ALIAS }}
+          PHONE_KEYSTORE_BASE64: ${{ secrets.PHONE_KEYSTORE_BASE64 }}
+          PHONE_KEYSTORE_PASSWORD: ${{ secrets.PHONE_KEYSTORE_PASSWORD }}
+          PHONE_KEY_ALIAS: ${{ secrets.PHONE_KEY_ALIAS }}
         run: |
           set -euo pipefail
 
-          # Decode keystore with all whitespace and newlines stripped
-          printf '%s' "$KEYSTORE_BASE64" | tr -d '\r\n ' | base64 -d > "$RUNNER_TEMP/release.jks"
-          if [ ! -s "$RUNNER_TEMP/release.jks" ]; then
-            echo "::error::Failed to decode keystore into $RUNNER_TEMP/release.jks (file missing or 0 bytes)"
-            exit 1
+          # Decode keystore
+          printf '%s' "$PHONE_KEYSTORE_BASE64" | tr -d '\r\n ' | base64 -d > "$RUNNER_TEMP/release.jks"
+
+          # Strip ONLY '\r' and '\n' from password and alias
+          PHONE_KEYSTORE_PASSWORD=$(printf '%s' "$PHONE_KEYSTORE_PASSWORD" | tr -d '\r\n')
+          PHONE_KEY_ALIAS=$(printf '%s' "$PHONE_KEY_ALIAS" | tr -d '\r\n')
+          export PHONE_KEYSTORE_PASSWORD
+          export PHONE_KEY_ALIAS
+
+          # Print safe diagnostic facts
+          KS_SIZE=$(wc -c < "$RUNNER_TEMP/release.jks" | tr -d ' ')
+          echo "Decoded keystore size: ${KS_SIZE} bytes"
+
+          KS_SHA256=$(sha256sum "$RUNNER_TEMP/release.jks" | awk '{print $1}')
+          echo "Decoded keystore SHA-256: ${KS_SHA256}"
+
+          KS_HEX=$(od -An -N2 -tx1 "$RUNNER_TEMP/release.jks" | tr -d ' \n')
+          echo "First 2 bytes (hex): ${KS_HEX}"
+
+          echo "Password length: ${#PHONE_KEYSTORE_PASSWORD}"
+          echo "Alias length: ${#PHONE_KEY_ALIAS}"
+
+          # Run keytool with -storepass:env and capture output without letting set -e kill the step
+          KT_EXIT=0
+          keytool -list -keystore "$RUNNER_TEMP/release.jks" -storepass:env PHONE_KEYSTORE_PASSWORD > "$RUNNER_TEMP/keytool.out" 2>&1 || KT_EXIT=$?
+          echo "keytool exit code (-storepass:env): $KT_EXIT"
+
+          echo "=== keytool output (filtered) ==="
+          if [ -s "$RUNNER_TEMP/keytool.out" ]; then
+            grep -F -v -e "$PHONE_KEY_ALIAS" -e "$PHONE_KEYSTORE_PASSWORD" "$RUNNER_TEMP/keytool.out" || true
           fi
-          echo "Keystore successfully decoded to $RUNNER_TEMP/release.jks"
+          echo "=================================="
 
-          CLEAN_PASS=$(printf '%s' "$CLEAN_STORE_PASS" | tr -d '\r\n')
-          CLEAN_ALIAS_VAL=$(printf '%s' "$TARGET_ALIAS" | tr -d '\r\n')
+          WORKING_METHOD="none"
+          if [ "$KT_EXIT" -eq 0 ]; then
+            WORKING_METHOD="-storepass:env"
+          else
+            echo "::warning::keytool -storepass:env failed (exit code $KT_EXIT). Retrying with temporary password file (-storepass:file)..."
+            PW_FILE=$(mktemp "$RUNNER_TEMP/kt_pw.XXXXXX")
+            ( umask 077 && printf '%s' "$PHONE_KEYSTORE_PASSWORD" > "$PW_FILE" )
 
-          # Inspect keystore with keytool; pass password via storepass env to prevent logging
-          KEYTOOL_OUT=$(keytool -list -keystore "$RUNNER_TEMP/release.jks" -storepass:env CLEAN_PASS 2>&1) || {
-            echo "::error::keytool failed to read keystore. Keystore password may be incorrect or keystore format invalid."
-            exit 1
-          }
+            KT_EXIT2=0
+            keytool -list -keystore "$RUNNER_TEMP/release.jks" -storepass:file "$PW_FILE" > "$RUNNER_TEMP/keytool.out" 2>&1 || KT_EXIT2=$?
+            rm -f "$PW_FILE"
 
-          # 1. Print keystore type
-          KS_TYPE=$(printf '%s\n' "$KEYTOOL_OUT" | grep -i "Keystore type:" | head -n 1 | awk -F: '{print $2}' | xargs || echo "Unknown")
+            echo "keytool retry exit code (-storepass:file): $KT_EXIT2"
+            echo "=== keytool retry output (filtered) ==="
+            if [ -s "$RUNNER_TEMP/keytool.out" ]; then
+              grep -F -v -e "$PHONE_KEY_ALIAS" -e "$PHONE_KEYSTORE_PASSWORD" "$RUNNER_TEMP/keytool.out" || true
+            fi
+            echo "========================================"
+
+            if [ "$KT_EXIT2" -eq 0 ]; then
+              WORKING_METHOD="-storepass:file"
+              KT_EXIT=0
+            else
+              echo "::warning::keytool retry with -storepass:file also failed (exit code $KT_EXIT2)."
+            fi
+          fi
+
+          if [ "$WORKING_METHOD" != "none" ]; then
+            echo "Keytool read method that worked: $WORKING_METHOD"
+          else
+            echo "::warning::Both keytool methods failed to inspect keystore. Proceeding to Gradle build step."
+          fi
+
+          KS_TYPE=$(grep -i "Keystore type:" "$RUNNER_TEMP/keytool.out" | head -n 1 | awk -F: '{print $2}' | xargs || echo "Unknown")
           echo "Keystore type: $KS_TYPE"
 
-          # 2. Print number of entries
-          ENTRY_COUNT=$(printf '%s\n' "$KEYTOOL_OUT" | grep -i "entry" | grep -i -E "[0-9]+ entry|[0-9]+ entries" | head -n 1 | sed -E 's/.*([0-9]+) (entry|entries).*/\1/' || echo "")
+          ENTRY_COUNT=$(grep -i "entry" "$RUNNER_TEMP/keytool.out" | grep -i -E "[0-9]+ entry|[0-9]+ entries" | head -n 1 | sed -E 's/.*([0-9]+) (entry|entries).*/\1/' || echo "")
           if [ -z "$ENTRY_COUNT" ]; then
-            ENTRY_COUNT=$(printf '%s\n' "$KEYTOOL_OUT" | grep -c "PrivateKeyEntry" || echo "0")
+            ENTRY_COUNT=$(grep -c -i "PrivateKeyEntry" "$RUNNER_TEMP/keytool.out" || echo "0")
           fi
-          echo "Number of entries: $ENTRY_COUNT"
+          echo "Entry count: $ENTRY_COUNT"
 
-          # 3. Print whether configured alias exists (yes/no)
-          ALIAS_FOUND="no"
-          if printf '%s\n' "$KEYTOOL_OUT" | grep -i -E "^${CLEAN_ALIAS_VAL}[[:space:]]*," > /dev/null; then
-            ALIAS_FOUND="yes"
+          ALIAS_MATCH="no"
+          if grep -qi -F "$PHONE_KEY_ALIAS" "$RUNNER_TEMP/keytool.out"; then
+            ALIAS_MATCH="yes"
           fi
-          echo "Configured alias exists: $ALIAS_FOUND"
+          echo "alias matches secret: $ALIAS_MATCH"
+          if [ "$ALIAS_MATCH" != "yes" ]; then
+            echo "::warning::Configured alias was not found in keytool output."
+          fi
 
-          if [ "$ALIAS_FOUND" = "no" ]; then
-            echo "::error::Configured key alias '$CLEAN_ALIAS_VAL' was not found in keystore!"
-            exit 1
-          fi
+          exit 0
 
       - name: Build Release APK
         shell: bash
         env:
-          RAW_STORE_PASS: ${{ secrets.PHONE_KEYSTORE_PASSWORD }}
-          RAW_ALIAS: ${{ secrets.PHONE_KEY_ALIAS }}
-          RAW_KEY_PASS: ${{ secrets.PHONE_KEY_PASSWORD }}
+          PHONE_KEYSTORE_PATH: ${{ runner.temp }}/release.jks
+          PHONE_KEYSTORE_PASSWORD: ${{ secrets.PHONE_KEYSTORE_PASSWORD }}
+          PHONE_KEY_ALIAS: ${{ secrets.PHONE_KEY_ALIAS }}
+          PHONE_KEY_PASSWORD: ${{ secrets.PHONE_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          export PHONE_KEYSTORE_PATH="${RUNNER_TEMP}/release.jks"
-          export PHONE_KEYSTORE_PASSWORD=$(printf '%s' "$RAW_STORE_PASS" | tr -d '\r\n')
-          export PHONE_KEY_ALIAS=$(printf '%s' "$RAW_ALIAS" | tr -d '\r\n')
-          export PHONE_KEY_PASSWORD=$(printf '%s' "$RAW_KEY_PASS" | tr -d '\r\n')
+          export PHONE_KEYSTORE_PASSWORD=$(printf '%s' "$PHONE_KEYSTORE_PASSWORD" | tr -d '\r\n')
+          export PHONE_KEY_ALIAS=$(printf '%s' "$PHONE_KEY_ALIAS" | tr -d '\r\n')
+          export PHONE_KEY_PASSWORD=$(printf '%s' "$PHONE_KEY_PASSWORD" | tr -d '\r\n')
 
           gradle assembleRelease
 
