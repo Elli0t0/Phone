@@ -1,0 +1,6 @@
+{
+  "name": "Phone",
+  "description": "Android dialer and contacts application inspired by Samsung One UI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

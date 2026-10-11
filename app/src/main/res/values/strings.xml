@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Phone</string>
+    <string name="tab_recents">Recents</string>
+    <string name="tab_contacts">Contacts</string>
+    <string name="tab_dialpad">Keypad</string>
+    <string name="placeholder_coming_soon">Coming in a later version</string>
+    <string name="cd_tab_recents">Recents tab</string>
+    <string name="cd_tab_contacts">Contacts tab</string>
+    <string name="cd_tab_dialpad">Keypad tab</string>
+</resources>
