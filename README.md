@@ -22,45 +22,63 @@ This version establishes the application architecture, Gradle configuration, One
 - **Dependency Injection**: Manual dependency injection via `AppContainer` in `PhoneApplication`
 - **Navigation**: `androidx.navigation.compose` with sealed `Screen` classes
 
-## Build Commands
+## Build Instructions
 
 Ensure you have JDK 17 installed and configured.
 
+> **Note on Gradle Wrapper**: The Gradle wrapper executable scripts (`gradlew`, `gradlew.bat`) and wrapper jar are not committed to the repository yet. For local builds, install **Gradle 9.3.1** on your system and run `gradle`, or generate the wrapper locally with `gradle wrapper --gradle-version 9.3.1 --distribution-type bin`.
+
 ### Run Unit Tests
 ```bash
-./gradlew testDebugUnitTest
+gradle testDebugUnitTest
 ```
 
 ### Build Debug APK
 ```bash
-./gradlew assembleDebug
+gradle assembleDebug
 ```
 The output APK will be generated at:
-`app/build/outputs/apk/debug/Phone-0.1.0.apk`
+`app/build/outputs/apk/debug/Phone-0.1.0-debug.apk`
 
 ### Build Release APK
-To build a release-signed APK, set the 4 signing environment variables:
+To build a release-signed APK locally, set the 4 signing environment variables:
 ```bash
 export PHONE_KEYSTORE_PATH="/path/to/release.jks"
 export PHONE_KEYSTORE_PASSWORD="your-keystore-password"
 export PHONE_KEY_ALIAS="phone-release"
 export PHONE_KEY_PASSWORD="your-key-password"
 
-./gradlew assembleRelease
+gradle assembleRelease
 ```
 The output APK will be generated at:
-`app/build/outputs/apk/release/Phone-0.1.0.apk`
+`app/build/outputs/apk/release/Phone-0.1.0-release.apk`
 
 *Note*: If the signing environment variables are omitted, Gradle produces an unsigned release build.
 
+## GitHub CI & Required Secrets
+
+The automated CI workflow (`.github/workflows/android-build.yml`) compiles, tests, verifies signatures, and publishes release APKs.
+
+To enable release signing in GitHub Actions, configure exactly **4 repository secrets** in **Settings > Secrets and variables > Actions**:
+1. `PHONE_KEYSTORE_BASE64`: The release keystore file encoded in Base64 (`base64 -w0 phone-release.jks`).
+2. `PHONE_KEYSTORE_PASSWORD`: Keystore store password.
+3. `PHONE_KEY_ALIAS`: Keystore entry alias (e.g. `phone-release`).
+4. `PHONE_KEY_PASSWORD`: Key password.
+
 ## How to Download the APK
 
-1. Navigate to the GitHub repository: `https://github.com/elli0t0/phone`
-2. Click on the **Actions** tab.
-3. Select the latest successful run of the **Android Build** workflow.
-4. Scroll down to the **Artifacts** section at the bottom of the summary page.
-5. Download the `Phone-0.1.0` artifact zip and extract `Phone-0.1.0.apk`.
-6. Transfer the APK to your Android device running Android 10 or later and install.
+Release APKs are published under **GitHub Releases** and available as **Workflow Artifacts**:
+
+1. **GitHub Releases (Recommended)**:
+   - Navigate to [https://github.com/Elli0t0/Phone/releases](https://github.com/Elli0t0/Phone/releases).
+   - Find the latest release (e.g. `v0.1.0-100`, marked as pre-release for `0.x.x`).
+   - Download `Phone-0.1.0.apk` and its checksum `Phone-0.1.0.apk.sha256`.
+
+2. **Workflow Artifacts**:
+   - Navigate to [https://github.com/Elli0t0/Phone/actions](https://github.com/Elli0t0/Phone/actions).
+   - Select the latest run of the **Android Build** workflow.
+   - Scroll to the **Artifacts** section at the bottom.
+   - Download the `Phone-0.1.0` artifact zip containing the release APK.
 
 ## Permissions (Placeholder)
 

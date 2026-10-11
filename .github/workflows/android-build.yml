@@ -253,16 +253,17 @@ jobs:
 
           echo "Checking tag and release: $TAG"
 
-          # Check if tag already exists on remote
+          # Check if release tag or GitHub Release already exists
+          TAG_EXISTS=false
           if git ls-remote --tags origin "refs/tags/${TAG}" | grep -q "refs/tags/${TAG}"; then
-            echo "::error::Release tag '${TAG}' already exists on remote! Aborting to prevent overwriting earlier release."
-            exit 1
+            TAG_EXISTS=true
+          elif gh release view "$TAG" >/dev/null 2>&1; then
+            TAG_EXISTS=true
           fi
 
-          # Check if GitHub Release already exists
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "::error::GitHub Release '${TAG}' already exists! Aborting."
-            exit 1
+          if [ "$TAG_EXISTS" = "true" ]; then
+            echo "::notice::Release tag '${TAG}' already exists. Version ${VERSION_NAME} (${VERSION_CODE}) was already released; skipping publish without modifying the existing release."
+            exit 0
           fi
 
           # Find downloaded APK and prepare release asset naming

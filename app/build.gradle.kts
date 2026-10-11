@@ -46,12 +46,6 @@ android {
         keyPassword = keyPasswordVal
       }
     }
-    create("debugConfig") {
-      storeFile = file("${rootDir}/debug.keystore")
-      storePassword = "android"
-      keyAlias = "androiddebugkey"
-      keyPassword = "android"
-    }
   }
 
   buildTypes {
@@ -63,9 +57,6 @@ android {
       if (releaseKeystore.storeFile != null) {
         signingConfig = releaseKeystore
       }
-    }
-    debug {
-      signingConfig = signingConfigs.getByName("debugConfig")
     }
   }
 
