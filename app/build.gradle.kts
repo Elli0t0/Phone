@@ -25,18 +25,14 @@ android {
 
   signingConfigs {
     create("release") {
-      val keystorePath = System.getenv("PHONE_KEYSTORE_PATH")
-        ?: (project.findProperty("PHONE_KEYSTORE_PATH") as? String)
-        ?: System.getenv("KEYSTORE_PATH")
-      val keystorePassword = System.getenv("PHONE_KEYSTORE_PASSWORD")
-        ?: (project.findProperty("PHONE_KEYSTORE_PASSWORD") as? String)
-        ?: System.getenv("STORE_PASSWORD")
-      val keyAliasVal = System.getenv("PHONE_KEY_ALIAS")
-        ?: (project.findProperty("PHONE_KEY_ALIAS") as? String)
-        ?: "phone-release"
-      val keyPasswordVal = System.getenv("PHONE_KEY_PASSWORD")
-        ?: (project.findProperty("PHONE_KEY_PASSWORD") as? String)
-        ?: System.getenv("KEY_PASSWORD")
+      val keystorePath = (System.getenv("PHONE_KEYSTORE_PATH")
+        ?: (project.findProperty("PHONE_KEYSTORE_PATH") as? String))?.trim()
+      val keystorePassword = (System.getenv("PHONE_KEYSTORE_PASSWORD")
+        ?: (project.findProperty("PHONE_KEYSTORE_PASSWORD") as? String))?.trim()
+      val keyAliasVal = (System.getenv("PHONE_KEY_ALIAS")
+        ?: (project.findProperty("PHONE_KEY_ALIAS") as? String))?.trim()
+      val keyPasswordVal = (System.getenv("PHONE_KEY_PASSWORD")
+        ?: (project.findProperty("PHONE_KEY_PASSWORD") as? String))?.trim()
 
       val hasSigningConfig = !keystorePath.isNullOrEmpty() &&
           !keystorePassword.isNullOrEmpty() &&

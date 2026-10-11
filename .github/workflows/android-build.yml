@@ -17,6 +17,10 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+    outputs:
+      version_name: ${{ steps.verify_apk.outputs.version_name }}
+      version_code: ${{ steps.verify_apk.outputs.version_code }}
+      cert_sha256: ${{ steps.verify_apk.outputs.cert_sha256 }}
 
     steps:
       - name: Checkout repository
@@ -54,28 +58,72 @@ jobs:
           fi
           echo "All release signing secrets are present."
 
-      - name: Decode release keystore
+      - name: Keystore Decode & Pre-build Diagnostics
         shell: bash
         env:
           KEYSTORE_BASE64: ${{ secrets.PHONE_KEYSTORE_BASE64 }}
+          CLEAN_STORE_PASS: ${{ secrets.PHONE_KEYSTORE_PASSWORD }}
+          TARGET_ALIAS: ${{ secrets.PHONE_KEY_ALIAS }}
         run: |
           set -euo pipefail
-          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+
+          # Decode keystore with all whitespace and newlines stripped
+          printf '%s' "$KEYSTORE_BASE64" | tr -d '\r\n ' | base64 -d > "$RUNNER_TEMP/release.jks"
           if [ ! -s "$RUNNER_TEMP/release.jks" ]; then
             echo "::error::Failed to decode keystore into $RUNNER_TEMP/release.jks (file missing or 0 bytes)"
             exit 1
           fi
-          echo "Release keystore decoded successfully."
+          echo "Keystore successfully decoded to $RUNNER_TEMP/release.jks"
+
+          CLEAN_PASS=$(printf '%s' "$CLEAN_STORE_PASS" | tr -d '\r\n')
+          CLEAN_ALIAS_VAL=$(printf '%s' "$TARGET_ALIAS" | tr -d '\r\n')
+
+          # Inspect keystore with keytool; pass password via storepass env to prevent logging
+          KEYTOOL_OUT=$(keytool -list -keystore "$RUNNER_TEMP/release.jks" -storepass:env CLEAN_PASS 2>&1) || {
+            echo "::error::keytool failed to read keystore. Keystore password may be incorrect or keystore format invalid."
+            exit 1
+          }
+
+          # 1. Print keystore type
+          KS_TYPE=$(printf '%s\n' "$KEYTOOL_OUT" | grep -i "Keystore type:" | head -n 1 | awk -F: '{print $2}' | xargs || echo "Unknown")
+          echo "Keystore type: $KS_TYPE"
+
+          # 2. Print number of entries
+          ENTRY_COUNT=$(printf '%s\n' "$KEYTOOL_OUT" | grep -i "entry" | grep -i -E "[0-9]+ entry|[0-9]+ entries" | head -n 1 | sed -E 's/.*([0-9]+) (entry|entries).*/\1/' || echo "")
+          if [ -z "$ENTRY_COUNT" ]; then
+            ENTRY_COUNT=$(printf '%s\n' "$KEYTOOL_OUT" | grep -c "PrivateKeyEntry" || echo "0")
+          fi
+          echo "Number of entries: $ENTRY_COUNT"
+
+          # 3. Print whether configured alias exists (yes/no)
+          ALIAS_FOUND="no"
+          if printf '%s\n' "$KEYTOOL_OUT" | grep -i -E "^${CLEAN_ALIAS_VAL}[[:space:]]*," > /dev/null; then
+            ALIAS_FOUND="yes"
+          fi
+          echo "Configured alias exists: $ALIAS_FOUND"
+
+          if [ "$ALIAS_FOUND" = "no" ]; then
+            echo "::error::Configured key alias '$CLEAN_ALIAS_VAL' was not found in keystore!"
+            exit 1
+          fi
 
       - name: Build Release APK
+        shell: bash
         env:
-          PHONE_KEYSTORE_PATH: ${{ runner.temp }}/release.jks
-          PHONE_KEYSTORE_PASSWORD: ${{ secrets.PHONE_KEYSTORE_PASSWORD }}
-          PHONE_KEY_ALIAS: ${{ secrets.PHONE_KEY_ALIAS }}
-          PHONE_KEY_PASSWORD: ${{ secrets.PHONE_KEY_PASSWORD }}
-        run: gradle assembleRelease
+          RAW_STORE_PASS: ${{ secrets.PHONE_KEYSTORE_PASSWORD }}
+          RAW_ALIAS: ${{ secrets.PHONE_KEY_ALIAS }}
+          RAW_KEY_PASS: ${{ secrets.PHONE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          export PHONE_KEYSTORE_PATH="${RUNNER_TEMP}/release.jks"
+          export PHONE_KEYSTORE_PASSWORD=$(printf '%s' "$RAW_STORE_PASS" | tr -d '\r\n')
+          export PHONE_KEY_ALIAS=$(printf '%s' "$RAW_ALIAS" | tr -d '\r\n')
+          export PHONE_KEY_PASSWORD=$(printf '%s' "$RAW_KEY_PASS" | tr -d '\r\n')
+
+          gradle assembleRelease
 
       - name: Verify and analyze release APK
+        id: verify_apk
         shell: bash
         run: |
           set -euo pipefail
@@ -103,12 +151,12 @@ jobs:
           APKSIGNER="$BUILD_TOOLS_DIR/apksigner"
 
           if [ ! -x "$AAPT2" ]; then
-            echo "::error::aapt2 executable not found or not executable at $AAPT2"
+            echo "::error::aapt2 executable not found at $AAPT2"
             exit 1
           fi
 
           if [ ! -x "$APKSIGNER" ]; then
-            echo "::error::apksigner executable not found or not executable at $APKSIGNER"
+            echo "::error::apksigner executable not found at $APKSIGNER"
             exit 1
           fi
 
@@ -125,11 +173,45 @@ jobs:
           fi
           echo "Found release APK: $APK_FILE"
 
-          echo "=== APK Badging (Package, VersionCode, VersionName) ==="
-          "$AAPT2" dump badging "$APK_FILE" | grep -E "package: name=" || true
+          echo "=== Extracting Badging Metadata ==="
+          BADGING_RAW=$("$AAPT2" dump badging "$APK_FILE")
+          APP_ID=$(printf '%s\n' "$BADGING_RAW" | grep "^package: " | sed -E "s/^package:[[:space:]]+name='([^']+)'.*/\1/")
+          V_CODE=$(printf '%s\n' "$BADGING_RAW" | grep "^package: " | sed -E "s/.*versionCode='([^']+)'.*/\1/")
+          V_NAME=$(printf '%s\n' "$BADGING_RAW" | grep "^package: " | sed -E "s/.*versionName='([^']+)'.*/\1/")
 
-          echo "=== APK Signing Verification & SHA-256 ==="
-          "$APKSIGNER" verify --print-certs "$APK_FILE"
+          echo "Application ID : $APP_ID"
+          echo "Version Code   : $V_CODE"
+          echo "Version Name   : $V_NAME"
+
+          if [ "$APP_ID" != "io.github.elli0t0.phone" ]; then
+            echo "::error::Application ID mismatch: expected 'io.github.elli0t0.phone', found '$APP_ID'"
+            exit 1
+          fi
+
+          if [ -z "$V_CODE" ] || [ -z "$V_NAME" ]; then
+            echo "::error::Failed to extract versionCode or versionName from APK badging"
+            exit 1
+          fi
+
+          echo "=== Verifying APK Signature ==="
+          APKSIGNER_RAW=$("$APKSIGNER" verify --print-certs "$APK_FILE")
+          printf '%s\n' "$APKSIGNER_RAW"
+
+          CERT_SHA256=$(printf '%s\n' "$APKSIGNER_RAW" | grep -i "Signer #1 certificate SHA-256 digest:" | head -n 1 | awk '{print $NF}' || echo "")
+          if [ -z "$CERT_SHA256" ]; then
+            CERT_SHA256=$(printf '%s\n' "$APKSIGNER_RAW" | grep -i "SHA-256 digest:" | head -n 1 | awk '{print $NF}' || echo "")
+          fi
+
+          if [ -z "$CERT_SHA256" ]; then
+            echo "::error::Failed to verify release signing certificate SHA-256. APK may not be properly signed."
+            exit 1
+          fi
+          echo "Signing Certificate SHA-256: $CERT_SHA256"
+
+          # Export outputs for downstream publishing job
+          echo "version_name=$V_NAME" >> "$GITHUB_OUTPUT"
+          echo "version_code=$V_CODE" >> "$GITHUB_OUTPUT"
+          echo "cert_sha256=$CERT_SHA256" >> "$GITHUB_OUTPUT"
 
       - name: Upload Release APK Artifact
         uses: actions/upload-artifact@v4
@@ -137,3 +219,93 @@ jobs:
           name: Phone-0.1.0
           path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
+
+  publish:
+    name: Publish GitHub Release
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Release APK Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Phone-0.1.0
+          path: downloaded-artifact
+
+      - name: Create and Publish GitHub Release
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION_NAME: ${{ needs.build.outputs.version_name }}
+          VERSION_CODE: ${{ needs.build.outputs.version_code }}
+          CERT_SHA256: ${{ needs.build.outputs.cert_sha256 }}
+        run: |
+          set -euo pipefail
+
+          TAG="v${VERSION_NAME}-${VERSION_CODE}"
+          RELEASE_TITLE="Phone ${VERSION_NAME} (${VERSION_CODE})"
+
+          echo "Checking tag and release: $TAG"
+
+          # Check if tag already exists on remote
+          if git ls-remote --tags origin "refs/tags/${TAG}" | grep -q "refs/tags/${TAG}"; then
+            echo "::error::Release tag '${TAG}' already exists on remote! Aborting to prevent overwriting earlier release."
+            exit 1
+          fi
+
+          # Check if GitHub Release already exists
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::GitHub Release '${TAG}' already exists! Aborting."
+            exit 1
+          fi
+
+          # Find downloaded APK and prepare release asset naming
+          APK_SOURCE=$(find downloaded-artifact -name "*.apk" -type f | head -n 1)
+          if [ -z "$APK_SOURCE" ] || [ ! -f "$APK_SOURCE" ]; then
+            echo "::error::Downloaded release APK not found in downloaded-artifact!"
+            exit 1
+          fi
+
+          FINAL_APK="Phone-${VERSION_NAME}.apk"
+          FINAL_SHA256="${FINAL_APK}.sha256"
+
+          cp "$APK_SOURCE" "$FINAL_APK"
+          sha256sum "$FINAL_APK" > "$FINAL_SHA256"
+
+          echo "Prepared release assets: $FINAL_APK and $FINAL_SHA256"
+
+          # Extract matching section from CHANGELOG.md for this version
+          RELEASE_NOTES="release_notes.md"
+          sed -n "/^## \[${VERSION_NAME}\]/,/^## \[/p" CHANGELOG.md | head -n -1 > "$RELEASE_NOTES" || true
+
+          if [ ! -s "$RELEASE_NOTES" ]; then
+            echo "## [${VERSION_NAME}]" > "$RELEASE_NOTES"
+            echo "" >> "$RELEASE_NOTES"
+            echo "Release version ${VERSION_NAME} (build ${VERSION_CODE})" >> "$RELEASE_NOTES"
+          fi
+
+          echo "" >> "$RELEASE_NOTES"
+          echo "### Signing Certificate SHA-256" >> "$RELEASE_NOTES"
+          echo "\`${CERT_SHA256}\`" >> "$RELEASE_NOTES"
+
+          # Mark as pre-release if major version is 0
+          MAJOR_VERSION=$(echo "$VERSION_NAME" | cut -d. -f1)
+          PRERELEASE_FLAG=""
+          if [ "$MAJOR_VERSION" = "0" ]; then
+            PRERELEASE_FLAG="--prerelease"
+            echo "Major version is 0; marking as pre-release."
+          fi
+
+          echo "Publishing release via gh CLI..."
+          gh release create "$TAG" "$FINAL_APK" "$FINAL_SHA256" \
+            --title "$RELEASE_TITLE" \
+            --notes-file "$RELEASE_NOTES" \
+            $PRERELEASE_FLAG
+
+          echo "GitHub Release creation command completed for $TAG."
