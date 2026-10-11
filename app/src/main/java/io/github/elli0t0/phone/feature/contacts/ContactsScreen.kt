@@ -1,75 +1,179 @@
 package io.github.elli0t0.phone.feature.contacts
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.PhoneApplication
+import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.permissions.rememberContactsPermissionState
+import io.github.elli0t0.phone.data.contacts.model.ContactDetail
+import io.github.elli0t0.phone.feature.contacts.ui.ContactDetailScreen
+import io.github.elli0t0.phone.feature.contacts.ui.ContactEditScreen
+import io.github.elli0t0.phone.feature.contacts.ui.ContactListScreen
+import kotlinx.coroutines.launch
+
+private sealed interface ContactsNavDestination {
+    data object List : ContactsNavDestination
+    data class Detail(val contactId: Long, val lookupKey: String) : ContactsNavDestination
+    data object Create : ContactsNavDestination
+    data class Edit(val contact: ContactDetail) : ContactsNavDestination
+}
 
 @Composable
 fun ContactsScreen(
-    modifier: Modifier = Modifier,
-    viewModel: ContactsViewModel = viewModel()
+    modifier: Modifier = Modifier
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val spacing = LocalSpacing.current
+    val context = LocalContext.current
+    val app = context.applicationContext as PhoneApplication
+    val repository = app.container.contactsRepository
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = spacing.screenHorizontalPadding)
-            .testTag("contacts_screen"),
-        verticalArrangement = Arrangement.Top
-    ) {
-        Spacer(modifier = Modifier.height(spacing.screenTopPadding))
+    val listViewModel: ContactsViewModel = viewModel(
+        factory = ContactsViewModel.provideFactory(repository)
+    )
+    val uiState by listViewModel.uiState.collectAsStateWithLifecycle()
+    val permissionState = rememberContactsPermissionState()
 
-        // One UI large screen title header
-        Text(
-            text = stringResource(id = uiState.titleRes),
-            style = MaterialTheme.typography.displayLarge,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(bottom = spacing.large)
-        )
+    var currentDestination by remember { mutableStateOf<ContactsNavDestination>(ContactsNavDestination.List) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
-        // Rounded container card
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag("contacts_content_card"),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            shape = MaterialTheme.shapes.large
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(spacing.cardContentPadding),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = stringResource(id = uiState.placeholderRes),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+    // Show user message from listViewModel if any
+    val userMessageRes = uiState.userMessageRes
+    val messageText = userMessageRes?.let { stringResource(id = it) }
+    LaunchedEffect(userMessageRes) {
+        if (messageText != null) {
+            snackbarHostState.showSnackbar(messageText)
+            listViewModel.clearMessage()
+        }
+    }
+
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+    ) { paddingValues ->
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            when (val dest = currentDestination) {
+                is ContactsNavDestination.List -> {
+                    ContactListScreen(
+                        uiState = uiState,
+                        permissionState = permissionState,
+                        onSearchQueryChanged = listViewModel::onSearchQueryChanged,
+                        onClearSearch = listViewModel::clearSearchQuery,
+                        onContactClick = { contact ->
+                            currentDestination = ContactsNavDestination.Detail(contact.id, contact.lookupKey)
+                        },
+                        onAddContactClick = {
+                            currentDestination = ContactsNavDestination.Create
+                        }
+                    )
+                }
+
+                is ContactsNavDestination.Detail -> {
+                    val detailViewModel: ContactDetailViewModel = viewModel(
+                        key = "detail_${dest.contactId}",
+                        factory = ContactDetailViewModel.provideFactory(repository, dest.contactId, dest.lookupKey)
+                    )
+                    val detailUiState by detailViewModel.uiState.collectAsStateWithLifecycle()
+
+                    ContactDetailScreen(
+                        uiState = detailUiState,
+                        onBackClick = { currentDestination = ContactsNavDestination.List },
+                        onEditClick = {
+                            detailUiState.contact?.let { contact ->
+                                currentDestination = ContactsNavDestination.Edit(contact)
+                            }
+                        },
+                        onDeleteRequest = { detailViewModel.setDeleteDialogVisible(true) },
+                        onConfirmDelete = {
+                            detailViewModel.deleteContact {
+                                currentDestination = ContactsNavDestination.List
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar(context.getString(R.string.snackbar_contact_deleted))
+                                }
+                            }
+                        },
+                        onDismissDeleteDialog = { detailViewModel.setDeleteDialogVisible(false) }
+                    )
+                }
+
+                is ContactsNavDestination.Create -> {
+                    val createViewModel: ContactEditViewModel = viewModel(
+                        key = "create_contact",
+                        factory = ContactEditViewModel.provideFactory(repository, null)
+                    )
+                    val createUiState by createViewModel.uiState.collectAsStateWithLifecycle()
+
+                    ContactEditScreen(
+                        uiState = createUiState,
+                        onNameChanged = createViewModel::onNameChanged,
+                        onOrganizationChanged = createViewModel::onOrganizationChanged,
+                        onPhoneNumberChanged = createViewModel::onPhoneNumberChanged,
+                        onPhoneTypeChanged = createViewModel::onPhoneTypeChanged,
+                        onAddPhone = createViewModel::addPhoneRow,
+                        onRemovePhone = createViewModel::removePhoneRow,
+                        onEmailAddressChanged = createViewModel::onEmailAddressChanged,
+                        onEmailTypeChanged = createViewModel::onEmailTypeChanged,
+                        onAddEmail = createViewModel::addEmailRow,
+                        onRemoveEmail = createViewModel::removeEmailRow,
+                        onSaveClick = {
+                            createViewModel.saveContact { newId ->
+                                currentDestination = ContactsNavDestination.Detail(newId, "")
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar(context.getString(R.string.snackbar_contact_created))
+                                }
+                            }
+                        },
+                        onCancelClick = { currentDestination = ContactsNavDestination.List }
+                    )
+                }
+
+                is ContactsNavDestination.Edit -> {
+                    val editViewModel: ContactEditViewModel = viewModel(
+                        key = "edit_${dest.contact.id}",
+                        factory = ContactEditViewModel.provideFactory(repository, dest.contact)
+                    )
+                    val editUiState by editViewModel.uiState.collectAsStateWithLifecycle()
+
+                    ContactEditScreen(
+                        uiState = editUiState,
+                        onNameChanged = editViewModel::onNameChanged,
+                        onOrganizationChanged = editViewModel::onOrganizationChanged,
+                        onPhoneNumberChanged = editViewModel::onPhoneNumberChanged,
+                        onPhoneTypeChanged = editViewModel::onPhoneTypeChanged,
+                        onAddPhone = editViewModel::addPhoneRow,
+                        onRemovePhone = editViewModel::removePhoneRow,
+                        onEmailAddressChanged = editViewModel::onEmailAddressChanged,
+                        onEmailTypeChanged = editViewModel::onEmailTypeChanged,
+                        onAddEmail = editViewModel::addEmailRow,
+                        onRemoveEmail = editViewModel::removeEmailRow,
+                        onSaveClick = {
+                            editViewModel.saveContact { savedId ->
+                                currentDestination = ContactsNavDestination.Detail(savedId, dest.contact.lookupKey)
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar(context.getString(R.string.snackbar_contact_updated))
+                                }
+                            }
+                        },
+                        onCancelClick = {
+                            currentDestination = ContactsNavDestination.Detail(dest.contact.id, dest.contact.lookupKey)
+                        }
+                    )
+                }
             }
         }
     }

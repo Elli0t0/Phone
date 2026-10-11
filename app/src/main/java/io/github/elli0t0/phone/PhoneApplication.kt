@@ -1,14 +1,19 @@
 package io.github.elli0t0.phone
 
 import android.app.Application
+import android.content.Context
+import io.github.elli0t0.phone.data.contacts.AndroidContactsRepository
+import io.github.elli0t0.phone.data.contacts.ContactsRepository
 
-/**
- * AppContainer serves as the manual dependency injection container for Phone.
- * Additional repositories and services will be registered in future versions.
- */
-interface AppContainer
+interface AppContainer {
+    val contactsRepository: ContactsRepository
+}
 
-class DefaultAppContainer : AppContainer
+class DefaultAppContainer(private val context: Context) : AppContainer {
+    override val contactsRepository: ContactsRepository by lazy {
+        AndroidContactsRepository(context.contentResolver)
+    }
+}
 
 class PhoneApplication : Application() {
     lateinit var container: AppContainer
@@ -16,6 +21,6 @@ class PhoneApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        container = DefaultAppContainer()
+        container = DefaultAppContainer(this)
     }
 }

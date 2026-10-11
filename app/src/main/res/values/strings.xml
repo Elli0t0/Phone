@@ -7,4 +7,67 @@
     <string name="cd_tab_recents">Recents tab</string>
     <string name="cd_tab_contacts">Contacts tab</string>
     <string name="cd_tab_dialpad">Keypad tab</string>
+
+    <!-- Permissions -->
+    <string name="permission_contacts_title">Contacts Permission Needed</string>
+    <string name="permission_contacts_message">Phone needs access to your contacts to display, search, create, and edit them on your device.</string>
+    <string name="permission_grant_button">Grant Permission</string>
+    <string name="permission_settings_message">Contacts permission was permanently denied. Please enable it in Application Settings to manage contacts.</string>
+    <string name="permission_settings_button">Open App Settings</string>
+
+    <!-- Contacts List -->
+    <string name="contacts_search_hint">Search contacts</string>
+    <string name="contacts_count_single">%1$d contact</string>
+    <string name="contacts_count_multiple">%1$d contacts</string>
+    <string name="contacts_empty_title">No contacts yet</string>
+    <string name="contacts_empty_message">Contacts added to your device will appear here.</string>
+    <string name="contacts_empty_action">Add contact</string>
+    <string name="contacts_search_empty_title">No contacts found</string>
+    <string name="contacts_search_empty_message">No contacts matching your search query.</string>
+    <string name="contact_unknown">Unknown</string>
+    <string name="cd_add_contact">Create new contact</string>
+    <string name="cd_clear_search">Clear search</string>
+    <string name="cd_contact_avatar">Contact avatar</string>
+
+    <!-- Contact Details -->
+    <string name="contact_details_title">Contact Details</string>
+    <string name="contact_details_phones">Phone Numbers</string>
+    <string name="contact_details_emails">Email Addresses</string>
+    <string name="contact_details_organization">Organization</string>
+    <string name="contact_action_edit">Edit</string>
+    <string name="contact_action_delete">Delete</string>
+    <string name="contact_delete_dialog_title">Delete Contact?</string>
+    <string name="contact_delete_dialog_message">Are you sure you want to delete %1$s? This action cannot be undone.</string>
+    <string name="contact_delete_confirm">Delete</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_save">Save</string>
+    <string name="cd_back">Back</string>
+
+    <!-- Create / Edit Contact -->
+    <string name="contact_create_title">New Contact</string>
+    <string name="contact_edit_title">Edit Contact</string>
+    <string name="contact_field_name">Name</string>
+    <string name="contact_field_organization">Company / Organization</string>
+    <string name="contact_field_phone">Phone</string>
+    <string name="contact_field_email">Email</string>
+    <string name="contact_add_phone">+ Add Phone</string>
+    <string name="contact_add_email">+ Add Email</string>
+    <string name="contact_remove_field">Remove</string>
+    <string name="contact_validation_error">Please enter at least a name or one phone number.</string>
+
+    <!-- Type Labels -->
+    <string name="type_phone_mobile">Mobile</string>
+    <string name="type_phone_home">Home</string>
+    <string name="type_phone_work">Work</string>
+    <string name="type_phone_other">Other</string>
+
+    <string name="type_email_home">Home</string>
+    <string name="type_email_work">Work</string>
+    <string name="type_email_other">Other</string>
+
+    <!-- Snackbars -->
+    <string name="snackbar_contact_created">Contact created successfully</string>
+    <string name="snackbar_contact_updated">Contact updated successfully</string>
+    <string name="snackbar_contact_deleted">Contact deleted</string>
+    <string name="snackbar_contact_error">An error occurred. Please try again.</string>
 </resources>

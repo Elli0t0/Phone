@@ -1,0 +1,19 @@
+package io.github.elli0t0.phone.feature.contacts
+
+import io.github.elli0t0.phone.data.contacts.model.ContactDetail
+import io.github.elli0t0.phone.data.contacts.model.ContactEmail
+import io.github.elli0t0.phone.data.contacts.model.ContactPhone
+
+data class ContactEditUiState(
+    val isNewContact: Boolean = true,
+    val contactId: Long = 0L,
+    val lookupKey: String = "",
+    val displayName: String = "",
+    val organization: String = "",
+    val phones: List<ContactPhone> = listOf(ContactPhone(number = "")),
+    val emails: List<ContactEmail> = emptyList(),
+    val isLoading: Boolean = false,
+    val isSaved: Boolean = false,
+    val validationErrorRes: Int? = null,
+    val originalDetail: ContactDetail? = null
+)

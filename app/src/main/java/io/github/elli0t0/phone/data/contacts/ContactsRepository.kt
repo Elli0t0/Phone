@@ -1,0 +1,39 @@
+package io.github.elli0t0.phone.data.contacts
+
+import io.github.elli0t0.phone.data.contacts.model.ContactDetail
+import io.github.elli0t0.phone.data.contacts.model.ContactInput
+import io.github.elli0t0.phone.data.contacts.model.ContactSummary
+import kotlinx.coroutines.flow.Flow
+
+interface ContactsRepository {
+    /**
+     * Flow emitting the full list of contacts, automatically refreshing on ContentObserver change.
+     */
+    fun getContactsFlow(): Flow<List<ContactSummary>>
+
+    /**
+     * Flow emitting detailed data for a specific contact.
+     */
+    fun getContactDetail(lookupKey: String, contactId: Long): Flow<ContactDetail?>
+
+    /**
+     * Creates a new contact with the provided information.
+     * Returns the created contact ID or a failure result.
+     */
+    suspend fun createContact(input: ContactInput): Result<Long>
+
+    /**
+     * Updates an existing contact, updating changed data rows in-place by _ID,
+     * inserting newly added rows, and deleting removed rows.
+     */
+    suspend fun updateContact(
+        contactId: Long,
+        original: ContactDetail,
+        updated: ContactInput
+    ): Result<Unit>
+
+    /**
+     * Deletes a contact from the device.
+     */
+    suspend fun deleteContact(contactId: Long, lookupKey: String): Result<Unit>
+}
