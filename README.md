@@ -4,10 +4,11 @@ An open-source Android dialer and contacts application with a visual style inspi
 
 ## Project Status
 
-**Version**: `0.1.2` (Real Contacts Management)
+**Version**: `0.1.3` (Dial Pad)
 
 - **Foundation (0.1.0)**: Architecture, Gradle build system, One UI design system tokens, bottom navigation.
 - **Contacts (0.1.2)**: Real device contacts management via `ContactsContract` and `ContentResolver`. Reactive flows via `ContentObserver`, One UI contact list with search (name & digits-insensitive), section headers, contact details, differential in-place editing, creation, and deletion.
+- **Dial Pad (0.1.3)**: Samsung One UI interactive dialer, circular keys (`1-9`, `*`, `0`, `#`) with letter sublabels, T9 search-as-you-type with 150 ms debounce, contact search results with tap-to-dial and direct call buttons, non-mutating display formatting (`PhoneNumberFormatter`), long-press `0` for `+`, accelerated repeating backspace without skipping, call placement via `TelecomManager.placeCall` with `ACTION_DIAL` fallback, safe USSD (`*#`) URL encoding, haptics, and rotation-proof state.
 
 ## Minimum Android Version
 

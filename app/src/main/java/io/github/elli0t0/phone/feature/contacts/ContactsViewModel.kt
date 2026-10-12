@@ -13,11 +13,18 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
 class ContactsViewModel(
-    private val contactsRepository: ContactsRepository
+    private val contactsRepository: ContactsRepository,
+    coroutineScope: kotlinx.coroutines.CoroutineScope? = null
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
     private val _userMessageRes = MutableStateFlow<Int?>(null)
+
+    private val activeScope = coroutineScope ?: try {
+        viewModelScope
+    } catch (_: Exception) {
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined)
+    }
 
     val uiState: StateFlow<ContactsUiState> = combine(
         contactsRepository.getContactsFlow(),
@@ -36,7 +43,7 @@ class ContactsViewModel(
             userMessageRes = messageRes
         )
     }.stateIn(
-        scope = viewModelScope,
+        scope = activeScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = ContactsUiState(isLoading = true)
     )

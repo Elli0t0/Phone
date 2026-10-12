@@ -70,4 +70,12 @@
     <string name="snackbar_contact_updated">Contact updated successfully</string>
     <string name="snackbar_contact_deleted">Contact deleted</string>
     <string name="snackbar_contact_error">An error occurred. Please try again.</string>
+
+    <!-- Dialpad / Calling -->
+    <string name="cd_call_button">Call</string>
+    <string name="cd_backspace_button">Backspace</string>
+    <string name="dialpad_empty_search">No matching contacts</string>
+    <string name="cd_dialpad_key">Key %1$s</string>
+    <string name="permission_call_title">Phone Call Permission</string>
+    <string name="permission_call_message">Phone needs permission to place direct phone calls. Otherwise, calls will be handed off to the system dialer.</string>
 </resources>

@@ -1,9 +1,11 @@
 package io.github.elli0t0.phone.feature.dialpad
 
-import androidx.annotation.StringRes
-import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 
 data class DialpadUiState(
-    @StringRes val titleRes: Int = R.string.tab_dialpad,
-    @StringRes val placeholderRes: Int = R.string.placeholder_coming_soon
+    val rawNumber: String = "",
+    val formattedNumber: String = "",
+    val matchingContacts: List<ContactSummary> = emptyList(),
+    val isSearching: Boolean = false,
+    val canCall: Boolean = false
 )

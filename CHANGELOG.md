@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-10-12
+
+### Added
+- One UI inspired interactive Dial Pad with circular digit keys (`1-9`, `*`, `0`, `#`) and letter sublabels.
+- Real-time search-as-you-type above the keypad with 150 ms debounce, matching by number substring and T9-style ITU E.164 name mapping.
+- T9 search result cards showing contact name and primary number with tap-to-populate and direct quick-call button.
+- Raw dial string state management in `DialpadViewModel` decoupled from presentation formatting.
+- `PhoneNumberFormatter` using Android `PhoneNumberUtils` with local formatting fallbacks (including Iranian `0912...`, US, and international `+` numbers) and strict dialpad sanitization on paste.
+- Accelerated backspace deletion on long-press with repeating interval reduction, ensuring single-digit synchronous deletion without skipping.
+- Long-press on `0` key inserts international prefix `+`.
+- Full telephone call dispatching via `CallManager`:
+  - Direct call placement with `TelecomManager.placeCall` when `CALL_PHONE` permission is granted (with immediate `ACTION_CALL` fallback).
+  - Graceful zero-permission fallback to system dialer via `ACTION_DIAL` when `CALL_PHONE` permission is denied.
+  - Safe USSD code support (`*#...`) via `Uri.encode` of `#` to `%23` to prevent URL fragment truncation by Android Uri parser.
+  - Call button automatically disabled when input is empty.
+- System haptic feedback integration respecting `Settings.System.HAPTIC_FEEDBACK_ENABLED`.
+- Keypad state preservation across configuration changes and device rotations via `SavedStateHandle`.
+- Unit test suite for phone number formatting, USSD preservation, paste sanitization, T9 matching, and ViewModel state transitions.
+
 ## [0.1.2] - 2026-10-11
 
 ### Added
