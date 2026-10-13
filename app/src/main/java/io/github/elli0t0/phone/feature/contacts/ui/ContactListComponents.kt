@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,11 +27,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.design.FavoriteCardGradients
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 
@@ -93,7 +99,7 @@ fun ContactRow(
             .padding(vertical = spacing.extraSmall)
             .clickable(onClick = onClick)
             .testTag("contact_item_${contact.id}"),
-        shape = MaterialTheme.shapes.medium,
+        shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
@@ -235,6 +241,51 @@ fun SearchEmptyState(
                 text = stringResource(id = R.string.contacts_search_empty_message),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+fun FavoriteContactCard(
+    contact: ContactSummary,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val displayName = contact.displayName.ifBlank {
+        contact.primaryNumberPreview ?: stringResource(id = R.string.contact_unknown)
+    }
+    val gradientIndex =
+        ((contact.id % FavoriteCardGradients.size) + FavoriteCardGradients.size) % FavoriteCardGradients.size
+    val gradient = FavoriteCardGradients[gradientIndex.toInt()]
+
+    Box(
+        modifier = modifier
+            .aspectRatio(1f)
+            .clip(MaterialTheme.shapes.large)
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(gradient.first, gradient.second)
+                )
+            )
+            .clickable(onClick = onClick)
+            .testTag("favorite_card_${contact.id}")
+            .padding(12.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            ContactAvatar(
+                photoUri = contact.photoUri,
+                displayName = displayName,
+                size = 56.dp
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = displayName,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }

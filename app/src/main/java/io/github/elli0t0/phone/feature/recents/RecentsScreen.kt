@@ -4,7 +4,6 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.ContactsContract
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -35,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -56,7 +56,6 @@ import io.github.elli0t0.phone.feature.contacts.ui.ContactSearchBar
 import io.github.elli0t0.phone.feature.contacts.ui.PermissionCard
 import io.github.elli0t0.phone.feature.setup.SetupWarningCard
 import io.github.elli0t0.phone.feature.recents.ui.CallLogRow
-import io.github.elli0t0.phone.feature.recents.ui.FavoritesHorizontalSection
 import io.github.elli0t0.phone.feature.recents.ui.RecentsEmptyState
 import io.github.elli0t0.phone.feature.recents.ui.RecentsFilterChips
 import kotlinx.coroutines.launch
@@ -149,23 +148,24 @@ fun RecentsScreen(
                     .padding(bottom = spacing.small)
             )
 
-            // Large header with settings icon
-            Row(
+            // Centered app title with settings icon
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = spacing.small),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                    .padding(bottom = spacing.small)
             ) {
                 Text(
-                    text = stringResource(id = R.string.tab_recents),
-                    style = MaterialTheme.typography.displayLarge,
-                    color = MaterialTheme.colorScheme.onBackground
+                    text = stringResource(id = R.string.app_name),
+                    style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.align(Alignment.Center)
                 )
 
                 androidx.compose.material3.IconButton(
                     onClick = onNavigateToSettings,
-                    modifier = Modifier.testTag("settings_button")
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .testTag("settings_button")
                 ) {
                     androidx.compose.material3.Icon(
                         painter = painterResource(id = R.drawable.ic_settings),
@@ -223,19 +223,6 @@ fun RecentsScreen(
                                     )
                                 }
                             }
-                        } else if (uiState.favorites.isNotEmpty() && !uiState.isSearching) {
-                            item(key = "section_favorites") {
-                                FavoritesHorizontalSection(
-                                    favorites = uiState.favorites,
-                                    onContactClick = { contact -> onNavigateToContactDetail(contact.id) },
-                                    onCallClick = { contact ->
-                                        contact.primaryNumberPreview?.let { num ->
-                                            initiateCall(num, contact.lookupKey)
-                                        }
-                                    },
-                                    modifier = Modifier.padding(bottom = spacing.medium)
-                                )
-                            }
                         }
 
                         // Loading skeleton or Empty calls state
@@ -246,7 +233,8 @@ fun RecentsScreen(
                         } else if (uiState.errorMessage == null && uiState.daySections.isEmpty()) {
                             item(key = "empty_recents") {
                                 RecentsEmptyState(
-                                    isFiltered = uiState.selectedFilter != CallFilter.ALL || uiState.isSearching
+                                    isFiltered = uiState.selectedFilter != CallFilter.ALL || uiState.isSearching,
+                                    modifier = Modifier.fillParentMaxHeight()
                                 )
                             }
                         } else if (uiState.errorMessage == null) {
@@ -256,8 +244,8 @@ fun RecentsScreen(
                                 item(key = "header_${section.title}") {
                                     Text(
                                         text = section.title,
-                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.primary,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(top = spacing.small, bottom = spacing.extraSmall)

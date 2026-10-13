@@ -7,7 +7,15 @@ val AccentBlue = Color(0xFF2473FE)
 val AccentBlueDark = Color(0xFF3E89FF)
 val OnAccentBlue = Color(0xFFFFFFFF)
 
-// In-call screen
+// Favorite contact card gradients (reference-style colorful cards)
+val FavoriteCardGradients = listOf(
+    Color(0xFFFFB75E) to Color(0xFFFF8C42),
+    Color(0xFFFF9EBB) to Color(0xFFFF6B9D),
+    Color(0xFF8EC5FF) to Color(0xFF5B8DEF),
+    Color(0xFF9BE7C4) to Color(0xFF4ECB9B),
+    Color(0xFFD5A6FF) to Color(0xFF9B5DE5),
+    Color(0xFFFFD166) to Color(0xFFFFB703)
+)
 val InCallGradientTop = Color(0xFF6E1B0C)
 val InCallGradientBottom = Color(0xFF000000)
 val InCallControlBackground = Color(0x1FFFFFFF)

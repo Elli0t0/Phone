@@ -16,19 +16,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -50,8 +46,6 @@ import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.data.calllog.model.CallGroup
 import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import io.github.elli0t0.phone.data.calllog.model.CallType
-import io.github.elli0t0.phone.data.contacts.model.ContactSummary
-import io.github.elli0t0.phone.feature.contacts.ui.ContactAvatar
 import io.github.elli0t0.phone.feature.recents.CallFilter
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -86,91 +80,6 @@ fun RecentsFilterChips(
     }
 }
 
-@Composable
-fun FavoritesHorizontalSection(
-    favorites: List<ContactSummary>,
-    onContactClick: (ContactSummary) -> Unit,
-    onCallClick: (ContactSummary) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val spacing = LocalSpacing.current
-    Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(id = R.string.section_favorites),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(bottom = spacing.small)
-        )
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(spacing.medium),
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag("recents_favorites_row")
-        ) {
-            items(favorites, key = { it.id }) { contact ->
-                FavoriteContactChip(
-                    contact = contact,
-                    onClick = { onContactClick(contact) },
-                    onCallClick = { onCallClick(contact) }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun FavoriteContactChip(
-    contact: ContactSummary,
-    onClick: () -> Unit,
-    onCallClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val spacing = LocalSpacing.current
-    Card(
-        onClick = onClick,
-        modifier = modifier
-            .width(100.dp)
-            .testTag("favorite_chip_${contact.id}"),
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(spacing.small),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            ContactAvatar(
-                photoUri = contact.photoUri,
-                displayName = contact.displayName,
-                size = 44.dp
-            )
-            Spacer(modifier = Modifier.height(spacing.extraSmall))
-            Text(
-
-                text = contact.displayName,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            IconButton(
-                onClick = onCallClick,
-                modifier = Modifier
-                    .size(28.dp)
-                    .testTag("favorite_chip_call_${contact.id}")
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_phone),
-                    contentDescription = stringResource(id = R.string.cd_call_button),
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(16.dp)
-                )
-            }
-        }
-    }
-}
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CallLogRow(
@@ -198,7 +107,7 @@ fun CallLogRow(
         MaterialTheme.colorScheme.onSurfaceVariant
     }
 
-    Card(
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 3.dp)
@@ -206,9 +115,7 @@ fun CallLogRow(
                 onClick = onRowClick,
                 onLongClick = { showMenu = true }
             )
-            .testTag("call_row_${group.id}"),
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            .testTag("call_row_${group.id}")
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = spacing.medium, vertical = spacing.small)) {
             Row(
@@ -328,6 +235,7 @@ fun CallLogRow(
                 )
             }
         }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
     }
 }
 

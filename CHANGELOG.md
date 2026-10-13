@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-10-13
+
+### Changed
+- Contacts: centered "Phone" header with "N contacts with phone numbers" count, favorites as a 3-column grid of gradient cards with avatar and name, pill-shaped contact rows, muted letter headers.
+- Recents: centered "Phone" header, flat call rows with dividers instead of cards, muted day headers, empty state vertically centered. Favorites shortcut row removed (favorites live in Contacts).
+- Note: profile and groups rows from the reference were not added — the app has no groups feature and no profile plumbing; nonfunctional rows were not added.
+
 ## [0.1.27] - 2026-10-13
 
 ### Fixed

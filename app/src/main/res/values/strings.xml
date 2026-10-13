@@ -17,8 +17,8 @@
 
     <!-- Contacts List -->
     <string name="contacts_search_hint">Search contacts</string>
-    <string name="contacts_count_single">%1$d contact</string>
-    <string name="contacts_count_multiple">%1$d contacts</string>
+    <string name="contacts_count_single">%1$d contact with a phone number</string>
+    <string name="contacts_count_multiple">%1$d contacts with phone numbers</string>
     <string name="contacts_empty_title">No contacts yet</string>
     <string name="contacts_empty_message">Contacts added to your device will appear here.</string>
     <string name="contacts_empty_action">Add contact</string>
