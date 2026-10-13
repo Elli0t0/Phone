@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -30,6 +31,13 @@ class CallActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d("PhoneCall", "activity onCreate CallActivity action=${intent?.action}")
+        try {
+            val isDefault = io.github.elli0t0.phone.core.telecom.DefaultDialerHelper.isDefaultDialer(this)
+            Log.d("PhoneCall", "activity onCreate isDefaultDialer=$isDefault")
+        } catch (e: Exception) {
+            Log.e("PhoneCall", "isDefaultDialer check failed", e)
+        }
         turnScreenOnAndShowOverLockScreen()
         handleIntent(intent)
 
@@ -108,6 +116,7 @@ class CallActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        Log.d("PhoneCall", "activity resumed CallActivity")
         CallRepository.setCallActivityVisible(true)
         PhoneInCallService.onCallActivityResumed(this)
     }

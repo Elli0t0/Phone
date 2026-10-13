@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.14] - 2026-10-13
+
+### Fixed
+- Call UI not appearing in background: InCallService now posts a foreground notification synchronously in onCallAdded (channels first, before lookups), with startForeground + notify fallback, and logs failures with tag PhoneCall instead of swallowing them.
+- Outgoing calls: both startActivity (FLAG_ACTIVITY_NEW_TASK) and call notification with full-screen intent run in onCallAdded and on first state change.
+- Incoming ringing: HIGH heads-up notification with Answer/Decline, full-screen intent only when device is locked.
+- After call screen visible: only quiet LOW ongoing notification, no heads-up, no full-screen intent.
+- Manifest: FOREGROUND_SERVICE + FOREGROUND_SERVICE_PHONE_CALL, service foregroundServiceType phoneCall, CallActivity launchMode singleTask + excludeFromRecents false.
+- Default dialer: ROLE_DIALER state logged in service onCreate/onCallAdded and in CallActivity onCreate; service not bound when not default dialer is now visible in logcat.
+
 ## [0.1.13] - 2026-10-13
 
 ### Added
