@@ -94,7 +94,8 @@ fun ContactsScreen(
                             repository,
                             app.container.favoritesRepository,
                             dest.contactId,
-                            dest.lookupKey
+                            dest.lookupKey,
+                            app.container.contactSimRepository
                         )
                     )
                     val detailUiState by detailViewModel.uiState.collectAsStateWithLifecycle()
@@ -126,7 +127,9 @@ fun ContactsScreen(
                         onDismissPhotoPreview = { detailViewModel.setPhotoPreviewVisible(false) },
                         onPhotoOptionsRequest = { detailViewModel.setPhotoOptionsDialogVisible(true) },
                         onDismissPhotoOptions = { detailViewModel.setPhotoOptionsDialogVisible(false) },
-                        onRingtoneSelected = detailViewModel::onRingtoneSelected
+                        onRingtoneSelected = detailViewModel::onRingtoneSelected,
+                        contactSimRepository = app.container.contactSimRepository,
+                        onCallingSimSelected = detailViewModel::setCallingSim
                     )
                 }
 

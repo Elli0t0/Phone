@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.data.contacts.ContactsRepository
+import io.github.elli0t0.phone.data.favorites.ContactSimRepository
 import io.github.elli0t0.phone.data.favorites.FavoritesRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,20 +17,50 @@ class ContactDetailViewModel(
     private val contactsRepository: ContactsRepository,
     private val favoritesRepository: FavoritesRepository,
     private val contactId: Long,
-    private val lookupKey: String
+    private val lookupKey: String,
+    private val contactSimRepository: ContactSimRepository? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ContactDetailUiState(isLoading = true))
     val uiState: StateFlow<ContactDetailUiState> = _uiState.asStateFlow()
+    private var effectiveLookupKey: String = lookupKey
+    private var callingSimJob: kotlinx.coroutines.Job? = null
 
     init {
         loadContact()
         observeFavorite()
+        observeCallingSim()
+    }
+
+    private fun observeCallingSim() {
+        val repo = contactSimRepository ?: return
+        val key = effectiveLookupKey
+        if (key.isBlank()) return
+        callingSimJob?.cancel()
+        callingSimJob = viewModelScope.launch {
+            repo.getSimIdFlow(key).collect { simId ->
+                _uiState.update { it.copy(callingSimId = simId) }
+            }
+        }
+    }
+
+    fun setCallingSim(simId: String?) {
+        val repo = contactSimRepository ?: return
+        val key = _uiState.value.contact?.lookupKey?.takeIf { it.isNotBlank() } ?: effectiveLookupKey
+        if (key.isBlank()) return
+        viewModelScope.launch {
+            repo.setSimId(key, simId)
+        }
     }
 
     private fun loadContact() {
         viewModelScope.launch {
             contactsRepository.getContactDetail(lookupKey, contactId).collect { detail ->
+                val loadedKey = detail?.lookupKey?.takeIf { it.isNotBlank() }
+                if (loadedKey != null && loadedKey != effectiveLookupKey) {
+                    effectiveLookupKey = loadedKey
+                    observeCallingSim()
+                }
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -151,7 +182,8 @@ class ContactDetailViewModel(
             repository: ContactsRepository,
             favoritesRepository: FavoritesRepository,
             contactId: Long,
-            lookupKey: String
+            lookupKey: String,
+            contactSimRepository: ContactSimRepository? = null
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -159,7 +191,8 @@ class ContactDetailViewModel(
                     repository,
                     favoritesRepository,
                     contactId,
-                    lookupKey
+                    lookupKey,
+                    contactSimRepository
                 ) as T
             }
         }

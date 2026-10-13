@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.16] - 2026-10-13
+
+### Added
+- Per-contact calling SIM in contact details: Ask every time (default) or a specific SIM, saved in Room (contact_sims, Migration 1 to 2). Calls to that contact use it without the dialog from keypad, recents, and contacts. Falls back to the dialog if the SIM is gone. Hidden on single-SIM phones.
+- In-call audio route picker: Earpiece, Speaker, Wired headset, and each Bluetooth device by name, from the real CallAudioState supported routes. Replaces the earpiece/speaker toggle so Bluetooth can be returned to.
+
+### Fixed
+- SIM dialog: rows at least 64dp, clear spacing, whole row clickable.
+
+### Changed
+- BLUETOOTH_CONNECT is requested only when the audio route picker needs Bluetooth device names, not at call start.
+
 ## [0.1.15] - 2026-10-13
 
 ### Fixed

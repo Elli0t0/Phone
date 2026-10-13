@@ -50,6 +50,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,7 +63,12 @@ import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.telecom.CallManager
+import io.github.elli0t0.phone.core.telecom.SimCallHelper
+import io.github.elli0t0.phone.core.telecom.TelecomHelper
 import io.github.elli0t0.phone.data.contacts.model.ContactDetail
+import io.github.elli0t0.phone.data.favorites.ContactSimRepository
+import io.github.elli0t0.phone.feature.call.ui.DualSimPickerDialog
+import kotlinx.coroutines.launch
 import io.github.elli0t0.phone.data.contacts.model.ContactEmail
 import io.github.elli0t0.phone.data.contacts.model.ContactPhone
 import io.github.elli0t0.phone.data.contacts.util.ContactPhotoUtil
@@ -87,15 +93,64 @@ fun ContactDetailScreen(
     onPhotoOptionsRequest: () -> Unit = {},
     onDismissPhotoOptions: () -> Unit = {},
     onRingtoneSelected: (Uri?) -> Unit = {},
+    contactSimRepository: ContactSimRepository? = null,
+    onCallingSimSelected: (String?) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     BackHandler(onBack = onBackClick)
     val context = LocalContext.current
     val spacing = LocalSpacing.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     var showMoreMenu by remember { mutableStateOf(false) }
     var phonePickerAction by remember { mutableStateOf<String?>(null) } // "call" or "message"
+    var simPickerNumber by remember { mutableStateOf<String?>(null) }
+    var showCallingSimDialog by remember { mutableStateOf(false) }
+    val simAccounts = remember(context) { TelecomHelper.getCallCapablePhoneAccounts(context) }
+
+    fun placeCallWithSim(number: String) {
+        if (simAccounts.size <= 1) {
+            CallManager.placeCall(context, number)
+            return
+        }
+        val repo = contactSimRepository
+        if (repo == null) {
+            simPickerNumber = number
+            return
+        }
+        coroutineScope.launch {
+            when (val res = SimCallHelper.resolveSim(context, number, uiState.contact?.lookupKey, simAccounts, repo)) {
+                is SimCallHelper.SimCallResolution.UseSim -> CallManager.placeCall(context, number, res.sim.handle)
+                is SimCallHelper.SimCallResolution.ShowDialog -> simPickerNumber = number
+            }
+        }
+    }
+
+    if (simPickerNumber != null && simAccounts.size > 1) {
+        DualSimPickerDialog(
+            simAccounts = simAccounts,
+            targetNumber = simPickerNumber.orEmpty(),
+            onSimSelected = { sim ->
+                val num = simPickerNumber.orEmpty()
+                simPickerNumber = null
+                CallManager.placeCall(context, num, sim.handle)
+            },
+            onDismiss = { simPickerNumber = null }
+        )
+    }
+
+    if (showCallingSimDialog && simAccounts.size > 1) {
+        CallingSimDialog(
+            simAccounts = simAccounts,
+            currentSimId = uiState.callingSimId,
+            onSimSelected = { simId ->
+                showCallingSimDialog = false
+                onCallingSimSelected(simId)
+            },
+            onDismiss = { showCallingSimDialog = false }
+        )
+    }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -213,7 +268,7 @@ fun ContactDetailScreen(
             onSelectPhone = { selectedNumber ->
                 phonePickerAction = null
                 if (action == "call") {
-                    CallManager.placeCall(context, selectedNumber)
+                    placeCallWithSim(selectedNumber)
                 } else {
                     val smsIntent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:${Uri.encode(selectedNumber)}")).apply {
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -375,7 +430,7 @@ fun ContactDetailScreen(
                     ContactActionRow(
                         onCallClick = {
                             if (phones.size == 1) {
-                                CallManager.placeCall(context, phones.first().number)
+                                placeCallWithSim(phones.first().number)
                             } else if (phones.size > 1) {
                                 phonePickerAction = "call"
                             }
@@ -404,7 +459,7 @@ fun ContactDetailScreen(
                             contact.phones.forEach { phone ->
                                 PhoneRowItem(
                                     phone = phone,
-                                    onCall = { CallManager.placeCall(context, phone.number) },
+                                    onCall = { placeCallWithSim(phone.number) },
                                     onMessage = {
                                         val smsIntent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:${Uri.encode(phone.number)}")).apply {
                                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -441,6 +496,44 @@ fun ContactDetailScreen(
                             ringtoneUriString = contact.customRingtone,
                             onClick = { launchRingtonePicker(contact.customRingtone) }
                         )
+                    }
+
+                    // Calling SIM Section (dual-SIM only)
+                    if (simAccounts.size > 1) {
+                        Spacer(modifier = Modifier.height(spacing.medium))
+                        DetailSectionCard(title = stringResource(id = R.string.contact_calling_sim_title)) {
+                            val currentLabel = simAccounts.firstOrNull { it.handle.id == uiState.callingSimId }?.label
+                                ?: stringResource(id = R.string.contact_calling_sim_ask)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(MaterialTheme.shapes.small)
+                                    .clickable { showCallingSimDialog = true }
+                                    .padding(vertical = spacing.small)
+                                    .testTag("row_contact_calling_sim"),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_sim_card),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(spacing.medium))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = currentLabel,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = stringResource(id = R.string.contact_calling_sim_desc),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(spacing.large))

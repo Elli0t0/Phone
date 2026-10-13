@@ -155,7 +155,12 @@
     <string name="call_action_resume">Resume</string>
     <string name="call_action_keypad">Keypad</string>
     <string name="call_audio_output">Audio Output</string>
+    <string name="call_audio_wired">Wired headset</string>
+    <string name="call_audio_bluetooth_grant">Bluetooth — allow to see devices</string>
     <string name="call_sim_picker_title">Select SIM card</string>
+    <string name="contact_calling_sim_title">Calling SIM</string>
+    <string name="contact_calling_sim_desc">SIM used for calls to this contact</string>
+    <string name="contact_calling_sim_ask">Ask every time</string>
 
     <!-- Contact Photos, Ringtones, and Redesign Actions -->
     <string name="action_favorite">Favorite</string>

@@ -7,6 +7,8 @@ import io.github.elli0t0.phone.data.calllog.CallLogRepository
 import io.github.elli0t0.phone.data.contacts.AndroidContactsRepository
 import io.github.elli0t0.phone.data.contacts.ContactsRepository
 import io.github.elli0t0.phone.data.favorites.AppDatabase
+import io.github.elli0t0.phone.data.favorites.ContactSimRepository
+import io.github.elli0t0.phone.data.favorites.DefaultContactSimRepository
 import io.github.elli0t0.phone.data.favorites.DefaultFavoritesRepository
 import io.github.elli0t0.phone.data.favorites.FavoritesRepository
 import io.github.elli0t0.phone.core.notifications.CallNotificationChannels
@@ -21,6 +23,7 @@ interface AppContainer {
     val contactsRepository: ContactsRepository
     val callLogRepository: CallLogRepository
     val favoritesRepository: FavoritesRepository
+    val contactSimRepository: ContactSimRepository
     val settingsRepository: SettingsRepository
     val setupRepository: SetupRepository
 }
@@ -40,6 +43,10 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
 
     override val favoritesRepository: FavoritesRepository by lazy {
         DefaultFavoritesRepository(database.favoritesDao())
+    }
+
+    override val contactSimRepository: ContactSimRepository by lazy {
+        DefaultContactSimRepository(database.contactSimDao())
     }
 
     override val settingsRepository: SettingsRepository by lazy {

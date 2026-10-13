@@ -12,5 +12,6 @@ data class ContactDetailUiState(
     val showPhotoOptionsDialog: Boolean = false,
     val pendingPhotoBytes: ByteArray? = null,
     val errorMessageRes: Int? = null,
-    val infoMessageRes: Int? = null
+    val infoMessageRes: Int? = null,
+    val callingSimId: String? = null
 )
