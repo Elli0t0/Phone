@@ -1,5 +1,6 @@
 package io.github.elli0t0.phone.feature.dialpad
 
+import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 
 /**
@@ -60,16 +61,9 @@ object T9SearchHelper {
         val queryDigits = trimmedQuery.filter { it.isDigit() }
         if (queryDigits.isEmpty()) return false
 
-        // 1. Phone number match
-        val phoneDigits = (contact.primaryNumberPreview ?: "").filter { it.isDigit() }
-        if (phoneDigits.contains(queryDigits)) {
+        // 1. Phone number match (shared normalization: device region + trailing digits)
+        if (PhoneNumberMatcher.matchesQuery(contact.primaryNumberPreview ?: "", trimmedQuery)) {
             return true
-        }
-        if (queryDigits.startsWith("0")) {
-            val withoutZero = queryDigits.dropWhile { it == '0' }
-            if (withoutZero.isNotEmpty() && phoneDigits.contains(withoutZero)) {
-                return true
-            }
         }
 
         // 2. Name T9 match across whole name

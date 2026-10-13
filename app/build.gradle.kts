@@ -22,6 +22,9 @@ android {
     versionName = appVersionName
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+    // Keep only English and Persian resources from the app and its libraries.
+    resourceConfigurations += setOf("en", "fa")
   }
 
   signingConfigs {
@@ -52,7 +55,8 @@ android {
   buildTypes {
     release {
       isCrunchPngs = false
-      isMinifyEnabled = false
+      isMinifyEnabled = true
+      isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       val releaseKeystore = signingConfigs.getByName("release")
       if (releaseKeystore.storeFile != null) {
@@ -98,7 +102,6 @@ dependencies {
   implementation(libs.androidx.navigation.compose)
   implementation(libs.androidx.compose.ui)
   implementation(libs.androidx.compose.ui.graphics)
-  implementation(libs.androidx.compose.ui.tooling.preview)
   implementation(libs.androidx.compose.material3)
   implementation(libs.coil.compose)
   implementation(libs.androidx.datastore.preferences)
@@ -109,7 +112,6 @@ dependencies {
 
   testImplementation(libs.junit)
   testImplementation(libs.kotlinx.coroutines.test)
-  testImplementation(libs.androidx.room.testing)
 
   debugImplementation(libs.androidx.compose.ui.tooling)
   debugImplementation(libs.androidx.compose.ui.test.manifest)

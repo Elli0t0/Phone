@@ -38,6 +38,21 @@ interface ContactsRepository {
     suspend fun deleteContact(contactId: Long, lookupKey: String): Result<Unit>
 
     /**
+     * All phone numbers per contact, keyed by contact ID. Used for duplicate
+     * detection, which needs every number, not just the primary preview.
+     */
+    suspend fun getAllContactNumbers(): Map<Long, List<String>> = emptyMap()
+
+    /**
+     * Merges [mergeContactIds] into [keepContactId]: phone numbers and emails
+     * missing from the kept contact are moved into it, then the merged contacts
+     * are deleted. The kept contact's name, photo, ringtone, and organization
+     * are unchanged. Call only after the user confirmed the merge.
+     */
+    suspend fun mergeContacts(keepContactId: Long, mergeContactIds: List<Long>): Result<Unit> =
+        Result.failure(UnsupportedOperationException("Merging contacts is not supported"))
+
+    /**
      * Updates or inserts only the photo row for a contact in ContactsContract.Data.
      */
     suspend fun saveContactPhoto(contactId: Long, photoBytes: ByteArray): Result<Unit> = Result.success(Unit)

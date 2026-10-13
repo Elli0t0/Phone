@@ -43,6 +43,18 @@
     <string name="action_save">Save</string>
     <string name="cd_back">Back</string>
 
+    <!-- Duplicate Contacts -->
+    <string name="duplicates_find">Find duplicate contacts</string>
+    <string name="duplicates_title">Duplicate contacts</string>
+    <string name="duplicates_description">Contacts with the same phone number or the same name.</string>
+    <string name="duplicates_none">No duplicate contacts found</string>
+    <string name="duplicates_reason_number">Same phone number</string>
+    <string name="duplicates_reason_name">Same name</string>
+    <string name="duplicates_merge">Merge</string>
+    <string name="duplicates_merge_title">Merge contacts?</string>
+    <string name="duplicates_merge_message">Keep %1$s? %2$s will be deleted, and their phone numbers and emails will be moved into %1$s.</string>
+    <string name="duplicates_merge_confirm">Merge</string>
+
     <!-- Create / Edit Contact -->
     <string name="contact_create_title">New Contact</string>
     <string name="contact_edit_title">Edit Contact</string>
@@ -69,6 +81,7 @@
     <string name="snackbar_contact_created">Contact created successfully</string>
     <string name="snackbar_contact_updated">Contact updated successfully</string>
     <string name="snackbar_contact_deleted">Contact deleted</string>
+    <string name="snackbar_contacts_merged">Contacts merged</string>
     <string name="snackbar_contact_error">An error occurred. Please try again.</string>
 
     <!-- Dialpad / Calling -->

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
 import io.github.elli0t0.phone.data.calllog.CallLogRepository
 import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import io.github.elli0t0.phone.data.calllog.model.CallType
@@ -134,7 +135,7 @@ class RecentsViewModel(
                 true
             } else {
                 call.displayTitle.lowercase().contains(trimmedQuery) ||
-                    call.number.contains(trimmedQuery)
+                    PhoneNumberMatcher.matchesQuery(call.number, trimmedQuery)
             }
 
             matchesFilter && matchesQuery

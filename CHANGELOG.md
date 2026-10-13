@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.18] - 2026-10-13
+
+### Added
+- Number matching: one shared PhoneNumberMatcher (device-region normalization + trailing-digit match) used consistently in keypad search, contacts search, recents search and lookup, and the call screen.
+- Duplicate contacts: detected by same normalized number or same name, listed from the contacts tab, merged only after confirmation. Merge keeps the first contact, moves the others' numbers and emails into it, then deletes the merged contacts.
+- R8 minification + resource shrinking for release builds, with keep rules for manifest components, Room, DataStore, Coil, and reflection-safe members. Release resources kept for en and fa locales only.
+- R8 mapping.txt uploaded as a separate workflow artifact (Phone-mapping), not attached to the public Release.
+
+### Changed
+- README rewritten: current features, full permissions list, install steps, and limitations.
+- Removed unused dependencies: compose ui-tooling-preview, Room testing.
+
 ## [0.1.17] - 2026-10-13
 
 ### Fixed

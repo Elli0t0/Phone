@@ -83,7 +83,12 @@ fun ContactsScreen(
                         },
                         onAddContactClick = {
                             currentDestination = ContactsNavDestination.Create
-                        }
+                        },
+                        onFindDuplicates = listViewModel::findDuplicates,
+                        onBackFromDuplicates = listViewModel::hideDuplicates,
+                        onMergeRequest = listViewModel::requestMerge,
+                        onDismissMerge = listViewModel::dismissMergeDialog,
+                        onConfirmMerge = listViewModel::confirmMerge
                     )
                 }
 
