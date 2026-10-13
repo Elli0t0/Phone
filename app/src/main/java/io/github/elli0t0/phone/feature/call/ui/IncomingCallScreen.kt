@@ -60,8 +60,11 @@ fun IncomingCallScreen(
                 modifier = Modifier.padding(bottom = spacing.small)
             )
 
+            val hasName = !callModel.displayName.isNullOrBlank() && callModel.displayName != callModel.number
+            val titleText = if (hasName) callModel.displayName!! else callModel.number
+
             Text(
-                text = callModel.displayName ?: callModel.number,
+                text = titleText,
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 32.sp
@@ -70,7 +73,7 @@ fun IncomingCallScreen(
                 modifier = Modifier.padding(bottom = spacing.extraSmall)
             )
 
-            if (callModel.displayName != null && callModel.number.isNotBlank()) {
+            if (hasName && callModel.number.isNotBlank()) {
                 Text(
                     text = callModel.number,
                     style = MaterialTheme.typography.bodyLarge,

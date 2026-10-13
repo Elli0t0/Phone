@@ -79,8 +79,11 @@ fun OngoingCallScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(top = 40.dp)
         ) {
+            val hasName = !callModel.displayName.isNullOrBlank() && callModel.displayName != callModel.number
+            val titleText = if (hasName) callModel.displayName!! else callModel.number
+
             Text(
-                text = callModel.displayName ?: callModel.number,
+                text = titleText,
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 32.sp
@@ -89,7 +92,7 @@ fun OngoingCallScreen(
                 modifier = Modifier.padding(bottom = spacing.extraSmall)
             )
 
-            if (callModel.displayName != null && callModel.number.isNotBlank()) {
+            if (hasName && callModel.number.isNotBlank()) {
                 Text(
                     text = callModel.number,
                     style = MaterialTheme.typography.bodyLarge,
@@ -147,7 +150,7 @@ fun OngoingCallScreen(
                     } else if (isSpeaker) {
                         R.drawable.ic_volume_up
                     } else {
-                        R.drawable.ic_phone_in_talk
+                        R.drawable.ic_phone
                     }
                     val audioLabel = if (isBluetooth) {
                         stringResource(id = R.string.call_action_bluetooth)

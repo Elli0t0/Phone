@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.8] - 2026-10-13
+
+### Fixed
+- In-call and incoming screens: Resolved contact name asynchronously via PhoneLookup with normalized number and Call.Details fallback, displaying name as title and number as subtitle in UI and notification.
+- Handset icons: Replaced call vectors with shared Material Symbols handset path and updated launcher foreground inside centered group.
+
 ## [0.1.7] - 2026-10-13
 
 ### Fixed

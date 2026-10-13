@@ -55,6 +55,13 @@ object CallRepository {
         _ongoingCallModel.value = current.copy(durationSeconds = durationSeconds)
     }
 
+    fun updateDisplayName(name: String?) {
+        val current = _ongoingCallModel.value ?: return
+        if (!name.isNullOrBlank()) {
+            _ongoingCallModel.value = current.copy(displayName = name)
+        }
+    }
+
     private fun updateCallModel() {
         val call = _currentCall.value
         if (call == null) {
@@ -65,6 +72,7 @@ object CallRepository {
         val handle = call.details?.handle
         val rawNumber = handle?.schemeSpecificPart ?: ""
         val callerDisplayName = call.details?.callerDisplayName
+        val contactDisplayName = call.details?.contactDisplayName
 
         val state = when (call.state) {
             Call.STATE_RINGING -> CallState.RINGING
@@ -77,10 +85,14 @@ object CallRepository {
         }
 
         val currentModel = _ongoingCallModel.value
+        val effectiveDisplayName = currentModel?.displayName
+            ?: contactDisplayName?.takeIf { it.isNotBlank() }
+            ?: callerDisplayName?.takeIf { it.isNotBlank() }
+
         _ongoingCallModel.value = OngoingCallModel(
             id = call.hashCode().toString(),
             number = rawNumber,
-            displayName = callerDisplayName?.takeIf { it.isNotBlank() },
+            displayName = effectiveDisplayName,
             state = state,
             durationSeconds = currentModel?.durationSeconds ?: 0L,
             isMuted = currentModel?.isMuted ?: false,
