@@ -1,0 +1,223 @@
+package io.github.elli0t0.phone.feature.settings
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import io.github.elli0t0.phone.PhoneApplication
+import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.telecom.rememberDefaultDialerState
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BlockedNumbersScreen(
+    onNavigateBack: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val app = context.applicationContext as PhoneApplication
+    val viewModel: BlockedNumbersViewModel = viewModel(
+        factory = BlockedNumbersViewModel.provideFactory(app)
+    )
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val spacing = LocalSpacing.current
+    val dialerState = rememberDefaultDialerState()
+
+    var showAddDialog by remember { mutableStateOf(false) }
+    var numberInput by remember { mutableStateOf("") }
+    var inputError by remember { mutableStateOf(false) }
+
+    if (showAddDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddDialog = false },
+            title = { Text(text = stringResource(id = R.string.blocked_numbers_add)) },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = numberInput,
+                        onValueChange = {
+                            numberInput = it
+                            inputError = false
+                        },
+                        label = { Text(text = stringResource(id = R.string.blocked_numbers_hint)) },
+                        singleLine = true,
+                        isError = inputError,
+                        modifier = Modifier.testTag("blocked_number_input")
+                    )
+                    if (inputError) {
+                        Text(
+                            text = stringResource(id = R.string.blocked_numbers_invalid),
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (numberInput.isBlank()) {
+                            inputError = true
+                        } else {
+                            viewModel.blockNumber(numberInput)
+                            numberInput = ""
+                            showAddDialog = false
+                        }
+                    },
+                    modifier = Modifier.testTag("block_number_confirm")
+                ) {
+                    Text(text = stringResource(id = R.string.blocked_numbers_block))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddDialog = false }) {
+                    Text(text = stringResource(id = R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    Scaffold(
+        modifier = modifier.fillMaxSize().testTag("blocked_numbers_screen"),
+        topBar = {
+            TopAppBar(
+                title = { Text(text = stringResource(id = R.string.blocked_numbers_title)) },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_arrow_back),
+                            contentDescription = stringResource(id = R.string.cd_back)
+                        )
+                    }
+                }
+            )
+        },
+        floatingActionButton = {
+            if (uiState.canBlock) {
+                FloatingActionButton(
+                    onClick = { showAddDialog = true },
+                    modifier = Modifier.testTag("add_blocked_number_button")
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_add),
+                        contentDescription = stringResource(id = R.string.blocked_numbers_add)
+                    )
+                }
+            }
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = spacing.screenHorizontalPadding)
+        ) {
+            if (!uiState.canBlock) {
+                Card(
+                    shape = MaterialTheme.shapes.extraLarge,
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(spacing.medium)) {
+                        Text(
+                            text = stringResource(id = R.string.blocked_numbers_not_available),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (!dialerState.isDefault) {
+                            Spacer(modifier = Modifier.height(spacing.small))
+                            Button(onClick = dialerState.requestDefaultDialer) {
+                                Text(text = stringResource(id = R.string.blocked_numbers_set_default))
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(spacing.medium))
+            }
+
+            if (!uiState.isLoading && uiState.numbers.isEmpty()) {
+                Text(
+                    text = stringResource(id = R.string.blocked_numbers_empty),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = spacing.medium)
+                )
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(spacing.small)
+                ) {
+                    itemsIndexed(uiState.numbers, key = { _, number -> number }) { index, number ->
+                        Card(
+                            shape = MaterialTheme.shapes.extraLarge,
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(spacing.medium),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = number,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                IconButton(
+                                    onClick = { viewModel.unblockNumber(number) },
+                                    modifier = Modifier.testTag("unblock_button_$index")
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_delete),
+                                        contentDescription = stringResource(id = R.string.blocked_numbers_unblock)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

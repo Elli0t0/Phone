@@ -1,6 +1,11 @@
 package io.github.elli0t0.phone.feature.settings
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
+import android.telecom.TelecomManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -51,6 +56,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.core.content.pm.PackageInfoCompat
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -120,6 +126,15 @@ fun SettingsScreen(
     var showAnimDialog by remember { mutableStateOf(false) }
     var showSortDialog by remember { mutableStateOf(false) }
     var showFormatDialog by remember { mutableStateOf(false) }
+    var showBlockedNumbers by remember { mutableStateOf(false) }
+    var showAboutDialog by remember { mutableStateOf(false) }
+
+    val telecomManager = remember {
+        context.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
+    }
+    val voicemailNumber = remember {
+        runCatching { telecomManager.voiceMailNumber }.getOrNull()?.takeIf { it.isNotBlank() }
+    }
     var customColorHexInput by remember { mutableStateOf("") }
     var customColorError by remember { mutableStateOf(false) }
 
@@ -342,6 +357,52 @@ fun SettingsScreen(
         )
     }
 
+    if (showAboutDialog) {
+        val packageInfo = remember {
+            runCatching { context.packageManager.getPackageInfo(context.packageName, 0) }.getOrNull()
+        }
+        val versionName = packageInfo?.versionName ?: ""
+        val versionCode = packageInfo?.let { PackageInfoCompat.getLongVersionCode(it) } ?: 0L
+        AlertDialog(
+            onDismissRequest = { showAboutDialog = false },
+            title = { Text(text = stringResource(id = R.string.settings_about_phone)) },
+            text = {
+                Text(
+                    text = stringResource(
+                        id = R.string.settings_about_version,
+                        versionName,
+                        versionCode
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showAboutDialog = false
+                        runCatching {
+                            context.startActivity(
+                                Intent(
+                                    Intent.ACTION_VIEW,
+                                    Uri.parse("https://github.com/Elli0t0/Phone")
+                                )
+                            )
+                        }
+                    }
+                ) {
+                    Text(text = stringResource(id = R.string.settings_view_source))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAboutDialog = false }) {
+                    Text(text = stringResource(id = R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    if (showBlockedNumbers) {
+        BlockedNumbersScreen(onNavigateBack = { showBlockedNumbers = false })
+    } else {
     Scaffold(
         modifier = modifier.fillMaxSize().testTag("settings_screen"),
         topBar = {
@@ -639,6 +700,109 @@ fun SettingsScreen(
                 }
             }
 
+            // Calls
+            item {
+                SettingsSectionHeader(title = stringResource(id = R.string.settings_cat_calls))
+            }
+
+            item {
+                Card(
+                    shape = MaterialTheme.shapes.extraLarge,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(spacing.medium)) {
+                        SettingsRow(
+                            title = stringResource(id = R.string.settings_block_numbers),
+                            onClick = { showBlockedNumbers = true }
+                        )
+
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        Spacer(modifier = Modifier.height(spacing.small))
+
+                        SettingsRow(
+                            title = stringResource(id = R.string.settings_voicemail),
+                            subtitle = voicemailNumber
+                                ?: stringResource(id = R.string.settings_voicemail_unavailable),
+                            onClick = {
+                                voicemailNumber?.let { number ->
+                                    runCatching {
+                                        context.startActivity(
+                                            Intent(Intent.ACTION_DIAL, Uri.parse("tel:$number"))
+                                        )
+                                    }
+                                }
+                            }
+                        )
+
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        Spacer(modifier = Modifier.height(spacing.small))
+
+                        SettingsRow(
+                            title = stringResource(id = R.string.settings_supplementary),
+                            onClick = {
+                                runCatching {
+                                    context.startActivity(
+                                        Intent(TelecomManager.ACTION_SHOW_CALL_SETTINGS)
+                                    )
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+
+            // Privacy
+            item {
+                SettingsSectionHeader(title = stringResource(id = R.string.settings_cat_privacy))
+            }
+
+            item {
+                Card(
+                    shape = MaterialTheme.shapes.extraLarge,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(spacing.medium)) {
+                        SettingsRow(
+                            title = stringResource(id = R.string.settings_permissions),
+                            onClick = {
+                                runCatching {
+                                    context.startActivity(
+                                        Intent(
+                                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                            Uri.fromParts("package", context.packageName, null)
+                                        )
+                                    )
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+
+            // About
+            item {
+                SettingsSectionHeader(title = stringResource(id = R.string.settings_cat_about))
+            }
+
+            item {
+                Card(
+                    shape = MaterialTheme.shapes.extraLarge,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(spacing.medium)) {
+                        SettingsRow(
+                            title = stringResource(id = R.string.settings_about_phone),
+                            onClick = { showAboutDialog = true }
+                        )
+                    }
+                }
+            }
+
             // Category 5: Reset
             item {
                 SettingsSectionHeader(title = stringResource(id = R.string.settings_cat_reset))
@@ -665,6 +829,7 @@ fun SettingsScreen(
             }
         }
     }
+    }
 }
 
 @Composable
@@ -677,7 +842,7 @@ private fun SettingsSectionHeader(title: String) {
     )
 }
 
-// One UI style settings row: title with the current value as a subtitle.
+// Settings row: title with the current value as a subtitle.
 // Tapping the row opens the picker dialog for that setting.
 @Composable
 private fun SettingsRow(
@@ -707,7 +872,7 @@ private fun SettingsRow(
     }
 }
 
-// One UI style switch row: title + description on the left, switch on the right.
+// Switch row: title + description on the left, switch on the right.
 @Composable
 private fun SettingsSwitchRow(
     title: String,

@@ -43,7 +43,7 @@ fun PhoneBottomBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(32.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
                 .padding(8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
@@ -56,7 +56,7 @@ fun PhoneBottomBar(
                         .clip(RoundedCornerShape(24.dp))
                         .background(
                             if (selected) {
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                                MaterialTheme.colorScheme.surfaceContainerHighest
                             } else {
                                 androidx.compose.ui.graphics.Color.Transparent
                             }
