@@ -2,6 +2,7 @@ package io.github.elli0t0.phone.feature.contacts.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,8 +14,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -53,22 +54,7 @@ fun ContactListScreen(
     val spacing = LocalSpacing.current
 
     Scaffold(
-        modifier = modifier.fillMaxSize().testTag("contact_list_screen"),
-        floatingActionButton = {
-            if (permissionState.status is ContactsPermissionStatus.Granted) {
-                FloatingActionButton(
-                    onClick = onAddContactClick,
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.testTag("fab_add_contact")
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_add),
-                        contentDescription = stringResource(id = R.string.cd_add_contact)
-                    )
-                }
-            }
-        }
+        modifier = modifier.fillMaxSize().testTag("contact_list_screen")
     ) { innerPadding ->
         if (uiState.showDuplicates && permissionState.status is ContactsPermissionStatus.Granted) {
             DuplicatesScreen(
@@ -150,35 +136,53 @@ private fun ContactsContent(
                 .testTag("contacts_lazy_column")
         ) {
             item {
-                Column(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = spacing.small, bottom = spacing.medium),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .padding(top = spacing.small, bottom = spacing.medium)
                 ) {
-                    Text(
-                        text = stringResource(id = R.string.app_name),
-                        style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    val count = uiState.allContacts.size
-                    val countText = if (count == 1) {
-                        stringResource(id = R.string.contacts_count_single, count)
-                    } else {
-                        stringResource(id = R.string.contacts_count_multiple, count)
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.app_name),
+                            style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        val count = uiState.allContacts.size
+                        val countText = if (count == 1) {
+                            stringResource(id = R.string.contacts_count_single, count)
+                        } else {
+                            stringResource(id = R.string.contacts_count_multiple, count)
+                        }
+                        Text(
+                            text = countText,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (uiState.searchQuery.isEmpty()) {
+                            TextButton(
+                                onClick = onFindDuplicates,
+                                enabled = !uiState.isFindingDuplicates,
+                                modifier = Modifier.testTag("button_find_duplicates")
+                            ) {
+                                Text(text = stringResource(id = R.string.duplicates_find))
+                            }
+                        }
                     }
-                    Text(
-                        text = countText,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    if (uiState.searchQuery.isEmpty()) {
-                        TextButton(
-                            onClick = onFindDuplicates,
-                            enabled = !uiState.isFindingDuplicates,
-                            modifier = Modifier.testTag("button_find_duplicates")
+                    if (permissionState.status is ContactsPermissionStatus.Granted) {
+                        IconButton(
+                            onClick = onAddContactClick,
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .testTag("button_add_contact")
                         ) {
-                            Text(text = stringResource(id = R.string.duplicates_find))
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_add),
+                                contentDescription = stringResource(id = R.string.cd_add_contact),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                         }
                     }
                 }

@@ -151,23 +151,21 @@ fun CallLogRow(
                         }
                     }
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(spacing.small)
-                    ) {
-                        Text(
-                            text = formattedTime,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        if (group.primaryCall.simInfo != null) {
-                            Text(
-                                text = "• ${group.primaryCall.simInfo}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                    val subtitleParts = buildList {
+                        add(stringResource(id = group.type.titleRes))
+                        if (!isMissed) {
+                            add(formatDuration(group.primaryCall.durationSeconds, group.type))
                         }
+                        add(formattedTime)
+                        group.primaryCall.simInfo?.let { add(it) }
                     }
+                    Text(
+                        text = subtitleParts.joinToString(" • "),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
 
                 // Call back button
