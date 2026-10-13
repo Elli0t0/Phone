@@ -171,19 +171,17 @@ private fun ContactsContent(
                             }
                         }
                     }
-                    if (permissionState.status is ContactsPermissionStatus.Granted) {
-                        IconButton(
-                            onClick = onAddContactClick,
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .testTag("button_add_contact")
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_add),
-                                contentDescription = stringResource(id = R.string.cd_add_contact),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
+                    IconButton(
+                        onClick = onAddContactClick,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .testTag("button_add_contact")
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_add),
+                            contentDescription = stringResource(id = R.string.cd_add_contact),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                     }
                 }
             }
