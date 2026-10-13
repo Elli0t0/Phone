@@ -50,7 +50,11 @@ fun PhoneNavHost(
             )
         }
         composable(route = Screen.Dialpad.route) {
-            DialpadScreen()
+            DialpadScreen(
+                onNavigateToSettings = {
+                    navController.navigate(Screen.Settings.route)
+                }
+            )
         }
         composable(route = Screen.Settings.route) {
             io.github.elli0t0.phone.feature.settings.SettingsScreen(

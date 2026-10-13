@@ -100,7 +100,7 @@ fun ContactsScreen(
                         onBackFromDuplicates = listViewModel::hideDuplicates,
                         onMergeRequest = listViewModel::requestMerge,
                         onDismissMerge = listViewModel::dismissMergeDialog,
-                        onConfirmMerge = listViewModel::confirmMerge
+                        onConfirmMerge = { keepId -> listViewModel.confirmMerge(keepId) }
                     )
                 }
 

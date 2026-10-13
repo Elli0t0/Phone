@@ -63,7 +63,7 @@ fun DialKeyView(
 
     Surface(
         modifier = modifier
-            .size(76.dp)
+            .size(64.dp)
             .clip(CircleShape)
             .pointerInput(dialKey) {
                 detectTapGestures(
@@ -91,7 +91,7 @@ fun DialKeyView(
             Text(
                 text = dialKey.digit.toString(),
                 style = MaterialTheme.typography.titleLarge.copy(
-                    fontSize = 44.sp,
+                    fontSize = 32.sp,
                     fontWeight = FontWeight.Normal
                 ),
                 color = MaterialTheme.colorScheme.onSurface
@@ -100,7 +100,7 @@ fun DialKeyView(
                 Text(
                     text = dialKey.letters,
                     style = MaterialTheme.typography.labelMedium.copy(
-                        fontSize = 12.sp,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold
                     ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant

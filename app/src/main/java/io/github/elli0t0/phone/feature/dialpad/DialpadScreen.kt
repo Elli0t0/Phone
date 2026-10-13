@@ -31,6 +31,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
@@ -61,11 +63,13 @@ import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.telecom.CallManager
+import io.github.elli0t0.phone.feature.contacts.ui.ContactSearchBar
 import io.github.elli0t0.phone.feature.setup.SetupWarningCard
 import kotlinx.coroutines.launch
 
 @Composable
 fun DialpadScreen(
+    onNavigateToSettings: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -86,6 +90,8 @@ fun DialpadScreen(
 
     val simAccounts = remember(context) { io.github.elli0t0.phone.core.telecom.TelecomHelper.getCallCapablePhoneAccounts(context) }
     var simPickerTargetNumber by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
+    var searchVisible by remember { androidx.compose.runtime.mutableStateOf(false) }
+    var menuExpanded by remember { androidx.compose.runtime.mutableStateOf(false) }
 
     fun dialNumber(number: String, lookupKey: String? = null) {
         if (simAccounts.size <= 1) {
@@ -180,6 +186,62 @@ fun DialpadScreen(
             .testTag("dialpad_screen"),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Top-right actions: search + menu, like Recents and Contacts
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(
+                onClick = {
+                    if (searchVisible) viewModel.onNameSearchQueryChanged("")
+                    searchVisible = !searchVisible
+                },
+                modifier = Modifier.testTag("button_search_dialpad")
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_search),
+                    contentDescription = stringResource(id = R.string.cd_search),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Box {
+                IconButton(
+                    onClick = { menuExpanded = true },
+                    modifier = Modifier.testTag("button_dialpad_menu")
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_more_vert),
+                        contentDescription = stringResource(id = R.string.cd_more_options),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(text = stringResource(id = R.string.settings_title)) },
+                        onClick = { menuExpanded = false; onNavigateToSettings() },
+                        modifier = Modifier.testTag("settings_button")
+                    )
+                }
+            }
+        }
+        if (searchVisible) {
+            ContactSearchBar(
+                query = uiState.nameSearchQuery,
+                onQueryChange = viewModel::onNameSearchQueryChanged,
+                onClear = {
+                    viewModel.onNameSearchQueryChanged("")
+                    searchVisible = false
+                },
+                placeholderText = stringResource(id = R.string.contacts_search_hint),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = spacing.small)
+            )
+        }
         SetupWarningCard(
             modifier = Modifier
                 .fillMaxWidth()
@@ -193,18 +255,25 @@ fun DialpadScreen(
                 .padding(top = spacing.small),
             contentAlignment = Alignment.BottomCenter
         ) {
-            if (uiState.matchingContacts.isNotEmpty()) {
+            val shownContacts = if (searchVisible && uiState.nameSearchQuery.isNotBlank()) {
+                uiState.nameSearchResults
+            } else {
+                uiState.matchingContacts
+            }
+            if (shownContacts.isNotEmpty()) {
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("dialpad_search_results")
                 ) {
-                    items(uiState.matchingContacts, key = { it.id }) { contact ->
+                    items(shownContacts, key = { it.id }) { contact ->
                         DialpadSearchRow(
                             contact = contact,
                             onClick = {
                                 performHaptic()
                                 viewModel.onContactSelected(contact)
+                                viewModel.onNameSearchQueryChanged("")
+                                searchVisible = false
                             },
                             onCallClick = {
                                 performHaptic()
@@ -223,7 +292,7 @@ fun DialpadScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(64.dp)
+                .height(56.dp)
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onLongPress = {
@@ -241,7 +310,7 @@ fun DialpadScreen(
             val displayText = uiState.formattedNumber.ifBlank { uiState.rawNumber }
             Text(
                 text = displayText,
-                style = MaterialTheme.typography.displayLarge.copy(fontSize = 36.sp),
+                style = MaterialTheme.typography.displayLarge.copy(fontSize = 32.sp),
                 color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Center,
                 maxLines = 1
@@ -255,7 +324,7 @@ fun DialpadScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = spacing.small),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             DIAL_KEYS_GRID.forEach { rowKeys ->
@@ -302,7 +371,7 @@ fun DialpadScreen(
                     }
                 },
                 modifier = Modifier
-                    .size(76.dp)
+                    .size(68.dp)
                     .testTag("btn_call"),
                 shape = CircleShape,
                 containerColor = if (uiState.canCall) {

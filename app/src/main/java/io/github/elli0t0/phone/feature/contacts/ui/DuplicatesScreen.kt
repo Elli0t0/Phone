@@ -1,5 +1,6 @@
 package io.github.elli0t0.phone.feature.contacts.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,10 +18,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -45,7 +51,7 @@ fun DuplicatesScreen(
     onBack: () -> Unit,
     onMergeRequest: (DuplicateGroup) -> Unit,
     onDismissMerge: () -> Unit,
-    onConfirmMerge: () -> Unit,
+    onConfirmMerge: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
@@ -131,8 +137,14 @@ fun DuplicatesScreen(
 
     val pendingGroup = uiState.pendingMergeGroup
     if (pendingGroup != null) {
-        val kept = pendingGroup.contacts.first()
-        val removedNames = pendingGroup.contacts.drop(1).joinToString(", ") { it.displayName }
+        var keepId by remember(pendingGroup) {
+            mutableStateOf(pendingGroup.contacts.first().id)
+        }
+        val kept = pendingGroup.contacts.firstOrNull { it.id == keepId }
+            ?: pendingGroup.contacts.first()
+        val removedNames = pendingGroup.contacts
+            .filter { it.id != kept.id }
+            .joinToString(", ") { it.displayName }
         AlertDialog(
             onDismissRequest = { if (!uiState.isMerging) onDismissMerge() },
             title = {
@@ -142,18 +154,54 @@ fun DuplicatesScreen(
                 )
             },
             text = {
-                Text(
-                    text = stringResource(
-                        id = R.string.duplicates_merge_message,
-                        kept.displayName,
-                        removedNames
-                    ),
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Column {
+                    Text(
+                        text = stringResource(id = R.string.duplicates_choose_keep),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(modifier = Modifier.height(spacing.small))
+                    pendingGroup.contacts.forEach { contact ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { keepId = contact.id }
+                                .padding(vertical = spacing.extraSmall)
+                        ) {
+                            RadioButton(
+                                selected = contact.id == keepId,
+                                onClick = { keepId = contact.id }
+                            )
+                            Column(modifier = Modifier.padding(start = spacing.small)) {
+                                Text(
+                                    text = contact.displayName,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                contact.primaryNumberPreview?.takeIf { it.isNotBlank() }?.let { number ->
+                                    Text(
+                                        text = number,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(spacing.small))
+                    Text(
+                        text = stringResource(
+                            id = R.string.duplicates_merge_message,
+                            kept.displayName,
+                            removedNames
+                        ),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             },
             confirmButton = {
                 TextButton(
-                    onClick = onConfirmMerge,
+                    onClick = { onConfirmMerge(keepId) },
                     enabled = !uiState.isMerging
                 ) {
                     Text(text = stringResource(id = R.string.duplicates_merge_confirm))

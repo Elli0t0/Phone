@@ -13,7 +13,7 @@ sealed class Screen(
     data object Recents : Screen(
         route = "recents",
         titleRes = R.string.tab_recents,
-        iconRes = R.drawable.ic_nav_recents,
+        iconRes = R.drawable.ic_recents,
         contentDescriptionRes = R.string.cd_tab_recents
     )
 

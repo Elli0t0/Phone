@@ -147,6 +147,19 @@ class DialpadViewModel(
         }
     }
 
+    /** Filters contacts by name for the keypad search bar. */
+    fun onNameSearchQueryChanged(query: String) {
+        val results = if (query.isNotBlank()) {
+            allContactsCache.filter { it.displayName.contains(query, ignoreCase = true) }.take(10)
+        } else {
+            emptyList()
+        }
+        _uiState.value = _uiState.value.copy(
+            nameSearchQuery = query,
+            nameSearchResults = results
+        )
+    }
+
     private fun setRawNumber(number: String) {
         _rawNumber.value = number
         savedStateHandle[KEY_RAW_NUMBER] = number

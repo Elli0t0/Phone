@@ -220,10 +220,10 @@ class ContactsViewModel(
 
     /**
      * Merges the pending group only after the user confirmed it in the dialog.
-     * Keeps the first contact, moves the others' numbers and emails into it,
-     * then deletes the merged contacts.
+     * Keeps the contact the user chose, moves the others' numbers and emails
+     * into it, then deletes the merged contacts.
      */
-    fun confirmMerge() {
+    fun confirmMerge(keepContactId: Long) {
         val group = _pendingMergeGroup.value ?: return
         if (group.contacts.size < 2) {
             _pendingMergeGroup.value = null
@@ -232,8 +232,9 @@ class ContactsViewModel(
         activeScope.launch {
             _isMerging.value = true
             try {
-                val keep = group.contacts.first()
-                val mergeIds = group.contacts.drop(1).map { it.id }
+                val keep = group.contacts.firstOrNull { it.id == keepContactId }
+                    ?: group.contacts.first()
+                val mergeIds = group.contacts.filter { it.id != keep.id }.map { it.id }
                 val result = contactsRepository.mergeContacts(keep.id, mergeIds)
                 if (result.isSuccess) {
                     _pendingMergeGroup.value = null
