@@ -271,7 +271,8 @@ class AndroidCallLogRepository(
         val normalized = PhoneNumberMatcher.normalize(number)
         val candidates = listOfNotNull(
             number,
-            normalized.ifBlank { null },
+            // takeIf: ifBlank/ifEmpty must return a non-null String, they cannot yield null.
+            normalized.takeIf { it.isNotBlank() },
             "+$normalized".takeIf { normalized.isNotBlank() }
         ).distinct()
         for (candidate in candidates) {

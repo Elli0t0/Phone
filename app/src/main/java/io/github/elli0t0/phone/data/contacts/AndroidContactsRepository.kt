@@ -556,7 +556,9 @@ class AndroidContactsRepository(
 
     override suspend fun mergeContacts(keepContactId: Long, mergeContactIds: List<Long>): Result<Unit> =
         withContext(Dispatchers.IO) {
-            runCatching {
+            // try/catch, not runCatching: updateContact/deleteContact are suspend
+            // functions and cannot be called inside runCatching's non-suspend block.
+            try {
                 val keptDetail = queryContactDetail(keepContactId)
                     ?: error("Kept contact not found")
                 val mergedPhones = keptDetail.phones.toMutableList()
@@ -597,7 +599,9 @@ class AndroidContactsRepository(
                     val detail = queryContactDetail(targetId) ?: continue
                     deleteContact(targetId, detail.lookupKey).getOrThrow()
                 }
-                Unit
+                Result.success(Unit)
+            } catch (e: Exception) {
+                Result.failure(e)
             }
         }
 
