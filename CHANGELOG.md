@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.22] - 2026-10-13
+
+### Changed
+- In-call screen: liquid-glass redesign. Frosted background with soft dynamic gradients, centered caller info with squircle avatar and translucent border, floating glass dock for mute, keypad, audio route, and hold, and a bottom-anchored pill-shaped red end-call button. All call controls, audio route picker, and DTMF behavior unchanged.
+- Removed brand-name references from code, comments, and docs; renamed the accent blue tokens.
+
 ## [0.1.21] - 2026-10-13
 
 ### Changed
@@ -123,7 +129,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - System photo picker integration with square cropping and preview dialog for contact avatars.
 - Coil image loading integration with safe fallback to initials avatar.
-- Redesigned contact details screen featuring large avatar, action row (Call, Message, Favorite, More), and One UI aesthetic.
+- Redesigned contact details screen featuring large avatar, action row (Call, Message, Favorite, More), and a clean modern aesthetic.
 - Per-contact custom ringtone selection via system RingtonePicker with default and silent options.
 
 ## [0.1.5] - 2026-10-13
@@ -158,7 +164,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.3] - 2026-10-12
 
 ### Added
-- One UI inspired interactive Dial Pad with circular digit keys (`1-9`, `*`, `0`, `#`) and letter sublabels.
+- Interactive Dial Pad with circular digit keys (`1-9`, `*`, `0`, `#`) and letter sublabels.
 - Real-time search-as-you-type above the keypad with 150 ms debounce, matching by number substring and T9-style ITU E.164 name mapping.
 - T9 search result cards showing contact name and primary number with tap-to-populate and direct quick-call button.
 - Raw dial string state management in `DialpadViewModel` decoupled from presentation formatting.
@@ -180,7 +186,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Real device contacts management via `ContactsContract` and `ContentResolver` on `Dispatchers.IO`.
 - `ContactsRepository` with reactive `ContentObserver` callbacks via `callbackFlow` for auto-refreshing contact list and details.
 - Clean MVVM architecture for Contacts feature (`ContactsViewModel`, `ContactDetailViewModel`, `ContactEditViewModel`).
-- Full Contacts UI inspired by Samsung One UI:
+- Full Contacts UI:
   - Collapsing header with dynamic contact count display.
   - Search bar supporting case-insensitive name matching and digits-insensitive phone number matching (e.g. matching local `0912` against international numbers).
   - Alphabetically sorted contact list with section headers, grouping non-letters and symbols under `#` and safely supporting Unicode, Persian, and Arabic names.
@@ -199,9 +205,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Gradle build system with Version Catalog (`gradle/libs.versions.toml`) and single-source versioning (`VERSION_MAJOR`, `VERSION_MINOR`, `VERSION_PATCH`).
 - Application entry point with `PhoneApplication` and manual DI `AppContainer`.
 - Edge-to-edge `MainActivity` with Jetpack Compose Material 3 theme.
-- Core design tokens inspired by Samsung One UI: `Color.kt`, `Type.kt`, `Spacing.kt`, `Shape.kt`, `Theme.kt`.
+- Core design tokens: `Color.kt`, `Type.kt`, `Spacing.kt`, `Shape.kt`, `Theme.kt`.
 - Navigation structure with sealed `Screen` routes and `PhoneBottomBar` featuring Recents, Contacts, and Keypad tabs.
 - Initial feature screens with MVVM architecture: `RecentsScreen`, `ContactsScreen`, `DialpadScreen` and their corresponding ViewModels and UiStates.
-- Adaptive vector launcher icon with custom telephone handset foreground and One UI styling.
+- Adaptive vector launcher icon with custom telephone handset foreground and custom styling.
 - Local unit test coverage verifying navigation destinations and initial ViewModel UiState.
 - GitHub Actions CI workflow (`.github/workflows/android-build.yml`) for automated building, signing validation, and release artifact generation.

@@ -6,7 +6,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// One UI typographic scale
+// App typographic scale
 val PhoneTypography = Typography(
     displayLarge = TextStyle(
         fontFamily = FontFamily.Default,

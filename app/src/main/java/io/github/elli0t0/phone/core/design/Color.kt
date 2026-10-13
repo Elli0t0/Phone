@@ -2,9 +2,9 @@ package io.github.elli0t0.phone.core.design
 
 import androidx.compose.ui.graphics.Color
 
-// One UI inspired color palette
-val OneUiBlue = Color(0xFF2473FE)
-val OneUiBlueDark = Color(0xFF3E89FF)
+// App color palette
+val AccentBlue = Color(0xFF2473FE)
+val AccentBlueDark = Color(0xFF3E89FF)
 
 // Light theme colors
 val LightBackground = Color(0xFFF7F8FA)

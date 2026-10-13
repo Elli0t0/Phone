@@ -24,7 +24,7 @@ import io.github.elli0t0.phone.data.settings.model.ThemeMode
 val LocalAppSettings = staticCompositionLocalOf { AppSettings() }
 
 private val DefaultDarkColorScheme = darkColorScheme(
-    primary = OneUiBlueDark,
+    primary = AccentBlueDark,
     onPrimary = DarkBackground,
     primaryContainer = DarkSurfaceVariant,
     onPrimaryContainer = DarkOnBackground,
@@ -39,7 +39,7 @@ private val DefaultDarkColorScheme = darkColorScheme(
 )
 
 private val DefaultLightColorScheme = lightColorScheme(
-    primary = OneUiBlue,
+    primary = AccentBlue,
     onPrimary = LightSurface,
     primaryContainer = LightSurfaceVariant,
     onPrimaryContainer = LightOnBackground,

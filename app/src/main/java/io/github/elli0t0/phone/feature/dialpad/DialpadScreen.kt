@@ -293,7 +293,7 @@ fun DialpadScreen(
             // Placeholder empty box for balance (same size as backspace)
             Box(modifier = Modifier.size(56.dp))
 
-            // One UI Call Button (Disabled when empty input)
+            // Call button (disabled when empty input)
             FloatingActionButton(
                 onClick = {
                     if (uiState.canCall) {

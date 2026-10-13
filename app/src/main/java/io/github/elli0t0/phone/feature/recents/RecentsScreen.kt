@@ -149,7 +149,7 @@ fun RecentsScreen(
                     .padding(bottom = spacing.small)
             )
 
-            // One UI Large Header with Settings Icon
+            // Large header with settings icon
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

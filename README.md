@@ -1,6 +1,6 @@
 # Phone
 
-An open-source Android dialer and contacts application with a visual style inspired by Samsung One UI. Built purely in Kotlin using modern Jetpack Compose.
+An open-source Android dialer and contacts application with a clean, modern visual style. Built purely in Kotlin using modern Jetpack Compose.
 
 ## Project Status
 
@@ -10,7 +10,7 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ## Features
 
-- **Keypad**: One UI dialer with circular keys (`1-9`, `*`, `0`, `#`) and letter sublabels, T9 search-as-you-type with 150 ms debounce, tap-to-dial and direct call buttons, non-mutating display formatting, long-press `0` for `+`, accelerated repeating backspace, call placement via `TelecomManager.placeCall` with `ACTION_DIAL` fallback, safe USSD (`*#`) encoding, and haptics.
+- **Keypad**: Dialer with circular keys (`1-9`, `*`, `0`, `#`) and letter sublabels, T9 search-as-you-type with 150 ms debounce, tap-to-dial and direct call buttons, non-mutating display formatting, long-press `0` for `+`, accelerated repeating backspace, call placement via `TelecomManager.placeCall` with `ACTION_DIAL` fallback, safe USSD (`*#`) encoding, and haptics.
 - **Recents**: Call log with consecutive-call grouping, day sections (Today, Yesterday, date), filters (All, Missed, Incoming, Outgoing), search, favorites, tap-to-expand details, call-back, and delete. Contact names are resolved via `PhoneLookup` with an in-memory cache.
 - **Contacts**: Real device contacts management via `ContactsContract` (create, edit, delete, differential in-place updates), contact details with photos, custom ringtones, and favorites. Duplicate contacts are detected by same normalized number or same name, listed, and merged only after confirmation — nothing is deleted without confirmation.
 - **Calling**: Default dialer integration (`ROLE_DIALER`) with `InCallService`, incoming call screen with full-screen notification over the lock screen, ongoing call screen with timer, mute, hold, DTMF keypad, and an audio route picker (Earpiece, Speaker, Wired headset, each Bluetooth device by name).
@@ -27,7 +27,7 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ## Architecture & Technology Stack
 
-- **UI**: Jetpack Compose, Material 3 with custom One UI theming
+- **UI**: Jetpack Compose, Material 3 with custom theming
 - **Language**: Kotlin 2.2.x (100% Kotlin)
 - **Architecture**: MVVM + Repository pattern with Unidirectional Data Flow (`StateFlow`)
 - **Dependency Injection**: Manual dependency injection via `AppContainer` in `PhoneApplication`
