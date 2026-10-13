@@ -128,6 +128,7 @@ fun SettingsScreen(
     var showFormatDialog by remember { mutableStateOf(false) }
     var showBlockedNumbers by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
+    var showCallWaitingDialog by remember { mutableStateOf(false) }
     var customColorHexInput by remember { mutableStateOf("") }
     var customColorError by remember { mutableStateOf(false) }
 
@@ -395,6 +396,70 @@ fun SettingsScreen(
 
     if (showBlockedNumbers) {
         BlockedNumbersScreen(onNavigateBack = { showBlockedNumbers = false })
+    }
+
+    if (showCallWaitingDialog) {
+        AlertDialog(
+            onDismissRequest = { showCallWaitingDialog = false },
+            title = { Text(text = stringResource(id = R.string.settings_call_waiting)) },
+            text = {
+                Text(text = stringResource(id = R.string.call_waiting_desc))
+            },
+            confirmButton = {
+                Column {
+                    TextButton(
+                        onClick = {
+                            showCallWaitingDialog = false
+                            runCatching {
+                                context.startActivity(
+                                    Intent(
+                                        Intent.ACTION_DIAL,
+                                        Uri.parse("tel:${Uri.encode("*43#")}")
+                                    )
+                                )
+                            }
+                        }
+                    ) {
+                        Text(text = stringResource(id = R.string.call_waiting_activate))
+                    }
+                    TextButton(
+                        onClick = {
+                            showCallWaitingDialog = false
+                            runCatching {
+                                context.startActivity(
+                                    Intent(
+                                        Intent.ACTION_DIAL,
+                                        Uri.parse("tel:${Uri.encode("#43#")}")
+                                    )
+                                )
+                            }
+                        }
+                    ) {
+                        Text(text = stringResource(id = R.string.call_waiting_deactivate))
+                    }
+                    TextButton(
+                        onClick = {
+                            showCallWaitingDialog = false
+                            runCatching {
+                                context.startActivity(
+                                    Intent(
+                                        Intent.ACTION_DIAL,
+                                        Uri.parse("tel:${Uri.encode("*#43#")}")
+                                    )
+                                )
+                            }
+                        }
+                    ) {
+                        Text(text = stringResource(id = R.string.call_waiting_check))
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCallWaitingDialog = false }) {
+                    Text(text = stringResource(id = R.string.action_cancel))
+                }
+            }
+        )
     } else {
     Scaffold(
         modifier = modifier.fillMaxSize().testTag("settings_screen"),
@@ -708,6 +773,17 @@ fun SettingsScreen(
                                     )
                                 }
                             }
+                        )
+
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        Spacer(modifier = Modifier.height(spacing.small))
+
+                        // Call waiting is a carrier supplementary service:
+                        // the MMI code is dialed and the carrier executes it.
+                        SettingsRow(
+                            title = stringResource(id = R.string.settings_call_waiting),
+                            onClick = { showCallWaitingDialog = true }
                         )
                     }
                 }

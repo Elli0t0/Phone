@@ -61,6 +61,16 @@
     <string name="duplicates_merge_title">Merge contacts?</string>
     <string name="duplicates_merge_message">Keep %1$s? %2$s will be deleted, and their phone numbers and emails will be moved into %1$s.</string>
     <string name="duplicates_merge_confirm">Merge</string>
+    <string name="duplicates_choose_keep">Choose which contact to keep</string>
+    <string name="settings_call_waiting">Call waiting</string>
+    <string name="call_waiting_desc">Lets a second call come through while you are on a call. Managed by your carrier.</string>
+    <string name="call_waiting_activate">Activate</string>
+    <string name="call_waiting_deactivate">Deactivate</string>
+    <string name="call_waiting_check">Check status</string>
+    <string name="quick_reply_title">Reply with message</string>
+    <string name="quick_reply_cant_talk">Can\'t talk now</string>
+    <string name="quick_reply_call_back">I\'ll call you back</string>
+    <string name="quick_reply_in_meeting">I\'m in a meeting</string>
 
     <!-- Groups -->
     <string name="groups_title">Groups</string>

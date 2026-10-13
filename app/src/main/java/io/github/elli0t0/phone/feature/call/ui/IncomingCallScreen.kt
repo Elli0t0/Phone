@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,6 +14,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,11 +41,13 @@ import io.github.elli0t0.phone.core.design.InCallGradientTop
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.data.call.OngoingCallModel
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun IncomingCallScreen(
     callModel: OngoingCallModel,
     onAnswer: () -> Unit,
     onDecline: () -> Unit,
+    onDeclineWithMessage: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
@@ -108,6 +114,43 @@ fun IncomingCallScreen(
                     color = Color.White.copy(alpha = 0.8f),
                     textAlign = TextAlign.Center
                 )
+            }
+        }
+
+        // Quick responses: decline the call and send the message as a reply SMS
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = spacing.medium)
+        ) {
+            Text(
+                text = stringResource(id = R.string.quick_reply_title),
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.White.copy(alpha = 0.8f),
+                modifier = Modifier.padding(bottom = spacing.small)
+            )
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                listOf(
+                    R.string.quick_reply_cant_talk,
+                    R.string.quick_reply_call_back,
+                    R.string.quick_reply_in_meeting
+                ).forEach { messageRes ->
+                    val message = stringResource(id = messageRes)
+                    AssistChip(
+                        onClick = { onDeclineWithMessage(message) },
+                        label = { Text(text = message) },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = Color.White.copy(alpha = 0.12f),
+                            labelColor = Color.White
+                        ),
+                        modifier = Modifier.testTag("quick_reply_${messageRes}")
+                    )
+                }
             }
         }
 

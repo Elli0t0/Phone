@@ -129,6 +129,16 @@ object CallRepository {
         }
     }
 
+    /** Declines a ringing call and sends the given text as a reply SMS. */
+    fun rejectCallWithMessage(message: String) {
+        val call = _currentCall.value ?: return
+        if (call.state == Call.STATE_RINGING) {
+            call.reject(true, message)
+        } else {
+            call.disconnect()
+        }
+    }
+
     fun disconnectCall() {
         _currentCall.value?.disconnect()
     }

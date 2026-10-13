@@ -103,7 +103,8 @@ class CallActivity : ComponentActivity() {
                         IncomingCallScreen(
                             callModel = currentModel,
                             onAnswer = { CallRepository.answerCall() },
-                            onDecline = { CallRepository.rejectCall() }
+                            onDecline = { CallRepository.rejectCall() },
+                            onDeclineWithMessage = { CallRepository.rejectCallWithMessage(it) }
                         )
                     } else {
                         OngoingCallScreen(
