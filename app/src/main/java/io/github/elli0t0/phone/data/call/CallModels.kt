@@ -22,5 +22,6 @@ data class OngoingCallModel(
     val isMuted: Boolean = false,
     val isSpeakerOn: Boolean = false,
     val audioRoute: Int = CallAudioState.ROUTE_EARPIECE,
-    val availableAudioRoutes: Int = CallAudioState.ROUTE_EARPIECE or CallAudioState.ROUTE_SPEAKER
+    val availableAudioRoutes: Int = CallAudioState.ROUTE_EARPIECE or CallAudioState.ROUTE_SPEAKER,
+    val bluetoothDeviceNames: List<String> = emptyList()
 )

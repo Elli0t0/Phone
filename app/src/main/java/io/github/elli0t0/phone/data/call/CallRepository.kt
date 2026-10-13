@@ -57,6 +57,13 @@ object CallRepository {
         }
     }
 
+    fun updateBluetoothDevices(names: List<String>) {
+        val current = _ongoingCallModel.value ?: return
+        if (current.bluetoothDeviceNames != names) {
+            _ongoingCallModel.value = current.copy(bluetoothDeviceNames = names)
+        }
+    }
+
     fun updateDuration(durationSeconds: Long) {
         val current = _ongoingCallModel.value ?: return
         _ongoingCallModel.value = current.copy(durationSeconds = durationSeconds)

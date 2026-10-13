@@ -87,11 +87,21 @@ fun DialpadScreen(
     val simAccounts = remember(context) { io.github.elli0t0.phone.core.telecom.TelecomHelper.getCallCapablePhoneAccounts(context) }
     var simPickerTargetNumber by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
 
-    fun dialNumber(number: String) {
-        if (simAccounts.size > 1) {
-            simPickerTargetNumber = number
-        } else {
+    fun dialNumber(number: String, lookupKey: String? = null) {
+        if (simAccounts.size <= 1) {
             CallManager.placeCall(context, number)
+            return
+        }
+        coroutineScope.launch {
+            when (val res = io.github.elli0t0.phone.core.telecom.SimCallHelper.resolveSim(
+                context, number, lookupKey, simAccounts, app.container.contactSimRepository
+            )) {
+                is io.github.elli0t0.phone.core.telecom.SimCallHelper.SimCallResolution.UseSim ->
+                    CallManager.placeCall(context, number, res.sim.handle)
+                is io.github.elli0t0.phone.core.telecom.SimCallHelper.SimCallResolution.ShowDialog -> {
+                    simPickerTargetNumber = number
+                }
+            }
         }
     }
 
@@ -104,7 +114,9 @@ fun DialpadScreen(
                 simPickerTargetNumber = null
                 CallManager.placeCall(context, num, sim.handle)
             },
-            onDismiss = { simPickerTargetNumber = null }
+            onDismiss = {
+                simPickerTargetNumber = null
+            }
         )
     }
 
@@ -198,7 +210,7 @@ fun DialpadScreen(
                                 performHaptic()
                                 val num = contact.primaryNumberPreview ?: ""
                                 if (num.isNotBlank()) {
-                                    dialNumber(num)
+                                    dialNumber(num, contact.lookupKey)
                                 }
                             }
                         )

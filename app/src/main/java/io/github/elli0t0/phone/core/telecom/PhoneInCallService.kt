@@ -120,6 +120,34 @@ class PhoneInCallService : InCallService() {
     override fun onCallAudioStateChanged(audioState: CallAudioState?) {
         super.onCallAudioStateChanged(audioState)
         CallRepository.updateAudioState(audioState)
+        refreshBluetoothDevices()
+    }
+
+    private fun refreshBluetoothDevices() {
+        try {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                return
+            }
+            val bluetoothManager =
+                getSystemService(Context.BLUETOOTH_SERVICE) as? android.bluetooth.BluetoothManager
+            val adapter = bluetoothManager?.adapter ?: return
+            val names = try {
+                adapter.bondedDevices
+                    ?.mapNotNull { it.name?.takeIf { name -> name.isNotBlank() } }
+                    ?.sorted()
+                    ?: emptyList()
+            } catch (e: SecurityException) {
+                Log.e(TAG, "bondedDevices SecurityException", e)
+                emptyList()
+            }
+            CallRepository.updateBluetoothDevices(names)
+        } catch (e: Exception) {
+            Log.e(TAG, "refreshBluetoothDevices failed", e)
+        }
     }
 
     private fun isOutgoingState(state: Int): Boolean {
@@ -788,6 +816,10 @@ class PhoneInCallService : InCallService() {
 
         fun setMuted(muted: Boolean) {
             instance?.setMuted(muted)
+        }
+
+        fun refreshBluetoothDevices() {
+            instance?.refreshBluetoothDevices()
         }
 
         fun startCallActivity(context: Context) {

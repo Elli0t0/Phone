@@ -59,6 +59,7 @@ import io.github.elli0t0.phone.feature.recents.ui.CallLogRow
 import io.github.elli0t0.phone.feature.recents.ui.FavoritesHorizontalSection
 import io.github.elli0t0.phone.feature.recents.ui.RecentsEmptyState
 import io.github.elli0t0.phone.feature.recents.ui.RecentsFilterChips
+import kotlinx.coroutines.launch
 
 @Composable
 fun RecentsScreen(
@@ -90,12 +91,22 @@ fun RecentsScreen(
 
     var simPickerTargetNumber by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
     val simAccounts = remember(context) { io.github.elli0t0.phone.core.telecom.TelecomHelper.getCallCapablePhoneAccounts(context) }
+    val recentsScope = androidx.compose.runtime.rememberCoroutineScope()
 
-    fun initiateCall(number: String) {
-        if (simAccounts.size > 1) {
-            simPickerTargetNumber = number
-        } else {
+    fun initiateCall(number: String, lookupKey: String? = null) {
+        if (simAccounts.size <= 1) {
             CallManager.placeCall(context, number)
+            return
+        }
+        recentsScope.launch {
+            when (val res = io.github.elli0t0.phone.core.telecom.SimCallHelper.resolveSim(
+                context, number, lookupKey, simAccounts, app.container.contactSimRepository
+            )) {
+                is io.github.elli0t0.phone.core.telecom.SimCallHelper.SimCallResolution.UseSim ->
+                    CallManager.placeCall(context, number, res.sim.handle)
+                is io.github.elli0t0.phone.core.telecom.SimCallHelper.SimCallResolution.ShowDialog ->
+                    simPickerTargetNumber = number
+            }
         }
     }
 
@@ -219,7 +230,7 @@ fun RecentsScreen(
                                     onContactClick = { contact -> onNavigateToContactDetail(contact.id) },
                                     onCallClick = { contact ->
                                         contact.primaryNumberPreview?.let { num ->
-                                            initiateCall(num)
+                                            initiateCall(num, contact.lookupKey)
                                         }
                                     },
                                     modifier = Modifier.padding(bottom = spacing.medium)

@@ -1,20 +1,26 @@
 package io.github.elli0t0.phone.feature.call
 
+import android.Manifest
 import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.core.design.PhoneTheme
@@ -46,6 +52,25 @@ class CallActivity : ComponentActivity() {
             val settings by app?.container?.settingsRepository?.settingsFlow?.collectAsStateWithLifecycle(
                 initialValue = AppSettings()
             ) ?: remember { mutableStateOf(AppSettings()) }
+
+            // BLUETOOTH_CONNECT only when the user opens the audio route picker
+            // and Bluetooth is available. Not requested at call start.
+            var hasBluetoothPermission by remember {
+                mutableStateOf(
+                    ContextCompat.checkSelfPermission(
+                        this@CallActivity,
+                        Manifest.permission.BLUETOOTH_CONNECT
+                    ) == PackageManager.PERMISSION_GRANTED
+                )
+            }
+            val bluetoothPermissionLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.RequestPermission()
+            ) { granted ->
+                hasBluetoothPermission = granted
+                if (granted) {
+                    PhoneInCallService.refreshBluetoothDevices()
+                }
+            }
 
             PhoneTheme(appSettings = settings) {
                 val ongoingCall by CallRepository.ongoingCallModel.collectAsStateWithLifecycle()
@@ -89,7 +114,11 @@ class CallActivity : ComponentActivity() {
                                 if (hold) CallRepository.holdCall() else CallRepository.unholdCall()
                             },
                             onDtmfDigit = { digit -> CallRepository.playDtmfTone(digit) },
-                            onEndCall = { CallRepository.disconnectCall() }
+                            onEndCall = { CallRepository.disconnectCall() },
+                            onRequestBluetoothPermission = {
+                                bluetoothPermissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
+                            },
+                            hasBluetoothPermission = hasBluetoothPermission
                         )
                     }
                 }

@@ -11,14 +11,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,10 +50,29 @@ fun OngoingCallScreen(
     onHoldToggle: (Boolean) -> Unit,
     onDtmfDigit: (Char) -> Unit,
     onEndCall: () -> Unit,
+    onRequestBluetoothPermission: () -> Unit = {},
+    hasBluetoothPermission: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
     var showKeypad by remember { mutableStateOf(false) }
+    var showAudioPicker by remember { mutableStateOf(false) }
+
+    if (showAudioPicker) {
+        AudioRoutePickerDialog(
+            callModel = callModel,
+            hasBluetoothPermission = hasBluetoothPermission,
+            onRequestBluetoothPermission = {
+                showAudioPicker = false
+                onRequestBluetoothPermission()
+            },
+            onRouteSelected = { route ->
+                showAudioPicker = false
+                onAudioRouteSelect(route)
+            },
+            onDismiss = { showAudioPicker = false }
+        )
+    }
 
     val formattedDuration = remember(callModel.durationSeconds) {
         val mins = callModel.durationSeconds / 60
@@ -142,13 +164,16 @@ fun OngoingCallScreen(
                         testTag = "keypad_button"
                     )
 
-                    // Audio output (Speaker / Earpiece / Bluetooth)
+                    // Audio output: opens route picker (Earpiece / Speaker / Wired / Bluetooth)
                     val isSpeaker = callModel.isSpeakerOn || (callModel.audioRoute and CallAudioState.ROUTE_SPEAKER) != 0
                     val isBluetooth = (callModel.audioRoute and CallAudioState.ROUTE_BLUETOOTH) != 0
+                    val isWired = (callModel.audioRoute and CallAudioState.ROUTE_WIRED_HEADSET) != 0
                     val audioIcon = if (isBluetooth) {
                         R.drawable.ic_bluetooth
                     } else if (isSpeaker) {
                         R.drawable.ic_volume_up
+                    } else if (isWired) {
+                        R.drawable.ic_headset
                     } else {
                         R.drawable.ic_phone
                     }
@@ -156,6 +181,8 @@ fun OngoingCallScreen(
                         stringResource(id = R.string.call_action_bluetooth)
                     } else if (isSpeaker) {
                         stringResource(id = R.string.call_action_speaker)
+                    } else if (isWired) {
+                        stringResource(id = R.string.call_audio_wired)
                     } else {
                         stringResource(id = R.string.call_action_earpiece)
                     }
@@ -163,15 +190,8 @@ fun OngoingCallScreen(
                     InCallActionButton(
                         iconRes = audioIcon,
                         label = audioLabel,
-                        isActive = isSpeaker || isBluetooth,
-                        onClick = {
-                            val nextRoute = if (isSpeaker) {
-                                CallAudioState.ROUTE_EARPIECE
-                            } else {
-                                CallAudioState.ROUTE_SPEAKER
-                            }
-                            onAudioRouteSelect(nextRoute)
-                        },
+                        isActive = isSpeaker || isBluetooth || isWired,
+                        onClick = { showAudioPicker = true },
                         testTag = "speaker_button"
                     )
                 }
@@ -307,5 +327,142 @@ private fun InCallKeypadGrid(
                 .clickable(onClick = onClose)
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         )
+    }
+}
+
+@Composable
+private fun AudioRoutePickerDialog(
+    callModel: OngoingCallModel,
+    hasBluetoothPermission: Boolean,
+    onRequestBluetoothPermission: () -> Unit,
+    onRouteSelected: (Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val spacing = LocalSpacing.current
+    val available = callModel.availableAudioRoutes
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = stringResource(id = R.string.call_audio_output),
+                style = MaterialTheme.typography.titleMedium
+            )
+        },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                if ((available and CallAudioState.ROUTE_EARPIECE) != 0) {
+                    AudioRouteRow(
+                        label = stringResource(id = R.string.call_action_earpiece),
+                        iconRes = R.drawable.ic_phone,
+                        isSelected = (callModel.audioRoute and CallAudioState.ROUTE_EARPIECE) != 0,
+                        onClick = { onRouteSelected(CallAudioState.ROUTE_EARPIECE) },
+                        testTag = "audio_route_earpiece"
+                    )
+                    Spacer(modifier = Modifier.height(spacing.small))
+                }
+                if ((available and CallAudioState.ROUTE_SPEAKER) != 0) {
+                    AudioRouteRow(
+                        label = stringResource(id = R.string.call_action_speaker),
+                        iconRes = R.drawable.ic_volume_up,
+                        isSelected = (callModel.audioRoute and CallAudioState.ROUTE_SPEAKER) != 0,
+                        onClick = { onRouteSelected(CallAudioState.ROUTE_SPEAKER) },
+                        testTag = "audio_route_speaker"
+                    )
+                    Spacer(modifier = Modifier.height(spacing.small))
+                }
+                if ((available and CallAudioState.ROUTE_WIRED_HEADSET) != 0) {
+                    AudioRouteRow(
+                        label = stringResource(id = R.string.call_audio_wired),
+                        iconRes = R.drawable.ic_headset,
+                        isSelected = (callModel.audioRoute and CallAudioState.ROUTE_WIRED_HEADSET) != 0,
+                        onClick = { onRouteSelected(CallAudioState.ROUTE_WIRED_HEADSET) },
+                        testTag = "audio_route_wired"
+                    )
+                    Spacer(modifier = Modifier.height(spacing.small))
+                }
+                if ((available and CallAudioState.ROUTE_BLUETOOTH) != 0) {
+                    val isBluetoothActive = (callModel.audioRoute and CallAudioState.ROUTE_BLUETOOTH) != 0
+                    if (callModel.bluetoothDeviceNames.isNotEmpty()) {
+                        callModel.bluetoothDeviceNames.forEach { name ->
+                            AudioRouteRow(
+                                label = name,
+                                iconRes = R.drawable.ic_bluetooth,
+                                isSelected = isBluetoothActive,
+                                onClick = { onRouteSelected(CallAudioState.ROUTE_BLUETOOTH) },
+                                testTag = "audio_route_bluetooth_$name"
+                            )
+                            Spacer(modifier = Modifier.height(spacing.small))
+                        }
+                    } else if (!hasBluetoothPermission) {
+                        AudioRouteRow(
+                            label = stringResource(id = R.string.call_audio_bluetooth_grant),
+                            iconRes = R.drawable.ic_bluetooth,
+                            isSelected = isBluetoothActive,
+                            onClick = onRequestBluetoothPermission,
+                            testTag = "audio_route_bluetooth_grant"
+                        )
+                        Spacer(modifier = Modifier.height(spacing.small))
+                    } else {
+                        AudioRouteRow(
+                            label = stringResource(id = R.string.call_action_bluetooth),
+                            iconRes = R.drawable.ic_bluetooth,
+                            isSelected = isBluetoothActive,
+                            onClick = { onRouteSelected(CallAudioState.ROUTE_BLUETOOTH) },
+                            testTag = "audio_route_bluetooth"
+                        )
+                        Spacer(modifier = Modifier.height(spacing.small))
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(id = R.string.action_cancel))
+            }
+        }
+    )
+}
+
+@Composable
+private fun AudioRouteRow(
+    label: String,
+    iconRes: Int,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    testTag: String
+) {
+    val spacing = LocalSpacing.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 64.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = spacing.small, vertical = spacing.small)
+            .testTag(testTag),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(id = iconRes),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.width(spacing.medium))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
+        )
+        if (isSelected) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_check),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+        }
     }
 }
