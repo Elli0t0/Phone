@@ -40,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,11 +55,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.permissions.SetupPermissions
 import io.github.elli0t0.phone.core.telecom.rememberDefaultDialerState
 import io.github.elli0t0.phone.feature.setup.SetupChecklist
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
@@ -85,6 +90,25 @@ fun SettingsScreen(
     val settings by viewModel.settingsState.collectAsStateWithLifecycle()
     val spacing = LocalSpacing.current
     val dialerState = rememberDefaultDialerState()
+
+    // Permissions & setup card visibility: hidden once every required permission
+    // and the default dialer role are granted. Re-checked on every resume so the
+    // card reappears if anything is revoked, and disappears once granted.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var requiredSetupComplete by remember {
+        mutableStateOf(SetupPermissions.isRequiredSetupComplete(context))
+    }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                requiredSetupComplete = SetupPermissions.isRequiredSetupComplete(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     var showResetDialog by remember { mutableStateOf(false) }
     var showCustomColorDialog by remember { mutableStateOf(false) }
@@ -250,28 +274,31 @@ fun SettingsScreen(
                 }
             }
 
-            // Permissions & setup
-            item {
-                SettingsSectionHeader(title = stringResource(id = R.string.settings_permissions_setup_title))
-            }
+            // Permissions & setup: shown only while a required permission or the
+            // default dialer role is missing.
+            if (!requiredSetupComplete) {
+                item {
+                    SettingsSectionHeader(title = stringResource(id = R.string.settings_permissions_setup_title))
+                }
 
-            item {
-                Card(
-                    shape = MaterialTheme.shapes.large,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(spacing.medium)) {
-                        Text(
-                            text = stringResource(id = R.string.settings_permissions_setup_desc),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(spacing.medium))
-                        SetupChecklist(
-                            modifier = Modifier.fillMaxWidth(),
-                            scrollable = false
-                        )
+                item {
+                    Card(
+                        shape = MaterialTheme.shapes.large,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(spacing.medium)) {
+                            Text(
+                                text = stringResource(id = R.string.settings_permissions_setup_desc),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(spacing.medium))
+                            SetupChecklist(
+                                modifier = Modifier.fillMaxWidth(),
+                                scrollable = false
+                            )
+                        }
                     }
                 }
             }

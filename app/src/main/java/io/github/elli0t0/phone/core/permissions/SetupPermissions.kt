@@ -114,6 +114,20 @@ object SetupPermissions {
         return powerManager?.isIgnoringBatteryOptimizations(context.packageName) ?: true
     }
 
+    /**
+     * True when every permission the Settings "Permissions & setup" card requires
+     * (contacts, call log, make calls, phone state) is granted and this app holds
+     * the default dialer role. Other setup items (notifications, Bluetooth,
+     * full-screen intent, battery) do not affect this.
+     */
+    fun isRequiredSetupComplete(context: Context): Boolean {
+        return isContactsGranted(context) &&
+            isCallLogGranted(context) &&
+            isCallPhoneGranted(context) &&
+            isPhoneStateGranted(context) &&
+            isDefaultDialerGranted(context)
+    }
+
     fun isAnyMissing(context: Context): Boolean {
         return getItemStates(context).any { it.isApplicable && !it.isGranted }
     }

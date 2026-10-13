@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.21] - 2026-10-13
+
+### Changed
+- Settings: the "Permissions & setup" card is hidden once the contacts, call log, make calls, and phone state permissions plus the default dialer role are all granted. It reappears automatically if any of them is missing or revoked (re-checked on resume).
+
 ## [0.1.20] - 2026-10-13
 
 ### Fixed
