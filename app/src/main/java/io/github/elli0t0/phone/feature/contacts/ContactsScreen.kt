@@ -36,7 +36,8 @@ private sealed interface ContactsNavDestination {
 
 @Composable
 fun ContactsScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNavigateToSettings: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val app = context.applicationContext as PhoneApplication
@@ -78,6 +79,7 @@ fun ContactsScreen(
                         permissionState = permissionState,
                         onSearchQueryChanged = listViewModel::onSearchQueryChanged,
                         onClearSearch = listViewModel::clearSearchQuery,
+                        onNavigateToSettings = onNavigateToSettings,
                         onContactClick = { contact ->
                             currentDestination = ContactsNavDestination.Detail(contact.id, contact.lookupKey)
                         },

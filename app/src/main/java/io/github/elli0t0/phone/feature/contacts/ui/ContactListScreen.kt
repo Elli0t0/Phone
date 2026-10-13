@@ -47,6 +47,7 @@ fun ContactListScreen(
     permissionState: ContactsPermissionState,
     onSearchQueryChanged: (String) -> Unit,
     onClearSearch: () -> Unit,
+    onNavigateToSettings: () -> Unit = {},
     onContactClick: (ContactSummary) -> Unit,
     onAddContactClick: () -> Unit,
     onFindDuplicates: () -> Unit,
@@ -84,6 +85,7 @@ fun ContactListScreen(
                         uiState = uiState,
                         onSearchQueryChanged = onSearchQueryChanged,
                         onClearSearch = onClearSearch,
+                        onNavigateToSettings = onNavigateToSettings,
                         onContactClick = onContactClick,
                         onAddContactClick = onAddContactClick,
                         onFindDuplicates = onFindDuplicates
@@ -118,6 +120,7 @@ private fun ContactsContent(
     uiState: ContactsUiState,
     onSearchQueryChanged: (String) -> Unit,
     onClearSearch: () -> Unit,
+    onNavigateToSettings: () -> Unit,
     onContactClick: (ContactSummary) -> Unit,
     onAddContactClick: () -> Unit,
     onFindDuplicates: () -> Unit
@@ -173,6 +176,11 @@ private fun ContactsContent(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false }
                 ) {
+                    DropdownMenuItem(
+                        text = { Text(text = stringResource(id = R.string.settings_title)) },
+                        onClick = { menuExpanded = false; onNavigateToSettings() },
+                        modifier = Modifier.testTag("button_settings")
+                    )
                     DropdownMenuItem(
                         text = { Text(text = stringResource(id = R.string.duplicates_find)) },
                         onClick = { menuExpanded = false; onFindDuplicates() },

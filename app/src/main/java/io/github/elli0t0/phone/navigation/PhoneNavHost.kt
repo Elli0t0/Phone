@@ -43,7 +43,11 @@ fun PhoneNavHost(
             )
         }
         composable(route = Screen.Contacts.route) {
-            ContactsScreen()
+            ContactsScreen(
+                onNavigateToSettings = {
+                    navController.navigate(Screen.Settings.route)
+                }
+            )
         }
         composable(route = Screen.Dialpad.route) {
             DialpadScreen()

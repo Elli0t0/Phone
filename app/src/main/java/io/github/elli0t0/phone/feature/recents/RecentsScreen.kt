@@ -19,6 +19,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -88,6 +90,8 @@ fun RecentsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     var simPickerTargetNumber by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
+    var searchVisible by remember { mutableStateOf(uiState.searchQuery.isNotEmpty()) }
+    var menuExpanded by remember { mutableStateOf(false) }
     val simAccounts = remember(context) { io.github.elli0t0.phone.core.telecom.TelecomHelper.getCallCapablePhoneAccounts(context) }
     val recentsScope = androidx.compose.runtime.rememberCoroutineScope()
 
@@ -147,7 +151,7 @@ fun RecentsScreen(
                     .padding(bottom = spacing.small)
             )
 
-            // Centered app title with settings icon
+            // Centered app title with search and menu actions
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -160,30 +164,63 @@ fun RecentsScreen(
                     modifier = Modifier.align(Alignment.Center)
                 )
 
-                androidx.compose.material3.IconButton(
-                    onClick = onNavigateToSettings,
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .testTag("settings_button")
+                Row(
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    androidx.compose.material3.Icon(
-                        painter = painterResource(id = R.drawable.ic_settings),
-                        contentDescription = stringResource(id = R.string.cd_settings),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    androidx.compose.material3.IconButton(
+                        onClick = {
+                            if (searchVisible) viewModel.onSearchQueryChanged("")
+                            searchVisible = !searchVisible
+                        },
+                        modifier = Modifier.testTag("button_search_recents")
+                    ) {
+                        androidx.compose.material3.Icon(
+                            painter = painterResource(id = R.drawable.ic_search),
+                            contentDescription = stringResource(id = R.string.cd_search),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Box {
+                        androidx.compose.material3.IconButton(
+                            onClick = { menuExpanded = true },
+                            modifier = Modifier.testTag("button_recents_menu")
+                        ) {
+                            androidx.compose.material3.Icon(
+                                painter = painterResource(id = R.drawable.ic_more_vert),
+                                contentDescription = stringResource(id = R.string.cd_more_options),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(text = stringResource(id = R.string.settings_title)) },
+                                onClick = { menuExpanded = false; onNavigateToSettings() },
+                                modifier = Modifier.testTag("settings_button")
+                            )
+                        }
+                    }
                 }
             }
 
-            // Search Bar with "Search calls" placeholder
-            ContactSearchBar(
-                query = uiState.searchQuery,
-                onQueryChange = viewModel::onSearchQueryChanged,
-                onClear = { viewModel.onSearchQueryChanged("") },
-                placeholderText = stringResource(id = R.string.recents_search_hint),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = spacing.small)
-            )
+            // Search Bar with "Search calls" placeholder, shown when the search icon is tapped
+            if (searchVisible) {
+                ContactSearchBar(
+                    query = uiState.searchQuery,
+                    onQueryChange = viewModel::onSearchQueryChanged,
+                    onClear = {
+                        viewModel.onSearchQueryChanged("")
+                        searchVisible = false
+                    },
+                    placeholderText = stringResource(id = R.string.recents_search_hint),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = spacing.small)
+                )
+            }
 
             when (val status = permissionState.status) {
                 is CallLogPermissionStatus.Granted -> {
