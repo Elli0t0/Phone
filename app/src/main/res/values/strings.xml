@@ -26,6 +26,7 @@
     <string name="contacts_search_empty_message">No contacts matching your search query.</string>
     <string name="contact_unknown">Unknown</string>
     <string name="cd_add_contact">Create new contact</string>
+    <string name="cd_search">Search</string>
     <string name="cd_clear_search">Clear search</string>
     <string name="cd_contact_avatar">Contact avatar</string>
 

@@ -14,13 +14,18 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -73,19 +78,12 @@ fun ContactListScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
         ) {
-            ContactSearchBar(
-                query = uiState.searchQuery,
-                onQueryChange = onSearchQueryChanged,
-                onClear = onClearSearch,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = spacing.screenHorizontalPadding, vertical = spacing.small)
-            )
-
             when (val status = permissionState.status) {
                 is ContactsPermissionStatus.Granted -> {
                     ContactsContent(
                         uiState = uiState,
+                        onSearchQueryChanged = onSearchQueryChanged,
+                        onClearSearch = onClearSearch,
                         onContactClick = onContactClick,
                         onAddContactClick = onAddContactClick,
                         onFindDuplicates = onFindDuplicates
@@ -118,17 +116,89 @@ fun ContactListScreen(
 @Composable
 private fun ContactsContent(
     uiState: ContactsUiState,
+    onSearchQueryChanged: (String) -> Unit,
+    onClearSearch: () -> Unit,
     onContactClick: (ContactSummary) -> Unit,
     onAddContactClick: () -> Unit,
     onFindDuplicates: () -> Unit
 ) {
     val spacing = LocalSpacing.current
+    var searchVisible by remember { mutableStateOf(uiState.searchQuery.isNotEmpty()) }
+    var menuExpanded by remember { mutableStateOf(false) }
 
-    if (uiState.allContacts.isEmpty() && !uiState.isLoading) {
-        EmptyContactsState(onAddContactClick = onAddContactClick)
-    } else if (uiState.filteredContacts.isEmpty() && uiState.searchQuery.isNotEmpty()) {
-        SearchEmptyState(query = uiState.searchQuery)
-    } else {
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Top-right action row: add / search / menu
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = spacing.screenHorizontalPadding, vertical = spacing.small),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(
+                onClick = onAddContactClick,
+                modifier = Modifier.testTag("button_add_contact")
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_add),
+                    contentDescription = stringResource(id = R.string.cd_add_contact),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            IconButton(
+                onClick = {
+                    if (searchVisible) onClearSearch()
+                    searchVisible = !searchVisible
+                },
+                modifier = Modifier.testTag("button_search_contacts")
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_search),
+                    contentDescription = stringResource(id = R.string.cd_search),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Box {
+                IconButton(
+                    onClick = { menuExpanded = true },
+                    modifier = Modifier.testTag("button_contacts_menu")
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_more_vert),
+                        contentDescription = stringResource(id = R.string.cd_more_options),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(text = stringResource(id = R.string.duplicates_find)) },
+                        onClick = { menuExpanded = false; onFindDuplicates() },
+                        enabled = !uiState.isFindingDuplicates,
+                        modifier = Modifier.testTag("button_find_duplicates")
+                    )
+                }
+            }
+        }
+
+        if (searchVisible) {
+            ContactSearchBar(
+                query = uiState.searchQuery,
+                onQueryChange = onSearchQueryChanged,
+                onClear = { onClearSearch(); searchVisible = false },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = spacing.screenHorizontalPadding, vertical = spacing.small)
+            )
+        }
+
+        if (uiState.allContacts.isEmpty() && !uiState.isLoading) {
+            EmptyContactsState(onAddContactClick = onAddContactClick)
+        } else if (uiState.filteredContacts.isEmpty() && uiState.searchQuery.isNotEmpty()) {
+            SearchEmptyState(query = uiState.searchQuery)
+        } else {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -136,53 +206,28 @@ private fun ContactsContent(
                 .testTag("contacts_lazy_column")
         ) {
             item {
-                Box(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = spacing.small, bottom = spacing.medium)
+                        .padding(top = spacing.small, bottom = spacing.medium),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Column(
-                        modifier = Modifier.align(Alignment.Center),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.app_name),
-                            style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        val count = uiState.allContacts.size
-                        val countText = if (count == 1) {
-                            stringResource(id = R.string.contacts_count_single, count)
-                        } else {
-                            stringResource(id = R.string.contacts_count_multiple, count)
-                        }
-                        Text(
-                            text = countText,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        if (uiState.searchQuery.isEmpty()) {
-                            TextButton(
-                                onClick = onFindDuplicates,
-                                enabled = !uiState.isFindingDuplicates,
-                                modifier = Modifier.testTag("button_find_duplicates")
-                            ) {
-                                Text(text = stringResource(id = R.string.duplicates_find))
-                            }
-                        }
+                    Text(
+                        text = stringResource(id = R.string.app_name),
+                        style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    val count = uiState.allContacts.size
+                    val countText = if (count == 1) {
+                        stringResource(id = R.string.contacts_count_single, count)
+                    } else {
+                        stringResource(id = R.string.contacts_count_multiple, count)
                     }
-                    IconButton(
-                        onClick = onAddContactClick,
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .testTag("button_add_contact")
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_add),
-                            contentDescription = stringResource(id = R.string.cd_add_contact),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                    Text(
+                        text = countText,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
 
@@ -254,6 +299,7 @@ private fun ContactsContent(
             item {
                 Spacer(modifier = Modifier.height(80.dp))
             }
+        }
         }
     }
 }
