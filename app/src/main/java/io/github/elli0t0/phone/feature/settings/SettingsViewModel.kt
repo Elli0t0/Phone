@@ -32,72 +32,84 @@ class SettingsViewModel(
             settingsRepository.setAccentColor(colorValue, isCustom)
         }
     }
+    fun setAccentColor(colorValue: Long, isCustom: Boolean = false) = onAccentColorSelected(colorValue, isCustom)
 
     fun onDynamicColorChanged(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setDynamicColor(enabled)
         }
     }
+    fun setDynamicColor(enabled: Boolean) = onDynamicColorChanged(enabled)
 
     fun onPureBlackDarkModeChanged(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setPureBlackDarkMode(enabled)
         }
     }
+    fun setPureBlackDarkMode(enabled: Boolean) = onPureBlackDarkModeChanged(enabled)
 
     fun onListDensityChanged(density: ListDensity) {
         viewModelScope.launch {
             settingsRepository.setListDensity(density)
         }
     }
+    fun setListDensity(density: ListDensity) = onListDensityChanged(density)
 
     fun onCardStyleChanged(style: CardStyle) {
         viewModelScope.launch {
             settingsRepository.setCardStyle(style)
         }
     }
+    fun setCardStyle(style: CardStyle) = onCardStyleChanged(style)
 
     fun onFontSizeScaleChanged(scale: Float) {
         viewModelScope.launch {
             settingsRepository.setFontSizeScale(scale)
         }
     }
+    fun setFontSizeScale(scale: Float) = onFontSizeScaleChanged(scale)
 
     fun onAnimationOptionChanged(option: AnimationOption) {
         viewModelScope.launch {
             settingsRepository.setAnimationOption(option)
         }
     }
+    fun setAnimationOption(option: AnimationOption) = onAnimationOptionChanged(option)
 
     fun onShowBottomBarLabelsChanged(show: Boolean) {
         viewModelScope.launch {
             settingsRepository.setShowBottomBarLabels(show)
         }
     }
+    fun setShowBottomBarLabels(show: Boolean) = onShowBottomBarLabelsChanged(show)
 
     fun onDefaultStartTabChanged(tab: StartTab) {
         viewModelScope.launch {
             settingsRepository.setDefaultStartTab(tab)
         }
     }
+    fun setDefaultStartTab(tab: StartTab) = onDefaultStartTabChanged(tab)
 
     fun onContactSortOrderChanged(order: ContactSortOrder) {
         viewModelScope.launch {
             settingsRepository.setContactSortOrder(order)
         }
     }
+    fun setContactSortOrder(order: ContactSortOrder) = onContactSortOrderChanged(order)
 
     fun onContactNameFormatChanged(format: ContactNameFormat) {
         viewModelScope.launch {
             settingsRepository.setContactNameFormat(format)
         }
     }
+    fun setContactNameFormat(format: ContactNameFormat) = onContactNameFormatChanged(format)
 
     fun onResetToDefaults() {
         viewModelScope.launch {
             settingsRepository.resetToDefaults()
         }
     }
+    fun resetToDefaults() = onResetToDefaults()
 
     companion object {
         fun provideFactory(
