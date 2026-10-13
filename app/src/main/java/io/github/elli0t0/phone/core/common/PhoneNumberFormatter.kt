@@ -24,7 +24,11 @@ object PhoneNumberFormatter {
 
         try {
             val formatted = PhoneNumberUtils.formatNumber(rawNumber, defaultCountryIso)
-            if (!formatted.isNullOrBlank()) {
+            // formatNumber returns the input unchanged when it cannot parse
+            // it for the device region (e.g. a national number from another
+            // region). In that case fall through to the chunking fallback
+            // so all rows format consistently instead of some staying raw.
+            if (!formatted.isNullOrBlank() && formatted != rawNumber) {
                 return formatted
             }
         } catch (_: Exception) {
@@ -36,8 +40,9 @@ object PhoneNumberFormatter {
     }
 
     private fun formatFallback(number: String): String {
-        // Iranian mobile formatting: 0912 345 6789 (11 digits starting with 09)
-        if (number.startsWith("09") && number.length == 11 && number.all { it.isDigit() }) {
+        // National 11-digit numbers (mobiles and landlines): 4-3-4 chunking,
+        // e.g. 0912 345 6789, 0133 322 3782.
+        if (number.length == 11 && number.startsWith("0") && number.all { it.isDigit() }) {
             return "${number.substring(0, 4)} ${number.substring(4, 7)} ${number.substring(7)}"
         }
         // International formatting fallback: +98 912 345 6789

@@ -37,4 +37,9 @@ object PhoneDimens {
     val keypadCallButtonBottomPadding = 16.dp
     val keypadAsteriskSize = 28.dp
     val keypadVoicemailIconSize = 20.dp
+    // Recents: one rounded card per day, swipe reveal, row metrics.
+    val recentsDayCardCornerRadius = 28.dp
+    val recentsRowIconSize = 20.dp
+    val recentsRowVerticalPadding = 3.dp
+    val recentsSwipeRevealIconSize = 24.dp
 }

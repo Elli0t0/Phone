@@ -13,12 +13,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Card
@@ -27,7 +29,10 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,7 +51,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.design.AccentBlue
+import io.github.elli0t0.phone.core.design.CallAnswerGreen
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.OnAccentBlue
+import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.data.calllog.model.CallGroup
 import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import io.github.elli0t0.phone.data.calllog.model.CallType
@@ -84,18 +93,71 @@ fun CallLogRow(
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
+    // The name color, reused by the group count so it never shows blue.
+    val nameColor = if (isMissed) {
+        MaterialTheme.colorScheme.error
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+
+    // Swipe to act: right = call, left = message. The row snaps back
+    // after the action; it is never dismissed.
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            when (value) {
+                SwipeToDismissBoxValue.StartToEnd -> {
+                    onCallClick()
+                    false
+                }
+                SwipeToDismissBoxValue.EndToStart -> {
+                    onMessageClick()
+                    false
+                }
+                SwipeToDismissBoxValue.Settled -> true
+            }
+        }
+    )
 
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 3.dp)
-            .combinedClickable(
-                onClick = onRowClick,
-                onLongClick = { showMenu = true }
-            )
-            .testTag("call_row_${group.id}")
+        modifier = modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = spacing.medium, vertical = spacing.small)) {
+        SwipeToDismissBox(
+            state = dismissState,
+            backgroundContent = {
+                val target = dismissState.targetValue
+                if (target != SwipeToDismissBoxValue.Settled) {
+                    val isCall = target == SwipeToDismissBoxValue.StartToEnd
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(if (isCall) CallAnswerGreen else AccentBlue),
+                        contentAlignment = if (isCall) Alignment.CenterStart else Alignment.CenterEnd
+                    ) {
+                        Icon(
+                            painter = painterResource(
+                                id = if (isCall) R.drawable.ic_phone else R.drawable.ic_message
+                            ),
+                            contentDescription = null,
+                            tint = OnAccentBlue,
+                            modifier = Modifier
+                                .padding(horizontal = spacing.medium)
+                                .size(PhoneDimens.recentsSwipeRevealIconSize)
+                        )
+                    }
+                }
+            }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = PhoneDimens.recentsRowVerticalPadding)
+                    .combinedClickable(
+                        onClick = onRowClick,
+                        onLongClick = { showMenu = true }
+                    )
+                    .testTag("call_row_${group.id}")
+            ) {
+                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = spacing.medium, vertical = spacing.small)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -105,7 +167,7 @@ fun CallLogRow(
                     painter = painterResource(id = group.type.iconRes),
                     contentDescription = stringResource(id = group.type.titleRes),
                     tint = typeColor,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(PhoneDimens.recentsRowIconSize)
                 )
 
                 Spacer(modifier = Modifier.width(spacing.medium))
@@ -124,7 +186,7 @@ fun CallLogRow(
                             Text(
                                 text = " (${group.count})",
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                color = if (isMissed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                color = nameColor
                             )
                         }
                     }
@@ -134,11 +196,10 @@ fun CallLogRow(
                         if (!isMissed) {
                             add(formatDuration(group.primaryCall.durationSeconds, group.type))
                         }
-                        add(formattedTime)
                         group.primaryCall.simInfo?.let { add(it) }
                     }
                     Text(
-                        text = subtitleParts.joinToString(" • "),
+                        text = subtitleParts.joinToString(" - "),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -146,18 +207,15 @@ fun CallLogRow(
                     )
                 }
 
-                // Call back button
-                IconButton(
-                    onClick = onCallClick,
-                    modifier = Modifier.testTag("btn_callback_${group.id}")
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_phone),
-                        contentDescription = stringResource(id = R.string.cd_call_back, group.displayTitle),
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
+                // Time on the right, replacing the call-back button.
+                // Call-back stays reachable via swipe right, long-press
+                // menu, and the expanded details.
+                Text(
+                    text = formattedTime,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1
+                )
 
                 // Long press context menu
                 DropdownMenu(
@@ -210,9 +268,17 @@ fun CallLogRow(
                     onAddContactClick = onAddContactClick
                 )
             }
+                }
+            }
         }
         if (showDivider) {
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                modifier = Modifier.padding(
+                    start = spacing.medium + PhoneDimens.recentsRowIconSize + spacing.medium,
+                    end = spacing.medium
+                )
+            )
         }
     }
 }
@@ -232,7 +298,7 @@ fun DaySectionCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(bottom = spacing.small),
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = RoundedCornerShape(PhoneDimens.recentsDayCardCornerRadius),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         calls.forEachIndexed { index, group ->
@@ -240,8 +306,12 @@ fun DaySectionCard(
             if (index < calls.lastIndex) {
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.outlineVariant,
-                    thickness = 1.dp,
-                    modifier = Modifier.padding(horizontal = spacing.medium)
+                    modifier = Modifier.padding(
+                        // Divider starts at the text, not at the row edge:
+                        // row padding + icon + gap.
+                        start = spacing.medium + PhoneDimens.recentsRowIconSize + spacing.medium,
+                        end = spacing.medium
+                    )
                 )
             }
         }
