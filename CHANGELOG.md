@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.9] - 2026-10-13
+
+### Added
+- Appearance settings: Theme selector with Light, Dark, and System (default System) persisted in DataStore and applied across the app.
+
+### Changed
+- Incoming calls: Post high-importance heads-up call notification via NotificationCompat.CallStyle with Answer and Decline actions and full-screen intent instead of opening call activity directly.
+
 ## [0.1.8] - 2026-10-13
 
 ### Fixed

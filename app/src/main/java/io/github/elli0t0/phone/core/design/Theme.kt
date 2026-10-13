@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.CardStyle
+import io.github.elli0t0.phone.data.settings.model.ThemeMode
 
 val LocalAppSettings = staticCompositionLocalOf { AppSettings() }
 
@@ -54,8 +55,12 @@ private val DefaultLightColorScheme = lightColorScheme(
 
 @Composable
 fun PhoneTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
     appSettings: AppSettings = AppSettings(),
+    darkTheme: Boolean = when (appSettings.themeMode) {
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+    },
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current

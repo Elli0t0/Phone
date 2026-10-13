@@ -11,6 +11,7 @@ import io.github.elli0t0.phone.data.settings.model.ContactNameFormat
 import io.github.elli0t0.phone.data.settings.model.ContactSortOrder
 import io.github.elli0t0.phone.data.settings.model.ListDensity
 import io.github.elli0t0.phone.data.settings.model.StartTab
+import io.github.elli0t0.phone.data.settings.model.ThemeMode
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -26,6 +27,13 @@ class SettingsViewModel(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = AppSettings()
         )
+
+    fun onThemeModeChanged(mode: ThemeMode) {
+        viewModelScope.launch {
+            settingsRepository.setThemeMode(mode)
+        }
+    }
+    fun setThemeMode(mode: ThemeMode) = onThemeModeChanged(mode)
 
     fun onAccentColorSelected(colorValue: Long, isCustom: Boolean = false) {
         viewModelScope.launch {

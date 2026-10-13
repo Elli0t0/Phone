@@ -67,6 +67,7 @@ import io.github.elli0t0.phone.data.settings.model.ContactNameFormat
 import io.github.elli0t0.phone.data.settings.model.ContactSortOrder
 import io.github.elli0t0.phone.data.settings.model.ListDensity
 import io.github.elli0t0.phone.data.settings.model.StartTab
+import io.github.elli0t0.phone.data.settings.model.ThemeMode
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -260,6 +261,40 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
+                        // Theme (System, Light, Dark)
+                        Text(
+                            text = stringResource(id = R.string.settings_theme),
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
+                        )
+                        Text(
+                            text = stringResource(id = R.string.settings_theme_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            ThemeMode.entries.forEach { mode ->
+                                FilterChip(
+                                    selected = settings.themeMode == mode,
+                                    onClick = { viewModel.onThemeModeChanged(mode) },
+                                    label = {
+                                        Text(
+                                            when (mode) {
+                                                ThemeMode.SYSTEM -> stringResource(id = R.string.settings_theme_system)
+                                                ThemeMode.LIGHT -> stringResource(id = R.string.settings_theme_light)
+                                                ThemeMode.DARK -> stringResource(id = R.string.settings_theme_dark)
+                                            }
+                                        )
+                                    }
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(spacing.medium))
+
                         // Dynamic Color (Android 12+)
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                             Row(

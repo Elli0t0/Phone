@@ -2,6 +2,7 @@ package io.github.elli0t0.phone.feature.call
 
 import android.app.KeyguardManager
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
@@ -10,12 +11,16 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.core.design.PhoneTheme
 import io.github.elli0t0.phone.core.telecom.PhoneInCallService
 import io.github.elli0t0.phone.data.call.CallRepository
 import io.github.elli0t0.phone.data.call.CallState
+import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.feature.call.ui.IncomingCallScreen
 import io.github.elli0t0.phone.feature.call.ui.OngoingCallScreen
 import kotlinx.coroutines.delay
@@ -26,9 +31,15 @@ class CallActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         turnScreenOnAndShowOverLockScreen()
+        handleIntent(intent)
 
+        val app = application as? PhoneApplication
         setContent {
-            PhoneTheme {
+            val settings by app?.container?.settingsRepository?.settingsFlow?.collectAsStateWithLifecycle(
+                initialValue = AppSettings()
+            ) ?: remember { mutableStateOf(AppSettings()) }
+
+            PhoneTheme(appSettings = settings) {
                 val ongoingCall by CallRepository.ongoingCallModel.collectAsStateWithLifecycle()
 
                 // Timer loop when active
@@ -90,6 +101,19 @@ class CallActivity : ComponentActivity() {
                     WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD or
                     WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
             )
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        if (intent?.action == PhoneInCallService.ACTION_ANSWER_CALL) {
+            CallRepository.answerCall()
+            PhoneInCallService.dismissNotification(this)
         }
     }
 }

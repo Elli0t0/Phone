@@ -17,6 +17,7 @@ import io.github.elli0t0.phone.data.settings.model.ContactNameFormat
 import io.github.elli0t0.phone.data.settings.model.ContactSortOrder
 import io.github.elli0t0.phone.data.settings.model.ListDensity
 import io.github.elli0t0.phone.data.settings.model.StartTab
+import io.github.elli0t0.phone.data.settings.model.ThemeMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -24,6 +25,7 @@ val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(na
 
 interface SettingsRepository {
     val settingsFlow: Flow<AppSettings>
+    suspend fun setThemeMode(mode: ThemeMode)
     suspend fun setAccentColor(colorValue: Long, isCustom: Boolean)
     suspend fun setDynamicColor(enabled: Boolean)
     suspend fun setPureBlackDarkMode(enabled: Boolean)
@@ -43,6 +45,7 @@ class DataStoreSettingsRepository(
 ) : SettingsRepository {
 
     private object Keys {
+        val THEME_MODE = stringPreferencesKey("theme_mode")
         val ACCENT_COLOR = longPreferencesKey("accent_color")
         val IS_CUSTOM_ACCENT = booleanPreferencesKey("is_custom_accent")
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
@@ -58,6 +61,8 @@ class DataStoreSettingsRepository(
     }
 
     override val settingsFlow: Flow<AppSettings> = dataStore.data.map { prefs ->
+        val themeModeStr = prefs[Keys.THEME_MODE]
+        val themeMode = themeModeStr?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() } ?: ThemeMode.SYSTEM
         val accent = prefs[Keys.ACCENT_COLOR] ?: AccentPreset.ONE_UI_BLUE.colorValue
         val isCustom = prefs[Keys.IS_CUSTOM_ACCENT] ?: false
         val dynamic = prefs[Keys.DYNAMIC_COLOR] ?: true
@@ -86,6 +91,7 @@ class DataStoreSettingsRepository(
         val nameFormat = formatStr?.let { runCatching { ContactNameFormat.valueOf(it) }.getOrNull() } ?: ContactNameFormat.FIRST_NAME_FIRST
 
         AppSettings(
+            themeMode = themeMode,
             accentColor = accent,
             isCustomAccent = isCustom,
             dynamicColor = dynamic,
@@ -99,6 +105,12 @@ class DataStoreSettingsRepository(
             contactSortOrder = sortOrder,
             contactNameFormat = nameFormat
         )
+    }
+
+    override suspend fun setThemeMode(mode: ThemeMode) {
+        dataStore.edit { prefs ->
+            prefs[Keys.THEME_MODE] = mode.name
+        }
     }
 
     override suspend fun setAccentColor(colorValue: Long, isCustom: Boolean) {

@@ -45,7 +45,14 @@ enum class ContactNameFormat(val label: String) {
     LAST_NAME_FIRST("Last name first")
 }
 
+enum class ThemeMode(val label: String) {
+    SYSTEM("System"),
+    LIGHT("Light"),
+    DARK("Dark")
+}
+
 data class AppSettings(
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val accentColor: Long = AccentPreset.ONE_UI_BLUE.colorValue,
     val isCustomAccent: Boolean = false,
     val dynamicColor: Boolean = true,
