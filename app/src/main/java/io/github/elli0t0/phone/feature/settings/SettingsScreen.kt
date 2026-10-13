@@ -6,7 +6,6 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.telecom.TelecomManager
-import android.telephony.TelephonyManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -129,13 +128,6 @@ fun SettingsScreen(
     var showFormatDialog by remember { mutableStateOf(false) }
     var showBlockedNumbers by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
-
-    val telephonyManager = remember {
-        context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-    }
-    val voicemailNumber = remember {
-        runCatching { telephonyManager.voiceMailNumber }.getOrNull()?.takeIf { it.isNotBlank() }
-    }
     var customColorHexInput by remember { mutableStateOf("") }
     var customColorError by remember { mutableStateOf(false) }
 
@@ -701,25 +693,6 @@ fun SettingsScreen(
                         SettingsRow(
                             title = stringResource(id = R.string.settings_block_numbers),
                             onClick = { showBlockedNumbers = true }
-                        )
-
-                        Spacer(modifier = Modifier.height(spacing.small))
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                        Spacer(modifier = Modifier.height(spacing.small))
-
-                        SettingsRow(
-                            title = stringResource(id = R.string.settings_voicemail),
-                            subtitle = voicemailNumber
-                                ?: stringResource(id = R.string.settings_voicemail_unavailable),
-                            onClick = {
-                                voicemailNumber?.let { number ->
-                                    runCatching {
-                                        context.startActivity(
-                                            Intent(Intent.ACTION_DIAL, Uri.parse("tel:$number"))
-                                        )
-                                    }
-                                }
-                            }
                         )
 
                         Spacer(modifier = Modifier.height(spacing.small))
