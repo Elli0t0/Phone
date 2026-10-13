@@ -14,6 +14,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -25,6 +26,7 @@ import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.permissions.ContactsPermissionState
 import io.github.elli0t0.phone.core.permissions.ContactsPermissionStatus
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
+import io.github.elli0t0.phone.data.contacts.model.DuplicateGroup
 import io.github.elli0t0.phone.feature.contacts.ContactsUiState
 
 @Composable
@@ -35,6 +37,11 @@ fun ContactListScreen(
     onClearSearch: () -> Unit,
     onContactClick: (ContactSummary) -> Unit,
     onAddContactClick: () -> Unit,
+    onFindDuplicates: () -> Unit,
+    onBackFromDuplicates: () -> Unit,
+    onMergeRequest: (DuplicateGroup) -> Unit,
+    onDismissMerge: () -> Unit,
+    onConfirmMerge: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
@@ -57,6 +64,17 @@ fun ContactListScreen(
             }
         }
     ) { innerPadding ->
+        if (uiState.showDuplicates && permissionState.status is ContactsPermissionStatus.Granted) {
+            DuplicatesScreen(
+                uiState = uiState,
+                onBack = onBackFromDuplicates,
+                onMergeRequest = onMergeRequest,
+                onDismissMerge = onDismissMerge,
+                onConfirmMerge = onConfirmMerge,
+                modifier = Modifier.padding(innerPadding)
+            )
+            return@Scaffold
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -77,7 +95,8 @@ fun ContactListScreen(
                     ContactsContent(
                         uiState = uiState,
                         onContactClick = onContactClick,
-                        onAddContactClick = onAddContactClick
+                        onAddContactClick = onAddContactClick,
+                        onFindDuplicates = onFindDuplicates
                     )
                 }
                 is ContactsPermissionStatus.NotAsked,
@@ -108,7 +127,8 @@ fun ContactListScreen(
 private fun ContactsContent(
     uiState: ContactsUiState,
     onContactClick: (ContactSummary) -> Unit,
-    onAddContactClick: () -> Unit
+    onAddContactClick: () -> Unit,
+    onFindDuplicates: () -> Unit
 ) {
     val spacing = LocalSpacing.current
 
@@ -141,6 +161,15 @@ private fun ContactsContent(
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    if (uiState.searchQuery.isEmpty()) {
+                        TextButton(
+                            onClick = onFindDuplicates,
+                            enabled = !uiState.isFindingDuplicates,
+                            modifier = Modifier.testTag("button_find_duplicates")
+                        ) {
+                            Text(text = stringResource(id = R.string.duplicates_find))
+                        }
+                    }
                 }
             }
 

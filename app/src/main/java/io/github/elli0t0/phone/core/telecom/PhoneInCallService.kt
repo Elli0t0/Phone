@@ -14,12 +14,12 @@ import android.provider.ContactsContract
 import android.telecom.Call
 import android.telecom.CallAudioState
 import android.telecom.InCallService
-import android.telephony.PhoneNumberUtils
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
 import androidx.core.content.ContextCompat
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
 import io.github.elli0t0.phone.core.notifications.CallNotificationChannels
 import io.github.elli0t0.phone.data.call.CallRepository
 import io.github.elli0t0.phone.feature.call.CallActivity
@@ -235,10 +235,15 @@ class PhoneInCallService : InCallService() {
             val asIs = queryPhoneLookup(rawNumber)
             if (asIs != null) return asIs
 
-            val normalized = PhoneNumberUtils.normalizeNumber(rawNumber)
-            if (!normalized.isNullOrBlank() && normalized != rawNumber) {
+            // Shared normalization (device region + trunk prefix), then the same
+            // number with an explicit "+" prefix, for stored numbers in a
+            // different format than the incoming number.
+            val normalized = PhoneNumberMatcher.normalize(rawNumber)
+            if (normalized.isNotBlank() && normalized != rawNumber.filter { it.isDigit() }) {
                 val fromNormalized = queryPhoneLookup(normalized)
                 if (fromNormalized != null) return fromNormalized
+                val fromPlusNormalized = queryPhoneLookup("+$normalized")
+                if (fromPlusNormalized != null) return fromPlusNormalized
             }
         }
 

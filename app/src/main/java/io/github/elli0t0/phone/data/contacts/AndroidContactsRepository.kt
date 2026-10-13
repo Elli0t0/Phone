@@ -18,6 +18,7 @@ import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import android.provider.ContactsContract.Contacts
 import android.provider.ContactsContract.Data
 import android.provider.ContactsContract.RawContacts
+import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
 import io.github.elli0t0.phone.data.contacts.model.ContactDetail
 import io.github.elli0t0.phone.data.contacts.model.ContactEmail
 import io.github.elli0t0.phone.data.contacts.model.ContactInput
@@ -522,6 +523,83 @@ class AndroidContactsRepository(
             Unit
         }
     }
+
+    override suspend fun getAllContactNumbers(): Map<Long, List<String>> = withContext(Dispatchers.IO) {
+        val map = mutableMapOf<Long, MutableList<String>>()
+        try {
+            val cursor = contentResolver.query(
+                Phone.CONTENT_URI,
+                arrayOf(Phone.CONTACT_ID, Phone.NUMBER),
+                null,
+                null,
+                null
+            )
+            cursor?.use {
+                val contactIdIdx = it.getColumnIndex(Phone.CONTACT_ID)
+                val numberIdx = it.getColumnIndex(Phone.NUMBER)
+                while (it.moveToNext()) {
+                    val contactId = it.getLong(contactIdIdx)
+                    val number = it.getString(numberIdx)?.trim().orEmpty()
+                    if (number.isNotBlank()) {
+                        val numbers = map.getOrPut(contactId) { mutableListOf() }
+                        if (!numbers.contains(number)) {
+                            numbers.add(number)
+                        }
+                    }
+                }
+            }
+        } catch (_: Exception) {
+            // Return what was collected (possibly empty) instead of failing the scan.
+        }
+        map
+    }
+
+    override suspend fun mergeContacts(keepContactId: Long, mergeContactIds: List<Long>): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val keptDetail = queryContactDetail(keepContactId)
+                    ?: error("Kept contact not found")
+                val mergedPhones = keptDetail.phones.toMutableList()
+                val mergedEmails = keptDetail.emails.toMutableList()
+                val targets = mergeContactIds.filter { it != keepContactId }.distinct()
+
+                for (targetId in targets) {
+                    val detail = queryContactDetail(targetId) ?: continue
+                    for (phone in detail.phones) {
+                        if (mergedPhones.none { PhoneNumberMatcher.matches(it.number, phone.number) }) {
+                            mergedPhones.add(
+                                ContactPhone(id = 0L, number = phone.number, type = phone.type, label = phone.label)
+                            )
+                        }
+                    }
+                    for (email in detail.emails) {
+                        if (mergedEmails.none { it.address.equals(email.address, ignoreCase = true) }) {
+                            mergedEmails.add(
+                                ContactEmail(id = 0L, address = email.address, type = email.type, label = email.label)
+                            )
+                        }
+                    }
+                }
+
+                // Update first (no data loss), then delete the merged contacts.
+                updateContact(
+                    keepContactId,
+                    keptDetail,
+                    ContactInput(
+                        displayName = keptDetail.displayName,
+                        phones = mergedPhones,
+                        emails = mergedEmails,
+                        organization = keptDetail.organization
+                    )
+                ).getOrThrow()
+
+                for (targetId in targets) {
+                    val detail = queryContactDetail(targetId) ?: continue
+                    deleteContact(targetId, detail.lookupKey).getOrThrow()
+                }
+                Unit
+            }
+        }
 
     override suspend fun saveContactPhoto(contactId: Long, photoBytes: ByteArray): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {

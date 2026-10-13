@@ -13,6 +13,7 @@ import android.provider.CallLog
 import android.provider.ContactsContract
 import android.util.Log
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
+import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
 import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import io.github.elli0t0.phone.data.calllog.model.CallType
 import kotlinx.coroutines.CoroutineScope
@@ -263,6 +264,24 @@ class AndroidCallLogRepository(
     private fun querySinglePhoneLookup(number: String): ResolvedContact {
         if (number.isBlank()) return ResolvedContact(null, null, null, null)
 
+        // Try the number as-is, then the shared normalized form (device region +
+        // trunk prefix), then the normalized form with an explicit "+" prefix.
+        // PhoneLookup already normalizes, but the stored number may use a different
+        // format than the call log number, so the extra attempts close that gap.
+        val normalized = PhoneNumberMatcher.normalize(number)
+        val candidates = listOfNotNull(
+            number,
+            normalized.ifBlank { null },
+            "+$normalized".takeIf { normalized.isNotBlank() }
+        ).distinct()
+        for (candidate in candidates) {
+            val resolved = queryPhoneLookupRow(candidate)
+            if (resolved != null) return resolved
+        }
+        return ResolvedContact(null, null, null, null)
+    }
+
+    private fun queryPhoneLookupRow(number: String): ResolvedContact? {
         val uri = Uri.withAppendedPath(
             ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
             Uri.encode(number)
@@ -296,7 +315,7 @@ class AndroidCallLogRepository(
             cursor?.close()
         }
 
-        return ResolvedContact(null, null, null, null)
+        return null
     }
 
     private fun mapCallType(typeCode: Int): CallType {
