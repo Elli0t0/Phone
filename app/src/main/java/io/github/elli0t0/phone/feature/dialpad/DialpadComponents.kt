@@ -83,27 +83,36 @@ fun DialKeyView(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = dialKey.digit.toString(),
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontSize = PhoneDimens.keypadDigitSize,
-                    fontWeight = FontWeight.Light
-                ),
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            if (dialKey.digit == '*') {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_asterisk),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(PhoneDimens.keypadAsteriskSize)
+                )
+            } else {
+                Text(
+                    text = dialKey.digit.toString(),
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontSize = PhoneDimens.keypadDigitSize,
+                        fontWeight = FontWeight.Normal
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
             if (dialKey.digit == '1') {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_voicemail),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(PhoneDimens.keypadVoicemailIconSize)
                 )
             } else if (dialKey.letters.isNotEmpty()) {
                 Text(
                     text = dialKey.letters,
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontSize = PhoneDimens.keypadLetterSize,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Normal
                     ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
