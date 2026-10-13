@@ -165,8 +165,9 @@ class PhoneInCallService : InCallService() {
     private fun updateProximityWakeLock() {
         try {
             val call = CallRepository.currentCall.value
-            val route = call?.audioState?.route
-                ?: CallRepository.ongoingCallModel.value?.audioRoute
+            // Call carries no audio state; the route lives in the call model,
+            // updated from onCallAudioStateChanged.
+            val route = CallRepository.ongoingCallModel.value?.audioRoute
                 ?: CallAudioState.ROUTE_EARPIECE
             val shouldHold = call != null &&
                 (call.state == Call.STATE_DIALING ||
