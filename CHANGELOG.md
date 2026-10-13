@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] - 2026-10-14
+
+### Changed
+- Contacts: duplicate banner is now a compact centered card with centered text, a Merge pill button, and a circular dismiss button.
+- Contacts: "Add your favorite contacts", "My profile", and "Groups" are now pill-shaped cards.
+- Contacts: list rows show only the name. Contact avatars use soft pastel gradient circles with a white initial when no photo is set.
+- Contacts: dividers inside each letter-section card now start at the text.
+
 ## [0.2.5] - 2026-10-13
 
 ### Changed

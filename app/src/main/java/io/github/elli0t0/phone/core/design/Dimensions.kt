@@ -42,4 +42,13 @@ object PhoneDimens {
     val recentsRowIconSize = 20.dp
     val recentsRowVerticalPadding = 3.dp
     val recentsSwipeRevealIconSize = 24.dp
+    // Contacts list: name-only rows, gradient avatars, pill cards.
+    val contactsRowAvatarSize = 40.dp
+    val contactsRowVerticalPadding = 8.dp
+    val contactsDuplicatesCardWidthFraction = 0.7f
+    val contactsDuplicatesDismissSize = 24.dp
+    val contactsDuplicatesDismissIconSize = 14.dp
+    val contactsFavoritesHintIconSize = 22.dp
+    val contactsGroupIconSize = 24.dp
+    val contactsPillCornerPercent = 50
 }

@@ -36,6 +36,18 @@ val KeypadBackgroundLight = Color(0xFFF6F6F6)
 val KeypadCallButtonGreenDark = Color(0xFF4AA564)
 val KeypadCallButtonGreenLight = Color(0xFF3DAA5C)
 val FavoriteHintOrange = Color(0xFFFFA726)
+// Contact avatar fallback: soft two-tone pastel gradients,
+// picked deterministically from the contact name.
+val ContactAvatarGradients = listOf(
+    Color(0xFFFFD6E0) to Color(0xFFFF9EBB),
+    Color(0xFFC9E8FF) to Color(0xFF8EC5FF),
+    Color(0xFFD3F5D3) to Color(0xFF9BE7C4),
+    Color(0xFFFFE9C4) to Color(0xFFFFD166),
+    Color(0xFFE3D3FF) to Color(0xFFD5A6FF),
+    Color(0xFFFFD9B8) to Color(0xFFFFB75E),
+    Color(0xFFC4F1F0) to Color(0xFF7FD8D4),
+    Color(0xFFFFD1DC) to Color(0xFFFF8FAB)
+)
 val InCallControlBackground = Color(0x1FFFFFFF)
 val InCallControlActive = Color(0xFFFFFFFF)
 val InCallControlActiveContent = Color(0xFF000000)
