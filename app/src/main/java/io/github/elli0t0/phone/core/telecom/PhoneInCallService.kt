@@ -83,12 +83,13 @@ class PhoneInCallService : InCallService() {
             }
             isOutgoingState(call.state) -> {
                 // Outgoing call (NEW, SELECT_PHONE_ACCOUNT, CONNECTING, DIALING):
-                // Immediately start the in-call activity and post ongoing-call notification as fallback
+                // Immediately start the in-call activity and post ongoing-call notification on low channel
                 startCallActivity()
                 postOngoingCallNotification(call)
             }
             isActiveState(call.state) -> {
-                // Active/connected call: ensure in-call screen is open and keep ongoing-call notification
+                // Active/connected call: cancel incoming notification, ensure call screen is open, post ongoing on low channel
+                cancelIncomingNotification()
                 startCallActivity()
                 postOngoingCallNotification(call)
             }
@@ -166,11 +167,50 @@ class PhoneInCallService : InCallService() {
                 postIncomingCallNotification(call, cachedDisplayName)
             }
             isOutgoingState(call.state) || isActiveState(call.state) -> {
+                cancelIncomingNotification()
                 postOngoingCallNotification(call, cachedDisplayName)
             }
             else -> {
                 dismissNotification()
             }
+        }
+    }
+
+    private fun ensureIncomingChannel(notificationManager: NotificationManager) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                INCOMING_CHANNEL_ID,
+                "Incoming calls",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Incoming call notifications"
+                setSound(null, null)
+                enableVibration(true)
+                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+            }
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    private fun ensureOngoingChannel(notificationManager: NotificationManager) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Delete old high-importance channel if present
+            try {
+                notificationManager.deleteNotificationChannel(OLD_ONGOING_CHANNEL_ID)
+            } catch (_: Throwable) {
+            }
+
+            val channel = NotificationChannel(
+                ONGOING_CHANNEL_ID,
+                "Ongoing calls",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Active and ongoing call notifications"
+                setSound(null, null)
+                enableVibration(false)
+                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+            }
+            notificationManager.createNotificationChannel(channel)
         }
     }
 
@@ -182,21 +222,8 @@ class PhoneInCallService : InCallService() {
 
         try {
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
-            val channelId = "phone_incoming_call_channel"
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val channel = NotificationChannel(
-                    channelId,
-                    "Incoming calls",
-                    NotificationManager.IMPORTANCE_HIGH
-                ).apply {
-                    description = "Incoming call notifications"
-                    setSound(null, null)
-                    lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
-                    enableVibration(true)
-                }
-                notificationManager.createNotificationChannel(channel)
-            }
+            ensureIncomingChannel(notificationManager)
+            notificationManager.cancel(NOTIFICATION_ONGOING_ID)
 
             val handle = call.details?.handle
             val rawNumber = handle?.schemeSpecificPart ?: ""
@@ -276,7 +303,7 @@ class PhoneInCallService : InCallService() {
                 answerPendingIntent
             )
 
-            val builder = NotificationCompat.Builder(this, channelId)
+            val builder = NotificationCompat.Builder(this, INCOMING_CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_phone)
                 .setContentTitle(title)
                 .setContentText(contentText)
@@ -306,7 +333,7 @@ class PhoneInCallService : InCallService() {
                 }
             }
 
-            notificationManager.notify(NOTIFICATION_ID, builder.build())
+            notificationManager.notify(NOTIFICATION_INCOMING_ID, builder.build())
         } catch (_: Exception) {
         }
     }
@@ -319,20 +346,8 @@ class PhoneInCallService : InCallService() {
 
         try {
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
-            val channelId = "phone_in_call_channel"
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val channel = NotificationChannel(
-                    channelId,
-                    "Calls",
-                    NotificationManager.IMPORTANCE_HIGH
-                ).apply {
-                    description = "Active and ongoing calls"
-                    setSound(null, null)
-                    lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
-                }
-                notificationManager.createNotificationChannel(channel)
-            }
+            ensureOngoingChannel(notificationManager)
+            notificationManager.cancel(NOTIFICATION_INCOMING_ID)
 
             val handle = call.details?.handle
             val rawNumber = handle?.schemeSpecificPart ?: ""
@@ -373,19 +388,6 @@ class PhoneInCallService : InCallService() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
-            // Full screen intent to the in-call activity (fallback if system blocks background start)
-            val fullScreenIntent = Intent(this, CallActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                    Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                    Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
-            }
-            val fullScreenPendingIntent = PendingIntent.getActivity(
-                this,
-                REQUEST_CODE_FULL_SCREEN,
-                fullScreenIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-
             // Hang up action
             val hangUpIntent = Intent(this, CallActionReceiver::class.java).apply {
                 action = ACTION_HANG_UP_CALL
@@ -407,37 +409,35 @@ class PhoneInCallService : InCallService() {
                 hangUpPendingIntent
             )
 
-            val builder = NotificationCompat.Builder(this, channelId)
+            val builder = NotificationCompat.Builder(this, ONGOING_CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_phone)
                 .setContentTitle(title)
                 .setContentText(contentText)
                 .setContentIntent(contentPendingIntent)
                 .setOngoing(true)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setOnlyAlertOnce(true)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setCategory(NotificationCompat.CATEGORY_CALL)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setStyle(callStyle)
 
-            val canUseFullScreen = if (Build.VERSION.SDK_INT >= 34) {
-                try {
-                    notificationManager.canUseFullScreenIntent()
-                } catch (_: Throwable) {
-                    true
-                }
+            val connectTime = call.details?.connectTimeMillis ?: 0L
+            if (connectTime > 0L && call.state == Call.STATE_ACTIVE) {
+                builder.setWhen(connectTime)
+                builder.setUsesChronometer(true)
+                builder.setShowWhen(true)
             } else {
-                true
+                builder.setUsesChronometer(false)
+                builder.setShowWhen(false)
             }
 
-            if (canUseFullScreen) {
-                try {
-                    builder.setFullScreenIntent(fullScreenPendingIntent, true)
-                } catch (_: SecurityException) {
-                }
-            }
-
-            notificationManager.notify(NOTIFICATION_ID, builder.build())
+            notificationManager.notify(NOTIFICATION_ONGOING_ID, builder.build())
         } catch (_: Exception) {
         }
+    }
+
+    private fun cancelIncomingNotification() {
+        cancelIncomingNotification(this)
     }
 
     private fun dismissNotification() {
@@ -446,6 +446,13 @@ class PhoneInCallService : InCallService() {
 
     companion object {
         const val NOTIFICATION_ID = 1001
+        const val NOTIFICATION_INCOMING_ID = 1001
+        const val NOTIFICATION_ONGOING_ID = 1002
+
+        const val INCOMING_CHANNEL_ID = "phone_incoming_call_channel"
+        const val ONGOING_CHANNEL_ID = "phone_ongoing_call_channel"
+        const val OLD_ONGOING_CHANNEL_ID = "phone_in_call_channel"
+
         const val ACTION_ANSWER_CALL = "io.github.elli0t0.phone.action.ANSWER_CALL"
         const val ACTION_DECLINE_CALL = "io.github.elli0t0.phone.action.DECLINE_CALL"
         const val ACTION_HANG_UP_CALL = "io.github.elli0t0.phone.action.HANG_UP_CALL"
@@ -478,9 +485,19 @@ class PhoneInCallService : InCallService() {
             }
         }
 
+        fun cancelIncomingNotification(context: Context) {
+            try {
+                val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+                notificationManager?.cancel(NOTIFICATION_INCOMING_ID)
+            } catch (_: Exception) {
+            }
+        }
+
         fun dismissNotification(context: Context) {
             try {
                 val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+                notificationManager?.cancel(NOTIFICATION_INCOMING_ID)
+                notificationManager?.cancel(NOTIFICATION_ONGOING_ID)
                 notificationManager?.cancel(NOTIFICATION_ID)
             } catch (_: Exception) {
             }

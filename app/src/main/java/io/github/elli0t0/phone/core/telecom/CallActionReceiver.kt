@@ -19,7 +19,7 @@ class CallActionReceiver : BroadcastReceiver() {
             }
             PhoneInCallService.ACTION_ANSWER_CALL -> {
                 CallRepository.answerCall()
-                PhoneInCallService.dismissNotification(context)
+                PhoneInCallService.cancelIncomingNotification(context)
                 val callIntent = Intent(context, CallActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                         Intent.FLAG_ACTIVITY_SINGLE_TOP or

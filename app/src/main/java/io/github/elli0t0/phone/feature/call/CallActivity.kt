@@ -115,7 +115,7 @@ class CallActivity : ComponentActivity() {
     private fun handleIntent(intent: Intent?) {
         if (intent?.action == PhoneInCallService.ACTION_ANSWER_CALL) {
             CallRepository.answerCall()
-            PhoneInCallService.dismissNotification(this)
+            PhoneInCallService.cancelIncomingNotification(this)
         }
     }
 }
