@@ -20,14 +20,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.design.CallAnswerGreen
+import io.github.elli0t0.phone.core.design.CallDeclineRed
+import io.github.elli0t0.phone.core.design.InCallGradientBottom
+import io.github.elli0t0.phone.core.design.InCallGradientTop
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.data.call.OngoingCallModel
 
@@ -43,7 +49,11 @@ fun IncomingCallScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF1C1B1F))
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(InCallGradientTop, InCallGradientBottom)
+                )
+            )
             .padding(horizontal = spacing.screenHorizontalPadding, vertical = spacing.large)
             .testTag("incoming_call_screen"),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -57,19 +67,37 @@ fun IncomingCallScreen(
                 text = stringResource(id = R.string.call_incoming),
                 style = MaterialTheme.typography.titleMedium,
                 color = Color.White.copy(alpha = 0.7f),
-                modifier = Modifier.padding(bottom = spacing.small)
+                modifier = Modifier.padding(bottom = spacing.medium)
             )
 
             val hasName = !callModel.displayName.isNullOrBlank() && callModel.displayName != callModel.number
             val titleText = if (hasName) callModel.displayName!! else callModel.number
+            val initial = titleText.trim().take(1).uppercase().ifBlank { "?" }
+
+            Box(
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = initial,
+                    style = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Bold),
+                    color = Color.White
+                )
+            }
+
+            Spacer(modifier = Modifier.height(spacing.medium))
 
             Text(
                 text = titleText,
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = 32.sp
+                    fontSize = 40.sp
                 ),
                 color = Color.White,
+                textAlign = TextAlign.Center,
                 modifier = Modifier.padding(bottom = spacing.extraSmall)
             )
 
@@ -77,7 +105,8 @@ fun IncomingCallScreen(
                 Text(
                     text = callModel.number,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = Color.White.copy(alpha = 0.8f)
+                    color = Color.White.copy(alpha = 0.8f),
+                    textAlign = TextAlign.Center
                 )
             }
         }
@@ -95,9 +124,9 @@ fun IncomingCallScreen(
                 IconButton(
                     onClick = onDecline,
                     modifier = Modifier
-                        .size(72.dp)
+                        .size(76.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFFE53935))
+                        .background(CallDeclineRed)
                         .testTag("decline_call_button")
                 ) {
                     Icon(
@@ -120,9 +149,9 @@ fun IncomingCallScreen(
                 IconButton(
                     onClick = onAnswer,
                     modifier = Modifier
-                        .size(72.dp)
+                        .size(76.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF43A047))
+                        .background(CallAnswerGreen)
                         .testTag("answer_call_button")
                 ) {
                     Icon(
