@@ -120,6 +120,11 @@ class RecentsViewModel(
         _userMessageRes.value = null
     }
 
+    override fun onCleared() {
+        super.onCleared()
+        // If activeScope is a custom Job or scope, or tied to viewModelScope, ensure clean up
+    }
+
     companion object {
         fun provideFactory(
             callLogRepository: CallLogRepository,

@@ -12,20 +12,38 @@ import io.github.elli0t0.phone.feature.contacts.ContactsViewModel
 import io.github.elli0t0.phone.feature.dialpad.DialpadViewModel
 import io.github.elli0t0.phone.feature.recents.CallFilter
 import io.github.elli0t0.phone.feature.recents.RecentsViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ViewModelsStateTest {
+
+    private val testDispatcher = UnconfinedTestDispatcher()
+
+    @Before
+    fun setUp() {
+        Dispatchers.setMain(testDispatcher)
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
 
     private class FakeContactsRepository(
         private val initialList: List<ContactSummary> = emptyList()
@@ -56,10 +74,9 @@ class ViewModelsStateTest {
             callLogRepository = FakeCallLogRepository(),
             favoritesRepository = FakeFavoritesRepository(),
             contactsRepository = FakeContactsRepository(),
-            coroutineScope = this
+            coroutineScope = backgroundScope
         )
         backgroundScope.launch { viewModel.uiState.collect() }
-        advanceUntilIdle()
 
         assertEquals(CallFilter.ALL, viewModel.uiState.value.selectedFilter)
         assertEquals("", viewModel.uiState.value.searchQuery)
@@ -68,32 +85,41 @@ class ViewModelsStateTest {
 
         // Test filter change
         viewModel.onFilterSelected(CallFilter.MISSED)
-        advanceUntilIdle()
+        runCurrent()
         assertEquals(CallFilter.MISSED, viewModel.uiState.value.selectedFilter)
 
         // Test search query change
         viewModel.onSearchQueryChanged("John")
-        advanceUntilIdle()
+        runCurrent()
         assertEquals("John", viewModel.uiState.value.searchQuery)
         assertTrue(viewModel.uiState.value.isSearching)
     }
 
     @Test
-    fun contactsViewModel_initialUiStateIsCorrect() {
+    fun contactsViewModel_initialUiStateIsCorrect() = runTest {
         val fakeRepo = FakeContactsRepository()
-        val testScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined)
-        val viewModel = ContactsViewModel(fakeRepo, FakeFavoritesRepository(), testScope)
+        val viewModel = ContactsViewModel(
+            contactsRepository = fakeRepo,
+            favoritesRepository = FakeFavoritesRepository(),
+            coroutineScope = backgroundScope
+        )
+        backgroundScope.launch { viewModel.uiState.collect() }
+
         val state = viewModel.uiState.value
         assertTrue("Initial contacts should be empty", state.allContacts.isEmpty())
         assertEquals("", state.searchQuery)
     }
 
     @Test
-    fun dialpadViewModel_entryAndDeletionFlow() {
+    fun dialpadViewModel_entryAndDeletionFlow() = runTest {
         val fakeRepo = FakeContactsRepository()
         val savedStateHandle = SavedStateHandle()
-        val testScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined)
-        val viewModel = DialpadViewModel(fakeRepo, savedStateHandle, testScope)
+        val viewModel = DialpadViewModel(
+            contactsRepository = fakeRepo,
+            savedStateHandle = savedStateHandle,
+            coroutineScope = backgroundScope
+        )
+        backgroundScope.launch { viewModel.uiState.collect() }
 
         // Initial state
         assertEquals("", viewModel.uiState.value.rawNumber)
