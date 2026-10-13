@@ -61,6 +61,7 @@ import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.telecom.CallManager
+import io.github.elli0t0.phone.feature.setup.SetupWarningCard
 import kotlinx.coroutines.launch
 
 @Composable
@@ -167,6 +168,11 @@ fun DialpadScreen(
             .testTag("dialpad_screen"),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        SetupWarningCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = spacing.small)
+        )
         // T9 Matching contacts list above the keypad
         Box(
             modifier = Modifier

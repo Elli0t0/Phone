@@ -60,6 +60,7 @@ import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.telecom.rememberDefaultDialerState
+import io.github.elli0t0.phone.feature.setup.SetupChecklist
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.CardStyle
@@ -245,6 +246,32 @@ fun SettingsScreen(
                                 Text(text = stringResource(id = R.string.settings_set_as_default))
                             }
                         }
+                    }
+                }
+            }
+
+            // Permissions & setup
+            item {
+                SettingsSectionHeader(title = stringResource(id = R.string.settings_permissions_setup_title))
+            }
+
+            item {
+                Card(
+                    shape = MaterialTheme.shapes.large,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(spacing.medium)) {
+                        Text(
+                            text = stringResource(id = R.string.settings_permissions_setup_desc),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(spacing.medium))
+                        SetupChecklist(
+                            modifier = Modifier.fillMaxWidth(),
+                            scrollable = false
+                        )
                     }
                 }
             }

@@ -54,6 +54,7 @@ import io.github.elli0t0.phone.core.permissions.rememberCallLogPermissionState
 import io.github.elli0t0.phone.core.telecom.CallManager
 import io.github.elli0t0.phone.feature.contacts.ui.ContactSearchBar
 import io.github.elli0t0.phone.feature.contacts.ui.PermissionCard
+import io.github.elli0t0.phone.feature.setup.SetupWarningCard
 import io.github.elli0t0.phone.feature.recents.ui.CallLogRow
 import io.github.elli0t0.phone.feature.recents.ui.FavoritesHorizontalSection
 import io.github.elli0t0.phone.feature.recents.ui.RecentsEmptyState
@@ -130,6 +131,12 @@ fun RecentsScreen(
                 .padding(horizontal = spacing.screenHorizontalPadding)
         ) {
             Spacer(modifier = Modifier.height(spacing.screenTopPadding))
+
+            SetupWarningCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = spacing.small)
+            )
 
             // One UI Large Header with Settings Icon
             Row(
