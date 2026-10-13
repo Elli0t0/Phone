@@ -260,6 +260,7 @@
     <string name="settings_format_last_first">Last name first</string>
 
     <string name="settings_cat_reset">Reset</string>
+    <string name="settings_reset_button">Reset to defaults</string>
     <string name="settings_cat_calls">Calls</string>
     <string name="settings_cat_privacy">Privacy</string>
     <string name="settings_cat_about">About</string>

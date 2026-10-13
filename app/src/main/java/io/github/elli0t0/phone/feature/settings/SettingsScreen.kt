@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.telecom.TelecomManager
+import android.telephony.TelephonyManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -129,11 +130,11 @@ fun SettingsScreen(
     var showBlockedNumbers by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
 
-    val telecomManager = remember {
-        context.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
+    val telephonyManager = remember {
+        context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
     }
     val voicemailNumber = remember {
-        runCatching { telecomManager.voiceMailNumber }.getOrNull()?.takeIf { it.isNotBlank() }
+        runCatching { telephonyManager.voiceMailNumber }.getOrNull()?.takeIf { it.isNotBlank() }
     }
     var customColorHexInput by remember { mutableStateOf("") }
     var customColorError by remember { mutableStateOf(false) }
