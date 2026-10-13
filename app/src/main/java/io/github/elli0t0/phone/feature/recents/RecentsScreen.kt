@@ -59,7 +59,6 @@ import io.github.elli0t0.phone.feature.setup.SetupWarningCard
 import io.github.elli0t0.phone.feature.recents.ui.CallLogRow
 import io.github.elli0t0.phone.feature.recents.ui.DaySectionCard
 import io.github.elli0t0.phone.feature.recents.ui.RecentsEmptyState
-import io.github.elli0t0.phone.feature.recents.ui.RecentsFilterChips
 import kotlinx.coroutines.launch
 
 @Composable
@@ -93,6 +92,7 @@ fun RecentsScreen(
     var simPickerTargetNumber by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
     var searchVisible by remember { mutableStateOf(uiState.searchQuery.isNotEmpty()) }
     var menuExpanded by remember { mutableStateOf(false) }
+    var filterMenuExpanded by remember { mutableStateOf(false) }
     val simAccounts = remember(context) { io.github.elli0t0.phone.core.telecom.TelecomHelper.getCallCapablePhoneAccounts(context) }
     val recentsScope = androidx.compose.runtime.rememberCoroutineScope()
 
@@ -169,6 +169,41 @@ fun RecentsScreen(
                     modifier = Modifier.align(Alignment.CenterEnd),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Box {
+                        androidx.compose.material3.IconButton(
+                            onClick = { filterMenuExpanded = true },
+                            modifier = Modifier.testTag("button_recents_filter")
+                        ) {
+                            androidx.compose.material3.Icon(
+                                painter = painterResource(id = R.drawable.ic_filter),
+                                contentDescription = stringResource(id = R.string.cd_filter),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = filterMenuExpanded,
+                            onDismissRequest = { filterMenuExpanded = false }
+                        ) {
+                            CallFilter.entries.forEach { filter ->
+                                DropdownMenuItem(
+                                    text = { Text(text = stringResource(id = filter.titleRes)) },
+                                    leadingIcon = if (filter == uiState.selectedFilter) {
+                                        {
+                                            Icon(
+                                                painter = painterResource(id = R.drawable.ic_check),
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    } else {
+                                        null
+                                    },
+                                    onClick = { filterMenuExpanded = false; viewModel.onFilterSelected(filter) },
+                                    modifier = Modifier.testTag("filter_menu_${filter.name.lowercase()}")
+                                )
+                            }
+                        }
+                    }
                     androidx.compose.material3.IconButton(
                         onClick = {
                             if (searchVisible) viewModel.onSearchQueryChanged("")
@@ -225,13 +260,6 @@ fun RecentsScreen(
 
             when (val status = permissionState.status) {
                 is CallLogPermissionStatus.Granted -> {
-                    // Filter Chips
-                    RecentsFilterChips(
-                        selectedFilter = uiState.selectedFilter,
-                        onFilterSelected = viewModel::onFilterSelected,
-                        modifier = Modifier.padding(bottom = spacing.small)
-                    )
-
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()

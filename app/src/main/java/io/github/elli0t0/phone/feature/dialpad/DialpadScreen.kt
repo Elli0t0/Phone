@@ -306,7 +306,7 @@ fun DialpadScreen(
                     .testTag("btn_call"),
                 shape = CircleShape,
                 containerColor = if (uiState.canCall) {
-                    MaterialTheme.colorScheme.primary
+                    io.github.elli0t0.phone.core.design.CallAnswerGreen
                 } else {
                     MaterialTheme.colorScheme.surfaceVariant
                 },
