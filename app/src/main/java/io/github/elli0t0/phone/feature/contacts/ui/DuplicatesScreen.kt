@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.calculateBottomPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -47,7 +46,7 @@ import io.github.elli0t0.phone.feature.contacts.ContactsUiState
 
 /**
  * Lists duplicate contacts (same normalized number or same name). Merging a
- * group keeps the first contact, moves the others' numbers and emails into it,
+ * group keeps the first contact, moves the others numbers and emails into it,
  * and deletes the merged contacts — only after the user confirms in the dialog.
  * Nothing is deleted without confirmation.
  */
