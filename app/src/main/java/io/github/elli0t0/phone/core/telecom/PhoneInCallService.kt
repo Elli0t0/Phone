@@ -10,6 +10,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.os.PowerManager
 import android.provider.ContactsContract
 import android.telecom.Call
 import android.telecom.CallAudioState
@@ -41,6 +42,8 @@ class PhoneInCallService : InCallService() {
 
     @Volatile
     private var currentForegroundId: Int = -1
+
+    private var proximityWakeLock: PowerManager.WakeLock? = null
 
     private val callCallback = object : Call.Callback() {
         override fun onStateChanged(call: Call?, state: Int) {
@@ -91,6 +94,7 @@ class PhoneInCallService : InCallService() {
                 handleCallState(call)
             }
             resolveContactNameInBackground(call)
+            updateProximityWakeLock()
         } catch (e: Exception) {
             Log.e(TAG, "onCallAdded failed", e)
         }
@@ -115,12 +119,14 @@ class PhoneInCallService : InCallService() {
         currentForegroundId = -1
         dismissNotification()
         CallRepository.onCallRemoved(call)
+        updateProximityWakeLock()
     }
 
     override fun onCallAudioStateChanged(audioState: CallAudioState?) {
         super.onCallAudioStateChanged(audioState)
         CallRepository.updateAudioState(audioState)
         refreshBluetoothDevices()
+        updateProximityWakeLock()
     }
 
     private fun refreshBluetoothDevices() {
@@ -147,6 +153,75 @@ class PhoneInCallService : InCallService() {
             CallRepository.updateBluetoothDevices(names)
         } catch (e: Exception) {
             Log.e(TAG, "refreshBluetoothDevices failed", e)
+        }
+    }
+
+    /**
+     * Holds the proximity wake lock only while a call is in progress
+     * (dialing, connecting, or active) and audio goes to the earpiece.
+     * Any other route (speaker, Bluetooth, wired headset) releases it,
+     * and so do disconnect, call removal, and service destruction.
+     */
+    private fun updateProximityWakeLock() {
+        try {
+            val call = CallRepository.currentCall.value
+            val route = call?.audioState?.route
+                ?: CallRepository.ongoingCallModel.value?.audioRoute
+                ?: CallAudioState.ROUTE_EARPIECE
+            val shouldHold = call != null &&
+                (call.state == Call.STATE_DIALING ||
+                    call.state == Call.STATE_CONNECTING ||
+                    call.state == Call.STATE_ACTIVE) &&
+                route == CallAudioState.ROUTE_EARPIECE
+            if (shouldHold) {
+                acquireProximityWakeLock()
+            } else {
+                releaseProximityWakeLock()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "updateProximityWakeLock failed", e)
+        }
+    }
+
+    private fun acquireProximityWakeLock() {
+        try {
+            var lock = proximityWakeLock
+            if (lock == null) {
+                val powerManager =
+                    getSystemService(Context.POWER_SERVICE) as? PowerManager ?: return
+                if (!powerManager.isWakeLockLevelSupported(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK)) {
+                    Log.d(TAG, "proximity wake lock not supported on this device")
+                    return
+                }
+                lock = powerManager.newWakeLock(
+                    PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK,
+                    PROXIMITY_WAKE_LOCK_TAG
+                )
+                lock.setReferenceCounted(false)
+                proximityWakeLock = lock
+            }
+            if (!lock.isHeld) {
+                lock.acquire()
+                Log.d(TAG, "proximity wake lock acquired")
+            }
+        } catch (e: SecurityException) {
+            Log.e(TAG, "acquireProximityWakeLock SecurityException", e)
+        } catch (e: Exception) {
+            Log.e(TAG, "acquireProximityWakeLock failed", e)
+        }
+    }
+
+    private fun releaseProximityWakeLock() {
+        try {
+            val lock = proximityWakeLock ?: return
+            if (lock.isHeld) {
+                lock.release()
+                Log.d(TAG, "proximity wake lock released")
+            }
+        } catch (e: RuntimeException) {
+            Log.e(TAG, "releaseProximityWakeLock RuntimeException", e)
+        } catch (e: Exception) {
+            Log.e(TAG, "releaseProximityWakeLock failed", e)
         }
     }
 
@@ -205,6 +280,7 @@ class PhoneInCallService : InCallService() {
         } catch (e: Exception) {
             Log.e(TAG, "handleCallState failed state=${call.state}", e)
         }
+        updateProximityWakeLock()
     }
 
     private fun startCallActivity() {
@@ -793,6 +869,7 @@ class PhoneInCallService : InCallService() {
 
     companion object {
         private const val TAG = "PhoneCall"
+        private const val PROXIMITY_WAKE_LOCK_TAG = "Phone:Proximity"
         const val NOTIFICATION_ID = 1001
         const val NOTIFICATION_INCOMING_ID = 1001
         const val NOTIFICATION_ONGOING_ID = 1002
@@ -902,6 +979,7 @@ class PhoneInCallService : InCallService() {
         lookupJob?.cancel()
         callStartTimeoutJob?.cancel()
         callStartTimeoutJob = null
+        releaseProximityWakeLock()
         dismissNotification()
     }
 }

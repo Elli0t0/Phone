@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.24] - 2026-10-13
+
+### Fixed
+- Screen now turns off when the phone is held to the ear during a call. The in-call service holds a proximity screen-off wake lock while a call is dialing, connecting, or active with audio on the earpiece, and releases it on speaker, Bluetooth, or wired headset, on disconnect, and on service destroy. Added the WAKE_LOCK permission. The lock is only created if the device reports the proximity wake lock level as supported, and release is guarded by isHeld.
+
 ## [0.1.23] - 2026-10-13
 
 ### Fixed
