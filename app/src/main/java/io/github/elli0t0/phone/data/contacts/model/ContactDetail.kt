@@ -7,5 +7,7 @@ data class ContactDetail(
     val photoUri: String? = null,
     val phones: List<ContactPhone> = emptyList(),
     val emails: List<ContactEmail> = emptyList(),
-    val organization: String? = null
+    val organization: String? = null,
+    val customRingtone: String? = null
 )
+

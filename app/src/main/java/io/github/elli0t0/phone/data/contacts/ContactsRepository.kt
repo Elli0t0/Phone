@@ -36,4 +36,20 @@ interface ContactsRepository {
      * Deletes a contact from the device.
      */
     suspend fun deleteContact(contactId: Long, lookupKey: String): Result<Unit>
+
+    /**
+     * Updates or inserts only the photo row for a contact in ContactsContract.Data.
+     */
+    suspend fun saveContactPhoto(contactId: Long, photoBytes: ByteArray): Result<Unit> = Result.success(Unit)
+
+    /**
+     * Removes the photo row for a contact from ContactsContract.Data.
+     */
+    suspend fun removeContactPhoto(contactId: Long): Result<Unit> = Result.success(Unit)
+
+    /**
+     * Updates the custom ringtone for a contact in ContactsContract.Contacts.
+     */
+    suspend fun updateContactRingtone(contactId: Long, ringtoneUri: String?): Result<Unit> = Result.success(Unit)
 }
+

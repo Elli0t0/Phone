@@ -102,19 +102,13 @@ fun ContactRow(
                 .padding(spacing.medium),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(46.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = displayName.take(1).uppercase(),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
+            ContactAvatar(
+                photoUri = contact.photoUri,
+                displayName = displayName,
+                size = 46.dp,
+                modifier = Modifier.testTag("avatar_${contact.id}")
+            )
+
 
             Spacer(modifier = Modifier.width(spacing.medium))
 

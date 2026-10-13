@@ -3,6 +3,7 @@ package io.github.elli0t0.phone.data.contacts
 import android.content.ContentProviderOperation
 import android.content.ContentResolver
 import android.content.ContentUris
+import android.content.ContentValues
 import android.database.ContentObserver
 import android.database.Cursor
 import android.net.Uri
@@ -12,6 +13,7 @@ import android.provider.ContactsContract
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.provider.ContactsContract.CommonDataKinds.Organization
 import android.provider.ContactsContract.CommonDataKinds.Phone
+import android.provider.ContactsContract.CommonDataKinds.Photo
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import android.provider.ContactsContract.Contacts
 import android.provider.ContactsContract.Data
@@ -173,6 +175,7 @@ class AndroidContactsRepository(
             var lookupKey = ""
             var photoUri: String? = null
             var organization: String? = null
+            var customRingtone: String? = null
             val phones = mutableListOf<ContactPhone>()
             val emails = mutableListOf<ContactEmail>()
 
@@ -250,7 +253,7 @@ class AndroidContactsRepository(
             // Also retrieve photo URI from Contacts table
             val contactCursor = contentResolver.query(
                 ContentUris.withAppendedId(Contacts.CONTENT_URI, contactId),
-                arrayOf(Contacts.PHOTO_URI, Contacts.DISPLAY_NAME_PRIMARY),
+                arrayOf(Contacts.PHOTO_URI, Contacts.DISPLAY_NAME_PRIMARY, Contacts.CUSTOM_RINGTONE),
                 null,
                 null,
                 null
@@ -262,6 +265,10 @@ class AndroidContactsRepository(
                     if (displayName.isBlank() && !primaryName.isNullOrBlank()) {
                         displayName = primaryName
                     }
+                    val ringtoneIdx = it.getColumnIndex(Contacts.CUSTOM_RINGTONE)
+                    if (ringtoneIdx >= 0) {
+                        customRingtone = it.getString(ringtoneIdx)
+                    }
                 }
             }
 
@@ -272,7 +279,8 @@ class AndroidContactsRepository(
                 photoUri = photoUri,
                 phones = phones,
                 emails = emails,
-                organization = organization
+                organization = organization,
+                customRingtone = customRingtone
             )
         } catch (_: Exception) {
             null
@@ -514,6 +522,60 @@ class AndroidContactsRepository(
             Unit
         }
     }
+
+    override suspend fun saveContactPhoto(contactId: Long, photoBytes: ByteArray): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            val existingPhotoRowId = findDataRowId(contactId, Photo.CONTENT_ITEM_TYPE)
+            if (existingPhotoRowId != null) {
+                val values = ContentValues().apply {
+                    put(Photo.PHOTO, photoBytes)
+                }
+                contentResolver.update(
+                    Data.CONTENT_URI,
+                    values,
+                    "${Data._ID} = ?",
+                    arrayOf(existingPhotoRowId.toString())
+                )
+            } else {
+                val rawContactId = findWritableRawContactId(contactId)
+                    ?: error("No writable raw contact found for contact $contactId")
+                val values = ContentValues().apply {
+                    put(Data.RAW_CONTACT_ID, rawContactId)
+                    put(Data.MIMETYPE, Photo.CONTENT_ITEM_TYPE)
+                    put(Photo.PHOTO, photoBytes)
+                }
+                contentResolver.insert(Data.CONTENT_URI, values)
+            }
+            Unit
+        }
+    }
+
+    override suspend fun removeContactPhoto(contactId: Long): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            contentResolver.delete(
+                Data.CONTENT_URI,
+                "${Data.CONTACT_ID} = ? AND ${Data.MIMETYPE} = ?",
+                arrayOf(contactId.toString(), Photo.CONTENT_ITEM_TYPE)
+            )
+            Unit
+        }
+    }
+
+    override suspend fun updateContactRingtone(contactId: Long, ringtoneUri: String?): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            val contactUri = ContentUris.withAppendedId(Contacts.CONTENT_URI, contactId)
+            val values = ContentValues().apply {
+                if (ringtoneUri == null) {
+                    putNull(Contacts.CUSTOM_RINGTONE)
+                } else {
+                    put(Contacts.CUSTOM_RINGTONE, ringtoneUri)
+                }
+            }
+            contentResolver.update(contactUri, values, null, null)
+            Unit
+        }
+    }
+
 
     private fun findWritableRawContactId(contactId: Long): Long? {
         val cursor = contentResolver.query(

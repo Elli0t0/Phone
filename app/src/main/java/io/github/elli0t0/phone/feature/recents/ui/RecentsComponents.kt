@@ -51,6 +51,7 @@ import io.github.elli0t0.phone.data.calllog.model.CallGroup
 import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import io.github.elli0t0.phone.data.calllog.model.CallType
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
+import io.github.elli0t0.phone.feature.contacts.ui.ContactAvatar
 import io.github.elli0t0.phone.feature.recents.CallFilter
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -139,22 +140,14 @@ private fun FavoriteContactChip(
                 .padding(spacing.small),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Surface(
-                modifier = Modifier.size(44.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primary
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    val initial = contact.displayName.trim().take(1).uppercase().ifBlank { "?" }
-                    Text(
-                        text = initial,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                }
-            }
+            ContactAvatar(
+                photoUri = contact.photoUri,
+                displayName = contact.displayName,
+                size = 44.dp
+            )
             Spacer(modifier = Modifier.height(spacing.extraSmall))
             Text(
+
                 text = contact.displayName,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurface,

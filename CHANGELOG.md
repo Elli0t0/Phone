@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2026-10-13
+
+### Added
+- System photo picker integration with square cropping and preview dialog for contact avatars.
+- Coil image loading integration with safe fallback to initials avatar.
+- Redesigned contact details screen featuring large avatar, action row (Call, Message, Favorite, More), and One UI aesthetic.
+- Per-contact custom ringtone selection via system RingtonePicker with default and silent options.
+
 ## [0.1.5] - 2026-10-13
 
 ### Fixed

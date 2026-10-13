@@ -63,6 +63,68 @@ class ContactDetailViewModel(
         _uiState.update { it.copy(showDeleteDialog = visible) }
     }
 
+    fun setPhotoPreviewVisible(visible: Boolean) {
+        _uiState.update { it.copy(showPhotoPreview = visible) }
+    }
+
+    fun setPhotoOptionsDialogVisible(visible: Boolean) {
+        _uiState.update { it.copy(showPhotoOptionsDialog = visible) }
+    }
+
+    fun onPhotoPickedForPreview(bytes: ByteArray) {
+        _uiState.update { it.copy(pendingPhotoBytes = bytes, showPhotoOptionsDialog = false) }
+    }
+
+    fun onDiscardPendingPhoto() {
+        _uiState.update { it.copy(pendingPhotoBytes = null) }
+    }
+
+    fun onConfirmSavePhoto() {
+        val bytes = _uiState.value.pendingPhotoBytes ?: return
+        viewModelScope.launch {
+            _uiState.update { it.copy(pendingPhotoBytes = null, isLoading = true) }
+            val result = contactsRepository.saveContactPhoto(contactId, bytes)
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    infoMessageRes = if (result.isSuccess) R.string.snackbar_photo_updated else null,
+                    errorMessageRes = if (result.isFailure) R.string.snackbar_contact_error else null
+                )
+            }
+        }
+    }
+
+    fun onRemovePhoto() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(showPhotoOptionsDialog = false, isLoading = true) }
+            val result = contactsRepository.removeContactPhoto(contactId)
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    infoMessageRes = if (result.isSuccess) R.string.snackbar_photo_removed else null,
+                    errorMessageRes = if (result.isFailure) R.string.snackbar_contact_error else null
+                )
+            }
+        }
+    }
+
+    fun onRingtoneSelected(ringtoneUri: android.net.Uri?) {
+        viewModelScope.launch {
+            val uriString = ringtoneUri?.toString()
+            val result = contactsRepository.updateContactRingtone(contactId, uriString)
+            _uiState.update {
+                it.copy(
+                    infoMessageRes = if (result.isSuccess) R.string.snackbar_ringtone_updated else null,
+                    errorMessageRes = if (result.isFailure) R.string.snackbar_contact_error else null
+                )
+            }
+        }
+    }
+
+    fun clearMessages() {
+        _uiState.update { it.copy(infoMessageRes = null, errorMessageRes = null) }
+    }
+
     fun deleteContact(onDeleted: () -> Unit) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, showDeleteDialog = false) }
@@ -82,6 +144,7 @@ class ContactDetailViewModel(
             }
         }
     }
+
 
     companion object {
         fun provideFactory(

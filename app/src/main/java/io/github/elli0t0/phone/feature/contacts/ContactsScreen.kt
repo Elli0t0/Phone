@@ -113,9 +113,19 @@ fun ContactsScreen(
                                 }
                             }
                         },
-                        onDismissDeleteDialog = { detailViewModel.setDeleteDialogVisible(false) }
+                        onDismissDeleteDialog = { detailViewModel.setDeleteDialogVisible(false) },
+                        onPhotoPicked = detailViewModel::onPhotoPickedForPreview,
+                        onConfirmSavePhoto = detailViewModel::onConfirmSavePhoto,
+                        onDiscardPendingPhoto = detailViewModel::onDiscardPendingPhoto,
+                        onRemovePhoto = detailViewModel::onRemovePhoto,
+                        onPhotoPreviewRequest = { detailViewModel.setPhotoPreviewVisible(true) },
+                        onDismissPhotoPreview = { detailViewModel.setPhotoPreviewVisible(false) },
+                        onPhotoOptionsRequest = { detailViewModel.setPhotoOptionsDialogVisible(true) },
+                        onDismissPhotoOptions = { detailViewModel.setPhotoOptionsDialogVisible(false) },
+                        onRingtoneSelected = detailViewModel::onRingtoneSelected
                     )
                 }
+
 
                 is ContactsNavDestination.Create -> {
                     val createViewModel: ContactEditViewModel = viewModel(

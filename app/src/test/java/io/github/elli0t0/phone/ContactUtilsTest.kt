@@ -55,4 +55,18 @@ class ContactUtilsTest {
         val keys = grouped.keys.toList()
         assertEquals(listOf("A", "B", "#"), keys)
     }
+
+    @Test
+    fun contactDetail_customRingtoneAndPhotoHandling() {
+        val detail = io.github.elli0t0.phone.data.contacts.model.ContactDetail(
+            id = 10L,
+            lookupKey = "k10",
+            displayName = "Charlie",
+            photoUri = "content://com.android.contacts/display_photo/1",
+            customRingtone = "content://media/internal/audio/media/42"
+        )
+        assertEquals("content://com.android.contacts/display_photo/1", detail.photoUri)
+        assertEquals("content://media/internal/audio/media/42", detail.customRingtone)
+    }
 }
+

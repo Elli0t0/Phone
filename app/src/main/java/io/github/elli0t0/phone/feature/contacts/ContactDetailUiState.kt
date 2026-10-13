@@ -8,5 +8,9 @@ data class ContactDetailUiState(
     val isFavorite: Boolean = false,
     val showDeleteDialog: Boolean = false,
     val isDeleted: Boolean = false,
-    val errorMessageRes: Int? = null
+    val showPhotoPreview: Boolean = false,
+    val showPhotoOptionsDialog: Boolean = false,
+    val pendingPhotoBytes: ByteArray? = null,
+    val errorMessageRes: Int? = null,
+    val infoMessageRes: Int? = null
 )

@@ -156,4 +156,27 @@
     <string name="call_action_keypad">Keypad</string>
     <string name="call_audio_output">Audio Output</string>
     <string name="call_sim_picker_title">Select SIM card</string>
+
+    <!-- Contact Photos, Ringtones, and Redesign Actions -->
+    <string name="action_favorite">Favorite</string>
+    <string name="action_more">More</string>
+    <string name="action_change_photo">Change photo</string>
+    <string name="action_remove_photo">Remove photo</string>
+    <string name="action_preview_photo">View photo</string>
+    <string name="action_save_photo">Save photo</string>
+    <string name="action_discard">Discard</string>
+    <string name="photo_preview_title">Contact photo</string>
+    <string name="photo_crop_preview_title">Set contact photo</string>
+    <string name="contact_details_ringtone">Ringtone</string>
+    <string name="ringtone_default">Default ringtone</string>
+    <string name="ringtone_silent">Silent</string>
+    <string name="ringtone_custom">Custom ringtone</string>
+    <string name="cd_edit_photo">Change contact photo</string>
+    <string name="cd_more_options">More options</string>
+    <string name="cd_call_contact">Call %1$s</string>
+    <string name="cd_message_contact">Message %1$s</string>
+    <string name="snackbar_photo_updated">Contact photo updated</string>
+    <string name="snackbar_photo_removed">Contact photo removed</string>
+    <string name="snackbar_ringtone_updated">Ringtone updated</string>
 </resources>
+
