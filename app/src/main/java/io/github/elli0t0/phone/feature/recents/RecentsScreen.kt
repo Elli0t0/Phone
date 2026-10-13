@@ -213,14 +213,19 @@ fun RecentsScreen(
                             }
                         }
 
-                        // Empty calls state
-                        if (uiState.errorMessage == null && uiState.daySections.isEmpty()) {
+                        // Loading skeleton or Empty calls state
+                        if (uiState.isLoading && uiState.daySections.isEmpty()) {
+                            items(count = 5, key = { "skeleton_$it" }) {
+                                RecentsLoadingSkeletonItem()
+                            }
+                        } else if (uiState.errorMessage == null && uiState.daySections.isEmpty()) {
                             item(key = "empty_recents") {
                                 RecentsEmptyState(
                                     isFiltered = uiState.selectedFilter != CallFilter.ALL || uiState.isSearching
                                 )
                             }
                         } else if (uiState.errorMessage == null) {
+
                             // Grouped Call List with Day Headers
                             uiState.daySections.forEach { section ->
                                 item(key = "header_${section.title}") {
@@ -292,3 +297,49 @@ fun RecentsScreen(
         }
     }
 }
+
+@Composable
+private fun RecentsLoadingSkeletonItem() {
+    val spacing = LocalSpacing.current
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = spacing.extraSmall)
+            .testTag("recents_skeleton_item"),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(spacing.medium),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+            )
+            Spacer(modifier = Modifier.width(spacing.medium))
+            Column(modifier = Modifier.weight(1f)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.5f)
+                        .height(18.dp)
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+                )
+                Spacer(modifier = Modifier.height(spacing.extraSmall))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.35f)
+                        .height(14.dp)
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                )
+            }
+        }
+    }
+}
+

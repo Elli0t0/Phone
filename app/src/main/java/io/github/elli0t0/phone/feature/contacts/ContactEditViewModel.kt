@@ -1,5 +1,6 @@
 package io.github.elli0t0.phone.feature.contacts
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -30,6 +31,8 @@ class ContactEditViewModel(
                 organization = initialContact.organization.orEmpty(),
                 phones = if (initialContact.phones.isNotEmpty()) initialContact.phones else listOf(ContactPhone(number = "")),
                 emails = initialContact.emails,
+                initialPhotoUri = initialContact.photoUri,
+                customRingtone = initialContact.customRingtone,
                 originalDetail = initialContact
             )
         } else {
@@ -122,6 +125,47 @@ class ContactEditViewModel(
         }
     }
 
+    fun setPhotoOptionsDialogVisible(visible: Boolean) {
+        _uiState.update { it.copy(showPhotoOptionsDialog = visible) }
+    }
+
+    fun setPhotoPreviewVisible(visible: Boolean) {
+        _uiState.update { it.copy(showPhotoPreview = visible) }
+    }
+
+    fun onPhotoPickedForPreview(bytes: ByteArray) {
+        _uiState.update { it.copy(pendingCropPhotoBytes = bytes, showPhotoOptionsDialog = false) }
+    }
+
+    fun onDiscardPendingCropPhoto() {
+        _uiState.update { it.copy(pendingCropPhotoBytes = null) }
+    }
+
+    fun onConfirmSaveCroppedPhoto() {
+        _uiState.update { state ->
+            state.copy(
+                stagedPhotoBytes = state.pendingCropPhotoBytes,
+                isPhotoRemoved = false,
+                pendingCropPhotoBytes = null
+            )
+        }
+    }
+
+    fun onRemovePhoto() {
+        _uiState.update { state ->
+            state.copy(
+                stagedPhotoBytes = null,
+                isPhotoRemoved = true,
+                showPhotoOptionsDialog = false
+            )
+        }
+    }
+
+    fun onRingtoneSelected(uri: Uri?) {
+        val uriString = uri?.toString()
+        _uiState.update { it.copy(customRingtone = uriString) }
+    }
+
     fun saveContact(onSuccess: (savedId: Long) -> Unit) {
         val state = _uiState.value
         val trimmedName = state.displayName.trim()
@@ -147,6 +191,14 @@ class ContactEditViewModel(
                 val result = contactsRepository.createContact(input)
                 if (result.isSuccess) {
                     val newId = result.getOrNull() ?: 0L
+                    if (newId > 0L) {
+                        if (state.stagedPhotoBytes != null) {
+                            contactsRepository.saveContactPhoto(newId, state.stagedPhotoBytes)
+                        }
+                        if (state.customRingtone != null) {
+                            contactsRepository.updateContactRingtone(newId, state.customRingtone)
+                        }
+                    }
                     _uiState.update { it.copy(isLoading = false, isSaved = true) }
                     onSuccess(newId)
                 } else {
@@ -160,6 +212,14 @@ class ContactEditViewModel(
                 )
                 val result = contactsRepository.updateContact(state.contactId, original, input)
                 if (result.isSuccess) {
+                    if (state.stagedPhotoBytes != null) {
+                        contactsRepository.saveContactPhoto(state.contactId, state.stagedPhotoBytes)
+                    } else if (state.isPhotoRemoved) {
+                        contactsRepository.removeContactPhoto(state.contactId)
+                    }
+                    if (state.customRingtone != original.customRingtone) {
+                        contactsRepository.updateContactRingtone(state.contactId, state.customRingtone)
+                    }
                     _uiState.update { it.copy(isLoading = false, isSaved = true) }
                     onSuccess(state.contactId)
                 } else {

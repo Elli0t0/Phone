@@ -1,0 +1,61 @@
+package io.github.elli0t0.phone.data.settings.model
+
+enum class AccentPreset(val colorValue: Long, val label: String) {
+    ONE_UI_BLUE(0xFF0072DEL, "Blue"),
+    EMERALD_GREEN(0xFF00875AL, "Green"),
+    ROYAL_PURPLE(0xFF6554C0L, "Purple"),
+    SUNSET_ORANGE(0xFFFF5630L, "Orange"),
+    CRIMSON_RED(0xFFDE350BL, "Red"),
+    TEAL_CYAN(0xFF00B8D9L, "Cyan"),
+    ROSE_PINK(0xFFE03997L, "Pink"),
+    AMBER_GOLD(0xFFFFAB00L, "Amber")
+}
+
+enum class ListDensity(val verticalPaddingDp: Int, val label: String) {
+    COMPACT(4, "Compact"),
+    DEFAULT(8, "Default"),
+    COMFORTABLE(14, "Comfortable")
+}
+
+enum class CardStyle(val label: String) {
+    ROUNDED("Rounded"),
+    SQUARE("Square"),
+    OUTLINED("Outlined")
+}
+
+enum class AnimationOption(val label: String) {
+    ON("On"),
+    REDUCED("Reduced"),
+    OFF("Off")
+}
+
+enum class StartTab(val route: String, val label: String) {
+    KEYPAD("dialpad", "Keypad"),
+    RECENTS("recents", "Recents"),
+    CONTACTS("contacts", "Contacts")
+}
+
+enum class ContactSortOrder(val label: String) {
+    FIRST_NAME("First name"),
+    LAST_NAME("Last name")
+}
+
+enum class ContactNameFormat(val label: String) {
+    FIRST_NAME_FIRST("First name first"),
+    LAST_NAME_FIRST("Last name first")
+}
+
+data class AppSettings(
+    val accentColor: Long = AccentPreset.ONE_UI_BLUE.colorValue,
+    val isCustomAccent: Boolean = false,
+    val dynamicColor: Boolean = true,
+    val pureBlackDarkMode: Boolean = false,
+    val listDensity: ListDensity = ListDensity.DEFAULT,
+    val cardStyle: CardStyle = CardStyle.ROUNDED,
+    val fontSizeScale: Float = 1.0f,
+    val animationOption: AnimationOption = AnimationOption.ON,
+    val showBottomBarLabels: Boolean = true,
+    val defaultStartTab: StartTab = StartTab.KEYPAD,
+    val contactSortOrder: ContactSortOrder = ContactSortOrder.FIRST_NAME,
+    val contactNameFormat: ContactNameFormat = ContactNameFormat.FIRST_NAME_FIRST
+)

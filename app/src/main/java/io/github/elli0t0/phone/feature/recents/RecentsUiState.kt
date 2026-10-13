@@ -19,6 +19,8 @@ data class RecentsUiState(
     val searchQuery: String = "",
     val expandedCallId: Long? = null,
     val isSearching: Boolean = false,
+    val isLoading: Boolean = false,
     val userMessageRes: Int? = null,
     val errorMessage: String? = null
 )
+

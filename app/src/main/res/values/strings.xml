@@ -178,5 +178,54 @@
     <string name="snackbar_photo_updated">Contact photo updated</string>
     <string name="snackbar_photo_removed">Contact photo removed</string>
     <string name="snackbar_ringtone_updated">Ringtone updated</string>
+
+    <!-- Appearance and Settings -->
+    <string name="settings_cat_appearance">Appearance &amp; Display</string>
+    <string name="settings_dynamic_color">Dynamic color</string>
+    <string name="settings_dynamic_color_desc">Match app colors to your system wallpaper theme</string>
+    <string name="settings_accent_color">Accent color</string>
+    <string name="settings_accent_color_desc">Choose a primary accent for buttons, icons, and highlights</string>
+    <string name="settings_custom_color">Custom color</string>
+    <string name="settings_custom_color_dialog_title">Enter Hex Color (#RRGGBB)</string>
+    <string name="settings_pure_black">Pure black dark mode</string>
+    <string name="settings_pure_black_desc">Use true OLED black backgrounds in dark theme</string>
+    <string name="settings_font_scale">Font size scale</string>
+    <string name="settings_font_scale_desc">Adjust text sizing throughout the app</string>
+
+    <string name="settings_cat_layout">Layout &amp; Density</string>
+    <string name="settings_list_density">List density</string>
+    <string name="settings_list_density_compact">Compact</string>
+    <string name="settings_list_density_default">Default</string>
+    <string name="settings_list_density_comfortable">Comfortable</string>
+    <string name="settings_card_style">Card style</string>
+    <string name="settings_card_style_rounded">Rounded</string>
+    <string name="settings_card_style_square">Square</string>
+    <string name="settings_card_style_outlined">Outlined</string>
+
+    <string name="settings_cat_navigation">Navigation &amp; Behavior</string>
+    <string name="settings_default_tab">Default start tab</string>
+    <string name="settings_default_tab_keypad">Keypad</string>
+    <string name="settings_default_tab_recents">Recents</string>
+    <string name="settings_default_tab_contacts">Contacts</string>
+    <string name="settings_bottom_labels">Bottom bar labels</string>
+    <string name="settings_bottom_labels_desc">Display tab text labels below icons in navigation bar</string>
+    <string name="settings_animations">Animations</string>
+    <string name="settings_animations_on">On</string>
+    <string name="settings_animations_reduced">Reduced</string>
+    <string name="settings_animations_off">Off</string>
+
+    <string name="settings_cat_contacts">Contacts Display</string>
+    <string name="settings_sort_order">Sort contacts by</string>
+    <string name="settings_sort_first_name">First name</string>
+    <string name="settings_sort_last_name">Last name</string>
+    <string name="settings_name_format">Name display format</string>
+    <string name="settings_format_first_first">First name first</string>
+    <string name="settings_format_last_first">Last name first</string>
+
+    <string name="settings_cat_reset">Reset</string>
+    <string name="settings_reset_button">Reset to defaults</string>
+    <string name="settings_reset_dialog_title">Reset settings?</string>
+    <string name="settings_reset_dialog_message">This will restore all appearance, layout, and behavior preferences to their factory defaults.</string>
+    <string name="settings_reset_confirm">Reset</string>
 </resources>
 

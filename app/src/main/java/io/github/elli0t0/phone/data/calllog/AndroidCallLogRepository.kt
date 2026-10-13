@@ -5,23 +5,33 @@ import android.content.ContentUris
 import android.database.ContentObserver
 import android.database.Cursor
 import android.net.Uri
+import android.os.Build
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.CallLog
 import android.provider.ContactsContract
+import android.util.Log
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import io.github.elli0t0.phone.data.calllog.model.CallType
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.concurrent.ConcurrentHashMap
 
 class AndroidCallLogRepository(
-    private val contentResolver: ContentResolver
+    private val contentResolver: ContentResolver,
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 ) : CallLogRepository {
+
+    private val tag = "CallLogRepository"
 
     private data class ResolvedContact(
         val displayName: String?,
@@ -30,51 +40,79 @@ class AndroidCallLogRepository(
         val photoUri: String?
     )
 
-    override fun getCallLogsFlow(): Flow<List<CallLogEntry>> = callbackFlow {
-        fun sendCurrentLogs() {
-            try {
-                val logs = queryCallLogs()
-                trySend(logs)
-            } catch (e: SecurityException) {
-                android.util.Log.e("CallLogRepository", "SecurityException reading call logs", e)
-                trySend(emptyList())
-            } catch (e: Exception) {
-                android.util.Log.e("CallLogRepository", "Exception reading call logs", e)
-                trySend(emptyList())
-            }
-        }
+    private val resolvedContactsCache = ConcurrentHashMap<String, ResolvedContact>()
+    private val _callLogsFlow = MutableStateFlow<List<CallLogEntry>>(emptyList())
+    private val _isLoadingFlow = MutableStateFlow(true)
 
-        // Send initial load
-        sendCurrentLogs()
+    override val isLoadingFlow: StateFlow<Boolean> = _isLoadingFlow.asStateFlow()
 
-        val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
-            override fun onChange(selfChange: Boolean, uri: Uri?) {
-                sendCurrentLogs()
-            }
-        }
+    private var contentObserver: ContentObserver? = null
+    private var isObserverRegistered = false
+    private var queryJob: Job? = null
 
+    init {
+        registerObserverIfNeeded()
+    }
+
+    override fun reload() {
+        loadCallLogs()
+    }
+
+    fun preload() {
+        loadCallLogs()
+    }
+
+    private fun registerObserverIfNeeded() {
+        if (isObserverRegistered) return
         try {
+            val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
+                override fun onChange(selfChange: Boolean, uri: Uri?) {
+                    loadCallLogs()
+                }
+            }
             contentResolver.registerContentObserver(
                 CallLog.Calls.CONTENT_URI,
                 true,
                 observer
             )
+            contentObserver = observer
+            isObserverRegistered = true
         } catch (e: SecurityException) {
-            android.util.Log.e("CallLogRepository", "Permission not granted for ContentObserver", e)
+            Log.w(tag, "Permission not granted to register CallLog ContentObserver")
         } catch (e: Exception) {
-            android.util.Log.e("CallLogRepository", "Failed to register ContentObserver", e)
+            Log.e(tag, "Failed to register CallLog ContentObserver", e)
         }
+    }
 
-        awaitClose {
+    override fun getCallLogsFlow(): Flow<List<CallLogEntry>> {
+        registerObserverIfNeeded()
+        if (_callLogsFlow.value.isEmpty()) {
+            loadCallLogs()
+        }
+        return _callLogsFlow
+    }
+
+    @Synchronized
+    private fun loadCallLogs() {
+        queryJob?.cancel()
+        queryJob = scope.launch(Dispatchers.IO) {
             try {
-                contentResolver.unregisterContentObserver(observer)
+                if (_callLogsFlow.value.isEmpty()) {
+                    _isLoadingFlow.value = true
+                }
+                executeStreamingQuery()
+            } catch (e: SecurityException) {
+                Log.e(tag, "SecurityException loading call logs", e)
+                _callLogsFlow.value = emptyList()
+                _isLoadingFlow.value = false
             } catch (e: Exception) {
-                android.util.Log.e("CallLogRepository", "Failed to unregister ContentObserver", e)
+                Log.e(tag, "Exception loading call logs", e)
+                _isLoadingFlow.value = false
             }
         }
-    }.flowOn(Dispatchers.IO)
+    }
 
-    private fun queryCallLogs(): List<CallLogEntry> {
+    private suspend fun executeStreamingQuery() = withContext(Dispatchers.IO) {
         val projection = arrayOf(
             CallLog.Calls._ID,
             CallLog.Calls.NUMBER,
@@ -85,12 +123,9 @@ class AndroidCallLogRepository(
             CallLog.Calls.PHONE_ACCOUNT_ID
         )
 
-        val resolvedContactsCache = mutableMapOf<String, ResolvedContact>()
-        val result = mutableListOf<CallLogEntry>()
-
         val cursor: Cursor? = try {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                val queryArgs = android.os.Bundle().apply {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val queryArgs = Bundle().apply {
                     putInt(ContentResolver.QUERY_ARG_LIMIT, 500)
                     putStringArray(
                         ContentResolver.QUERY_ARG_SORT_COLUMNS,
@@ -101,31 +136,30 @@ class AndroidCallLogRepository(
                         ContentResolver.QUERY_SORT_DIRECTION_DESCENDING
                     )
                 }
-                contentResolver.query(
-                    CallLog.Calls.CONTENT_URI,
-                    projection,
-                    queryArgs,
-                    null
-                )
+                contentResolver.query(CallLog.Calls.CONTENT_URI, projection, queryArgs, null)
             } else {
-                val sortOrder = "${CallLog.Calls.DATE} DESC LIMIT 500"
                 contentResolver.query(
                     CallLog.Calls.CONTENT_URI,
                     projection,
                     null,
                     null,
-                    sortOrder
+                    "${CallLog.Calls.DATE} DESC LIMIT 500"
                 )
             }
         } catch (e: Exception) {
-            android.util.Log.e("CallLogRepository", "Error executing call log query", e)
+            Log.e(tag, "Error querying CallLog cursor", e)
             throw e
         }
 
         if (cursor == null) {
-            android.util.Log.w("CallLogRepository", "Call log query returned null cursor")
-            return emptyList()
+            _callLogsFlow.value = emptyList()
+            _isLoadingFlow.value = false
+            return@withContext
         }
+
+        val entries = mutableListOf<CallLogEntry>()
+        val unlookupedNumbers = mutableSetOf<String>()
+        var emittedFirst50 = false
 
         cursor.use { c ->
             val idIdx = c.getColumnIndex(CallLog.Calls._ID)
@@ -136,6 +170,7 @@ class AndroidCallLogRepository(
             val durationIdx = c.getColumnIndex(CallLog.Calls.DURATION)
             val accountIdIdx = c.getColumnIndex(CallLog.Calls.PHONE_ACCOUNT_ID)
 
+            var count = 0
             while (c.moveToNext()) {
                 val id = if (idIdx >= 0) c.getLong(idIdx) else 0L
                 val rawNumber = if (numberIdx >= 0) c.getString(numberIdx) ?: "" else ""
@@ -146,42 +181,86 @@ class AndroidCallLogRepository(
                 val phoneAccountId = if (accountIdIdx >= 0) c.getString(accountIdIdx) else null
 
                 val callType = mapCallType(typeCode)
-                val resolvedContact = if (rawNumber.isNotBlank()) {
-                    try {
-                        resolvedContactsCache.getOrPut(rawNumber) {
-                            resolveContactByNumber(rawNumber)
-                        }
-                    } catch (e: Exception) {
-                        android.util.Log.w("CallLogRepository", "Failed to resolve contact for $rawNumber", e)
-                        null
-                    }
-                } else null
-
                 val simInfo = phoneAccountId?.let { "SIM ${it.take(2)}" }
 
-                result.add(
+                // Check in-memory cache without blocking
+                val cachedContact = if (rawNumber.isNotBlank()) resolvedContactsCache[rawNumber] else null
+                if (cachedContact == null && rawNumber.isNotBlank()) {
+                    unlookupedNumbers.add(rawNumber)
+                }
+
+                val displayName = cachedContact?.displayName ?: cachedName
+
+                entries.add(
                     CallLogEntry(
                         id = id,
                         number = rawNumber,
                         formattedNumber = PhoneNumberFormatter.format(rawNumber),
                         cachedName = cachedName,
-                        contactName = resolvedContact?.displayName,
-                        contactId = resolvedContact?.contactId,
-                        contactLookupKey = resolvedContact?.lookupKey,
-                        contactPhotoUri = resolvedContact?.photoUri,
+                        contactName = displayName,
+                        contactId = cachedContact?.contactId,
+                        contactLookupKey = cachedContact?.lookupKey,
+                        contactPhotoUri = cachedContact?.photoUri,
                         type = callType,
                         date = date,
                         durationSeconds = duration,
                         simInfo = simInfo
                     )
                 )
+
+                count++
+                // Fast path: emit first 50 rows immediately so screen renders instantly
+                if (count == 50 && !emittedFirst50) {
+                    emittedFirst50 = true
+                    _callLogsFlow.value = entries.toList()
+                    _isLoadingFlow.value = false
+                }
             }
         }
 
-        return result
+        // Full emit of all rows
+        _callLogsFlow.value = entries.toList()
+        _isLoadingFlow.value = false
+
+        // Background pass: resolve names in batch for un-looked-up numbers
+        if (unlookupedNumbers.isNotEmpty()) {
+            resolveContactsInBatch(unlookupedNumbers, entries)
+        }
     }
 
-    private fun resolveContactByNumber(number: String): ResolvedContact {
+    private suspend fun resolveContactsInBatch(
+        numbers: Set<String>,
+        currentEntries: List<CallLogEntry>
+    ) = withContext(Dispatchers.IO) {
+        var didResolveAny = false
+        for (num in numbers) {
+            if (resolvedContactsCache.containsKey(num)) continue
+            val resolved = querySinglePhoneLookup(num)
+            resolvedContactsCache[num] = resolved
+            if (!resolved.displayName.isNullOrBlank()) {
+                didResolveAny = true
+            }
+        }
+
+        if (didResolveAny) {
+            val updated = currentEntries.map { entry ->
+                val cached = resolvedContactsCache[entry.number]
+                if (cached != null && (!cached.displayName.isNullOrBlank() || cached.photoUri != null)) {
+                    entry.copy(
+                        contactName = cached.displayName ?: entry.cachedName,
+                        contactId = cached.contactId ?: entry.contactId,
+                        contactLookupKey = cached.lookupKey ?: entry.contactLookupKey,
+                        contactPhotoUri = cached.photoUri ?: entry.contactPhotoUri
+                    )
+                } else {
+                    entry
+                }
+            }
+            _callLogsFlow.value = updated
+        }
+    }
+
+    private fun querySinglePhoneLookup(number: String): ResolvedContact {
         if (number.isBlank()) return ResolvedContact(null, null, null, null)
 
         val uri = Uri.withAppendedPath(
@@ -212,7 +291,7 @@ class AndroidCallLogRepository(
                 )
             }
         } catch (_: Exception) {
-            // Permission or resolution fallback
+            // Permission revoked or not granted
         } finally {
             cursor?.close()
         }
@@ -236,9 +315,11 @@ class AndroidCallLogRepository(
         try {
             val uri = ContentUris.withAppendedId(CallLog.Calls.CONTENT_URI, id)
             val deletedRows = contentResolver.delete(uri, null, null)
-            deletedRows > 0
-        } catch (_: SecurityException) {
-            false
+            if (deletedRows > 0) {
+                // Update in-memory state immediately
+                _callLogsFlow.value = _callLogsFlow.value.filter { it.id != id }
+                true
+            } else false
         } catch (_: Exception) {
             false
         }

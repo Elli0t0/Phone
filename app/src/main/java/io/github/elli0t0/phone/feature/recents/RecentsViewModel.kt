@@ -60,15 +60,17 @@ class RecentsViewModel(
     private data class LogData(
         val calls: List<CallLogEntry>,
         val favorites: List<io.github.elli0t0.phone.data.contacts.model.ContactSummary>,
+        val isLoading: Boolean,
         val errorMsg: String?
     )
 
     private val logDataFlow = combine(
         callLogsFlow,
         favoritesFlow,
+        callLogRepository.isLoadingFlow,
         _errorMessage
-    ) { calls, favorites, errorMsg ->
-        LogData(calls, favorites, errorMsg)
+    ) { calls, favorites, isLoading, errorMsg ->
+        LogData(calls, favorites, isLoading, errorMsg)
     }
 
     private data class FilterState(
@@ -102,10 +104,12 @@ class RecentsViewModel(
             searchQuery = filterState.query,
             expandedCallId = filterState.expandedId,
             isSearching = filterState.query.isNotBlank(),
+            isLoading = logData.isLoading && logData.calls.isEmpty(),
             userMessageRes = filterState.messageRes,
             errorMessage = logData.errorMsg
         )
     }.stateIn(
+
         scope = activeScope ?: CoroutineScope(kotlinx.coroutines.Dispatchers.Main.immediate),
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = RecentsUiState()

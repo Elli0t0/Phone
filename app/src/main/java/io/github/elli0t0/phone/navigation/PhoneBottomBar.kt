@@ -19,6 +19,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 fun PhoneBottomBar(
     navController: NavController,
     currentRoute: String?,
+    showLabels: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     NavigationBar(
@@ -48,12 +49,15 @@ fun PhoneBottomBar(
                         contentDescription = stringResource(id = screen.contentDescriptionRes)
                     )
                 },
-                label = {
-                    Text(
-                        text = stringResource(id = screen.titleRes),
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                },
+                alwaysShowLabel = showLabels,
+                label = if (showLabels) {
+                    {
+                        Text(
+                            text = stringResource(id = screen.titleRes),
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
+                } else null,
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = MaterialTheme.colorScheme.primary,
                     selectedTextColor = MaterialTheme.colorScheme.primary,

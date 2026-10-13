@@ -43,7 +43,11 @@ fun ContactsScreen(
     val repository = app.container.contactsRepository
 
     val listViewModel: ContactsViewModel = viewModel(
-        factory = ContactsViewModel.provideFactory(repository, app.container.favoritesRepository)
+        factory = ContactsViewModel.provideFactory(
+            repository,
+            app.container.favoritesRepository,
+            app.container.settingsRepository
+        )
     )
     val uiState by listViewModel.uiState.collectAsStateWithLifecycle()
     val permissionState = rememberContactsPermissionState()
@@ -154,7 +158,16 @@ fun ContactsScreen(
                                 }
                             }
                         },
-                        onCancelClick = { currentDestination = ContactsNavDestination.List }
+                        onCancelClick = { currentDestination = ContactsNavDestination.List },
+                        onPhotoPicked = createViewModel::onPhotoPickedForPreview,
+                        onConfirmSaveCroppedPhoto = createViewModel::onConfirmSaveCroppedPhoto,
+                        onDiscardPendingCropPhoto = createViewModel::onDiscardPendingCropPhoto,
+                        onRemovePhoto = createViewModel::onRemovePhoto,
+                        onPhotoPreviewRequest = { createViewModel.setPhotoPreviewVisible(true) },
+                        onDismissPhotoPreview = { createViewModel.setPhotoPreviewVisible(false) },
+                        onPhotoOptionsRequest = { createViewModel.setPhotoOptionsDialogVisible(true) },
+                        onDismissPhotoOptions = { createViewModel.setPhotoOptionsDialogVisible(false) },
+                        onRingtoneSelected = createViewModel::onRingtoneSelected
                     )
                 }
 
@@ -187,9 +200,19 @@ fun ContactsScreen(
                         },
                         onCancelClick = {
                             currentDestination = ContactsNavDestination.Detail(dest.contact.id, dest.contact.lookupKey)
-                        }
+                        },
+                        onPhotoPicked = editViewModel::onPhotoPickedForPreview,
+                        onConfirmSaveCroppedPhoto = editViewModel::onConfirmSaveCroppedPhoto,
+                        onDiscardPendingCropPhoto = editViewModel::onDiscardPendingCropPhoto,
+                        onRemovePhoto = editViewModel::onRemovePhoto,
+                        onPhotoPreviewRequest = { editViewModel.setPhotoPreviewVisible(true) },
+                        onDismissPhotoPreview = { editViewModel.setPhotoPreviewVisible(false) },
+                        onPhotoOptionsRequest = { editViewModel.setPhotoOptionsDialogVisible(true) },
+                        onDismissPhotoOptions = { editViewModel.setPhotoOptionsDialogVisible(false) },
+                        onRingtoneSelected = editViewModel::onRingtoneSelected
                     )
                 }
+
             }
         }
     }
