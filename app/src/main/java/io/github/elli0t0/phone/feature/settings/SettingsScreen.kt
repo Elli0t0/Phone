@@ -26,14 +26,13 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
@@ -113,6 +112,14 @@ fun SettingsScreen(
 
     var showResetDialog by remember { mutableStateOf(false) }
     var showCustomColorDialog by remember { mutableStateOf(false) }
+    var showThemeDialog by remember { mutableStateOf(false) }
+    var showAccentDialog by remember { mutableStateOf(false) }
+    var showDensityDialog by remember { mutableStateOf(false) }
+    var showCardStyleDialog by remember { mutableStateOf(false) }
+    var showTabDialog by remember { mutableStateOf(false) }
+    var showAnimDialog by remember { mutableStateOf(false) }
+    var showSortDialog by remember { mutableStateOf(false) }
+    var showFormatDialog by remember { mutableStateOf(false) }
     var customColorHexInput by remember { mutableStateOf("") }
     var customColorError by remember { mutableStateOf(false) }
 
@@ -191,6 +198,147 @@ fun SettingsScreen(
                     Text(text = stringResource(id = R.string.action_cancel))
                 }
             }
+        )
+    }
+
+    if (showThemeDialog) {
+        SettingsChoiceDialog(
+            title = stringResource(id = R.string.settings_theme),
+            options = ThemeMode.entries.map { it.label to it },
+            selected = settings.themeMode,
+            onSelect = { viewModel.onThemeModeChanged(it); showThemeDialog = false },
+            onDismiss = { showThemeDialog = false }
+        )
+    }
+
+    if (showAccentDialog) {
+        AlertDialog(
+            onDismissRequest = { showAccentDialog = false },
+            title = { Text(text = stringResource(id = R.string.settings_accent_color)) },
+            text = {
+                Column {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        AccentPreset.entries.forEach { preset ->
+                            val isSelected = !settings.dynamicColor &&
+                                !settings.isCustomAccent &&
+                                settings.accentColor == preset.colorValue
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(preset.colorValue))
+                                    .clickable {
+                                        viewModel.onAccentColorSelected(preset.colorValue, isCustom = false)
+                                        showAccentDialog = false
+                                    }
+                                    .border(
+                                        width = if (isSelected) 3.dp else 1.dp,
+                                        color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+                                        shape = CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (isSelected) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_check),
+                                        contentDescription = preset.label,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                showAccentDialog = false
+                                customColorHexInput = String.format("#%06X", 0xFFFFFF and settings.accentColor.toInt())
+                                showCustomColorDialog = true
+                            },
+                            shape = RoundedCornerShape(19.dp),
+                            modifier = Modifier.height(38.dp)
+                        ) {
+                            Text(
+                                text = if (settings.isCustomAccent && !settings.dynamicColor) {
+                                    "Custom \u2713"
+                                } else {
+                                    stringResource(id = R.string.settings_custom_color)
+                                },
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showAccentDialog = false }) {
+                    Text(text = stringResource(id = R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    if (showDensityDialog) {
+        SettingsChoiceDialog(
+            title = stringResource(id = R.string.settings_list_density),
+            options = ListDensity.entries.map { it.label to it },
+            selected = settings.listDensity,
+            onSelect = { viewModel.onListDensityChanged(it); showDensityDialog = false },
+            onDismiss = { showDensityDialog = false }
+        )
+    }
+
+    if (showCardStyleDialog) {
+        SettingsChoiceDialog(
+            title = stringResource(id = R.string.settings_card_style),
+            options = CardStyle.entries.map { it.label to it },
+            selected = settings.cardStyle,
+            onSelect = { viewModel.onCardStyleChanged(it); showCardStyleDialog = false },
+            onDismiss = { showCardStyleDialog = false }
+        )
+    }
+
+    if (showTabDialog) {
+        SettingsChoiceDialog(
+            title = stringResource(id = R.string.settings_default_tab),
+            options = StartTab.entries.map { it.label to it },
+            selected = settings.defaultStartTab,
+            onSelect = { viewModel.setDefaultStartTab(it); showTabDialog = false },
+            onDismiss = { showTabDialog = false }
+        )
+    }
+
+    if (showAnimDialog) {
+        SettingsChoiceDialog(
+            title = stringResource(id = R.string.settings_animations),
+            options = AnimationOption.entries.map { it.label to it },
+            selected = settings.animationOption,
+            onSelect = { viewModel.onAnimationOptionChanged(it); showAnimDialog = false },
+            onDismiss = { showAnimDialog = false }
+        )
+    }
+
+    if (showSortDialog) {
+        SettingsChoiceDialog(
+            title = stringResource(id = R.string.settings_sort_order),
+            options = ContactSortOrder.entries.map { it.label to it },
+            selected = settings.contactSortOrder,
+            onSelect = { viewModel.onContactSortOrderChanged(it); showSortDialog = false },
+            onDismiss = { showSortDialog = false }
+        )
+    }
+
+    if (showFormatDialog) {
+        SettingsChoiceDialog(
+            title = stringResource(id = R.string.settings_name_format),
+            options = ContactNameFormat.entries.map { it.label to it },
+            selected = settings.contactNameFormat,
+            onSelect = { viewModel.onContactNameFormatChanged(it); showFormatDialog = false },
+            onDismiss = { showFormatDialog = false }
         )
     }
 
@@ -316,37 +464,11 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
-                        // Theme (System, Light, Dark)
-                        Text(
-                            text = stringResource(id = R.string.settings_theme),
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
+                        SettingsRow(
+                            title = stringResource(id = R.string.settings_theme),
+                            subtitle = settings.themeMode.label,
+                            onClick = { showThemeDialog = true }
                         )
-                        Text(
-                            text = stringResource(id = R.string.settings_theme_desc),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(spacing.small))
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            ThemeMode.entries.forEach { mode ->
-                                FilterChip(
-                                    selected = settings.themeMode == mode,
-                                    onClick = { viewModel.onThemeModeChanged(mode) },
-                                    label = {
-                                        Text(
-                                            when (mode) {
-                                                ThemeMode.SYSTEM -> stringResource(id = R.string.settings_theme_system)
-                                                ThemeMode.LIGHT -> stringResource(id = R.string.settings_theme_light)
-                                                ThemeMode.DARK -> stringResource(id = R.string.settings_theme_dark)
-                                            }
-                                        )
-                                    }
-                                )
-                            }
-                        }
 
                         Spacer(modifier = Modifier.height(spacing.small))
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
@@ -354,126 +476,34 @@ fun SettingsScreen(
 
                         // Dynamic Color (Android 12+)
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Column(modifier = Modifier.weight(1f).padding(end = spacing.small)) {
-                                    Text(
-                                        text = stringResource(id = R.string.settings_dynamic_color),
-                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
-                                    )
-                                    Text(
-                                        text = stringResource(id = R.string.settings_dynamic_color_desc),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                Switch(
-                                    checked = settings.dynamicColor,
-                                    onCheckedChange = { viewModel.onDynamicColorChanged(it) }
-                                )
-                            }
+                            SettingsSwitchRow(
+                                title = stringResource(id = R.string.settings_dynamic_color),
+                                subtitle = stringResource(id = R.string.settings_dynamic_color_desc),
+                                checked = settings.dynamicColor,
+                                onCheckedChange = { viewModel.onDynamicColorChanged(it) }
+                            )
                             Spacer(modifier = Modifier.height(spacing.small))
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                             Spacer(modifier = Modifier.height(spacing.small))
                         }
 
-                        // Accent Color
-                        Text(
-                            text = stringResource(id = R.string.settings_accent_color),
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
+                        SettingsRow(
+                            title = stringResource(id = R.string.settings_accent_color),
+                            subtitle = AccentPreset.entries.find { it.colorValue == settings.accentColor }?.label
+                                ?: stringResource(id = R.string.settings_custom_color),
+                            onClick = { showAccentDialog = true }
                         )
-                        Text(
-                            text = stringResource(id = R.string.settings_accent_color_desc),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(spacing.small))
-
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            AccentPreset.entries.forEach { preset ->
-                                val isSelected = !settings.dynamicColor &&
-                                    !settings.isCustomAccent &&
-                                    settings.accentColor == preset.colorValue
-
-                                Box(
-                                    modifier = Modifier
-                                        .size(38.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(preset.colorValue))
-                                        .clickable {
-                                            viewModel.onAccentColorSelected(preset.colorValue, isCustom = false)
-                                        }
-                                        .border(
-                                            width = if (isSelected) 3.dp else 1.dp,
-                                            color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
-                                            shape = CircleShape
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    if (isSelected) {
-                                        Icon(
-                                            painter = painterResource(id = R.drawable.ic_check),
-                                            contentDescription = preset.label,
-                                            tint = Color.White,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    }
-                                }
-                            }
-
-                            // Custom Color Button
-                            OutlinedButton(
-                                onClick = {
-                                    customColorHexInput = String.format("#%06X", 0xFFFFFF and settings.accentColor.toInt())
-                                    showCustomColorDialog = true
-                                },
-                                shape = RoundedCornerShape(19.dp),
-                                modifier = Modifier.height(38.dp)
-                            ) {
-                                Text(
-                                    text = if (settings.isCustomAccent && !settings.dynamicColor) {
-                                        "Custom \u2713"
-                                    } else {
-                                        stringResource(id = R.string.settings_custom_color)
-                                    },
-                                    style = MaterialTheme.typography.labelMedium
-                                )
-                            }
-                        }
 
                         Spacer(modifier = Modifier.height(spacing.small))
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                         Spacer(modifier = Modifier.height(spacing.small))
 
-                        // Pure Black Dark Mode
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(modifier = Modifier.weight(1f).padding(end = spacing.small)) {
-                                Text(
-                                    text = stringResource(id = R.string.settings_pure_black),
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
-                                )
-                                Text(
-                                    text = stringResource(id = R.string.settings_pure_black_desc),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Switch(
-                                checked = settings.pureBlackDarkMode,
-                                onCheckedChange = { viewModel.onPureBlackDarkModeChanged(it) }
-                            )
-                        }
+                        SettingsSwitchRow(
+                            title = stringResource(id = R.string.settings_pure_black),
+                            subtitle = stringResource(id = R.string.settings_pure_black_desc),
+                            checked = settings.pureBlackDarkMode,
+                            onCheckedChange = { viewModel.onPureBlackDarkModeChanged(it) }
+                        )
 
                         Spacer(modifier = Modifier.height(spacing.small))
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
@@ -517,46 +547,21 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
-                        Text(
-                            text = stringResource(id = R.string.settings_list_density),
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
+                        SettingsRow(
+                            title = stringResource(id = R.string.settings_list_density),
+                            subtitle = settings.listDensity.label,
+                            onClick = { showDensityDialog = true }
                         )
-                        Spacer(modifier = Modifier.height(spacing.small))
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            ListDensity.entries.forEach { density ->
-                                FilterChip(
-                                    selected = settings.listDensity == density,
-                                    onClick = { viewModel.onListDensityChanged(density) },
-                                    label = { Text(density.label) },
-                                    colors = FilterChipDefaults.filterChipColors()
-                                )
-                            }
-                        }
 
                         Spacer(modifier = Modifier.height(spacing.small))
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                         Spacer(modifier = Modifier.height(spacing.small))
 
-                        Text(
-                            text = stringResource(id = R.string.settings_card_style),
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
+                        SettingsRow(
+                            title = stringResource(id = R.string.settings_card_style),
+                            subtitle = settings.cardStyle.label,
+                            onClick = { showCardStyleDialog = true }
                         )
-                        Spacer(modifier = Modifier.height(spacing.small))
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            CardStyle.entries.forEach { style ->
-                                FilterChip(
-                                    selected = settings.cardStyle == style,
-                                    onClick = { viewModel.onCardStyleChanged(style) },
-                                    label = { Text(style.label) }
-                                )
-                            }
-                        }
                     }
                 }
             }
@@ -573,71 +578,32 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
-                        Text(
-                            text = stringResource(id = R.string.settings_default_tab),
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
+                        SettingsRow(
+                            title = stringResource(id = R.string.settings_default_tab),
+                            subtitle = settings.defaultStartTab.label,
+                            onClick = { showTabDialog = true }
                         )
-                        Spacer(modifier = Modifier.height(spacing.small))
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            StartTab.entries.forEach { tab ->
-                                FilterChip(
-                                    selected = settings.defaultStartTab == tab,
-                                    onClick = { viewModel.setDefaultStartTab(tab) },
-                                    label = { Text(tab.label) }
-                                )
-                            }
-                        }
 
                         Spacer(modifier = Modifier.height(spacing.small))
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                         Spacer(modifier = Modifier.height(spacing.small))
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(modifier = Modifier.weight(1f).padding(end = spacing.small)) {
-                                Text(
-                                    text = stringResource(id = R.string.settings_bottom_labels),
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
-                                )
-                                Text(
-                                    text = stringResource(id = R.string.settings_bottom_labels_desc),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Switch(
-                                checked = settings.showBottomBarLabels,
-                                onCheckedChange = { viewModel.onShowBottomBarLabelsChanged(it) }
-                            )
-                        }
+                        SettingsSwitchRow(
+                            title = stringResource(id = R.string.settings_bottom_labels),
+                            subtitle = stringResource(id = R.string.settings_bottom_labels_desc),
+                            checked = settings.showBottomBarLabels,
+                            onCheckedChange = { viewModel.onShowBottomBarLabelsChanged(it) }
+                        )
 
                         Spacer(modifier = Modifier.height(spacing.small))
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                         Spacer(modifier = Modifier.height(spacing.small))
 
-                        Text(
-                            text = stringResource(id = R.string.settings_animations),
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
+                        SettingsRow(
+                            title = stringResource(id = R.string.settings_animations),
+                            subtitle = settings.animationOption.label,
+                            onClick = { showAnimDialog = true }
                         )
-                        Spacer(modifier = Modifier.height(spacing.small))
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            AnimationOption.entries.forEach { anim ->
-                                FilterChip(
-                                    selected = settings.animationOption == anim,
-                                    onClick = { viewModel.onAnimationOptionChanged(anim) },
-                                    label = { Text(anim.label) }
-                                )
-                            }
-                        }
                     }
                 }
             }
@@ -654,45 +620,21 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
-                        Text(
-                            text = stringResource(id = R.string.settings_sort_order),
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
+                        SettingsRow(
+                            title = stringResource(id = R.string.settings_sort_order),
+                            subtitle = settings.contactSortOrder.label,
+                            onClick = { showSortDialog = true }
                         )
-                        Spacer(modifier = Modifier.height(spacing.small))
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            ContactSortOrder.entries.forEach { order ->
-                                FilterChip(
-                                    selected = settings.contactSortOrder == order,
-                                    onClick = { viewModel.onContactSortOrderChanged(order) },
-                                    label = { Text(order.label) }
-                                )
-                            }
-                        }
 
                         Spacer(modifier = Modifier.height(spacing.small))
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                         Spacer(modifier = Modifier.height(spacing.small))
 
-                        Text(
-                            text = stringResource(id = R.string.settings_name_format),
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
+                        SettingsRow(
+                            title = stringResource(id = R.string.settings_name_format),
+                            subtitle = settings.contactNameFormat.label,
+                            onClick = { showFormatDialog = true }
                         )
-                        Spacer(modifier = Modifier.height(spacing.small))
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            ContactNameFormat.entries.forEach { format ->
-                                FilterChip(
-                                    selected = settings.contactNameFormat == format,
-                                    onClick = { viewModel.onContactNameFormatChanged(format) },
-                                    label = { Text(format.label) }
-                                )
-                            }
-                        }
                     }
                 }
             }
@@ -709,15 +651,11 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
-                        OutlinedButton(
-                            onClick = { showResetDialog = true },
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(text = stringResource(id = R.string.settings_reset_button))
-                        }
+                        SettingsRow(
+                            title = stringResource(id = R.string.settings_reset_button),
+                            titleColor = MaterialTheme.colorScheme.error,
+                            onClick = { showResetDialog = true }
+                        )
                     }
                 }
             }
@@ -736,5 +674,114 @@ private fun SettingsSectionHeader(title: String) {
         style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(vertical = 4.dp)
+    )
+}
+
+// One UI style settings row: title with the current value as a subtitle.
+// Tapping the row opens the picker dialog for that setting.
+@Composable
+private fun SettingsRow(
+    title: String,
+    subtitle: String? = null,
+    titleColor: Color = MaterialTheme.colorScheme.onSurface,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp)
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+            color = titleColor
+        )
+        if (subtitle != null) {
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+// One UI style switch row: title + description on the left, switch on the right.
+@Composable
+private fun SettingsSwitchRow(
+    title: String,
+    subtitle: String? = null,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
+            )
+            if (subtitle != null) {
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
+    }
+}
+
+// Radio-option picker dialog used by every choice setting.
+@Composable
+private fun <T> SettingsChoiceDialog(
+    title: String,
+    options: List<Pair<String, T>>,
+    selected: T,
+    onSelect: (T) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = title) },
+        text = {
+            Column {
+                options.forEach { (label, value) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelect(value) }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = value == selected,
+                            onClick = { onSelect(value) }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(id = R.string.action_cancel))
+            }
+        }
     )
 }
