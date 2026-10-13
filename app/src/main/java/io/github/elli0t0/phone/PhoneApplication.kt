@@ -9,15 +9,20 @@ import io.github.elli0t0.phone.data.contacts.ContactsRepository
 import io.github.elli0t0.phone.data.favorites.AppDatabase
 import io.github.elli0t0.phone.data.favorites.DefaultFavoritesRepository
 import io.github.elli0t0.phone.data.favorites.FavoritesRepository
+import io.github.elli0t0.phone.core.notifications.CallNotificationChannels
 import io.github.elli0t0.phone.data.settings.DataStoreSettingsRepository
+import io.github.elli0t0.phone.data.settings.DataStoreSetupRepository
 import io.github.elli0t0.phone.data.settings.SettingsRepository
+import io.github.elli0t0.phone.data.settings.SetupRepository
 import io.github.elli0t0.phone.data.settings.settingsDataStore
+import io.github.elli0t0.phone.data.settings.setupDataStore
 
 interface AppContainer {
     val contactsRepository: ContactsRepository
     val callLogRepository: CallLogRepository
     val favoritesRepository: FavoritesRepository
     val settingsRepository: SettingsRepository
+    val setupRepository: SetupRepository
 }
 
 class DefaultAppContainer(private val context: Context) : AppContainer {
@@ -40,6 +45,10 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
     override val settingsRepository: SettingsRepository by lazy {
         DataStoreSettingsRepository(context.applicationContext.settingsDataStore)
     }
+
+    override val setupRepository: SetupRepository by lazy {
+        DataStoreSetupRepository(context.applicationContext.setupDataStore)
+    }
 }
 
 
@@ -50,6 +59,7 @@ class PhoneApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         container = DefaultAppContainer(this)
+        CallNotificationChannels.createAll(this)
         if (androidx.core.content.ContextCompat.checkSelfPermission(
                 this,
                 android.Manifest.permission.READ_CALL_LOG

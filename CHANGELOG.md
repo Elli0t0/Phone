@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.13] - 2026-10-13
+
+### Added
+- First-run permissions setup: "Set up Phone" screen on first launch and whenever something is missing, with one card per item (contacts, call history, make calls, phone state/SIMs, notifications, Bluetooth, full-screen notifications, default phone app, battery), check mark when granted, app settings button if permanently denied, re-check on resume, and "Skip for now".
+- Same permissions checklist in Settings ("Permissions & setup").
+- Notification channels created at app start (call start HIGH, ongoing LOW, incoming HIGH).
+- Warning card on Keypad/Recents when notifications or full-screen intent are blocked, with a button to the right setting.
+- Manifest permissions: READ_PHONE_STATE, BLUETOOTH_CONNECT.
+
 ## [0.1.12] - 2026-10-13
 
 ### Fixed

@@ -8,18 +8,30 @@ import androidx.navigation.compose.composable
 import io.github.elli0t0.phone.feature.contacts.ContactsScreen
 import io.github.elli0t0.phone.feature.dialpad.DialpadScreen
 import io.github.elli0t0.phone.feature.recents.RecentsScreen
+import io.github.elli0t0.phone.feature.setup.SetupScreen
 
 @Composable
 fun PhoneNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    startDestination: String = Screen.Recents.route
+    startDestination: String = Screen.Recents.route,
+    defaultStartTabRoute: String = Screen.Recents.route
 ) {
     NavHost(
         navController = navController,
         startDestination = startDestination,
         modifier = modifier
     ) {
+        composable(route = Screen.Setup.route) {
+            SetupScreen(
+                onSetupFinished = {
+                    navController.navigate(defaultStartTabRoute) {
+                        popUpTo(Screen.Setup.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
         composable(route = Screen.Recents.route) {
             RecentsScreen(
                 onNavigateToContactDetail = {

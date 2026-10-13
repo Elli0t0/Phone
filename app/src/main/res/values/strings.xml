@@ -232,5 +232,40 @@
     <string name="settings_reset_dialog_title">Reset settings?</string>
     <string name="settings_reset_dialog_message">This will restore all appearance, layout, and behavior preferences to their factory defaults.</string>
     <string name="settings_reset_confirm">Reset</string>
+
+    <!-- Setup / Permissions -->
+    <string name="setup_title">Set up Phone</string>
+    <string name="setup_subtitle">Grant the permissions Phone needs to handle calls, contacts and notifications.</string>
+    <string name="setup_continue">Continue</string>
+    <string name="setup_skip">Skip for now</string>
+    <string name="cd_setup">Set up Phone</string>
+    <string name="setup_item_contacts_title">Contacts</string>
+    <string name="setup_item_contacts_desc">View, search, create and edit your contacts.</string>
+    <string name="setup_item_call_log_title">Call history</string>
+    <string name="setup_item_call_log_desc">Show recent calls.</string>
+    <string name="setup_item_call_phone_title">Make calls</string>
+    <string name="setup_item_call_phone_desc">Place calls directly from Phone.</string>
+    <string name="setup_item_phone_state_title">Phone state and SIMs</string>
+    <string name="setup_item_phone_state_desc">Detect SIMs and phone state for calling.</string>
+    <string name="setup_item_notifications_title">Notifications</string>
+    <string name="setup_item_notifications_desc">Show incoming and ongoing call notifications.</string>
+    <string name="setup_item_bluetooth_title">Bluetooth</string>
+    <string name="setup_item_bluetooth_desc">Use Bluetooth headsets during calls.</string>
+    <string name="setup_item_full_screen_title">Full-screen notifications</string>
+    <string name="setup_item_full_screen_desc">Show the incoming call screen over the lock screen.</string>
+    <string name="setup_item_default_dialer_title">Default phone app</string>
+    <string name="setup_item_default_dialer_desc">Handle incoming and outgoing calls.</string>
+    <string name="setup_item_battery_title">Battery</string>
+    <string name="setup_item_battery_desc">Allow Phone to run in the background for calls.</string>
+    <string name="setup_action_grant">Grant</string>
+    <string name="setup_action_open_settings">Open settings</string>
+    <string name="setup_action_set_as_default">Set as default</string>
+    <string name="setup_action_open_full_screen">Open full-screen settings</string>
+    <string name="setup_action_open_battery">Open battery settings</string>
+    <string name="settings_permissions_setup_title">Permissions &amp; setup</string>
+    <string name="settings_permissions_setup_desc">Review permissions needed for calls, contacts and notifications.</string>
+    <string name="setup_warning_title">Calls may not ring correctly</string>
+    <string name="setup_warning_message">Notifications or full-screen alerts are blocked. Allow them so incoming calls always reach you.</string>
+    <string name="setup_warning_button">Fix now</string>
 </resources>
 

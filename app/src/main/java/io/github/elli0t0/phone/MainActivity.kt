@@ -4,19 +4,23 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import io.github.elli0t0.phone.core.design.PhoneTheme
+import io.github.elli0t0.phone.core.permissions.SetupPermissions
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.navigation.PhoneBottomBar
 import io.github.elli0t0.phone.navigation.PhoneNavHost
+import io.github.elli0t0.phone.navigation.Screen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,32 +31,49 @@ class MainActivity : ComponentActivity() {
             val settings by app.container.settingsRepository.settingsFlow.collectAsStateWithLifecycle(
                 initialValue = AppSettings()
             )
+            val setupCompleted by app.container.setupRepository.setupCompletedFlow.collectAsStateWithLifecycle(
+                initialValue = null
+            )
             PhoneTheme(appSettings = settings) {
-                PhoneApp(appSettings = settings)
+                if (setupCompleted == null) {
+                    Box(modifier = Modifier.fillMaxSize())
+                } else {
+                    PhoneApp(appSettings = settings, setupCompleted = setupCompleted == true)
+                }
             }
         }
     }
 }
 
 @Composable
-fun PhoneApp(appSettings: AppSettings) {
+fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
+    val context = LocalContext.current
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+    val showSetup = !setupCompleted && SetupPermissions.isAnyMissing(context)
+    val startDestination = if (showSetup) {
+        Screen.Setup.route
+    } else {
+        appSettings.defaultStartTab.route
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            PhoneBottomBar(
-                navController = navController,
-                currentRoute = currentRoute,
-                showLabels = appSettings.showBottomBarLabels
-            )
+            if (currentRoute != Screen.Setup.route) {
+                PhoneBottomBar(
+                    navController = navController,
+                    currentRoute = currentRoute,
+                    showLabels = appSettings.showBottomBarLabels
+                )
+            }
         }
     ) { innerPadding ->
         PhoneNavHost(
             navController = navController,
-            startDestination = appSettings.defaultStartTab.route,
+            startDestination = startDestination,
+            defaultStartTabRoute = appSettings.defaultStartTab.route,
             modifier = Modifier.padding(innerPadding)
         )
     }
