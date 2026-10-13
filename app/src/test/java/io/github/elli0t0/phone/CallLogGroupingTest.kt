@@ -4,7 +4,6 @@ import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import io.github.elli0t0.phone.data.calllog.model.CallType
 import io.github.elli0t0.phone.data.calllog.util.CallLogGroupingHelper
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Calendar
 
@@ -78,28 +77,32 @@ class CallLogGroupingTest {
     }
 
     @Test
-    fun dayHeaders_identifiesTodayYesterdayAndOlderDates() {
+    fun dayHeaders_useFullDateForAllDays() {
         val nowCal = Calendar.getInstance().apply {
             set(2026, Calendar.OCTOBER, 12, 14, 0, 0)
         }
         val now = nowCal.timeInMillis
+        val format = java.text.SimpleDateFormat("EEEE, MMMM d", java.util.Locale.getDefault())
 
-        val todayHeader = CallLogGroupingHelper.getDayHeader(now, now)
-        assertEquals("Today", todayHeader)
+        assertEquals(format.format(java.util.Date(now)), CallLogGroupingHelper.getDayHeader(now, now))
 
         val yesterdayCal = Calendar.getInstance().apply {
             timeInMillis = now
             add(Calendar.DAY_OF_YEAR, -1)
         }
-        val yesterdayHeader = CallLogGroupingHelper.getDayHeader(yesterdayCal.timeInMillis, now)
-        assertEquals("Yesterday", yesterdayHeader)
+        assertEquals(
+            format.format(java.util.Date(yesterdayCal.timeInMillis)),
+            CallLogGroupingHelper.getDayHeader(yesterdayCal.timeInMillis, now)
+        )
 
         val olderCal = Calendar.getInstance().apply {
             timeInMillis = now
             add(Calendar.DAY_OF_YEAR, -5)
         }
-        val olderHeader = CallLogGroupingHelper.getDayHeader(olderCal.timeInMillis, now)
-        assertTrue("Older header should contain month name", olderHeader.contains("October") || olderHeader.contains("Oct"))
+        assertEquals(
+            format.format(java.util.Date(olderCal.timeInMillis)),
+            CallLogGroupingHelper.getDayHeader(olderCal.timeInMillis, now)
+        )
     }
 
     @Test
@@ -112,10 +115,11 @@ class CallLogGroupingTest {
 
         val sections = CallLogGroupingHelper.organizeIntoDaySections(group1 + group2, now)
 
+        val format = java.text.SimpleDateFormat("EEEE, MMMM d", java.util.Locale.getDefault())
         assertEquals(2, sections.size)
-        assertEquals("Today", sections[0].title)
+        assertEquals(format.format(java.util.Date(now)), sections[0].title)
         assertEquals(1, sections[0].calls.size)
-        assertEquals("Yesterday", sections[1].title)
+        assertEquals(format.format(java.util.Date(yesterday)), sections[1].title)
         assertEquals(1, sections[1].calls.size)
     }
 }

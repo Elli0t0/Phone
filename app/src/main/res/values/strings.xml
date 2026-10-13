@@ -119,8 +119,6 @@
     <string name="favorites_empty_message">Star contacts to see them here for quick access</string>
     <string name="section_favorites">Favorites</string>
     <string name="section_recents">Recent calls</string>
-    <string name="header_today">Today</string>
-    <string name="header_yesterday">Yesterday</string>
 
     <!-- Filters -->
     <string name="filter_all">All</string>

@@ -21,6 +21,8 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -93,6 +95,7 @@ fun CallLogRow(
     onAddContactClick: () -> Unit,
     onCopyNumberClick: () -> Unit,
     onDeleteClick: () -> Unit,
+    showDivider: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
@@ -233,7 +236,40 @@ fun CallLogRow(
                 )
             }
         }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        if (showDivider) {
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        }
+    }
+}
+
+/**
+ * One card per day section: the day's call rows with dividers between them,
+ * matching the reference Recents layout.
+ */
+@Composable
+fun DaySectionCard(
+    calls: List<CallGroup>,
+    modifier: Modifier = Modifier,
+    rowContent: @Composable (CallGroup) -> Unit
+) {
+    val spacing = LocalSpacing.current
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = spacing.small),
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        calls.forEachIndexed { index, group ->
+            rowContent(group)
+            if (index < calls.lastIndex) {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                    thickness = 1.dp,
+                    modifier = Modifier.padding(horizontal = spacing.medium)
+                )
+            }
+        }
     }
 }
 

@@ -57,6 +57,7 @@ import io.github.elli0t0.phone.feature.contacts.ui.ContactSearchBar
 import io.github.elli0t0.phone.feature.contacts.ui.PermissionCard
 import io.github.elli0t0.phone.feature.setup.SetupWarningCard
 import io.github.elli0t0.phone.feature.recents.ui.CallLogRow
+import io.github.elli0t0.phone.feature.recents.ui.DaySectionCard
 import io.github.elli0t0.phone.feature.recents.ui.RecentsEmptyState
 import io.github.elli0t0.phone.feature.recents.ui.RecentsFilterChips
 import kotlinx.coroutines.launch
@@ -289,35 +290,38 @@ fun RecentsScreen(
                                     )
                                 }
 
-                                items(section.calls, key = { it.id }) { group ->
-                                    CallLogRow(
-                                        group = group,
-                                        isExpanded = uiState.expandedCallId == group.id,
-                                        canWriteCallLog = permissionState.hasWritePermission,
-                                        onRowClick = { viewModel.onToggleExpandCall(group.id) },
-                                        onCallClick = { initiateCall(group.number) },
-                                        onMessageClick = {
-                                            val uri = Uri.parse("smsto:${Uri.encode(group.number)}")
-                                            val intent = Intent(Intent.ACTION_SENDTO, uri)
-                                            context.startActivity(intent)
-                                        },
-                                        onOpenContactClick = {
-                                            group.primaryCall.contactId?.let { id ->
-                                                onNavigateToContactDetail(id)
-                                            }
-                                        },
-                                        onAddContactClick = {
-                                            val intent = Intent(Intent.ACTION_INSERT).apply {
-                                                type = ContactsContract.Contacts.CONTENT_TYPE
-                                                putExtra(ContactsContract.Intents.Insert.PHONE, group.number)
-                                            }
-                                            context.startActivity(intent)
-                                        },
-                                        onCopyNumberClick = {
-                                            clipboardManager.setText(AnnotatedString(group.number))
-                                        },
-                                        onDeleteClick = { viewModel.deleteCall(group.id) }
-                                    )
+                                item(key = "section_${section.title}") {
+                                    DaySectionCard(calls = section.calls) { group ->
+                                        CallLogRow(
+                                            group = group,
+                                            isExpanded = uiState.expandedCallId == group.id,
+                                            canWriteCallLog = permissionState.hasWritePermission,
+                                            onRowClick = { viewModel.onToggleExpandCall(group.id) },
+                                            onCallClick = { initiateCall(group.number) },
+                                            onMessageClick = {
+                                                val uri = Uri.parse("smsto:${Uri.encode(group.number)}")
+                                                val intent = Intent(Intent.ACTION_SENDTO, uri)
+                                                context.startActivity(intent)
+                                            },
+                                            onOpenContactClick = {
+                                                group.primaryCall.contactId?.let { id ->
+                                                    onNavigateToContactDetail(id)
+                                                }
+                                            },
+                                            onAddContactClick = {
+                                                val intent = Intent(Intent.ACTION_INSERT).apply {
+                                                    type = ContactsContract.Contacts.CONTENT_TYPE
+                                                    putExtra(ContactsContract.Intents.Insert.PHONE, group.number)
+                                                }
+                                                context.startActivity(intent)
+                                            },
+                                            onCopyNumberClick = {
+                                                clipboardManager.setText(AnnotatedString(group.number))
+                                            },
+                                            onDeleteClick = { viewModel.deleteCall(group.id) },
+                                            showDivider = false
+                                        )
+                                    }
                                 }
                             }
                         }

@@ -66,28 +66,18 @@ object CallLogGroupingHelper {
         return result
     }
 
+    /**
+     * Full-date day header, e.g. "Monday, October 12". The reference UI
+     * always shows the full date, never "Today"/"Yesterday".
+     */
     fun getDayHeader(dateMillis: Long, nowMillis: Long = System.currentTimeMillis()): String {
         val nowCal = Calendar.getInstance().apply { timeInMillis = nowMillis }
         val dateCal = Calendar.getInstance().apply { timeInMillis = dateMillis }
 
-        val isToday = nowCal.get(Calendar.YEAR) == dateCal.get(Calendar.YEAR) &&
-            nowCal.get(Calendar.DAY_OF_YEAR) == dateCal.get(Calendar.DAY_OF_YEAR)
-
-        if (isToday) return "Today"
-
-        val yesterdayCal = Calendar.getInstance().apply {
-            timeInMillis = nowMillis
-            add(Calendar.DAY_OF_YEAR, -1)
-        }
-        val isYesterday = yesterdayCal.get(Calendar.YEAR) == dateCal.get(Calendar.YEAR) &&
-            yesterdayCal.get(Calendar.DAY_OF_YEAR) == dateCal.get(Calendar.DAY_OF_YEAR)
-
-        if (isYesterday) return "Yesterday"
-
         val format = if (nowCal.get(Calendar.YEAR) == dateCal.get(Calendar.YEAR)) {
-            SimpleDateFormat("MMMM d", Locale.getDefault())
+            SimpleDateFormat("EEEE, MMMM d", Locale.getDefault())
         } else {
-            SimpleDateFormat("MMMM d, yyyy", Locale.getDefault())
+            SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault())
         }
         return format.format(Date(dateMillis))
     }
