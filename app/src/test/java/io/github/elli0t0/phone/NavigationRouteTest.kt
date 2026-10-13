@@ -12,7 +12,7 @@ class NavigationRouteTest {
     fun bottomNavItems_containsExactlyThreeDestinations() {
         val items = Screen.bottomNavItems
         assertEquals(3, items.size)
-        assertEquals(listOf(Screen.Recents, Screen.Contacts, Screen.Dialpad), items)
+        assertEquals(listOf(Screen.Dialpad, Screen.Recents, Screen.Contacts), items)
     }
 
     @Test
