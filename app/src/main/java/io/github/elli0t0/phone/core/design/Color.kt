@@ -5,6 +5,14 @@ import androidx.compose.ui.graphics.Color
 // App color palette
 val AccentBlue = Color(0xFF2473FE)
 val AccentBlueDark = Color(0xFF3E89FF)
+val OnAccentBlue = Color(0xFFFFFFFF)
+
+// In-call screen
+val InCallGradientTop = Color(0xFF6E1B0C)
+val InCallGradientBottom = Color(0xFF000000)
+val InCallControlBackground = Color(0x1FFFFFFF)
+val InCallControlActive = Color(0xFFFFFFFF)
+val InCallControlActiveContent = Color(0xFF000000)
 
 // Light theme colors
 val LightBackground = Color(0xFFF7F8FA)

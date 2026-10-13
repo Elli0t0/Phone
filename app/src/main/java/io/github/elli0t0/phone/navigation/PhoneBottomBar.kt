@@ -1,13 +1,21 @@
 package io.github.elli0t0.phone.navigation
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -22,50 +30,75 @@ fun PhoneBottomBar(
     showLabels: Boolean = true,
     modifier: Modifier = Modifier
 ) {
-    NavigationBar(
-        modifier = modifier.testTag("phone_bottom_bar"),
-        containerColor = MaterialTheme.colorScheme.surface,
-        tonalElevation = 0.dp
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 12.dp)
+            .testTag("phone_bottom_bar"),
+        contentAlignment = Alignment.Center
     ) {
-        Screen.bottomNavItems.forEach { screen ->
-            val selected = currentRoute == screen.route
-            NavigationBarItem(
-                modifier = Modifier.testTag("tab_${screen.route}"),
-                selected = selected,
-                onClick = {
-                    if (currentRoute != screen.route) {
-                        navController.navigate(screen.route) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(8.dp, RoundedCornerShape(32.dp))
+                .clip(RoundedCornerShape(32.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Screen.bottomNavItems.forEach { screen ->
+                val selected = currentRoute == screen.route
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(
+                            if (selected) {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+                            } else {
+                                androidx.compose.ui.graphics.Color.Transparent
                             }
-                            launchSingleTop = true
-                            restoreState = true
+                        )
+                        .clickable {
+                            if (currentRoute != screen.route) {
+                                navController.navigate(screen.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
                         }
-                    }
-                },
-                icon = {
+                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                        .testTag("tab_${screen.route}"),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Icon(
                         painter = painterResource(id = screen.iconRes),
-                        contentDescription = stringResource(id = screen.contentDescriptionRes)
+                        contentDescription = stringResource(id = screen.contentDescriptionRes),
+                        tint = if (selected) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
                     )
-                },
-                alwaysShowLabel = showLabels,
-                label = if (showLabels) {
-                    {
+                    if (showLabels) {
                         Text(
                             text = stringResource(id = screen.titleRes),
-                            style = MaterialTheme.typography.labelMedium
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (selected) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                            modifier = Modifier.padding(start = 6.dp)
                         )
                     }
-                } else null,
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = MaterialTheme.colorScheme.primary,
-                    selectedTextColor = MaterialTheme.colorScheme.primary,
-                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    indicatorColor = MaterialTheme.colorScheme.primaryContainer
-                )
-            )
+                }
+            }
         }
     }
 }

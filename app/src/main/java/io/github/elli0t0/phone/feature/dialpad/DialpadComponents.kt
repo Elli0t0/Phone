@@ -82,7 +82,7 @@ fun DialKeyView(
             }
             .testTag("dial_key_$keyTag"),
         shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceVariant
+        color = androidx.compose.ui.graphics.Color.Transparent
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -91,7 +91,7 @@ fun DialKeyView(
             Text(
                 text = dialKey.digit.toString(),
                 style = MaterialTheme.typography.titleLarge.copy(
-                    fontSize = 30.sp,
+                    fontSize = 44.sp,
                     fontWeight = FontWeight.Normal
                 ),
                 color = MaterialTheme.colorScheme.onSurface
@@ -100,7 +100,7 @@ fun DialKeyView(
                 Text(
                     text = dialKey.letters,
                     style = MaterialTheme.typography.labelMedium.copy(
-                        fontSize = 11.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant

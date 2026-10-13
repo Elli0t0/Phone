@@ -46,6 +46,6 @@ sealed class Screen(
     )
 
     companion object {
-        val bottomNavItems = listOf(Recents, Contacts, Dialpad)
+        val bottomNavItems = listOf(Dialpad, Recents, Contacts)
     }
 }

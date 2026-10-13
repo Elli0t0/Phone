@@ -167,6 +167,7 @@
     <string name="call_action_hold">Hold</string>
     <string name="call_action_resume">Resume</string>
     <string name="call_action_keypad">Keypad</string>
+    <string name="call_action_hide">Hide</string>
     <string name="call_audio_output">Audio Output</string>
     <string name="call_audio_wired">Wired headset</string>
     <string name="call_audio_bluetooth_grant">Bluetooth — allow to see devices</string>

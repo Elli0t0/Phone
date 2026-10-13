@@ -241,7 +241,7 @@ fun DialpadScreen(
             val displayText = uiState.formattedNumber.ifBlank { uiState.rawNumber }
             Text(
                 text = displayText,
-                style = MaterialTheme.typography.displayLarge.copy(fontSize = 32.sp),
+                style = MaterialTheme.typography.displayLarge.copy(fontSize = 36.sp),
                 color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Center,
                 maxLines = 1
@@ -255,7 +255,7 @@ fun DialpadScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = spacing.small),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             DIAL_KEYS_GRID.forEach { rowKeys ->
@@ -302,7 +302,7 @@ fun DialpadScreen(
                     }
                 },
                 modifier = Modifier
-                    .size(68.dp)
+                    .size(76.dp)
                     .testTag("btn_call"),
                 shape = CircleShape,
                 containerColor = if (uiState.canCall) {
@@ -311,7 +311,7 @@ fun DialpadScreen(
                     MaterialTheme.colorScheme.surfaceVariant
                 },
                 contentColor = if (uiState.canCall) {
-                    MaterialTheme.colorScheme.onPrimary
+                    io.github.elli0t0.phone.core.design.OnAccentBlue
                 } else {
                     MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
                 },
@@ -320,7 +320,7 @@ fun DialpadScreen(
                 Icon(
                     painter = painterResource(id = R.drawable.ic_phone),
                     contentDescription = stringResource(id = R.string.cd_call_button),
-                    modifier = Modifier.size(30.dp)
+                    modifier = Modifier.size(32.dp)
                 )
             }
 

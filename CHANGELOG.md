@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.26] - 2026-10-13
+
+### Changed
+- Keypad: bare large digits with letters (no key backgrounds), bigger blue call button with white icon, airier key spacing, and a floating pill bottom bar (selected tab gets a lighter pill). Tab order is now Keypad, Recents, Contacts.
+- In-call screen: warm gradient background, large caller name with number and timer, and a control grid with labels: mute, speaker, Bluetooth (only when available), keypad, hold. Speaker and Bluetooth are now direct toggles instead of opening a route picker. End call is a red circle button. The DTMF keypad overlay now shows digits with letters plus speaker, hide, and mute controls.
+- Note: no Add call button — multi-call placement is still not implemented, so a nonfunctional button was not added.
+
 ## [0.1.25] - 2026-10-13
 
 ### Fixed
