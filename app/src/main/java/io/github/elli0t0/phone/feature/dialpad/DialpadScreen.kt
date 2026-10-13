@@ -96,9 +96,9 @@ fun DialpadScreen(
             when (val res = io.github.elli0t0.phone.core.telecom.SimCallHelper.resolveSim(
                 context, number, lookupKey, simAccounts, app.container.contactSimRepository
             )) {
-                is io.github.elli0t0.phone.core.telecom.SimCallHelper.SimCallResolution.UseSim ->
+                is io.github.elli0t0.phone.core.telecom.SimCallResolution.UseSim ->
                     CallManager.placeCall(context, number, res.sim.handle)
-                is io.github.elli0t0.phone.core.telecom.SimCallHelper.SimCallResolution.ShowDialog -> {
+                is io.github.elli0t0.phone.core.telecom.SimCallResolution.ShowDialog -> {
                     simPickerTargetNumber = number
                 }
             }

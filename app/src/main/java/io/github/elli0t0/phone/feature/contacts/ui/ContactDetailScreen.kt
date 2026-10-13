@@ -64,6 +64,7 @@ import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.telecom.CallManager
 import io.github.elli0t0.phone.core.telecom.SimCallHelper
+import io.github.elli0t0.phone.core.telecom.SimCallResolution
 import io.github.elli0t0.phone.core.telecom.TelecomHelper
 import io.github.elli0t0.phone.data.contacts.model.ContactDetail
 import io.github.elli0t0.phone.data.favorites.ContactSimRepository
@@ -121,8 +122,8 @@ fun ContactDetailScreen(
         }
         coroutineScope.launch {
             when (val res = SimCallHelper.resolveSim(context, number, uiState.contact?.lookupKey, simAccounts, repo)) {
-                is SimCallHelper.SimCallResolution.UseSim -> CallManager.placeCall(context, number, res.sim.handle)
-                is SimCallHelper.SimCallResolution.ShowDialog -> simPickerNumber = number
+                is SimCallResolution.UseSim -> CallManager.placeCall(context, number, res.sim.handle)
+                is SimCallResolution.ShowDialog -> simPickerNumber = number
             }
         }
     }
