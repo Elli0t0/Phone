@@ -524,6 +524,54 @@ class AndroidContactsRepository(
         }
     }
 
+    override suspend fun getProfileContact(): ContactSummary? = withContext(Dispatchers.IO) {
+        try {
+            val projection = arrayOf(
+                ContactsContract.Profile._ID,
+                ContactsContract.Profile.LOOKUP_KEY,
+                ContactsContract.Profile.DISPLAY_NAME_PRIMARY,
+                ContactsContract.Profile.PHOTO_URI
+            )
+            var profile: ContactSummary? = null
+            contentResolver.query(
+                ContactsContract.Profile.CONTENT_URI,
+                projection,
+                null,
+                null,
+                null
+            )?.use {
+                if (it.moveToFirst()) {
+                    val id = it.getLong(it.getColumnIndexOrThrow(ContactsContract.Profile._ID))
+                    val lookupKey = it.getString(it.getColumnIndexOrThrow(ContactsContract.Profile.LOOKUP_KEY)) ?: ""
+                    val name = it.getString(it.getColumnIndexOrThrow(ContactsContract.Profile.DISPLAY_NAME_PRIMARY))
+                    val photoUri = it.getString(it.getColumnIndexOrThrow(ContactsContract.Profile.PHOTO_URI))
+                    var phone: String? = null
+                    contentResolver.query(
+                        Phone.CONTENT_URI,
+                        arrayOf(Phone.NUMBER),
+                        "${Phone.CONTACT_ID} = ?",
+                        arrayOf(id.toString()),
+                        "${Phone.IS_PRIMARY} DESC"
+                    )?.use { phoneCursor ->
+                        if (phoneCursor.moveToFirst()) {
+                            phone = phoneCursor.getString(0)?.takeIf { number -> number.isNotBlank() }
+                        }
+                    }
+                    profile = ContactSummary(
+                        id = id,
+                        lookupKey = lookupKey,
+                        displayName = name?.takeIf { n -> n.isNotBlank() } ?: phone ?: "",
+                        photoUri = photoUri,
+                        primaryNumberPreview = phone
+                    )
+                }
+            }
+            profile
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     override suspend fun getAllContactNumbers(): Map<Long, List<String>> = withContext(Dispatchers.IO) {
         val map = mutableMapOf<Long, MutableList<String>>()
         try {

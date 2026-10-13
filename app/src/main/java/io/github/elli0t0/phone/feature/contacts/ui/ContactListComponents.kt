@@ -17,12 +17,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +39,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.FavoriteCardGradients
+import io.github.elli0t0.phone.core.design.FavoriteHintOrange
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 
@@ -131,6 +134,226 @@ fun ContactRow(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun ContactGroupCard(
+    contacts: List<ContactSummary>,
+    onContactClick: (ContactSummary) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val spacing = LocalSpacing.current
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = spacing.small),
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        contacts.forEachIndexed { index, contact ->
+            ContactGroupRow(
+                contact = contact,
+                onClick = { onContactClick(contact) }
+            )
+            if (index < contacts.lastIndex) {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                    thickness = 1.dp,
+                    modifier = Modifier.padding(horizontal = spacing.medium)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ContactGroupRow(
+    contact: ContactSummary,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val spacing = LocalSpacing.current
+    val displayName = contact.displayName.ifBlank {
+        contact.primaryNumberPreview ?: stringResource(id = R.string.contact_unknown)
+    }
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .testTag("contact_item_${contact.id}")
+            .padding(spacing.medium),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        ContactAvatar(
+            photoUri = contact.photoUri,
+            displayName = displayName,
+            size = 46.dp,
+            modifier = Modifier.testTag("avatar_${contact.id}")
+        )
+        Spacer(modifier = Modifier.width(spacing.medium))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = displayName,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            if (!contact.primaryNumberPreview.isNullOrBlank() && contact.primaryNumberPreview != displayName) {
+                Text(
+                    text = contact.primaryNumberPreview,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun FavoritesHintRow(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val spacing = LocalSpacing.current
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = spacing.small)
+            .clickable(onClick = onClick)
+            .testTag("favorites_hint_row"),
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(spacing.medium),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(FavoriteHintOrange),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_star),
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(spacing.medium))
+            Text(
+                text = stringResource(id = R.string.contacts_add_favorites),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+    }
+}
+
+@Composable
+fun ProfileRow(
+    contact: ContactSummary,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val spacing = LocalSpacing.current
+    val displayName = contact.displayName.ifBlank {
+        contact.primaryNumberPreview ?: stringResource(id = R.string.contact_unknown)
+    }
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = spacing.small)
+            .clickable(onClick = onClick)
+            .testTag("profile_row"),
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(spacing.medium),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ContactAvatar(
+                photoUri = contact.photoUri,
+                displayName = displayName,
+                size = 46.dp,
+                modifier = Modifier.testTag("avatar_profile")
+            )
+            Spacer(modifier = Modifier.width(spacing.medium))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = displayName,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                if (!contact.primaryNumberPreview.isNullOrBlank() && contact.primaryNumberPreview != displayName) {
+                    Text(
+                        text = contact.primaryNumberPreview,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DuplicatesCard(
+    duplicateCount: Int,
+    onMergeClick: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val spacing = LocalSpacing.current
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = spacing.small)
+            .testTag("duplicates_card"),
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    start = spacing.medium,
+                    top = spacing.small,
+                    bottom = spacing.small,
+                    end = spacing.small
+                ),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(id = R.string.duplicates_card_message, duplicateCount),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
+            )
+            TextButton(
+                onClick = onMergeClick,
+                modifier = Modifier.testTag("button_duplicates_card_merge")
+            ) {
+                Text(text = stringResource(id = R.string.duplicates_merge))
+            }
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier.testTag("button_duplicates_card_dismiss")
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_close),
+                    contentDescription = stringResource(id = R.string.cd_dismiss),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

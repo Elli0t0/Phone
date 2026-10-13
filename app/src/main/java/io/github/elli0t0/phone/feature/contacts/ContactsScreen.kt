@@ -87,6 +87,13 @@ fun ContactsScreen(
                             currentDestination = ContactsNavDestination.Create
                         },
                         onFindDuplicates = listViewModel::findDuplicates,
+                        onShowFavoritesHint = {
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar(context.getString(R.string.contacts_favorites_hint))
+                            }
+                        },
+                        onShowDuplicates = listViewModel::showDuplicates,
+                        onDismissDuplicatesCard = listViewModel::dismissDuplicatesCard,
                         onBackFromDuplicates = listViewModel::hideDuplicates,
                         onMergeRequest = listViewModel::requestMerge,
                         onDismissMerge = listViewModel::dismissMergeDialog,

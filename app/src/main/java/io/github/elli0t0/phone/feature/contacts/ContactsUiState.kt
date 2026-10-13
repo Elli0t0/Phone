@@ -9,6 +9,8 @@ data class ContactsUiState(
     val favorites: List<ContactSummary> = emptyList(),
     val filteredContacts: List<ContactSummary> = emptyList(),
     val groupedContacts: Map<String, List<ContactSummary>> = emptyMap(),
+    val profileContact: ContactSummary? = null,
+    val showDuplicatesCard: Boolean = false,
     val isLoading: Boolean = true,
     val userMessageRes: Int? = null,
     val duplicateGroups: List<DuplicateGroup> = emptyList(),

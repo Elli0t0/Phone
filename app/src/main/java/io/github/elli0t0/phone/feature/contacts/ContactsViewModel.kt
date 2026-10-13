@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -37,6 +38,8 @@ class ContactsViewModel(
     private val _isFindingDuplicates = MutableStateFlow(false)
     private val _pendingMergeGroup = MutableStateFlow<DuplicateGroup?>(null)
     private val _isMerging = MutableStateFlow(false)
+    private val _profileContact = MutableStateFlow<ContactSummary?>(null)
+    private val _duplicatesCardDismissed = MutableStateFlow(false)
 
     // Raw contacts (before name-format display changes) for duplicate detection.
     private var latestContacts: List<ContactSummary> = emptyList()
@@ -52,6 +55,27 @@ class ContactsViewModel(
     ) ?: flowOf(emptyList())
 
     private val settingsFlow = settingsRepository?.settingsFlow ?: flowOf(AppSettings())
+
+    init {
+        // Load the device owner's profile contact once for the "My profile" row.
+        activeScope.launch {
+            _profileContact.value = try {
+                contactsRepository.getProfileContact()
+            } catch (_: Exception) {
+                null
+            }
+        }
+        // Silent duplicate scan so the duplicates card can appear on top of
+        // the list without opening the duplicates screen.
+        activeScope.launch {
+            try {
+                val contacts = contactsRepository.getContactsFlow().first()
+                val numbers = contactsRepository.getAllContactNumbers()
+                _duplicateGroups.value = DuplicateContactFinder.findDuplicates(contacts, numbers)
+            } catch (_: Exception) {
+            }
+        }
+    }
 
     // kotlinx-coroutines 1.8.1 only provides combine() overloads for up to 5 flows,
     // so the 10 inputs are grouped into two 5-flow combines first.
@@ -93,8 +117,10 @@ class ContactsViewModel(
 
     val uiState: StateFlow<ContactsUiState> = combine(
         contactsDataFlow,
-        contactsUiExtrasFlow
-    ) { data, extras ->
+        contactsUiExtrasFlow,
+        _profileContact,
+        _duplicatesCardDismissed
+    ) { data, extras, profileContact, duplicatesCardDismissed ->
         latestContacts = data.contacts
         val formattedContacts = data.contacts.map { contact ->
             val parts = contact.displayName.trim().split("\\s+".toRegex())
@@ -127,6 +153,8 @@ class ContactsViewModel(
             userMessageRes = data.messageRes,
             duplicateGroups = extras.duplicateGroups,
             showDuplicates = extras.showDuplicates,
+            profileContact = profileContact,
+            showDuplicatesCard = extras.duplicateGroups.isNotEmpty() && !duplicatesCardDismissed,
             isFindingDuplicates = extras.isFindingDuplicates,
             pendingMergeGroup = extras.pendingMergeGroup,
             isMerging = extras.isMerging
@@ -172,6 +200,14 @@ class ContactsViewModel(
     fun hideDuplicates() {
         _showDuplicates.value = false
         _pendingMergeGroup.value = null
+    }
+
+    fun showDuplicates() {
+        _showDuplicates.value = true
+    }
+
+    fun dismissDuplicatesCard() {
+        _duplicatesCardDismissed.value = true
     }
 
     fun requestMerge(group: DuplicateGroup) {

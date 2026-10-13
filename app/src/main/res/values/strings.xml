@@ -52,6 +52,11 @@
     <string name="duplicates_reason_number">Same phone number</string>
     <string name="duplicates_reason_name">Same name</string>
     <string name="duplicates_merge">Merge</string>
+    <string name="duplicates_card_message">You have %1$d duplicate contacts.</string>
+    <string name="contacts_add_favorites">Add your favorite contacts</string>
+    <string name="contacts_favorites_hint">Open a contact and tap the star to add it to favorites</string>
+    <string name="contacts_my_profile">My profile</string>
+    <string name="cd_dismiss">Dismiss</string>
     <string name="duplicates_merge_title">Merge contacts?</string>
     <string name="duplicates_merge_message">Keep %1$s? %2$s will be deleted, and their phone numbers and emails will be moved into %1$s.</string>
     <string name="duplicates_merge_confirm">Merge</string>

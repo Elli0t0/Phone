@@ -38,6 +38,13 @@ interface ContactsRepository {
     suspend fun deleteContact(contactId: Long, lookupKey: String): Result<Unit>
 
     /**
+     * The device owner's own profile contact from ContactsContract.Profile,
+     * or null when the device has no profile contact. Used for the
+     * "My profile" row in the contacts list.
+     */
+    suspend fun getProfileContact(): ContactSummary? = null
+
+    /**
      * All phone numbers per contact, keyed by contact ID. Used for duplicate
      * detection, which needs every number, not just the primary preview.
      */

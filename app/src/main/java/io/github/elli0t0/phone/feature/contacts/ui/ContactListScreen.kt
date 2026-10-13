@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -51,6 +50,9 @@ fun ContactListScreen(
     onContactClick: (ContactSummary) -> Unit,
     onAddContactClick: () -> Unit,
     onFindDuplicates: () -> Unit,
+    onShowFavoritesHint: () -> Unit = {},
+    onShowDuplicates: () -> Unit = {},
+    onDismissDuplicatesCard: () -> Unit = {},
     onBackFromDuplicates: () -> Unit,
     onMergeRequest: (DuplicateGroup) -> Unit,
     onDismissMerge: () -> Unit,
@@ -88,7 +90,10 @@ fun ContactListScreen(
                         onNavigateToSettings = onNavigateToSettings,
                         onContactClick = onContactClick,
                         onAddContactClick = onAddContactClick,
-                        onFindDuplicates = onFindDuplicates
+                        onFindDuplicates = onFindDuplicates,
+                        onShowFavoritesHint = onShowFavoritesHint,
+                        onShowDuplicates = onShowDuplicates,
+                        onDismissDuplicatesCard = onDismissDuplicatesCard
                     )
                 }
                 is ContactsPermissionStatus.NotAsked,
@@ -123,7 +128,10 @@ private fun ContactsContent(
     onNavigateToSettings: () -> Unit,
     onContactClick: (ContactSummary) -> Unit,
     onAddContactClick: () -> Unit,
-    onFindDuplicates: () -> Unit
+    onFindDuplicates: () -> Unit,
+    onShowFavoritesHint: () -> Unit,
+    onShowDuplicates: () -> Unit,
+    onDismissDuplicatesCard: () -> Unit
 ) {
     val spacing = LocalSpacing.current
     var searchVisible by remember { mutableStateOf(uiState.searchQuery.isNotEmpty()) }
@@ -239,6 +247,16 @@ private fun ContactsContent(
                 }
             }
 
+            if (uiState.showDuplicatesCard && uiState.searchQuery.isEmpty()) {
+                item(key = "duplicates_card") {
+                    DuplicatesCard(
+                        duplicateCount = uiState.duplicateGroups.sumOf { it.contacts.size },
+                        onMergeClick = onShowDuplicates,
+                        onDismiss = onDismissDuplicatesCard
+                    )
+                }
+            }
+
             if (uiState.favorites.isNotEmpty() && uiState.searchQuery.isEmpty()) {
                 item(key = "header_favorites") {
                     Row(
@@ -283,6 +301,30 @@ private fun ContactsContent(
                 }
             }
 
+            if (uiState.favorites.isEmpty() && uiState.searchQuery.isEmpty()) {
+                item(key = "favorites_hint") {
+                    FavoritesHintRow(onClick = onShowFavoritesHint)
+                }
+            }
+
+            val profileContact = uiState.profileContact
+            if (profileContact != null && uiState.searchQuery.isEmpty()) {
+                item(key = "header_profile") {
+                    Text(
+                        text = stringResource(id = R.string.contacts_my_profile),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = spacing.small)
+                    )
+                }
+                item(key = "profile_row") {
+                    ProfileRow(
+                        contact = profileContact,
+                        onClick = { onContactClick(profileContact) }
+                    )
+                }
+            }
+
             uiState.groupedContacts.forEach { (letter, contactsInGroup) ->
                 item(key = "header_$letter") {
                     Text(
@@ -293,13 +335,10 @@ private fun ContactsContent(
                     )
                 }
 
-                items(
-                    items = contactsInGroup,
-                    key = { it.id }
-                ) { contact ->
-                    ContactRow(
-                        contact = contact,
-                        onClick = { onContactClick(contact) }
+                item(key = "group_$letter") {
+                    ContactGroupCard(
+                        contacts = contactsInGroup,
+                        onContactClick = onContactClick
                     )
                 }
             }
