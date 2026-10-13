@@ -10,12 +10,19 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.runtime.DisposableEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -53,9 +60,6 @@ import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.telecom.CallManager
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 @Composable
@@ -98,6 +102,35 @@ fun DialpadScreen(
         }
         if (hapticEnabled) {
             view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+        }
+    }
+
+    fun performTickHaptic() {
+        val hapticEnabled = try {
+            Settings.System.getInt(
+                context.contentResolver,
+                Settings.System.HAPTIC_FEEDBACK_ENABLED,
+                1
+            ) != 0
+        } catch (_: Exception) {
+            true
+        }
+        if (hapticEnabled) {
+            view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+        }
+    }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP) {
+                viewModel.stopBackspaceRepeat()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            viewModel.stopBackspaceRepeat()
+            lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
 
@@ -258,35 +291,22 @@ fun DialpadScreen(
                     enter = fadeIn(),
                     exit = fadeOut()
                 ) {
-                    var repeatJob: Job? = null
-
                     Box(
                         modifier = Modifier
                             .size(48.dp)
                             .clip(CircleShape)
                             .pointerInput(Unit) {
-                                detectTapGestures(
-                                    onPress = {
-                                        performHaptic()
-                                        viewModel.onBackspacePressed()
-
-                                        repeatJob = coroutineScope.launch {
-                                            delay(400L) // initial delay before acceleration
-                                            var interval = 160L
-                                            while (isActive) {
-                                                performHaptic()
-                                                viewModel.onBackspacePressed()
-                                                delay(interval)
-                                                if (interval > 50L) {
-                                                    interval -= 20L
-                                                }
-                                            }
-                                        }
-
-                                        tryAwaitRelease()
-                                        repeatJob?.cancel()
+                                awaitEachGesture {
+                                    awaitFirstDown(requireUnconsumed = false)
+                                    performHaptic()
+                                    viewModel.onBackspacePressed()
+                                    viewModel.startBackspaceRepeat(onTickHaptic = { performTickHaptic() })
+                                    try {
+                                        waitForUpOrCancellation()
+                                    } finally {
+                                        viewModel.stopBackspaceRepeat()
                                     }
-                                )
+                                }
                             }
                             .testTag("btn_backspace"),
                         contentAlignment = Alignment.Center

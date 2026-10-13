@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 @OptIn(FlowPreview::class)
@@ -74,12 +75,16 @@ class DialpadViewModel(
         _uiState.value = _uiState.value.copy(matchingContacts = matches)
     }
 
+    private var backspaceRepeatJob: kotlinx.coroutines.Job? = null
+
     fun onKeyPressed(digit: Char) {
+        stopBackspaceRepeat()
         val updated = _rawNumber.value + digit
         setRawNumber(updated)
     }
 
     fun onLongPressZero() {
+        stopBackspaceRepeat()
         val updated = _rawNumber.value + "+"
         setRawNumber(updated)
     }
@@ -92,7 +97,37 @@ class DialpadViewModel(
         }
     }
 
+    fun startBackspaceRepeat(onTickHaptic: (() -> Unit)? = null) {
+        stopBackspaceRepeat()
+        val scope = activeScope ?: return
+        backspaceRepeatJob = scope.launch {
+            kotlinx.coroutines.delay(400L)
+            if (!isActive || _rawNumber.value.isEmpty()) return@launch
+            onTickHaptic?.invoke()
+            var interval = 100L
+            while (isActive && _rawNumber.value.isNotEmpty()) {
+                onBackspacePressed()
+                if (_rawNumber.value.isEmpty()) break
+                kotlinx.coroutines.delay(interval)
+                if (interval > 40L) {
+                    interval = (interval - 10L).coerceAtLeast(40L)
+                }
+            }
+        }
+    }
+
+    fun stopBackspaceRepeat() {
+        backspaceRepeatJob?.cancel()
+        backspaceRepeatJob = null
+    }
+
+    override fun onCleared() {
+        stopBackspaceRepeat()
+        super.onCleared()
+    }
+
     fun onClearAll() {
+        stopBackspaceRepeat()
         setRawNumber("")
     }
 

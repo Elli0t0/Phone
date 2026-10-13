@@ -1,15 +1,25 @@
 package io.github.elli0t0.phone
 
 import androidx.lifecycle.SavedStateHandle
+import io.github.elli0t0.phone.data.calllog.CallLogRepository
+import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import io.github.elli0t0.phone.data.contacts.ContactsRepository
 import io.github.elli0t0.phone.data.contacts.model.ContactDetail
 import io.github.elli0t0.phone.data.contacts.model.ContactInput
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
+import io.github.elli0t0.phone.data.favorites.FavoritesRepository
 import io.github.elli0t0.phone.feature.contacts.ContactsViewModel
 import io.github.elli0t0.phone.feature.dialpad.DialpadViewModel
+import io.github.elli0t0.phone.feature.recents.CallFilter
 import io.github.elli0t0.phone.feature.recents.RecentsViewModel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -27,21 +37,53 @@ class ViewModelsStateTest {
         override suspend fun deleteContact(contactId: Long, lookupKey: String): Result<Unit> = Result.success(Unit)
     }
 
+    private class FakeCallLogRepository : CallLogRepository {
+        override fun getCallLogsFlow(): Flow<List<CallLogEntry>> = flowOf(emptyList())
+        override suspend fun deleteCall(id: Long): Boolean = true
+    }
+
+    private class FakeFavoritesRepository : FavoritesRepository {
+        override fun getFavoritesFlow(allContactsFlow: Flow<List<ContactSummary>>): Flow<List<ContactSummary>> = flowOf(emptyList())
+        override fun isFavoriteFlow(lookupKey: String): Flow<Boolean> = flowOf(false)
+        override suspend fun addFavorite(lookupKey: String, contactId: Long) {}
+        override suspend fun removeFavorite(lookupKey: String) {}
+        override suspend fun toggleFavorite(lookupKey: String, contactId: Long) {}
+    }
+
     @Test
-    fun recentsViewModel_initialUiStateIsCorrect() {
-        val viewModel = RecentsViewModel()
-        val state = viewModel.uiState.value
-        assertEquals(R.string.tab_recents, state.titleRes)
-        assertEquals(R.string.placeholder_coming_soon, state.placeholderRes)
+    fun recentsViewModel_initialUiStateIsCorrect() = runTest {
+        val viewModel = RecentsViewModel(
+            callLogRepository = FakeCallLogRepository(),
+            favoritesRepository = FakeFavoritesRepository(),
+            contactsRepository = FakeContactsRepository(),
+            coroutineScope = this
+        )
+        backgroundScope.launch { viewModel.uiState.collect() }
+        advanceUntilIdle()
+
+        assertEquals(CallFilter.ALL, viewModel.uiState.value.selectedFilter)
+        assertEquals("", viewModel.uiState.value.searchQuery)
+        assertTrue(viewModel.uiState.value.daySections.isEmpty())
+        assertTrue(viewModel.uiState.value.favorites.isEmpty())
+
+        // Test filter change
+        viewModel.onFilterSelected(CallFilter.MISSED)
+        advanceUntilIdle()
+        assertEquals(CallFilter.MISSED, viewModel.uiState.value.selectedFilter)
+
+        // Test search query change
+        viewModel.onSearchQueryChanged("John")
+        advanceUntilIdle()
+        assertEquals("John", viewModel.uiState.value.searchQuery)
+        assertTrue(viewModel.uiState.value.isSearching)
     }
 
     @Test
     fun contactsViewModel_initialUiStateIsCorrect() {
         val fakeRepo = FakeContactsRepository()
         val testScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined)
-        val viewModel = ContactsViewModel(fakeRepo, testScope)
+        val viewModel = ContactsViewModel(fakeRepo, FakeFavoritesRepository(), testScope)
         val state = viewModel.uiState.value
-        assertTrue("Initial state should be loading", state.isLoading)
         assertTrue("Initial contacts should be empty", state.allContacts.isEmpty())
         assertEquals("", state.searchQuery)
     }

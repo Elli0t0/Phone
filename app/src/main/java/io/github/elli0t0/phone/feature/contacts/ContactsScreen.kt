@@ -43,7 +43,7 @@ fun ContactsScreen(
     val repository = app.container.contactsRepository
 
     val listViewModel: ContactsViewModel = viewModel(
-        factory = ContactsViewModel.provideFactory(repository)
+        factory = ContactsViewModel.provideFactory(repository, app.container.favoritesRepository)
     )
     val uiState by listViewModel.uiState.collectAsStateWithLifecycle()
     val permissionState = rememberContactsPermissionState()
@@ -86,7 +86,12 @@ fun ContactsScreen(
                 is ContactsNavDestination.Detail -> {
                     val detailViewModel: ContactDetailViewModel = viewModel(
                         key = "detail_${dest.contactId}",
-                        factory = ContactDetailViewModel.provideFactory(repository, dest.contactId, dest.lookupKey)
+                        factory = ContactDetailViewModel.provideFactory(
+                            repository,
+                            app.container.favoritesRepository,
+                            dest.contactId,
+                            dest.lookupKey
+                        )
                     )
                     val detailUiState by detailViewModel.uiState.collectAsStateWithLifecycle()
 
@@ -98,6 +103,7 @@ fun ContactsScreen(
                                 currentDestination = ContactsNavDestination.Edit(contact)
                             }
                         },
+                        onFavoriteToggle = { detailViewModel.toggleFavorite() },
                         onDeleteRequest = { detailViewModel.setDeleteDialogVisible(true) },
                         onConfirmDelete = {
                             detailViewModel.deleteContact {

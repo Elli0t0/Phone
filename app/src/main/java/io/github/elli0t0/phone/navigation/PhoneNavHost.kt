@@ -21,7 +21,11 @@ fun PhoneNavHost(
         modifier = modifier
     ) {
         composable(route = Screen.Recents.route) {
-            RecentsScreen()
+            RecentsScreen(
+                onNavigateToContactDetail = {
+                    navController.navigate(Screen.Contacts.route)
+                }
+            )
         }
         composable(route = Screen.Contacts.route) {
             ContactsScreen()

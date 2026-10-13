@@ -78,4 +78,50 @@
     <string name="cd_dialpad_key">Key %1$s</string>
     <string name="permission_call_title">Phone Call Permission</string>
     <string name="permission_call_message">Phone needs permission to place direct phone calls. Otherwise, calls will be handed off to the system dialer.</string>
+
+    <!-- Recents / Call Log -->
+    <string name="permission_call_log_title">Call log permission</string>
+    <string name="permission_call_log_message">Phone needs access to your call history to display recent calls.</string>
+    <string name="recents_empty_title">No recent calls</string>
+    <string name="recents_empty_message">Calls will appear here once you make or receive them</string>
+    <string name="recents_empty_filtered">No calls matching this filter</string>
+    <string name="favorites_empty_title">No favorites yet</string>
+    <string name="favorites_empty_message">Star contacts to see them here for quick access</string>
+    <string name="section_favorites">Favorites</string>
+    <string name="section_recents">Recent calls</string>
+    <string name="header_today">Today</string>
+    <string name="header_yesterday">Yesterday</string>
+
+    <!-- Filters -->
+    <string name="filter_all">All</string>
+    <string name="filter_missed">Missed</string>
+    <string name="filter_incoming">Incoming</string>
+    <string name="filter_outgoing">Outgoing</string>
+
+    <!-- Call Types -->
+    <string name="call_type_incoming">Incoming</string>
+    <string name="call_type_outgoing">Outgoing</string>
+    <string name="call_type_missed">Missed</string>
+    <string name="call_type_rejected">Rejected</string>
+    <string name="call_type_voicemail">Voicemail</string>
+    <string name="call_type_blocked">Blocked</string>
+    <string name="call_type_unknown">Call</string>
+
+    <!-- Call Actions -->
+    <string name="action_call">Call</string>
+    <string name="action_message">Message</string>
+    <string name="action_open_contact">Open contact</string>
+    <string name="action_add_contact">Add to contacts</string>
+    <string name="action_copy_number">Copy number</string>
+    <string name="action_delete_call">Delete from log</string>
+    <string name="snackbar_number_copied">Number copied to clipboard</string>
+    <string name="snackbar_call_deleted">Call removed from log</string>
+    <string name="cd_favorite_star">Favorite</string>
+    <string name="cd_favorite_add">Add to favorites</string>
+    <string name="cd_favorite_remove">Remove from favorites</string>
+    <string name="cd_call_back">Call back %1$s</string>
+    <string name="cd_call_type">%1$s call</string>
+    <string name="call_duration_seconds">%1$d sec</string>
+    <string name="call_duration_minutes">%1$d min %2$d sec</string>
+    <string name="call_duration_hours">%1$d hr %2$d min</string>
 </resources>

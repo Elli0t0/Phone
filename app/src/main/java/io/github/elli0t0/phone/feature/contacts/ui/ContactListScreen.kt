@@ -144,6 +144,27 @@ private fun ContactsContent(
                 }
             }
 
+            if (uiState.favorites.isNotEmpty() && uiState.searchQuery.isEmpty()) {
+                item(key = "header_favorites") {
+                    Text(
+                        text = stringResource(id = R.string.section_favorites),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(vertical = spacing.small)
+                    )
+                }
+
+                items(
+                    items = uiState.favorites,
+                    key = { "fav_${it.id}" }
+                ) { contact ->
+                    ContactRow(
+                        contact = contact,
+                        onClick = { onContactClick(contact) }
+                    )
+                }
+            }
+
             uiState.groupedContacts.forEach { (letter, contactsInGroup) ->
                 item(key = "header_$letter") {
                     Text(

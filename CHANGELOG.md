@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-10-13
+
+### Fixed
+- dial pad backspace hold (continuous vibration, delayed deletion)
+
+### Added
+- READ_CALL_LOG and WRITE_CALL_LOG permissions management with full state UI.
+- CallLogRepository with ContentObserver Flow querying CallLog.Calls on Dispatchers.IO.
+- Consecutive call grouping on the same day with count and day headers (Today, Yesterday, date).
+- Recents row UI with call type indicators, tap-to-expand details, call-back, and long-press action menu.
+- Contact resolution via ContactsContract.PhoneLookup with in-memory caching.
+- Search filter chips: All, Missed, Incoming, Outgoing.
+- Favorites local persistence powered by Room database with FavoritesDao and toggle in contact details.
+
 ## [0.1.3] - 2026-10-12
 
 ### Added

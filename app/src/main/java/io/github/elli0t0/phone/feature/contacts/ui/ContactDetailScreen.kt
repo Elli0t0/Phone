@@ -50,6 +50,7 @@ fun ContactDetailScreen(
     uiState: ContactDetailUiState,
     onBackClick: () -> Unit,
     onEditClick: () -> Unit,
+    onFavoriteToggle: () -> Unit = {},
     onDeleteRequest: () -> Unit,
     onConfirmDelete: () -> Unit,
     onDismissDeleteDialog: () -> Unit,
@@ -101,6 +102,17 @@ fun ContactDetailScreen(
                 },
                 actions = {
                     if (uiState.contact != null) {
+                        IconButton(onClick = onFavoriteToggle, modifier = Modifier.testTag("btn_detail_favorite")) {
+                            Icon(
+                                painter = painterResource(
+                                    id = if (uiState.isFavorite) R.drawable.ic_star else R.drawable.ic_star_outline
+                                ),
+                                contentDescription = stringResource(
+                                    id = if (uiState.isFavorite) R.string.cd_favorite_remove else R.string.cd_favorite_add
+                                ),
+                                tint = if (uiState.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                         IconButton(onClick = onEditClick, modifier = Modifier.testTag("btn_detail_edit")) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_edit),
