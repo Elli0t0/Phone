@@ -13,6 +13,10 @@ class CallActionReceiver : BroadcastReceiver() {
                 CallRepository.rejectCall()
                 PhoneInCallService.dismissNotification(context)
             }
+            PhoneInCallService.ACTION_HANG_UP_CALL -> {
+                CallRepository.disconnectCall()
+                PhoneInCallService.dismissNotification(context)
+            }
             PhoneInCallService.ACTION_ANSWER_CALL -> {
                 CallRepository.answerCall()
                 PhoneInCallService.dismissNotification(context)

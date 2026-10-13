@@ -33,21 +33,11 @@ class PhoneInCallService : InCallService() {
 
     private val callCallback = object : Call.Callback() {
         override fun onStateChanged(call: Call?, state: Int) {
-            call?.let {
-                if (it.state == Call.STATE_RINGING) {
-                    postIncomingCallNotification(it)
-                } else {
-                    dismissNotification()
-                }
-            }
+            call?.let { handleCallState(it) }
         }
 
         override fun onDetailsChanged(call: Call?, details: Call.Details?) {
-            call?.let {
-                if (it.state == Call.STATE_RINGING) {
-                    postIncomingCallNotification(it)
-                }
-            }
+            call?.let { updateCallNotification(it) }
         }
     }
 
@@ -56,19 +46,7 @@ class PhoneInCallService : InCallService() {
         call.registerCallback(callCallback)
         CallRepository.onCallAdded(call)
 
-        if (call.state == Call.STATE_RINGING) {
-            postIncomingCallNotification(call)
-        } else {
-            // Outgoing calls still open the call screen directly
-            val intent = Intent(this, CallActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                    Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                    Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
-            }
-            startActivity(intent)
-        }
-
-        // Resolve contact name on background thread
+        handleCallState(call)
         resolveContactNameInBackground(call)
     }
 
@@ -85,6 +63,48 @@ class PhoneInCallService : InCallService() {
         CallRepository.updateAudioState(audioState)
     }
 
+    private fun isOutgoingState(state: Int): Boolean {
+        return state == Call.STATE_NEW ||
+            state == Call.STATE_SELECT_PHONE_ACCOUNT ||
+            state == Call.STATE_CONNECTING ||
+            state == Call.STATE_DIALING
+    }
+
+    private fun isActiveState(state: Int): Boolean {
+        return state == Call.STATE_ACTIVE ||
+            state == Call.STATE_HOLDING
+    }
+
+    private fun handleCallState(call: Call) {
+        when {
+            call.state == Call.STATE_RINGING -> {
+                // Incoming ringing call: show heads-up banner, full-screen only on lock screen
+                postIncomingCallNotification(call)
+            }
+            isOutgoingState(call.state) -> {
+                // Outgoing call (NEW, SELECT_PHONE_ACCOUNT, CONNECTING, DIALING):
+                // Immediately start the in-call activity and post ongoing-call notification as fallback
+                startCallActivity()
+                postOngoingCallNotification(call)
+            }
+            isActiveState(call.state) -> {
+                // Active/connected call: ensure in-call screen is open and keep ongoing-call notification
+                startCallActivity()
+                postOngoingCallNotification(call)
+            }
+            call.state == Call.STATE_DISCONNECTED || call.state == Call.STATE_DISCONNECTING -> {
+                dismissNotification()
+            }
+            else -> {
+                postOngoingCallNotification(call)
+            }
+        }
+    }
+
+    private fun startCallActivity() {
+        startCallActivity(this)
+    }
+
     private fun resolveContactNameInBackground(call: Call) {
         lookupJob?.cancel()
         lookupJob = serviceScope.launch {
@@ -94,9 +114,7 @@ class PhoneInCallService : InCallService() {
             if (!resolvedName.isNullOrBlank()) {
                 withContext(Dispatchers.Main) {
                     CallRepository.updateDisplayName(resolvedName)
-                    if (call.state == Call.STATE_RINGING) {
-                        postIncomingCallNotification(call, resolvedName)
-                    }
+                    updateCallNotification(call, resolvedName)
                 }
             }
         }
@@ -108,11 +126,9 @@ class PhoneInCallService : InCallService() {
                 Manifest.permission.READ_CONTACTS
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            // 1. Try number as-is
             val asIs = queryPhoneLookup(rawNumber)
             if (asIs != null) return asIs
 
-            // 2. Try normalized number
             val normalized = PhoneNumberUtils.normalizeNumber(rawNumber)
             if (!normalized.isNullOrBlank() && normalized != rawNumber) {
                 val fromNormalized = queryPhoneLookup(normalized)
@@ -120,7 +136,6 @@ class PhoneInCallService : InCallService() {
             }
         }
 
-        // 3. Fallback to Call.Details contactDisplayName or callerDisplayName
         return call.details?.contactDisplayName?.takeIf { it.isNotBlank() }
             ?: call.details?.callerDisplayName?.takeIf { it.isNotBlank() }
     }
@@ -142,6 +157,20 @@ class PhoneInCallService : InCallService() {
             null
         } catch (_: Exception) {
             null
+        }
+    }
+
+    private fun updateCallNotification(call: Call, cachedDisplayName: String? = null) {
+        when {
+            call.state == Call.STATE_RINGING -> {
+                postIncomingCallNotification(call, cachedDisplayName)
+            }
+            isOutgoingState(call.state) || isActiveState(call.state) -> {
+                postOngoingCallNotification(call, cachedDisplayName)
+            }
+            else -> {
+                dismissNotification()
+            }
         }
     }
 
@@ -282,6 +311,135 @@ class PhoneInCallService : InCallService() {
         }
     }
 
+    private fun postOngoingCallNotification(call: Call, cachedDisplayName: String? = null) {
+        if (call.state == Call.STATE_DISCONNECTED || call.state == Call.STATE_DISCONNECTING) {
+            dismissNotification()
+            return
+        }
+
+        try {
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
+            val channelId = "phone_in_call_channel"
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val channel = NotificationChannel(
+                    channelId,
+                    "Calls",
+                    NotificationManager.IMPORTANCE_HIGH
+                ).apply {
+                    description = "Active and ongoing calls"
+                    setSound(null, null)
+                    lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+                }
+                notificationManager.createNotificationChannel(channel)
+            }
+
+            val handle = call.details?.handle
+            val rawNumber = handle?.schemeSpecificPart ?: ""
+            val currentDisplayName = cachedDisplayName
+                ?: CallRepository.ongoingCallModel.value?.displayName
+                ?: call.details?.contactDisplayName?.takeIf { it.isNotBlank() }
+                ?: call.details?.callerDisplayName?.takeIf { it.isNotBlank() }
+
+            val title = currentDisplayName?.takeIf { it.isNotBlank() }
+                ?: rawNumber.takeIf { it.isNotBlank() }
+                ?: "Call"
+
+            val statusText = when (call.state) {
+                Call.STATE_DIALING -> "Dialing"
+                Call.STATE_CONNECTING -> "Connecting"
+                Call.STATE_SELECT_PHONE_ACCOUNT -> "Selecting SIM"
+                Call.STATE_HOLDING -> "On hold"
+                Call.STATE_ACTIVE -> "Active call"
+                else -> "Ongoing call"
+            }
+
+            val contentText = if (currentDisplayName != null && rawNumber.isNotBlank() && currentDisplayName != rawNumber) {
+                "$rawNumber • $statusText"
+            } else {
+                statusText
+            }
+
+            // Tapping notification opens the call screen
+            val contentIntent = Intent(this, CallActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                    Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
+            }
+            val contentPendingIntent = PendingIntent.getActivity(
+                this,
+                REQUEST_CODE_CONTENT,
+                contentIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            // Full screen intent to the in-call activity (fallback if system blocks background start)
+            val fullScreenIntent = Intent(this, CallActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                    Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
+            }
+            val fullScreenPendingIntent = PendingIntent.getActivity(
+                this,
+                REQUEST_CODE_FULL_SCREEN,
+                fullScreenIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            // Hang up action
+            val hangUpIntent = Intent(this, CallActionReceiver::class.java).apply {
+                action = ACTION_HANG_UP_CALL
+            }
+            val hangUpPendingIntent = PendingIntent.getBroadcast(
+                this,
+                REQUEST_CODE_HANG_UP,
+                hangUpIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val callerPerson = Person.Builder()
+                .setName(title)
+                .setImportant(true)
+                .build()
+
+            val callStyle = NotificationCompat.CallStyle.forOngoingCall(
+                callerPerson,
+                hangUpPendingIntent
+            )
+
+            val builder = NotificationCompat.Builder(this, channelId)
+                .setSmallIcon(R.drawable.ic_phone)
+                .setContentTitle(title)
+                .setContentText(contentText)
+                .setContentIntent(contentPendingIntent)
+                .setOngoing(true)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_CALL)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setStyle(callStyle)
+
+            val canUseFullScreen = if (Build.VERSION.SDK_INT >= 34) {
+                try {
+                    notificationManager.canUseFullScreenIntent()
+                } catch (_: Throwable) {
+                    true
+                }
+            } else {
+                true
+            }
+
+            if (canUseFullScreen) {
+                try {
+                    builder.setFullScreenIntent(fullScreenPendingIntent, true)
+                } catch (_: SecurityException) {
+                }
+            }
+
+            notificationManager.notify(NOTIFICATION_ID, builder.build())
+        } catch (_: Exception) {
+        }
+    }
+
     private fun dismissNotification() {
         dismissNotification(this)
     }
@@ -290,11 +448,13 @@ class PhoneInCallService : InCallService() {
         const val NOTIFICATION_ID = 1001
         const val ACTION_ANSWER_CALL = "io.github.elli0t0.phone.action.ANSWER_CALL"
         const val ACTION_DECLINE_CALL = "io.github.elli0t0.phone.action.DECLINE_CALL"
+        const val ACTION_HANG_UP_CALL = "io.github.elli0t0.phone.action.HANG_UP_CALL"
 
         private const val REQUEST_CODE_CONTENT = 100
         private const val REQUEST_CODE_FULL_SCREEN = 101
         private const val REQUEST_CODE_ANSWER = 102
         private const val REQUEST_CODE_DECLINE = 103
+        private const val REQUEST_CODE_HANG_UP = 104
 
         private var instance: PhoneInCallService? = null
 
@@ -304,6 +464,18 @@ class PhoneInCallService : InCallService() {
 
         fun setMuted(muted: Boolean) {
             instance?.setMuted(muted)
+        }
+
+        fun startCallActivity(context: Context) {
+            try {
+                val intent = Intent(context, CallActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                        Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
+                }
+                context.startActivity(intent)
+            } catch (_: Exception) {
+            }
         }
 
         fun dismissNotification(context: Context) {

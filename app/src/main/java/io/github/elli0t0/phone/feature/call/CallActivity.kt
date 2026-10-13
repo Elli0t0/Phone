@@ -56,8 +56,10 @@ class CallActivity : ComponentActivity() {
 
                 // Finish activity when call is removed or disconnected
                 LaunchedEffect(ongoingCall) {
-                    if (ongoingCall == null || ongoingCall?.state == CallState.DISCONNECTED) {
-                        delay(1200L)
+                    if (ongoingCall == null) {
+                        finish()
+                    } else if (ongoingCall?.state == CallState.DISCONNECTED) {
+                        delay(600L)
                         finish()
                     }
                 }

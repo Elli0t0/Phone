@@ -73,6 +73,7 @@
             <intent-filter>
                 <action android:name="io.github.elli0t0.phone.action.DECLINE_CALL" />
                 <action android:name="io.github.elli0t0.phone.action.ANSWER_CALL" />
+                <action android:name="io.github.elli0t0.phone.action.HANG_UP_CALL" />
             </intent-filter>
         </receiver>
     </application>
