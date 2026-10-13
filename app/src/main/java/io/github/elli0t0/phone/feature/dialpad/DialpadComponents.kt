@@ -12,28 +12,25 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 
 data class DialKey(
@@ -61,10 +58,9 @@ fun DialKeyView(
         else -> dialKey.digit.toString()
     }
 
-    Surface(
+    Box(
         modifier = modifier
-            .size(64.dp)
-            .clip(CircleShape)
+            .size(PhoneDimens.keypadTouchSize)
             .pointerInput(dialKey) {
                 detectTapGestures(
                     onPress = {
@@ -81,8 +77,7 @@ fun DialKeyView(
                 )
             }
             .testTag("dial_key_$keyTag"),
-        shape = CircleShape,
-        color = androidx.compose.ui.graphics.Color.Transparent
+        contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -91,16 +86,23 @@ fun DialKeyView(
             Text(
                 text = dialKey.digit.toString(),
                 style = MaterialTheme.typography.titleLarge.copy(
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Normal
+                    fontSize = PhoneDimens.keypadDigitSize,
+                    fontWeight = FontWeight.Light
                 ),
                 color = MaterialTheme.colorScheme.onSurface
             )
-            if (dialKey.letters.isNotEmpty()) {
+            if (dialKey.digit == '1') {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_voicemail),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
+            } else if (dialKey.letters.isNotEmpty()) {
                 Text(
                     text = dialKey.letters,
                     style = MaterialTheme.typography.labelMedium.copy(
-                        fontSize = 10.sp,
+                        fontSize = PhoneDimens.keypadLetterSize,
                         fontWeight = FontWeight.Bold
                     ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant

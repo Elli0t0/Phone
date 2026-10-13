@@ -56,7 +56,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.PhoneApplication
@@ -288,36 +287,41 @@ fun DialpadScreen(
             }
         }
 
-        // Formatted Number Display (supports long click to paste)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onLongPress = {
-                            val clipText = clipboardManager.getText()?.text
-                            if (!clipText.isNullOrBlank()) {
-                                performHaptic()
-                                viewModel.onNumberPasted(clipText)
+        // Formatted Number Display (supports long click to paste).
+        // Shown only when there are digits.
+        if (uiState.rawNumber.isNotEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onLongPress = {
+                                val clipText = clipboardManager.getText()?.text
+                                if (!clipText.isNullOrBlank()) {
+                                    performHaptic()
+                                    viewModel.onNumberPasted(clipText)
+                                }
                             }
-                        }
-                    )
-                }
-                .testTag("dialpad_number_display"),
-            contentAlignment = Alignment.Center
-        ) {
-            val displayText = uiState.formattedNumber.ifBlank { uiState.rawNumber }
-            Text(
-                text = displayText,
-                style = MaterialTheme.typography.displayLarge.copy(fontSize = 32.sp),
-                color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Center,
-                maxLines = 1
-            )
-        }
+                        )
+                    }
+                    .testTag("dialpad_number_display"),
+                contentAlignment = Alignment.Center
+            ) {
+                val displayText = uiState.formattedNumber.ifBlank { uiState.rawNumber }
+                Text(
+                    text = displayText,
+                    style = MaterialTheme.typography.displayLarge.copy(
+                        fontSize = io.github.elli0t0.phone.core.design.PhoneDimens.keypadNumberDisplaySize
+                    ),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1
+                )
+            }
 
-        Spacer(modifier = Modifier.height(spacing.small))
+            Spacer(modifier = Modifier.height(spacing.small))
+        }
 
         // Keypad Grid (Keys 1-9, *, 0, #)
         Column(
@@ -362,7 +366,7 @@ fun DialpadScreen(
             // Placeholder empty box for balance (same size as backspace)
             Box(modifier = Modifier.size(56.dp))
 
-            // Call button (disabled when empty input)
+            // Call button: always solid green. With no digits it does nothing.
             FloatingActionButton(
                 onClick = {
                     if (uiState.canCall) {
@@ -371,19 +375,11 @@ fun DialpadScreen(
                     }
                 },
                 modifier = Modifier
-                    .size(68.dp)
+                    .size(io.github.elli0t0.phone.core.design.PhoneDimens.callButtonSize)
                     .testTag("btn_call"),
                 shape = CircleShape,
-                containerColor = if (uiState.canCall) {
-                    io.github.elli0t0.phone.core.design.CallAnswerGreen
-                } else {
-                    MaterialTheme.colorScheme.surfaceVariant
-                },
-                contentColor = if (uiState.canCall) {
-                    io.github.elli0t0.phone.core.design.OnAccentBlue
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                },
+                containerColor = io.github.elli0t0.phone.core.design.CallAnswerGreen,
+                contentColor = io.github.elli0t0.phone.core.design.OnAccentBlue,
                 elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp)
             ) {
                 Icon(

@@ -13,7 +13,7 @@ sealed class Screen(
     data object Recents : Screen(
         route = "recents",
         titleRes = R.string.tab_recents,
-        iconRes = R.drawable.ic_recents,
+        iconRes = R.drawable.ic_nav_call_log,
         contentDescriptionRes = R.string.cd_tab_recents
     )
 
@@ -27,7 +27,7 @@ sealed class Screen(
     data object Dialpad : Screen(
         route = "dialpad",
         titleRes = R.string.tab_dialpad,
-        iconRes = R.drawable.ic_nav_keypad,
+        iconRes = R.drawable.ic_nav_dialpad,
         contentDescriptionRes = R.string.cd_tab_dialpad
     )
 
