@@ -57,7 +57,7 @@ fun ContactListScreen(
     onBackFromDuplicates: () -> Unit,
     onMergeRequest: (DuplicateGroup) -> Unit,
     onDismissMerge: () -> Unit,
-    onConfirmMerge: () -> Unit,
+    onConfirmMerge: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
