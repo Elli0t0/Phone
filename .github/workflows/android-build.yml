@@ -341,13 +341,8 @@ jobs:
           echo "### Signing Certificate SHA-256" >> "$RELEASE_NOTES"
           echo "\`${CERT_SHA256}\`" >> "$RELEASE_NOTES"
 
-          # Mark as pre-release if major version is 0
-          MAJOR_VERSION=$(echo "$VERSION_NAME" | cut -d. -f1)
           PRERELEASE_FLAG=""
-          if [ "$MAJOR_VERSION" = "0" ]; then
-            PRERELEASE_FLAG="--prerelease"
-            echo "Major version is 0; marking as pre-release."
-          fi
+
 
           echo "Publishing release via gh CLI..."
           gh release create "$TAG" "$FINAL_APK" "$FINAL_SHA256" \
