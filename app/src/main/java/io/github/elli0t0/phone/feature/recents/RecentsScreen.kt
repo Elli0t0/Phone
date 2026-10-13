@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -47,8 +48,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -65,6 +64,7 @@ import io.github.elli0t0.phone.feature.setup.SetupWarningCard
 import io.github.elli0t0.phone.feature.recents.ui.CallLogRow
 import io.github.elli0t0.phone.feature.recents.ui.DaySectionCard
 import io.github.elli0t0.phone.feature.recents.ui.RecentsEmptyState
+import io.github.elli0t0.phone.navigation.CollapsingPageHeader
 import kotlinx.coroutines.launch
 
 @Composable
@@ -99,6 +99,7 @@ fun RecentsScreen(
     var searchVisible by remember { mutableStateOf(uiState.searchQuery.isNotEmpty()) }
     var menuExpanded by remember { mutableStateOf(false) }
     var filterMenuExpanded by remember { mutableStateOf(false) }
+    val listState = rememberLazyListState()
     val simAccounts = remember(context) { io.github.elli0t0.phone.core.telecom.TelecomHelper.getCallCapablePhoneAccounts(context) }
     val recentsScope = androidx.compose.runtime.rememberCoroutineScope()
 
@@ -150,31 +151,20 @@ fun RecentsScreen(
                 .padding(innerPadding)
                 .padding(horizontal = spacing.screenHorizontalPadding)
         ) {
-            Spacer(modifier = Modifier.height(spacing.screenTopPadding))
-
             SetupWarningCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = spacing.small)
             )
 
-            // App title with search and menu actions: the title takes the
-            // remaining width so it can never overlap the icon row.
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = spacing.small),
-                verticalAlignment = Alignment.CenterVertically
+            // Collapsing header: big centered title that shrinks to a
+            // small top bar as the list scrolls. The filter, search and
+            // menu actions keep their existing behavior.
+            CollapsingPageHeader(
+                title = stringResource(id = R.string.app_name),
+                subtitle = null,
+                listState = listState
             ) {
-                Text(
-                    text = stringResource(id = R.string.app_name),
-                    style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    modifier = Modifier.weight(1f)
-                )
-
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -270,6 +260,7 @@ fun RecentsScreen(
             when (val status = permissionState.status) {
                 is CallLogPermissionStatus.Granted -> {
                     LazyColumn(
+                        state = listState,
                         modifier = Modifier
                             .fillMaxSize()
                             .testTag("recents_call_list"),

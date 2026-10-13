@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -33,7 +34,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
@@ -43,6 +43,7 @@ import io.github.elli0t0.phone.core.permissions.ContactsPermissionStatus
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 import io.github.elli0t0.phone.data.contacts.model.DuplicateGroup
 import io.github.elli0t0.phone.feature.contacts.ContactsUiState
+import io.github.elli0t0.phone.navigation.CollapsingPageHeader
 
 @Composable
 fun ContactListScreen(
@@ -143,10 +144,24 @@ private fun ContactsContent(
     val spacing = LocalSpacing.current
     var searchVisible by remember { mutableStateOf(uiState.searchQuery.isNotEmpty()) }
     var menuExpanded by remember { mutableStateOf(false) }
+    val listState = rememberLazyListState()
+    val contactCount = uiState.allContacts.size
+    val countText = if (contactCount == 1) {
+        stringResource(id = R.string.contacts_count_single, contactCount)
+    } else {
+        stringResource(id = R.string.contacts_count_multiple, contactCount)
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // Top-right action row: add / search / menu
-        Row(
+        // Collapsing header: big centered title that shrinks to a
+        // small top bar as the list scrolls. The add, search and
+        // menu actions keep their existing behavior.
+        CollapsingPageHeader(
+            title = stringResource(id = R.string.tab_contacts),
+            subtitle = countText,
+            listState = listState
+        ) {
+            Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = spacing.screenHorizontalPadding, vertical = spacing.small),
@@ -205,6 +220,7 @@ private fun ContactsContent(
                 }
             }
         }
+        }
 
         if (searchVisible) {
             ContactSearchBar(
@@ -223,6 +239,7 @@ private fun ContactsContent(
             SearchEmptyState(query = uiState.searchQuery)
         } else {
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = spacing.screenHorizontalPadding)
@@ -235,32 +252,6 @@ private fun ContactsContent(
                         .calculateBottomPadding()
             )
         ) {
-            item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = spacing.small, bottom = spacing.medium),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.app_name),
-                        style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    val count = uiState.allContacts.size
-                    val countText = if (count == 1) {
-                        stringResource(id = R.string.contacts_count_single, count)
-                    } else {
-                        stringResource(id = R.string.contacts_count_multiple, count)
-                    }
-                    Text(
-                        text = countText,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
             if (uiState.showDuplicatesCard && uiState.searchQuery.isEmpty()) {
                 item(key = "duplicates_card") {
                     DuplicatesCard(

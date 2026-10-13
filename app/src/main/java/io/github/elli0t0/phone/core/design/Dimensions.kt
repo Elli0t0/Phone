@@ -19,6 +19,14 @@ object PhoneDimens {
     val bottomBarItemPaddingVertical = 8.dp
     // Space kept clear above the bar: min bar height (60dp) + 16dp gap.
     val bottomBarReservedHeight = 76.dp
+    // Collapsing page header (Recents, Contacts): tall expanded area
+    // that shrinks to a small top bar as the list scrolls.
+    val headerExpandedFraction = 0.3f
+    val headerCollapsedHeight = 56.dp
+    val headerTitleExpandedSize = 34.sp
+    val headerTitleCollapsedSize = 20.sp
+    val headerActionsBottomPaddingExpanded = 12.dp
+    val headerActionsBottomPaddingCollapsed = 4.dp
     val keypadDigitSize = 40.sp
     val keypadLetterSize = 11.sp
     val keypadTouchSize = 64.dp
