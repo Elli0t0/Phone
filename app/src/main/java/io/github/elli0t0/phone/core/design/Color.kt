@@ -7,12 +7,6 @@ val AccentBlue = Color(0xFF2473FE)
 val AccentBlueDark = Color(0xFF3E89FF)
 val OnAccentBlue = Color(0xFFFFFFFF)
 
-// Bottom bar island: dark floating pill, same in both themes
-val IslandBar = Color(0xFF2C2E33)
-val IslandSelected = Color(0xFF45474F)
-val IslandContent = Color(0xFF9E9E9E)
-val IslandContentSelected = Color(0xFFFFFFFF)
-
 // Favorite contact card gradients (reference-style colorful cards)
 val FavoriteCardGradients = listOf(
     Color(0xFFFFB75E) to Color(0xFFFF8C42),

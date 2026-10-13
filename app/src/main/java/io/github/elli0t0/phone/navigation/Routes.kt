@@ -13,21 +13,21 @@ sealed class Screen(
     data object Recents : Screen(
         route = "recents",
         titleRes = R.string.tab_recents,
-        iconRes = R.drawable.ic_recents,
+        iconRes = R.drawable.ic_nav_recents,
         contentDescriptionRes = R.string.cd_tab_recents
     )
 
     data object Contacts : Screen(
         route = "contacts",
         titleRes = R.string.tab_contacts,
-        iconRes = R.drawable.ic_contacts,
+        iconRes = R.drawable.ic_nav_contacts,
         contentDescriptionRes = R.string.cd_tab_contacts
     )
 
     data object Dialpad : Screen(
         route = "dialpad",
         titleRes = R.string.tab_dialpad,
-        iconRes = R.drawable.ic_dialpad,
+        iconRes = R.drawable.ic_nav_keypad,
         contentDescriptionRes = R.string.cd_tab_dialpad
     )
 

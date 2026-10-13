@@ -22,10 +22,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import io.github.elli0t0.phone.core.design.IslandBar
-import io.github.elli0t0.phone.core.design.IslandContent
-import io.github.elli0t0.phone.core.design.IslandContentSelected
-import io.github.elli0t0.phone.core.design.IslandSelected
+import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 
 @Composable
@@ -46,7 +43,7 @@ fun PhoneBottomBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(32.dp))
-                .background(IslandBar)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
                 .padding(8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
@@ -59,7 +56,7 @@ fun PhoneBottomBar(
                         .clip(RoundedCornerShape(24.dp))
                         .background(
                             if (selected) {
-                                IslandSelected
+                                MaterialTheme.colorScheme.surfaceContainerHighest
                             } else {
                                 androidx.compose.ui.graphics.Color.Transparent
                             }
@@ -84,9 +81,9 @@ fun PhoneBottomBar(
                         painter = painterResource(id = screen.iconRes),
                         contentDescription = stringResource(id = screen.contentDescriptionRes),
                         tint = if (selected) {
-                            IslandContentSelected
+                            MaterialTheme.colorScheme.onSurface
                         } else {
-                            IslandContent
+                            MaterialTheme.colorScheme.onSurfaceVariant
                         }
                     )
                     if (showLabels) {
@@ -95,9 +92,9 @@ fun PhoneBottomBar(
                             text = stringResource(id = screen.titleRes),
                             style = MaterialTheme.typography.labelMedium,
                             color = if (selected) {
-                                IslandContentSelected
+                                MaterialTheme.colorScheme.onSurface
                             } else {
-                                IslandContent
+                                MaterialTheme.colorScheme.onSurfaceVariant
                             }
                         )
                     }
