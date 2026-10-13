@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.15] - 2026-10-13
+
+### Fixed
+- Incoming calls not popping up: always set full-screen intent on incoming HIGH notification (system shows heads-up when unlocked, full-screen when locked). Gating it to locked removed the heads-up pop. Post the incoming notification once via startForeground; a second notify update suppresses heads-up.
+- Outgoing HIGH notification stuck on screen: when CallActivity becomes visible, replace the foreground notification with LOW ongoing via startForeground(ONGOING). Cancel alone does not update the foreground notification, so HIGH stayed over the call screen and home screen.
+- Channels: createNotificationChannel does not update importance of an existing channel. Delete and recreate when importance mismatches, so HIGH channels actually trigger heads-up.
+
 ## [0.1.14] - 2026-10-13
 
 ### Fixed

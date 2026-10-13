@@ -1,7 +1,6 @@
 package io.github.elli0t0.phone.core.telecom
 
 import android.Manifest
-import android.app.KeyguardManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -11,7 +10,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
-import android.os.PowerManager
 import android.provider.ContactsContract
 import android.telecom.Call
 import android.telecom.CallAudioState
@@ -41,6 +39,9 @@ class PhoneInCallService : InCallService() {
     @Volatile
     private var isActivityVisible = false
 
+    @Volatile
+    private var currentForegroundId: Int = -1
+
     private val callCallback = object : Call.Callback() {
         override fun onStateChanged(call: Call?, state: Int) {
             call?.let { handleCallState(it) }
@@ -68,23 +69,24 @@ class PhoneInCallService : InCallService() {
             call.registerCallback(callCallback)
             CallRepository.onCallAdded(call)
             // Foreground notification synchronously in onCallAdded, before lookups.
+            // This single post is the heads-up / full-screen trigger. Do NOT post
+            // the same notification again via notify: an update suppresses heads-up.
             startForegroundForCall(call)
             // Outgoing: both activity start AND call notification must run.
             if (isOutgoingState(call.state)) {
                 startCallActivity()
                 if (isActivityVisible || CallRepository.isCallActivityVisible.value) {
-                    cancelCallStartNotification()
-                    postOngoingCallNotification(call)
+                    transitionToOngoing(call)
                 } else {
-                    postCallStartNotification(call)
+                    // Call-start HIGH is already foreground from startForegroundForCall.
                     callStartTimeoutJob?.cancel()
                     callStartTimeoutJob = serviceScope.launch {
                         delay(1500L)
                     }
                 }
             } else if (call.state == Call.STATE_RINGING) {
-                // Incoming: heads-up notification only, no direct activity start.
-                postIncomingCallNotification(call)
+                // Incoming: foreground HIGH is already posted, no direct activity start.
+                // Heads-up / full-screen is driven by that single foreground post.
             } else {
                 handleCallState(call)
             }
@@ -110,6 +112,7 @@ class PhoneInCallService : InCallService() {
         } catch (e: Exception) {
             Log.e(TAG, "stopForeground failed", e)
         }
+        currentForegroundId = -1
         dismissNotification()
         CallRepository.onCallRemoved(call)
     }
@@ -135,26 +138,27 @@ class PhoneInCallService : InCallService() {
         try {
             when {
                 call.state == Call.STATE_RINGING -> {
-                    cancelCallStartNotification()
-                    postIncomingCallNotification(call)
+                    // Switch foreground to incoming if not already there.
+                    if (currentForegroundId != NOTIFICATION_INCOMING_ID) {
+                        startForegroundForCall(call)
+                    } else {
+                        postIncomingCallNotification(call)
+                    }
                 }
                 isOutgoingState(call.state) -> {
                     startCallActivity()
                     if (isActivityVisible || CallRepository.isCallActivityVisible.value) {
-                        cancelCallStartNotification()
-                        postOngoingCallNotification(call)
-                    } else {
-                        postCallStartNotification(call)
+                        transitionToOngoing(call)
+                    } else if (currentForegroundId != NOTIFICATION_CALL_START_ID) {
+                        startForegroundForCall(call)
                     }
                 }
                 isActiveState(call.state) -> {
-                    cancelIncomingNotification()
                     startCallActivity()
                     if (isActivityVisible || CallRepository.isCallActivityVisible.value) {
-                        cancelCallStartNotification()
-                        postOngoingCallNotification(call)
-                    } else {
-                        postCallStartNotification(call)
+                        transitionToOngoing(call)
+                    } else if (currentForegroundId != NOTIFICATION_CALL_START_ID) {
+                        startForegroundForCall(call)
                     }
                 }
                 call.state == Call.STATE_DISCONNECTED || call.state == Call.STATE_DISCONNECTING -> {
@@ -164,10 +168,9 @@ class PhoneInCallService : InCallService() {
                 }
                 else -> {
                     if (isActivityVisible || CallRepository.isCallActivityVisible.value) {
-                        cancelCallStartNotification()
-                        postOngoingCallNotification(call)
-                    } else {
-                        postCallStartNotification(call)
+                        transitionToOngoing(call)
+                    } else if (currentForegroundId != NOTIFICATION_CALL_START_ID) {
+                        startForegroundForCall(call)
                     }
                 }
             }
@@ -241,14 +244,15 @@ class PhoneInCallService : InCallService() {
         try {
             when {
                 call.state == Call.STATE_RINGING -> {
-                    cancelCallStartNotification()
-                    postIncomingCallNotification(call, cachedDisplayName)
+                    if (currentForegroundId != NOTIFICATION_INCOMING_ID) {
+                        startForegroundForCall(call)
+                    } else {
+                        postIncomingCallNotification(call, cachedDisplayName)
+                    }
                 }
                 isOutgoingState(call.state) || isActiveState(call.state) -> {
-                    cancelIncomingNotification()
                     if (isActivityVisible || CallRepository.isCallActivityVisible.value) {
-                        cancelCallStartNotification()
-                        postOngoingCallNotification(call, cachedDisplayName)
+                        transitionToOngoing(call, cachedDisplayName)
                     } else {
                         postCallStartNotification(call, cachedDisplayName)
                     }
@@ -262,16 +266,38 @@ class PhoneInCallService : InCallService() {
         }
     }
 
-    private fun isDeviceLocked(): Boolean {
-        return try {
-            val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager
-            val keyguardLocked = keyguardManager?.isKeyguardLocked == true
-            val powerManager = getSystemService(Context.POWER_SERVICE) as? PowerManager
-            val interactive = powerManager?.isInteractive ?: true
-            keyguardLocked || !interactive
+    private fun publishForeground(id: Int, notification: Notification) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(id, notification)
+            } else {
+                @Suppress("DEPRECATION")
+                startForeground(id, notification)
+            }
+            currentForegroundId = id
+            Log.d(TAG, "notification posted foreground id=$id")
         } catch (e: Exception) {
-            Log.e(TAG, "isDeviceLocked check failed", e)
-            false
+            Log.e(TAG, "startForeground failed, falling back to notify", e)
+            val notificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+            notificationManager?.notify(id, notification)
+            Log.d(TAG, "notification posted notify fallback id=$id")
+        }
+    }
+
+    private fun transitionToOngoing(call: Call, cachedDisplayName: String? = null) {
+        try {
+            val notification = buildOngoingNotification(call, cachedDisplayName) ?: return
+            // Replace the foreground notification with LOW ongoing. Cancel alone
+            // does NOT update the foreground notification: the HIGH one stays.
+            publishForeground(NOTIFICATION_ONGOING_ID, notification)
+            val notificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+            notificationManager?.cancel(NOTIFICATION_INCOMING_ID)
+            notificationManager?.cancel(NOTIFICATION_CALL_START_ID)
+            Log.d(TAG, "transitioned foreground to ongoing LOW id=$NOTIFICATION_ONGOING_ID")
+        } catch (e: Exception) {
+            Log.e(TAG, "transitionToOngoing failed", e)
         }
     }
 
@@ -293,21 +319,7 @@ class PhoneInCallService : InCallService() {
                 isOutgoingState(call.state) -> NOTIFICATION_CALL_START_ID
                 else -> NOTIFICATION_ONGOING_ID
             }
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    startForeground(foregroundId, notification)
-                } else {
-                    @Suppress("DEPRECATION")
-                    startForeground(foregroundId, notification)
-                }
-                Log.d(TAG, "notification posted foreground id=$foregroundId state=${call.state}")
-            } catch (e: Exception) {
-                Log.e(TAG, "startForeground failed, falling back to notify", e)
-                val notificationManager =
-                    getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
-                notificationManager?.notify(foregroundId, notification)
-                Log.d(TAG, "notification posted notify fallback id=$foregroundId state=${call.state}")
-            }
+            publishForeground(foregroundId, notification)
         } catch (e: Exception) {
             Log.e(TAG, "startForegroundForCall failed", e)
         }
@@ -452,26 +464,26 @@ class PhoneInCallService : InCallService() {
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setStyle(callStyle)
 
-            // Full-screen intent only for lock screen. When unlocked, heads-up banner only.
-            if (isDeviceLocked()) {
-                val canUseFullScreen = if (Build.VERSION.SDK_INT >= 34) {
-                    try {
-                        notificationManager.canUseFullScreenIntent()
-                    } catch (e: Exception) {
-                        Log.e(TAG, "canUseFullScreenIntent check failed", e)
-                        true
-                    }
-                } else {
+            // Always set full-screen intent. The system shows heads-up when
+            // unlocked and full-screen only when locked. Gating it to locked
+            // removes the heads-up pop on unlocked devices.
+            val canUseFullScreen = if (Build.VERSION.SDK_INT >= 34) {
+                try {
+                    notificationManager.canUseFullScreenIntent()
+                } catch (e: Exception) {
+                    Log.e(TAG, "canUseFullScreenIntent check failed", e)
                     true
                 }
-                if (canUseFullScreen) {
-                    try {
-                        builder.setFullScreenIntent(fullScreenPendingIntent, true)
-                    } catch (e: SecurityException) {
-                        Log.e(TAG, "setFullScreenIntent SecurityException", e)
-                    } catch (e: Exception) {
-                        Log.e(TAG, "setFullScreenIntent failed", e)
-                    }
+            } else {
+                true
+            }
+            if (canUseFullScreen) {
+                try {
+                    builder.setFullScreenIntent(fullScreenPendingIntent, true)
+                } catch (e: SecurityException) {
+                    Log.e(TAG, "setFullScreenIntent SecurityException", e)
+                } catch (e: Exception) {
+                    Log.e(TAG, "setFullScreenIntent failed", e)
                 }
             }
             return builder.build()
@@ -686,12 +698,16 @@ class PhoneInCallService : InCallService() {
             return
         }
         try {
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
-            notificationManager.cancel(NOTIFICATION_ONGOING_ID)
-            notificationManager.cancel(NOTIFICATION_CALL_START_ID)
             val notification = buildIncomingNotification(call, cachedDisplayName) ?: return
-            notificationManager.notify(NOTIFICATION_INCOMING_ID, notification)
-            Log.d(TAG, "notification posted incoming id=$NOTIFICATION_INCOMING_ID")
+            if (currentForegroundId == NOTIFICATION_INCOMING_ID) {
+                publishForeground(NOTIFICATION_INCOMING_ID, notification)
+            } else {
+                val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
+                notificationManager.cancel(NOTIFICATION_ONGOING_ID)
+                notificationManager.cancel(NOTIFICATION_CALL_START_ID)
+                notificationManager.notify(NOTIFICATION_INCOMING_ID, notification)
+                Log.d(TAG, "notification posted incoming id=$NOTIFICATION_INCOMING_ID")
+            }
         } catch (e: Exception) {
             Log.e(TAG, "postIncomingCallNotification failed", e)
         }
@@ -704,9 +720,13 @@ class PhoneInCallService : InCallService() {
         }
         try {
             val notification = buildCallStartNotification(call, cachedDisplayName) ?: return
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
-            notificationManager.notify(NOTIFICATION_CALL_START_ID, notification)
-            Log.d(TAG, "notification posted callStart id=$NOTIFICATION_CALL_START_ID")
+            if (currentForegroundId == NOTIFICATION_CALL_START_ID) {
+                publishForeground(NOTIFICATION_CALL_START_ID, notification)
+            } else {
+                val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
+                notificationManager.notify(NOTIFICATION_CALL_START_ID, notification)
+                Log.d(TAG, "notification posted callStart id=$NOTIFICATION_CALL_START_ID")
+            }
         } catch (e: Exception) {
             Log.e(TAG, "postCallStartNotification failed", e)
         }
@@ -717,39 +737,21 @@ class PhoneInCallService : InCallService() {
             dismissNotification()
             return
         }
-        try {
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
-            notificationManager.cancel(NOTIFICATION_INCOMING_ID)
-            notificationManager.cancel(NOTIFICATION_CALL_START_ID)
-            val notification = buildOngoingNotification(call, cachedDisplayName) ?: return
-            notificationManager.notify(NOTIFICATION_ONGOING_ID, notification)
-            Log.d(TAG, "notification posted ongoing id=$NOTIFICATION_ONGOING_ID")
-        } catch (e: Exception) {
-            Log.e(TAG, "postOngoingCallNotification failed", e)
-        }
+        transitionToOngoing(call, cachedDisplayName)
     }
 
     private fun handleCallActivityResumed() {
         isActivityVisible = true
         callStartTimeoutJob?.cancel()
         callStartTimeoutJob = null
-        cancelCallStartNotification()
         val call = CallRepository.currentCall.value
         if (call != null && call.state != Call.STATE_RINGING && call.state != Call.STATE_DISCONNECTED && call.state != Call.STATE_DISCONNECTING) {
-            postOngoingCallNotification(call)
+            transitionToOngoing(call)
         }
     }
 
     private fun handleCallActivityPaused() {
         isActivityVisible = false
-    }
-
-    private fun cancelCallStartNotification() {
-        cancelCallStartNotification(this)
-    }
-
-    private fun cancelIncomingNotification() {
-        cancelIncomingNotification(this)
     }
 
     private fun dismissNotification() {

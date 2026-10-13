@@ -24,38 +24,56 @@ object CallNotificationChannels {
             notificationManager.deleteNotificationChannel(OLD_ONGOING_CHANNEL_ID)
         } catch (_: Throwable) {
         }
-        val incoming = NotificationChannel(
+        // createNotificationChannel does NOT update importance of an existing channel.
+        // If an old channel has the wrong importance, heads-up never triggers.
+        // Delete and recreate when importance mismatches.
+        createOrFix(
+            notificationManager,
             INCOMING_CHANNEL_ID,
             "Incoming calls",
-            NotificationManager.IMPORTANCE_HIGH
-        ).apply {
-            description = "Incoming call notifications"
-            setSound(null, null)
-            enableVibration(true)
-            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
-        }
-        val callStart = NotificationChannel(
+            NotificationManager.IMPORTANCE_HIGH,
+            "Incoming call notifications",
+            true
+        )
+        createOrFix(
+            notificationManager,
             CALL_START_CHANNEL_ID,
             "Call start",
-            NotificationManager.IMPORTANCE_HIGH
-        ).apply {
-            description = "Outgoing call starting notifications"
-            setSound(null, null)
-            enableVibration(false)
-            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
-        }
-        val ongoing = NotificationChannel(
+            NotificationManager.IMPORTANCE_HIGH,
+            "Outgoing call starting notifications",
+            false
+        )
+        createOrFix(
+            notificationManager,
             ONGOING_CHANNEL_ID,
             "Ongoing calls",
-            NotificationManager.IMPORTANCE_LOW
-        ).apply {
-            description = "Active and ongoing call notifications"
+            NotificationManager.IMPORTANCE_LOW,
+            "Active and ongoing call notifications",
+            false
+        )
+    }
+
+    private fun createOrFix(
+        notificationManager: NotificationManager,
+        id: String,
+        name: String,
+        importance: Int,
+        description: String,
+        vibrate: Boolean
+    ) {
+        try {
+            val existing = notificationManager.getNotificationChannel(id)
+            if (existing != null && existing.importance != importance) {
+                notificationManager.deleteNotificationChannel(id)
+            }
+        } catch (_: Throwable) {
+        }
+        val channel = NotificationChannel(id, name, importance).apply {
+            this.description = description
             setSound(null, null)
-            enableVibration(false)
+            enableVibration(vibrate)
             lockscreenVisibility = Notification.VISIBILITY_PUBLIC
         }
-        notificationManager.createNotificationChannel(incoming)
-        notificationManager.createNotificationChannel(callStart)
-        notificationManager.createNotificationChannel(ongoing)
+        notificationManager.createNotificationChannel(channel)
     }
 }
