@@ -40,14 +40,13 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -70,7 +69,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
-import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.permissions.SetupPermissions
 import io.github.elli0t0.phone.core.telecom.rememberDefaultDialerState
 import io.github.elli0t0.phone.feature.setup.SetupChecklist
@@ -475,10 +473,7 @@ fun SettingsScreen(
                             contentDescription = stringResource(id = R.string.cd_back)
                         )
                     }
-                },
-                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+                }
             )
         }
     ) { innerPadding ->
@@ -501,7 +496,7 @@ fun SettingsScreen(
                 Card(
                     shape = MaterialTheme.shapes.extraLarge,
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -542,7 +537,7 @@ fun SettingsScreen(
                 item {
                     Card(
                         shape = MaterialTheme.shapes.extraLarge,
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(spacing.medium)) {
@@ -569,7 +564,7 @@ fun SettingsScreen(
             item {
                 Card(
                     shape = MaterialTheme.shapes.extraLarge,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
@@ -634,71 +629,11 @@ fun SettingsScreen(
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
-                        // Font size scale: thin 4dp track, round thumb replaced by
-                        // a vertical bar, small tick marks at each stop.
-                        // State-based Slider (Material3 1.3.0): only this
-                        // overload accepts custom thumb/track slots.
-                        val fontScaleState = remember {
-                            SliderState(
-                                value = settings.fontSizeScale,
-                                steps = 8,
-                                valueRange = 0.85f..1.30f
-                            )
-                        }
-                        // Keep the state in sync when the stored setting
-                        // changes (e.g. first load from DataStore).
-                        LaunchedEffect(settings.fontSizeScale) {
-                            if (fontScaleState.value != settings.fontSizeScale) {
-                                fontScaleState.value = settings.fontSizeScale
-                            }
-                        }
                         Slider(
-                            state = fontScaleState,
+                            value = settings.fontSizeScale,
                             onValueChange = { viewModel.onFontSizeScaleChanged((it * 20).roundToInt() / 20f) },
-                            thumb = {
-                                Box(
-                                    modifier = Modifier
-                                        .size(width = 4.dp, height = 24.dp)
-                                        .clip(RoundedCornerShape(2.dp))
-                                        .background(MaterialTheme.colorScheme.primary)
-                                )
-                            },
-                            track = { sliderState ->
-                                val tickCount = 10
-                                val fraction = (
-                                    sliderState.value - sliderState.valueRange.start
-                                    ) / (sliderState.valueRange.endInclusive - sliderState.valueRange.start)
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(4.dp)
-                                        .clip(RoundedCornerShape(2.dp))
-                                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth(fraction)
-                                            .height(4.dp)
-                                            .background(MaterialTheme.colorScheme.primary)
-                                    )
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        repeat(tickCount) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(4.dp)
-                                                    .clip(CircleShape)
-                                                    .background(
-                                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                                    )
-                                            )
-                                        }
-                                    }
-                                }
-                            }
+                            valueRange = 0.85f..1.30f,
+                            steps = 8
                         )
                     }
                 }
@@ -712,7 +647,7 @@ fun SettingsScreen(
             item {
                 Card(
                     shape = MaterialTheme.shapes.extraLarge,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
@@ -743,7 +678,7 @@ fun SettingsScreen(
             item {
                 Card(
                     shape = MaterialTheme.shapes.extraLarge,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
@@ -785,7 +720,7 @@ fun SettingsScreen(
             item {
                 Card(
                     shape = MaterialTheme.shapes.extraLarge,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
@@ -816,7 +751,7 @@ fun SettingsScreen(
             item {
                 Card(
                     shape = MaterialTheme.shapes.extraLarge,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
@@ -862,7 +797,7 @@ fun SettingsScreen(
             item {
                 Card(
                     shape = MaterialTheme.shapes.extraLarge,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
@@ -891,7 +826,7 @@ fun SettingsScreen(
             item {
                 Card(
                     shape = MaterialTheme.shapes.extraLarge,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
@@ -911,7 +846,7 @@ fun SettingsScreen(
             item {
                 Card(
                     shape = MaterialTheme.shapes.extraLarge,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
@@ -1000,51 +935,9 @@ private fun SettingsSwitchRow(
                 )
             }
         }
-        AppSwitch(
+        Switch(
             checked = checked,
             onCheckedChange = onCheckedChange
-        )
-    }
-}
-
-// Wide-track switch with a large white round thumb.
-@Composable
-private fun AppSwitch(
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val thumbOffset by androidx.compose.animation.core.animateDpAsState(
-        targetValue = if (checked) {
-            PhoneDimens.switchWidth - PhoneDimens.switchThumbSize - 2.dp
-        } else {
-            2.dp
-        },
-        label = "switch_thumb"
-    )
-    Box(
-        modifier = modifier
-            .size(
-                width = PhoneDimens.switchWidth,
-                height = PhoneDimens.switchHeight
-            )
-            .clip(RoundedCornerShape(14.dp))
-            .background(
-                if (checked) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.outlineVariant
-                }
-            )
-            .clickable { onCheckedChange(!checked) },
-        contentAlignment = Alignment.CenterStart
-    ) {
-        Box(
-            modifier = Modifier
-                .padding(start = thumbOffset)
-                .size(PhoneDimens.switchThumbSize)
-                .clip(CircleShape)
-                .background(Color.White)
         )
     }
 }

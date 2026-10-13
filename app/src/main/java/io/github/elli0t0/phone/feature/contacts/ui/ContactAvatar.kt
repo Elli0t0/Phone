@@ -10,8 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -19,8 +17,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
-import io.github.elli0t0.phone.core.design.AvatarGradients
-import kotlin.math.abs
 
 @Composable
 fun ContactAvatar(
@@ -31,16 +27,12 @@ fun ContactAvatar(
     textStyle: TextStyle = MaterialTheme.typography.titleMedium
 ) {
     val initial = displayName.trim().take(1).uppercase().ifBlank { "?" }
-    // Soft two-tone pastel gradient, deterministic per name. Photos still
-    // show when present; the gradient is the fallback initial avatar.
-    val gradient = AvatarGradients[abs(displayName.hashCode()) % AvatarGradients.size]
-    val gradientBrush = Brush.linearGradient(colors = listOf(gradient.first, gradient.second))
 
     Box(
         modifier = modifier
             .size(size)
             .clip(CircleShape)
-            .background(gradientBrush),
+            .background(MaterialTheme.colorScheme.primaryContainer),
         contentAlignment = Alignment.Center
     ) {
         if (!photoUri.isNullOrBlank()) {
@@ -58,13 +50,13 @@ fun ContactAvatar(
                     Box(
                         modifier = Modifier
                             .size(size)
-                            .background(gradientBrush),
+                            .background(MaterialTheme.colorScheme.primaryContainer),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = initial,
                             style = textStyle,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
                 },
@@ -72,13 +64,13 @@ fun ContactAvatar(
                     Box(
                         modifier = Modifier
                             .size(size)
-                            .background(gradientBrush),
+                            .background(MaterialTheme.colorScheme.primaryContainer),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = initial,
                             style = textStyle,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
                 }
@@ -87,7 +79,7 @@ fun ContactAvatar(
             Text(
                 text = initial,
                 style = textStyle,
-                color = Color.White
+                color = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
     }
