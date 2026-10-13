@@ -106,16 +106,37 @@ class CallActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        CallRepository.setCallActivityVisible(true)
+        PhoneInCallService.onCallActivityResumed(this)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        CallRepository.setCallActivityVisible(false)
+        PhoneInCallService.onCallActivityPaused(this)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        CallRepository.setCallActivityVisible(false)
+        PhoneInCallService.onCallActivityPaused(this)
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         handleIntent(intent)
+        CallRepository.setCallActivityVisible(true)
+        PhoneInCallService.onCallActivityResumed(this)
     }
 
     private fun handleIntent(intent: Intent?) {
         if (intent?.action == PhoneInCallService.ACTION_ANSWER_CALL) {
             CallRepository.answerCall()
             PhoneInCallService.cancelIncomingNotification(this)
+            PhoneInCallService.onCallActivityResumed(this)
         }
     }
 }

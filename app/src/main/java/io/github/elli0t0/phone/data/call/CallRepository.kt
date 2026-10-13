@@ -14,6 +14,13 @@ object CallRepository {
     private val _ongoingCallModel = MutableStateFlow<OngoingCallModel?>(null)
     val ongoingCallModel: StateFlow<OngoingCallModel?> = _ongoingCallModel.asStateFlow()
 
+    private val _isCallActivityVisible = MutableStateFlow(false)
+    val isCallActivityVisible: StateFlow<Boolean> = _isCallActivityVisible.asStateFlow()
+
+    fun setCallActivityVisible(visible: Boolean) {
+        _isCallActivityVisible.value = visible
+    }
+
     private val callCallback = object : Call.Callback() {
         override fun onStateChanged(call: Call?, state: Int) {
             updateCallModel()
