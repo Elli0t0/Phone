@@ -61,6 +61,14 @@
     <string name="duplicates_merge_message">Keep %1$s? %2$s will be deleted, and their phone numbers and emails will be moved into %1$s.</string>
     <string name="duplicates_merge_confirm">Merge</string>
 
+    <!-- Groups -->
+    <string name="groups_title">Groups</string>
+    <string name="groups_empty_title">No groups yet</string>
+    <string name="groups_empty_message">Groups from your accounts will appear here.</string>
+    <string name="groups_member_count_single">%1$d member</string>
+    <string name="groups_member_count_multiple">%1$d members</string>
+    <string name="groups_no_members">No contacts in this group</string>
+
     <!-- Create / Edit Contact -->
     <string name="contact_create_title">New Contact</string>
     <string name="contact_edit_title">Edit Contact</string>

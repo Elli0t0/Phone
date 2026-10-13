@@ -1,6 +1,7 @@
 package io.github.elli0t0.phone.data.contacts
 
 import io.github.elli0t0.phone.data.contacts.model.ContactDetail
+import io.github.elli0t0.phone.data.contacts.model.ContactGroup
 import io.github.elli0t0.phone.data.contacts.model.ContactInput
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 import kotlinx.coroutines.flow.Flow
@@ -43,6 +44,17 @@ interface ContactsRepository {
      * "My profile" row in the contacts list.
      */
     suspend fun getProfileContact(): ContactSummary? = null
+
+    /**
+     * All non-deleted contact groups from ContactsContract.Groups, each with
+     * its member count. Used by the Groups screen.
+     */
+    suspend fun getContactGroups(): List<ContactGroup> = emptyList()
+
+    /**
+     * Members of one group, as contact summaries sorted by display name.
+     */
+    suspend fun getGroupMembers(groupId: Long): List<ContactSummary> = emptyList()
 
     /**
      * All phone numbers per contact, keyed by contact ID. Used for duplicate

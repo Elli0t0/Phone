@@ -25,6 +25,7 @@ import io.github.elli0t0.phone.data.contacts.model.ContactDetail
 import io.github.elli0t0.phone.feature.contacts.ui.ContactDetailScreen
 import io.github.elli0t0.phone.feature.contacts.ui.ContactEditScreen
 import io.github.elli0t0.phone.feature.contacts.ui.ContactListScreen
+import io.github.elli0t0.phone.feature.contacts.ui.GroupsScreen
 import kotlinx.coroutines.launch
 
 private sealed interface ContactsNavDestination {
@@ -32,6 +33,7 @@ private sealed interface ContactsNavDestination {
     data class Detail(val contactId: Long, val lookupKey: String) : ContactsNavDestination
     data object Create : ContactsNavDestination
     data class Edit(val contact: ContactDetail) : ContactsNavDestination
+    data object Groups : ContactsNavDestination
 }
 
 @Composable
@@ -94,10 +96,24 @@ fun ContactsScreen(
                         },
                         onShowDuplicates = listViewModel::showDuplicates,
                         onDismissDuplicatesCard = listViewModel::dismissDuplicatesCard,
+                        onGroupsClick = { currentDestination = ContactsNavDestination.Groups },
                         onBackFromDuplicates = listViewModel::hideDuplicates,
                         onMergeRequest = listViewModel::requestMerge,
                         onDismissMerge = listViewModel::dismissMergeDialog,
                         onConfirmMerge = listViewModel::confirmMerge
+                    )
+                }
+
+                is ContactsNavDestination.Groups -> {
+                    val groupsViewModel: GroupsViewModel = viewModel(
+                        factory = GroupsViewModel.provideFactory(repository)
+                    )
+                    GroupsScreen(
+                        viewModel = groupsViewModel,
+                        onBack = { currentDestination = ContactsNavDestination.List },
+                        onMemberClick = { contact ->
+                            currentDestination = ContactsNavDestination.Detail(contact.id, contact.lookupKey)
+                        }
                     )
                 }
 

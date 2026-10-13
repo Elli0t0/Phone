@@ -11,16 +11,19 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.ContactsContract
 import android.provider.ContactsContract.CommonDataKinds.Email
+import android.provider.ContactsContract.CommonDataKinds.GroupMembership
 import android.provider.ContactsContract.CommonDataKinds.Organization
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.Photo
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import android.provider.ContactsContract.Contacts
 import android.provider.ContactsContract.Data
+import android.provider.ContactsContract.Groups
 import android.provider.ContactsContract.RawContacts
 import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
 import io.github.elli0t0.phone.data.contacts.model.ContactDetail
 import io.github.elli0t0.phone.data.contacts.model.ContactEmail
+import io.github.elli0t0.phone.data.contacts.model.ContactGroup
 import io.github.elli0t0.phone.data.contacts.model.ContactInput
 import io.github.elli0t0.phone.data.contacts.model.ContactPhone
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
@@ -569,6 +572,113 @@ class AndroidContactsRepository(
             profile
         } catch (_: Exception) {
             null
+        }
+    }
+
+    override suspend fun getContactGroups(): List<ContactGroup> = withContext(Dispatchers.IO) {
+        try {
+            // Member counts per group: distinct contact IDs per GROUP_ROW_ID.
+            val counts = mutableMapOf<Long, MutableSet<Long>>()
+            contentResolver.query(
+                Data.CONTENT_URI,
+                arrayOf(Data.CONTACT_ID, GroupMembership.GROUP_ROW_ID),
+                "${Data.MIMETYPE} = ?",
+                arrayOf(GroupMembership.CONTENT_ITEM_TYPE),
+                null
+            )?.use {
+                val contactIdx = it.getColumnIndex(Data.CONTACT_ID)
+                val groupIdx = it.getColumnIndex(GroupMembership.GROUP_ROW_ID)
+                while (it.moveToNext()) {
+                    val members = counts.getOrPut(it.getLong(groupIdx)) { mutableSetOf() }
+                    members.add(it.getLong(contactIdx))
+                }
+            }
+
+            val groups = mutableListOf<ContactGroup>()
+            contentResolver.query(
+                Groups.CONTENT_URI,
+                arrayOf(Groups._ID, Groups.TITLE),
+                "${Groups.DELETED} = 0",
+                null,
+                "${Groups.TITLE} COLLATE LOCALIZED ASC"
+            )?.use {
+                val idIdx = it.getColumnIndex(Groups._ID)
+                val titleIdx = it.getColumnIndex(Groups.TITLE)
+                while (it.moveToNext()) {
+                    val id = it.getLong(idIdx)
+                    val title = it.getString(titleIdx)?.takeIf { t -> t.isNotBlank() } ?: continue
+                    groups.add(ContactGroup(id = id, title = title, memberCount = counts[id]?.size ?: 0))
+                }
+            }
+            groups
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    override suspend fun getGroupMembers(groupId: Long): List<ContactSummary> = withContext(Dispatchers.IO) {
+        try {
+            val memberIds = mutableListOf<Long>()
+            contentResolver.query(
+                Data.CONTENT_URI,
+                arrayOf(Data.CONTACT_ID),
+                "${Data.MIMETYPE} = ? AND ${GroupMembership.GROUP_ROW_ID} = ?",
+                arrayOf(GroupMembership.CONTENT_ITEM_TYPE, groupId.toString()),
+                null
+            )?.use {
+                val idx = it.getColumnIndex(Data.CONTACT_ID)
+                while (it.moveToNext()) {
+                    val id = it.getLong(idx)
+                    if (!memberIds.contains(id)) {
+                        memberIds.add(id)
+                    }
+                }
+            }
+            if (memberIds.isEmpty()) {
+                return@withContext emptyList()
+            }
+            val primaryPhones = queryPrimaryPhones()
+            val summaries = mutableListOf<ContactSummary>()
+            val selection = "${Contacts._ID} IN (${memberIds.joinToString(",") { "?" }})"
+            contentResolver.query(
+                Contacts.CONTENT_URI,
+                arrayOf(
+                    Contacts._ID,
+                    Contacts.LOOKUP_KEY,
+                    Contacts.DISPLAY_NAME_PRIMARY,
+                    Contacts.PHOTO_URI
+                ),
+                selection,
+                memberIds.map { it.toString() }.toTypedArray(),
+                "${Contacts.DISPLAY_NAME_PRIMARY} COLLATE LOCALIZED ASC"
+            )?.use {
+                val idIdx = it.getColumnIndex(Contacts._ID)
+                val lookupIdx = it.getColumnIndex(Contacts.LOOKUP_KEY)
+                val nameIdx = it.getColumnIndex(Contacts.DISPLAY_NAME_PRIMARY)
+                val photoIdx = it.getColumnIndex(Contacts.PHOTO_URI)
+                while (it.moveToNext()) {
+                    val id = it.getLong(idIdx)
+                    val lookupKey = it.getString(lookupIdx) ?: ""
+                    val rawName = it.getString(nameIdx)
+                    val photoUri = it.getString(photoIdx)
+                    val phonePreview = primaryPhones[id]
+                    val displayName = rawName?.takeIf { n -> n.isNotBlank() }
+                        ?: phonePreview
+                        ?: ""
+                    summaries.add(
+                        ContactSummary(
+                            id = id,
+                            lookupKey = lookupKey,
+                            displayName = displayName,
+                            photoUri = photoUri,
+                            primaryNumberPreview = phonePreview
+                        )
+                    )
+                }
+            }
+            summaries
+        } catch (_: Exception) {
+            emptyList()
         }
     }
 

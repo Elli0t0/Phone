@@ -53,6 +53,7 @@ fun ContactListScreen(
     onShowFavoritesHint: () -> Unit = {},
     onShowDuplicates: () -> Unit = {},
     onDismissDuplicatesCard: () -> Unit = {},
+    onGroupsClick: () -> Unit = {},
     onBackFromDuplicates: () -> Unit,
     onMergeRequest: (DuplicateGroup) -> Unit,
     onDismissMerge: () -> Unit,
@@ -93,7 +94,8 @@ fun ContactListScreen(
                         onFindDuplicates = onFindDuplicates,
                         onShowFavoritesHint = onShowFavoritesHint,
                         onShowDuplicates = onShowDuplicates,
-                        onDismissDuplicatesCard = onDismissDuplicatesCard
+                        onDismissDuplicatesCard = onDismissDuplicatesCard,
+                        onGroupsClick = onGroupsClick
                     )
                 }
                 is ContactsPermissionStatus.NotAsked,
@@ -131,7 +133,8 @@ private fun ContactsContent(
     onFindDuplicates: () -> Unit,
     onShowFavoritesHint: () -> Unit,
     onShowDuplicates: () -> Unit,
-    onDismissDuplicatesCard: () -> Unit
+    onDismissDuplicatesCard: () -> Unit,
+    onGroupsClick: () -> Unit
 ) {
     val spacing = LocalSpacing.current
     var searchVisible by remember { mutableStateOf(uiState.searchQuery.isNotEmpty()) }
@@ -322,6 +325,12 @@ private fun ContactsContent(
                         contact = profileContact,
                         onClick = { onContactClick(profileContact) }
                     )
+                }
+            }
+
+            if (uiState.searchQuery.isEmpty()) {
+                item(key = "groups_row") {
+                    GroupsRow(onClick = onGroupsClick)
                 }
             }
 

@@ -360,6 +360,43 @@ fun DuplicatesCard(
 }
 
 @Composable
+fun GroupsRow(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val spacing = LocalSpacing.current
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = spacing.small)
+            .clickable(onClick = onClick)
+            .testTag("groups_row"),
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(spacing.medium),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_group),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(spacing.medium))
+            Text(
+                text = stringResource(id = R.string.groups_title),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+    }
+}
+
+@Composable
 fun PermissionCard(
     title: String,
     message: String,
