@@ -39,12 +39,13 @@ fun ContactSearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
     onClear: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    placeholderText: String = stringResource(id = R.string.contacts_search_hint)
 ) {
     OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,
-        placeholder = { Text(text = stringResource(id = R.string.contacts_search_hint)) },
+        placeholder = { Text(text = placeholderText) },
         leadingIcon = {
             Icon(
                 painter = painterResource(id = R.drawable.ic_search),

@@ -35,9 +35,11 @@ class AndroidCallLogRepository(
             try {
                 val logs = queryCallLogs()
                 trySend(logs)
-            } catch (_: SecurityException) {
+            } catch (e: SecurityException) {
+                android.util.Log.e("CallLogRepository", "SecurityException reading call logs", e)
                 trySend(emptyList())
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                android.util.Log.e("CallLogRepository", "Exception reading call logs", e)
                 trySend(emptyList())
             }
         }
@@ -57,15 +59,17 @@ class AndroidCallLogRepository(
                 true,
                 observer
             )
-        } catch (_: SecurityException) {
-            // Permission not granted yet
+        } catch (e: SecurityException) {
+            android.util.Log.e("CallLogRepository", "Permission not granted for ContentObserver", e)
+        } catch (e: Exception) {
+            android.util.Log.e("CallLogRepository", "Failed to register ContentObserver", e)
         }
 
         awaitClose {
             try {
                 contentResolver.unregisterContentObserver(observer)
-            } catch (_: Exception) {
-                // Ignore cleanup errors
+            } catch (e: Exception) {
+                android.util.Log.e("CallLogRepository", "Failed to unregister ContentObserver", e)
             }
         }
     }.flowOn(Dispatchers.IO)
@@ -81,17 +85,47 @@ class AndroidCallLogRepository(
             CallLog.Calls.PHONE_ACCOUNT_ID
         )
 
-        val sortOrder = "${CallLog.Calls.DATE} DESC LIMIT 500"
         val resolvedContactsCache = mutableMapOf<String, ResolvedContact>()
         val result = mutableListOf<CallLogEntry>()
 
-        val cursor = contentResolver.query(
-            CallLog.Calls.CONTENT_URI,
-            projection,
-            null,
-            null,
-            sortOrder
-        ) ?: return emptyList()
+        val cursor: Cursor? = try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                val queryArgs = android.os.Bundle().apply {
+                    putInt(ContentResolver.QUERY_ARG_LIMIT, 500)
+                    putStringArray(
+                        ContentResolver.QUERY_ARG_SORT_COLUMNS,
+                        arrayOf(CallLog.Calls.DATE)
+                    )
+                    putInt(
+                        ContentResolver.QUERY_ARG_SORT_DIRECTION,
+                        ContentResolver.QUERY_SORT_DIRECTION_DESCENDING
+                    )
+                }
+                contentResolver.query(
+                    CallLog.Calls.CONTENT_URI,
+                    projection,
+                    queryArgs,
+                    null
+                )
+            } else {
+                val sortOrder = "${CallLog.Calls.DATE} DESC LIMIT 500"
+                contentResolver.query(
+                    CallLog.Calls.CONTENT_URI,
+                    projection,
+                    null,
+                    null,
+                    sortOrder
+                )
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("CallLogRepository", "Error executing call log query", e)
+            throw e
+        }
+
+        if (cursor == null) {
+            android.util.Log.w("CallLogRepository", "Call log query returned null cursor")
+            return emptyList()
+        }
 
         cursor.use { c ->
             val idIdx = c.getColumnIndex(CallLog.Calls._ID)
@@ -113,8 +147,13 @@ class AndroidCallLogRepository(
 
                 val callType = mapCallType(typeCode)
                 val resolvedContact = if (rawNumber.isNotBlank()) {
-                    resolvedContactsCache.getOrPut(rawNumber) {
-                        resolveContactByNumber(rawNumber)
+                    try {
+                        resolvedContactsCache.getOrPut(rawNumber) {
+                            resolveContactByNumber(rawNumber)
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.w("CallLogRepository", "Failed to resolve contact for $rawNumber", e)
+                        null
                     }
                 } else null
 

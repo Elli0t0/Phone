@@ -11,12 +11,18 @@ import io.github.elli0t0.phone.data.calllog.util.CallLogGroupingHelper
 import io.github.elli0t0.phone.data.contacts.ContactsRepository
 import io.github.elli0t0.phone.data.favorites.FavoritesRepository
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+@OptIn(ExperimentalCoroutinesApi::class)
 
 class RecentsViewModel(
     private val callLogRepository: CallLogRepository,
@@ -35,30 +41,69 @@ class RecentsViewModel(
     private val _searchQuery = MutableStateFlow("")
     private val _expandedCallId = MutableStateFlow<Long?>(null)
     private val _userMessageRes = MutableStateFlow<Int?>(null)
+    private val _reloadTrigger = MutableStateFlow(0L)
+    private val _errorMessage = MutableStateFlow<String?>(null)
 
     private val favoritesFlow = favoritesRepository.getFavoritesFlow(
         contactsRepository.getContactsFlow()
     )
 
-    val uiState: StateFlow<RecentsUiState> = combine(
-        combine(callLogRepository.getCallLogsFlow(), favoritesFlow, ::Pair),
+    private val callLogsFlow = _reloadTrigger.flatMapLatest {
+        callLogRepository.getCallLogsFlow()
+            .catch { e ->
+                android.util.Log.e("RecentsViewModel", "Error in callLogsFlow", e)
+                _errorMessage.value = e.localizedMessage ?: "Unknown error"
+                emit(emptyList())
+            }
+    }
+
+    private data class LogData(
+        val calls: List<CallLogEntry>,
+        val favorites: List<io.github.elli0t0.phone.data.contacts.model.ContactSummary>,
+        val errorMsg: String?
+    )
+
+    private val logDataFlow = combine(
+        callLogsFlow,
+        favoritesFlow,
+        _errorMessage
+    ) { calls, favorites, errorMsg ->
+        LogData(calls, favorites, errorMsg)
+    }
+
+    private data class FilterState(
+        val filter: CallFilter,
+        val query: String,
+        val expandedId: Long?,
+        val messageRes: Int?
+    )
+
+    private val filterStateFlow = combine(
         _selectedFilter,
         _searchQuery,
         _expandedCallId,
         _userMessageRes
-    ) { (calls, favorites), filter, query, expandedId, messageRes ->
-        val filteredCalls = filterCalls(calls, filter, query)
+    ) { filter, query, expandedId, messageRes ->
+        FilterState(filter, query, expandedId, messageRes)
+    }
+
+    val uiState: StateFlow<RecentsUiState> = combine(
+        logDataFlow,
+        filterStateFlow
+    ) { logData, filterState ->
+        val filteredCalls = filterCalls(logData.calls, filterState.filter, filterState.query)
         val grouped = CallLogGroupingHelper.groupConsecutiveCalls(filteredCalls)
         val daySections = CallLogGroupingHelper.organizeIntoDaySections(grouped)
 
         RecentsUiState(
             daySections = daySections,
-            favorites = favorites,
-            selectedFilter = filter,
-            searchQuery = query,
-            expandedCallId = expandedId,
-            isSearching = query.isNotBlank(),
-            userMessageRes = messageRes
+            favorites = logData.favorites,
+            selectedFilter = filterState.filter,
+            searchQuery = filterState.query,
+            expandedCallId = filterState.expandedId,
+            isSearching = filterState.query.isNotBlank(),
+            userMessageRes = filterState.messageRes,
+            errorMessage = logData.errorMsg
         )
     }.stateIn(
         scope = activeScope ?: CoroutineScope(kotlinx.coroutines.Dispatchers.Main.immediate),
@@ -118,6 +163,11 @@ class RecentsViewModel(
 
     fun clearUserMessage() {
         _userMessageRes.value = null
+    }
+
+    fun reload() {
+        _errorMessage.value = null
+        _reloadTrigger.value = System.currentTimeMillis()
     }
 
     override fun onCleared() {

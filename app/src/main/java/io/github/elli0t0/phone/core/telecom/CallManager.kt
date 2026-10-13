@@ -31,7 +31,11 @@ import androidx.core.content.ContextCompat
  */
 object CallManager {
 
-    fun placeCall(context: Context, rawNumber: String) {
+    fun placeCall(
+        context: Context,
+        rawNumber: String,
+        phoneAccountHandle: android.telecom.PhoneAccountHandle? = null
+    ) {
         val trimmed = rawNumber.trim()
         if (trimmed.isEmpty()) return
 
@@ -45,7 +49,12 @@ object CallManager {
             val telecomManager = context.getSystemService(Context.TELECOM_SERVICE) as? TelecomManager
             if (telecomManager != null) {
                 try {
-                    telecomManager.placeCall(encodedUri, null)
+                    val extras = if (phoneAccountHandle != null) {
+                        android.os.Bundle().apply {
+                            putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, phoneAccountHandle)
+                        }
+                    } else null
+                    telecomManager.placeCall(encodedUri, extras)
                     return
                 } catch (_: SecurityException) {
                     // Fallback to ACTION_CALL intent

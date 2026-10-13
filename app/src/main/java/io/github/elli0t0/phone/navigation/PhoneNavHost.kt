@@ -24,6 +24,9 @@ fun PhoneNavHost(
             RecentsScreen(
                 onNavigateToContactDetail = {
                     navController.navigate(Screen.Contacts.route)
+                },
+                onNavigateToSettings = {
+                    navController.navigate(Screen.Settings.route)
                 }
             )
         }
@@ -32,6 +35,11 @@ fun PhoneNavHost(
         }
         composable(route = Screen.Dialpad.route) {
             DialpadScreen()
+        }
+        composable(route = Screen.Settings.route) {
+            io.github.elli0t0.phone.feature.settings.SettingsScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
     }
 }

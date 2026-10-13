@@ -41,6 +41,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -82,12 +83,36 @@ fun DialpadScreen(
     val clipboardManager = LocalClipboardManager.current
     val coroutineScope = rememberCoroutineScope()
 
+    val simAccounts = remember(context) { io.github.elli0t0.phone.core.telecom.TelecomHelper.getCallCapablePhoneAccounts(context) }
+    var simPickerTargetNumber by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
+
+    fun dialNumber(number: String) {
+        if (simAccounts.size > 1) {
+            simPickerTargetNumber = number
+        } else {
+            CallManager.placeCall(context, number)
+        }
+    }
+
+    if (simPickerTargetNumber != null) {
+        io.github.elli0t0.phone.feature.call.ui.DualSimPickerDialog(
+            simAccounts = simAccounts,
+            targetNumber = simPickerTargetNumber.orEmpty(),
+            onSimSelected = { sim ->
+                val num = simPickerTargetNumber.orEmpty()
+                simPickerTargetNumber = null
+                CallManager.placeCall(context, num, sim.handle)
+            },
+            onDismiss = { simPickerTargetNumber = null }
+        )
+    }
+
     // Permission launcher for CALL_PHONE
     val callPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { _ ->
         // On either granted or denied, placeCall handles it (ACTION_CALL or ACTION_DIAL fallback)
-        CallManager.placeCall(context, uiState.rawNumber)
+        dialNumber(uiState.rawNumber)
     }
 
     fun performHaptic() {
@@ -167,7 +192,7 @@ fun DialpadScreen(
                                 performHaptic()
                                 val num = contact.primaryNumberPreview ?: ""
                                 if (num.isNotBlank()) {
-                                    CallManager.placeCall(context, num)
+                                    dialNumber(num)
                                 }
                             }
                         )

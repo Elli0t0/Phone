@@ -80,11 +80,14 @@
     <string name="permission_call_message">Phone needs permission to place direct phone calls. Otherwise, calls will be handed off to the system dialer.</string>
 
     <!-- Recents / Call Log -->
+    <string name="recents_search_hint">Search calls</string>
     <string name="permission_call_log_title">Call log permission</string>
     <string name="permission_call_log_message">Phone needs access to your call history to display recent calls.</string>
     <string name="recents_empty_title">No recent calls</string>
     <string name="recents_empty_message">Calls will appear here once you make or receive them</string>
     <string name="recents_empty_filtered">No calls matching this filter</string>
+    <string name="recents_error_title">Unable to load calls</string>
+    <string name="recents_error_message">An error occurred while reading your call history: %1$s</string>
     <string name="favorites_empty_title">No favorites yet</string>
     <string name="favorites_empty_message">Star contacts to see them here for quick access</string>
     <string name="section_favorites">Favorites</string>
@@ -124,4 +127,33 @@
     <string name="call_duration_seconds">%1$d sec</string>
     <string name="call_duration_minutes">%1$d min %2$d sec</string>
     <string name="call_duration_hours">%1$d hr %2$d min</string>
+
+    <!-- Default Phone App / Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_default_phone_app">Default phone app</string>
+    <string name="settings_default_phone_app_desc">Set Phone as your default dialer to handle incoming and outgoing calls</string>
+    <string name="settings_is_default">Default phone app is active</string>
+    <string name="settings_set_as_default">Set as default</string>
+    <string name="cd_settings">Settings</string>
+
+    <!-- InCall Service and UI -->
+    <string name="call_incoming">Incoming call</string>
+    <string name="call_outgoing">Calling…</string>
+    <string name="call_connecting">Connecting…</string>
+    <string name="call_active">Ongoing call</string>
+    <string name="call_holding">On hold</string>
+    <string name="call_disconnected">Call ended</string>
+    <string name="call_action_answer">Answer</string>
+    <string name="call_action_decline">Decline</string>
+    <string name="call_action_end">End call</string>
+    <string name="call_action_mute">Mute</string>
+    <string name="call_action_unmute">Unmute</string>
+    <string name="call_action_speaker">Speaker</string>
+    <string name="call_action_earpiece">Earpiece</string>
+    <string name="call_action_bluetooth">Bluetooth</string>
+    <string name="call_action_hold">Hold</string>
+    <string name="call_action_resume">Resume</string>
+    <string name="call_action_keypad">Keypad</string>
+    <string name="call_audio_output">Audio Output</string>
+    <string name="call_sim_picker_title">Select SIM card</string>
 </resources>

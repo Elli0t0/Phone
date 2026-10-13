@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] - 2026-10-13
+
+### Fixed
+- Recents: Re-check READ_CALL_LOG permission on resume and after grant, reloading call log flow dynamically.
+- Recents: Query CallLog on API 30+ using ContentResolver Bundle query arguments (limit 500, date DESC) instead of SQL LIMIT in sortOrder.
+- Recents: Caught and logged query/lookup exceptions, displaying an error state instead of a false empty state.
+- Recents: Changed search placeholder to "Search calls".
+
+### Added
+- Default phone app integration with RoleManager ROLE_DIALER in Settings screen.
+- PhoneInCallService handling telecom calls with BIND_INCALL_SERVICE permission.
+- Incoming call screen with full-screen notification over lock screen and answer/decline controls.
+- Ongoing call screen with timer, mute, audio routing (Speaker, Earpiece, Bluetooth), call hold, and DTMF keypad.
+- Multi-SIM support with dual SIM account picker dialog.
+
 ## [0.1.4] - 2026-10-13
 
 ### Fixed

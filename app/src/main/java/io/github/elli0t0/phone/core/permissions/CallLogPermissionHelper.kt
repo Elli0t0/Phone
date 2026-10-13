@@ -64,7 +64,9 @@ class CallLogPermissionState(
 )
 
 @Composable
-fun rememberCallLogPermissionState(): CallLogPermissionState {
+fun rememberCallLogPermissionState(
+    onPermissionChanged: (Boolean) -> Unit = {}
+): CallLogPermissionState {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -91,7 +93,9 @@ fun rememberCallLogPermissionState(): CallLogPermissionState {
 
         if (readGranted) {
             currentStatus = CallLogPermissionStatus.Granted
+            onPermissionChanged(true)
         } else {
+            onPermissionChanged(false)
             val activity = context as? Activity
             val shouldShowRationale = activity != null &&
                 ActivityCompat.shouldShowRequestPermissionRationale(
@@ -113,8 +117,10 @@ fun rememberCallLogPermissionState(): CallLogPermissionState {
                 canWrite = CallLogPermissions.hasWritePermission(context)
                 if (hasRead) {
                     currentStatus = CallLogPermissionStatus.Granted
+                    onPermissionChanged(true)
                 } else if (hasAskedOnce && currentStatus is CallLogPermissionStatus.Granted) {
                     currentStatus = CallLogPermissionStatus.Denied
+                    onPermissionChanged(false)
                 }
             }
         }

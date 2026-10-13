@@ -31,6 +31,13 @@ sealed class Screen(
         contentDescriptionRes = R.string.cd_tab_dialpad
     )
 
+    data object Settings : Screen(
+        route = "settings",
+        titleRes = R.string.settings_title,
+        iconRes = R.drawable.ic_settings,
+        contentDescriptionRes = R.string.cd_settings
+    )
+
     companion object {
         val bottomNavItems = listOf(Recents, Contacts, Dialpad)
     }

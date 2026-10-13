@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +15,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -22,11 +25,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -49,6 +55,7 @@ import io.github.elli0t0.phone.feature.recents.ui.RecentsFilterChips
 @Composable
 fun RecentsScreen(
     onNavigateToContactDetail: (Long) -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -62,10 +69,40 @@ fun RecentsScreen(
     )
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val permissionState = rememberCallLogPermissionState()
+    val permissionState = rememberCallLogPermissionState(
+        onPermissionChanged = { isGranted ->
+            if (isGranted) {
+                viewModel.reload()
+            }
+        }
+    )
     val spacing = LocalSpacing.current
     val clipboardManager = LocalClipboardManager.current
     val snackbarHostState = remember { SnackbarHostState() }
+
+    var simPickerTargetNumber by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
+    val simAccounts = remember(context) { io.github.elli0t0.phone.core.telecom.TelecomHelper.getCallCapablePhoneAccounts(context) }
+
+    fun initiateCall(number: String) {
+        if (simAccounts.size > 1) {
+            simPickerTargetNumber = number
+        } else {
+            CallManager.placeCall(context, number)
+        }
+    }
+
+    if (simPickerTargetNumber != null) {
+        io.github.elli0t0.phone.feature.call.ui.DualSimPickerDialog(
+            simAccounts = simAccounts,
+            targetNumber = simPickerTargetNumber.orEmpty(),
+            onSimSelected = { sim ->
+                val num = simPickerTargetNumber.orEmpty()
+                simPickerTargetNumber = null
+                CallManager.placeCall(context, num, sim.handle)
+            },
+            onDismiss = { simPickerTargetNumber = null }
+        )
+    }
 
     LaunchedEffect(uiState.userMessageRes) {
         uiState.userMessageRes?.let { resId ->
@@ -87,19 +124,38 @@ fun RecentsScreen(
         ) {
             Spacer(modifier = Modifier.height(spacing.screenTopPadding))
 
-            // One UI Large Header
-            Text(
-                text = stringResource(id = R.string.tab_recents),
-                style = MaterialTheme.typography.displayLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(bottom = spacing.small)
-            )
+            // One UI Large Header with Settings Icon
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = spacing.small),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(id = R.string.tab_recents),
+                    style = MaterialTheme.typography.displayLarge,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
 
-            // Search Bar
+                androidx.compose.material3.IconButton(
+                    onClick = onNavigateToSettings,
+                    modifier = Modifier.testTag("settings_button")
+                ) {
+                    androidx.compose.material3.Icon(
+                        painter = painterResource(id = R.drawable.ic_settings),
+                        contentDescription = stringResource(id = R.string.cd_settings),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            // Search Bar with "Search calls" placeholder
             ContactSearchBar(
                 query = uiState.searchQuery,
                 onQueryChange = viewModel::onSearchQueryChanged,
                 onClear = { viewModel.onSearchQueryChanged("") },
+                placeholderText = stringResource(id = R.string.recents_search_hint),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = spacing.small)
@@ -119,15 +175,37 @@ fun RecentsScreen(
                             .fillMaxSize()
                             .testTag("recents_call_list")
                     ) {
-                        // Favorites section if available
-                        if (uiState.favorites.isNotEmpty() && !uiState.isSearching) {
+                        // Error State
+                        if (uiState.errorMessage != null) {
+                            item(key = "recents_error") {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = spacing.large)
+                                        .testTag("recents_error_state"),
+                                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = stringResource(id = R.string.recents_error_title),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.padding(bottom = spacing.extraSmall)
+                                    )
+                                    Text(
+                                        text = stringResource(id = R.string.recents_error_message, uiState.errorMessage.orEmpty()),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        } else if (uiState.favorites.isNotEmpty() && !uiState.isSearching) {
                             item(key = "section_favorites") {
                                 FavoritesHorizontalSection(
                                     favorites = uiState.favorites,
                                     onContactClick = { contact -> onNavigateToContactDetail(contact.id) },
                                     onCallClick = { contact ->
                                         contact.primaryNumberPreview?.let { num ->
-                                            CallManager.placeCall(context, num)
+                                            initiateCall(num)
                                         }
                                     },
                                     modifier = Modifier.padding(bottom = spacing.medium)
@@ -136,13 +214,13 @@ fun RecentsScreen(
                         }
 
                         // Empty calls state
-                        if (uiState.daySections.isEmpty()) {
+                        if (uiState.errorMessage == null && uiState.daySections.isEmpty()) {
                             item(key = "empty_recents") {
                                 RecentsEmptyState(
                                     isFiltered = uiState.selectedFilter != CallFilter.ALL || uiState.isSearching
                                 )
                             }
-                        } else {
+                        } else if (uiState.errorMessage == null) {
                             // Grouped Call List with Day Headers
                             uiState.daySections.forEach { section ->
                                 item(key = "header_${section.title}") {
@@ -163,7 +241,7 @@ fun RecentsScreen(
                                         isExpanded = uiState.expandedCallId == group.id,
                                         canWriteCallLog = permissionState.hasWritePermission,
                                         onRowClick = { viewModel.onToggleExpandCall(group.id) },
-                                        onCallClick = { CallManager.placeCall(context, group.number) },
+                                        onCallClick = { initiateCall(group.number) },
                                         onMessageClick = {
                                             val uri = Uri.parse("smsto:${Uri.encode(group.number)}")
                                             val intent = Intent(Intent.ACTION_SENDTO, uri)
