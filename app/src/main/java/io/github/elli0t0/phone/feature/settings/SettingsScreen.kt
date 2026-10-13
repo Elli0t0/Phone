@@ -40,12 +40,14 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -634,11 +636,25 @@ fun SettingsScreen(
                         }
                         // Font size scale: thin 4dp track, round thumb replaced by
                         // a vertical bar, small tick marks at each stop.
+                        // State-based Slider (Material3 1.3.0): only this
+                        // overload accepts custom thumb/track slots.
+                        val fontScaleState = remember {
+                            SliderState(
+                                value = settings.fontSizeScale,
+                                steps = 8,
+                                valueRange = 0.85f..1.30f
+                            )
+                        }
+                        // Keep the state in sync when the stored setting
+                        // changes (e.g. first load from DataStore).
+                        LaunchedEffect(settings.fontSizeScale) {
+                            if (fontScaleState.value != settings.fontSizeScale) {
+                                fontScaleState.value = settings.fontSizeScale
+                            }
+                        }
                         Slider(
-                            value = settings.fontSizeScale,
+                            state = fontScaleState,
                             onValueChange = { viewModel.onFontSizeScaleChanged((it * 20).roundToInt() / 20f) },
-                            valueRange = 0.85f..1.30f,
-                            steps = 8,
                             thumb = {
                                 Box(
                                     modifier = Modifier
