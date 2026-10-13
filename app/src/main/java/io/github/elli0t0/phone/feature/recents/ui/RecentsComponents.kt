@@ -13,12 +13,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Card
@@ -27,7 +29,10 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,7 +51,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
+import io.github.elli0t0.phone.core.design.CallSwipeGreen
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.MessageSwipeBlue
+import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.data.calllog.model.CallGroup
 import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import io.github.elli0t0.phone.data.calllog.model.CallType
@@ -84,16 +93,83 @@ fun CallLogRow(
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
+    // Unknown numbers are formatted consistently (same formatter as the dialer)
+    // instead of showing the raw number from the call log.
+    val displayTitle = if (group.primaryCall.contactId == null) {
+        PhoneNumberFormatter.format(group.displayTitle)
+    } else {
+        group.displayTitle
+    }
+    val nameColor = if (isMissed) {
+        MaterialTheme.colorScheme.error
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
 
+    // Swipe right = call, left = message. The action fires and the row snaps
+    // back; the row is never dismissed.
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            when (value) {
+                SwipeToDismissBoxValue.StartToEnd -> {
+                    onCallClick()
+                    false
+                }
+                SwipeToDismissBoxValue.EndToStart -> {
+                    onMessageClick()
+                    false
+                }
+                SwipeToDismissBoxValue.Settled -> false
+            }
+        }
+    )
+
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {
+            val direction = dismissState.targetValue
+            val background = when (direction) {
+                SwipeToDismissBoxValue.StartToEnd -> CallSwipeGreen
+                SwipeToDismissBoxValue.EndToStart -> MessageSwipeBlue
+                SwipeToDismissBoxValue.Settled -> androidx.compose.ui.graphics.Color.Transparent
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(background)
+                    .padding(horizontal = spacing.medium),
+                contentAlignment = if (direction == SwipeToDismissBoxValue.StartToEnd) {
+                    Alignment.CenterStart
+                } else {
+                    Alignment.CenterEnd
+                }
+            ) {
+                if (direction != SwipeToDismissBoxValue.Settled) {
+                    Icon(
+                        painter = painterResource(
+                            id = if (direction == SwipeToDismissBoxValue.StartToEnd) {
+                                R.drawable.ic_phone
+                            } else {
+                                R.drawable.ic_message
+                            }
+                        ),
+                        contentDescription = null,
+                        tint = androidx.compose.ui.graphics.Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+        },
+        modifier = modifier.testTag("call_row_${group.id}"),
+        content = {
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 3.dp)
             .combinedClickable(
                 onClick = onRowClick,
                 onLongClick = { showMenu = true }
             )
-            .testTag("call_row_${group.id}")
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = spacing.medium, vertical = spacing.small)) {
             Row(
@@ -114,9 +190,9 @@ fun CallLogRow(
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = group.displayTitle,
+                            text = displayTitle,
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                            color = if (isMissed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                            color = nameColor,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -124,7 +200,7 @@ fun CallLogRow(
                             Text(
                                 text = " (${group.count})",
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                color = if (isMissed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                color = nameColor
                             )
                         }
                     }
@@ -134,7 +210,6 @@ fun CallLogRow(
                         if (!isMissed) {
                             add(formatDuration(group.primaryCall.durationSeconds, group.type))
                         }
-                        add(formattedTime)
                         group.primaryCall.simInfo?.let { add(it) }
                     }
                     Text(
@@ -146,18 +221,15 @@ fun CallLogRow(
                     )
                 }
 
-                // Call back button
-                IconButton(
-                    onClick = onCallClick,
-                    modifier = Modifier.testTag("btn_callback_${group.id}")
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_phone),
-                        contentDescription = stringResource(id = R.string.cd_call_back, group.displayTitle),
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
+                // Time on the right, instead of the blue call icon.
+                // Call-back stays reachable via swipe, tap-to-expand and long-press.
+                Text(
+                    text = formattedTime,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    modifier = Modifier.padding(start = spacing.small)
+                )
 
                 // Long press context menu
                 DropdownMenu(
@@ -215,6 +287,8 @@ fun CallLogRow(
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
         }
     }
+        }
+    )
 }
 
 /**
@@ -232,16 +306,21 @@ fun DaySectionCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(bottom = spacing.small),
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = RoundedCornerShape(PhoneDimens.sectionCardRadius),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         calls.forEachIndexed { index, group ->
             rowContent(group)
             if (index < calls.lastIndex) {
+                // Divider starts at the text, not at the row edge:
+                // row padding + type icon + gap.
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.outlineVariant,
                     thickness = 1.dp,
-                    modifier = Modifier.padding(horizontal = spacing.medium)
+                    modifier = Modifier.padding(
+                        start = spacing.medium + 20.dp + spacing.medium,
+                        end = spacing.medium
+                    )
                 )
             }
         }

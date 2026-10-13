@@ -61,7 +61,9 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            if (currentRoute != Screen.Setup.route) {
+            // The bar floats only over the 3 main tabs; it is hidden on
+            // Settings, contact details, edit, permissions setup and in-call.
+            if (currentRoute in Screen.bottomNavItems.map { it.route }) {
                 PhoneBottomBar(
                     navController = navController,
                     currentRoute = currentRoute,
@@ -70,11 +72,14 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
             }
         }
     ) { innerPadding ->
+        // Only the status-bar (top) inset applies here. Lists on the main tabs
+        // scroll edge-to-edge behind the floating bar and carry their own
+        // bottom content padding, so no clipped container appears behind it.
         PhoneNavHost(
             navController = navController,
             startDestination = startDestination,
             defaultStartTabRoute = appSettings.defaultStartTab.route,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(top = innerPadding.calculateTopPadding())
         )
     }
 }

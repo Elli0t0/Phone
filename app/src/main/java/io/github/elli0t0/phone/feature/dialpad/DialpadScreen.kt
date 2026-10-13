@@ -10,6 +10,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -60,7 +62,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
-import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.CallButtonDark
+import io.github.elli0t0.phone.core.design.CallButtonLight
+import io.github.elli0t0.phone.core.design.KeypadBackgroundDark
+import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.data.settings.model.ThemeMode
 import io.github.elli0t0.phone.core.telecom.CallManager
 import io.github.elli0t0.phone.feature.contacts.ui.ContactSearchBar
 import io.github.elli0t0.phone.feature.setup.SetupWarningCard
@@ -83,6 +90,11 @@ fun DialpadScreen(
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val spacing = LocalSpacing.current
+    val darkTheme = when (LocalAppSettings.current.themeMode) {
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+    }
     val view = LocalView.current
     val clipboardManager = LocalClipboardManager.current
     val coroutineScope = rememberCoroutineScope()
@@ -180,8 +192,16 @@ fun DialpadScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(
+                if (darkTheme) KeypadBackgroundDark else MaterialTheme.colorScheme.background
+            )
             .padding(horizontal = spacing.screenHorizontalPadding)
+            .navigationBarsPadding()
+            .padding(
+                bottom = PhoneDimens.bottomBarHeight +
+                    PhoneDimens.bottomBarAboveNavBar +
+                    PhoneDimens.callButtonAboveBarGap
+            )
             .testTag("dialpad_screen"),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -378,7 +398,7 @@ fun DialpadScreen(
                     .size(io.github.elli0t0.phone.core.design.PhoneDimens.callButtonSize)
                     .testTag("btn_call"),
                 shape = CircleShape,
-                containerColor = io.github.elli0t0.phone.core.design.CallAnswerGreen,
+                containerColor = if (darkTheme) CallButtonDark else CallButtonLight,
                 contentColor = io.github.elli0t0.phone.core.design.OnAccentBlue,
                 elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp)
             ) {
