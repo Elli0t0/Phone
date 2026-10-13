@@ -28,6 +28,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -226,7 +227,7 @@ fun SettingsScreen(
                 Card(
                     shape = MaterialTheme.shapes.large,
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        containerColor = Color.Transparent
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -274,6 +275,10 @@ fun SettingsScreen(
                 }
             }
 
+            item {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            }
+
             // Permissions & setup: shown only while a required permission or the
             // default dialer role is missing.
             if (!requiredSetupComplete) {
@@ -284,7 +289,7 @@ fun SettingsScreen(
                 item {
                     Card(
                         shape = MaterialTheme.shapes.large,
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(spacing.medium)) {
@@ -303,6 +308,10 @@ fun SettingsScreen(
                 }
             }
 
+            item {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            }
+
             // Category 1: Appearance & Display
             item {
                 SettingsSectionHeader(title = stringResource(id = R.string.settings_cat_appearance))
@@ -311,7 +320,7 @@ fun SettingsScreen(
             item {
                 Card(
                     shape = MaterialTheme.shapes.large,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
@@ -496,6 +505,10 @@ fun SettingsScreen(
                 }
             }
 
+            item {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            }
+
             // Category 2: Layout & Density
             item {
                 SettingsSectionHeader(title = stringResource(id = R.string.settings_cat_layout))
@@ -504,7 +517,7 @@ fun SettingsScreen(
             item {
                 Card(
                     shape = MaterialTheme.shapes.large,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
@@ -550,6 +563,10 @@ fun SettingsScreen(
                 }
             }
 
+            item {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            }
+
             // Category 3: Navigation & Behavior
             item {
                 SettingsSectionHeader(title = stringResource(id = R.string.settings_cat_navigation))
@@ -558,7 +575,7 @@ fun SettingsScreen(
             item {
                 Card(
                     shape = MaterialTheme.shapes.large,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
@@ -627,6 +644,10 @@ fun SettingsScreen(
                 }
             }
 
+            item {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            }
+
             // Category 4: Contacts Display
             item {
                 SettingsSectionHeader(title = stringResource(id = R.string.settings_cat_contacts))
@@ -635,7 +656,7 @@ fun SettingsScreen(
             item {
                 Card(
                     shape = MaterialTheme.shapes.large,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
@@ -680,6 +701,10 @@ fun SettingsScreen(
                 }
             }
 
+            item {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            }
+
             // Category 5: Reset
             item {
                 SettingsSectionHeader(title = stringResource(id = R.string.settings_cat_reset))
@@ -688,7 +713,7 @@ fun SettingsScreen(
             item {
                 Card(
                     shape = MaterialTheme.shapes.large,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
@@ -716,8 +741,8 @@ fun SettingsScreen(
 private fun SettingsSectionHeader(title: String) {
     Text(
         text = title,
-        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-        color = MaterialTheme.colorScheme.primary,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(vertical = 4.dp)
     )
 }
