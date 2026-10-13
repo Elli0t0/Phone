@@ -53,29 +53,59 @@ class ContactsViewModel(
 
     private val settingsFlow = settingsRepository?.settingsFlow ?: flowOf(AppSettings())
 
-    val uiState: StateFlow<ContactsUiState> = combine(
+    // kotlinx-coroutines 1.8.1 only provides combine() overloads for up to 5 flows,
+    // so the 10 inputs are grouped into two 5-flow combines first.
+    private data class ContactsData(
+        val contacts: List<ContactSummary>,
+        val favorites: List<ContactSummary>,
+        val settings: AppSettings,
+        val query: String,
+        val messageRes: Int?
+    )
+
+    private data class ContactsUiExtras(
+        val duplicateGroups: List<DuplicateGroup>,
+        val showDuplicates: Boolean,
+        val isFindingDuplicates: Boolean,
+        val pendingMergeGroup: DuplicateGroup?,
+        val isMerging: Boolean
+    )
+
+    private val contactsDataFlow = combine(
         contactsRepository.getContactsFlow(),
         favoritesFlow,
         settingsFlow,
         _searchQuery,
-        _userMessageRes,
+        _userMessageRes
+    ) { contacts, favorites, settings, query, messageRes ->
+        ContactsData(contacts, favorites, settings, query, messageRes)
+    }
+
+    private val contactsUiExtrasFlow = combine(
         _duplicateGroups,
         _showDuplicates,
         _isFindingDuplicates,
         _pendingMergeGroup,
         _isMerging
-    ) { contacts, favorites, settings, query, messageRes, duplicateGroups, showDuplicates, isFindingDuplicates, pendingMergeGroup, isMerging ->
-        latestContacts = contacts
-        val formattedContacts = contacts.map { contact ->
+    ) { duplicateGroups, showDuplicates, isFindingDuplicates, pendingMergeGroup, isMerging ->
+        ContactsUiExtras(duplicateGroups, showDuplicates, isFindingDuplicates, pendingMergeGroup, isMerging)
+    }
+
+    val uiState: StateFlow<ContactsUiState> = combine(
+        contactsDataFlow,
+        contactsUiExtrasFlow
+    ) { data, extras ->
+        latestContacts = data.contacts
+        val formattedContacts = data.contacts.map { contact ->
             val parts = contact.displayName.trim().split("\\s+".toRegex())
-            val formattedName = if (settings.contactNameFormat == ContactNameFormat.LAST_NAME_FIRST && parts.size > 1) {
+            val formattedName = if (data.settings.contactNameFormat == ContactNameFormat.LAST_NAME_FIRST && parts.size > 1) {
                 "${parts.last()}, ${parts.dropLast(1).joinToString(" ")}"
             } else {
                 contact.displayName
             }
             contact.copy(displayName = formattedName)
         }.sortedWith { a, b ->
-            if (settings.contactSortOrder == ContactSortOrder.LAST_NAME) {
+            if (data.settings.contactSortOrder == ContactSortOrder.LAST_NAME) {
                 val lastA = a.displayName.trim().split("\\s+".toRegex()).lastOrNull().orEmpty()
                 val lastB = b.displayName.trim().split("\\s+".toRegex()).lastOrNull().orEmpty()
                 lastA.compareTo(lastB, ignoreCase = true)
@@ -84,22 +114,22 @@ class ContactsViewModel(
             }
         }
 
-        val filtered = ContactSearchMatcher.filter(formattedContacts, query)
+        val filtered = ContactSearchMatcher.filter(formattedContacts, data.query)
         val grouped = ContactGroupingUtil.groupContacts(filtered)
 
         ContactsUiState(
-            searchQuery = query,
+            searchQuery = data.query,
             allContacts = formattedContacts,
-            favorites = favorites,
+            favorites = data.favorites,
             filteredContacts = filtered,
             groupedContacts = grouped,
             isLoading = false,
-            userMessageRes = messageRes,
-            duplicateGroups = duplicateGroups,
-            showDuplicates = showDuplicates,
-            isFindingDuplicates = isFindingDuplicates,
-            pendingMergeGroup = pendingMergeGroup,
-            isMerging = isMerging
+            userMessageRes = data.messageRes,
+            duplicateGroups = extras.duplicateGroups,
+            showDuplicates = extras.showDuplicates,
+            isFindingDuplicates = extras.isFindingDuplicates,
+            pendingMergeGroup = extras.pendingMergeGroup,
+            isMerging = extras.isMerging
         )
     }.stateIn(
         scope = activeScope,
