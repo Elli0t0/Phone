@@ -1,5 +1,7 @@
 package io.github.elli0t0.phone.feature.settings
 
+import android.content.Intent
+import android.telecom.TelecomManager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,6 +21,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -167,6 +170,18 @@ fun BlockedNumbersScreen(
                             Button(onClick = dialerState.requestDefaultDialer) {
                                 Text(text = stringResource(id = R.string.blocked_numbers_set_default))
                             }
+                        }
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        OutlinedButton(
+                            onClick = {
+                                runCatching {
+                                    context.startActivity(
+                                        Intent(TelecomManager.ACTION_SHOW_CALL_SETTINGS)
+                                    )
+                                }
+                            }
+                        ) {
+                            Text(text = stringResource(id = R.string.blocked_numbers_open_system))
                         }
                     }
                 }

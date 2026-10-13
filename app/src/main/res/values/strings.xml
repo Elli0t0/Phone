@@ -281,6 +281,9 @@
     <string name="blocked_numbers_not_available">Blocking needs Phone set as the default dialer</string>
     <string name="blocked_numbers_set_default">Set as default</string>
     <string name="blocked_numbers_invalid">Enter a phone number</string>
+    <string name="blocked_numbers_open_system">Open system call settings</string>
+    <string name="recents_block_number">Block number</string>
+    <string name="recents_unblock_number">Unblock number</string>
     <string name="settings_reset_dialog_title">Reset settings?</string>
     <string name="settings_reset_dialog_message">This will restore all appearance, layout, and behavior preferences to their factory defaults.</string>
     <string name="settings_reset_confirm">Reset</string>

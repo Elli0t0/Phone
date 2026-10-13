@@ -432,7 +432,9 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(spacing.extraSmall))
             }
 
-            // Default Phone App Card
+            // Default Phone App Card: hidden once Phone is the default dialer,
+            // since there is nothing left to do here.
+            if (!dialerState.isDefault) {
             item {
                 Card(
                     shape = MaterialTheme.shapes.extraLarge,
@@ -457,32 +459,15 @@ fun SettingsScreen(
                         )
                         Spacer(modifier = Modifier.height(spacing.medium))
 
-                        if (dialerState.isDefault) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_check),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = stringResource(id = R.string.settings_is_default),
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        } else {
-                            Button(
-                                onClick = dialerState.requestDefaultDialer,
-                                modifier = Modifier.testTag("set_as_default_button")
-                            ) {
-                                Text(text = stringResource(id = R.string.settings_set_as_default))
-                            }
+                        Button(
+                            onClick = dialerState.requestDefaultDialer,
+                            modifier = Modifier.testTag("set_as_default_button")
+                        ) {
+                            Text(text = stringResource(id = R.string.settings_set_as_default))
                         }
                     }
                 }
+            }
             }
 
             // Permissions & setup: shown only while a required permission or the

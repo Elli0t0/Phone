@@ -1,5 +1,7 @@
 package io.github.elli0t0.phone.feature.recents.ui
 
+import android.content.ContentValues
+import android.provider.BlockedNumberContract
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -30,10 +32,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -49,6 +53,9 @@ import io.github.elli0t0.phone.data.calllog.model.CallType
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -252,6 +259,18 @@ private fun ExpandedCallDetails(
 ) {
     val spacing = LocalSpacing.current
     val durationText = formatDuration(call.durationSeconds, call.type)
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val canBlock = remember {
+        runCatching { BlockedNumberContract.canCurrentUserBlockNumbers(context) }
+            .getOrDefault(false)
+    }
+    var isBlocked by remember(call.number) {
+        mutableStateOf(
+            runCatching { BlockedNumberContract.isBlocked(context, call.number) }
+                .getOrDefault(false)
+        )
+    }
 
     Column(
         modifier = modifier
@@ -309,6 +328,50 @@ private fun ExpandedCallDetails(
                         painter = painterResource(id = R.drawable.ic_add),
                         contentDescription = stringResource(id = R.string.action_add_contact),
                         tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+            if (canBlock) {
+                IconButton(
+                    onClick = {
+                        scope.launch(Dispatchers.IO) {
+                            val succeeded = runCatching {
+                                if (isBlocked) {
+                                    BlockedNumberContract.unblock(context, call.number)
+                                } else {
+                                    val values = ContentValues().apply {
+                                        put(
+                                            BlockedNumberContract.BlockedNumbers.COLUMN_ORIGINAL_NUMBER,
+                                            call.number
+                                        )
+                                    }
+                                    context.contentResolver.insert(
+                                        BlockedNumberContract.BlockedNumbers.CONTENT_URI,
+                                        values
+                                    )
+                                }
+                            }.isSuccess
+                            if (succeeded) {
+                                withContext(Dispatchers.Main) { isBlocked = !isBlocked }
+                            }
+                        }
+                    },
+                    modifier = Modifier.testTag("block_button_${call.id}")
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_block),
+                        contentDescription = stringResource(
+                            id = if (isBlocked) {
+                                R.string.recents_unblock_number
+                            } else {
+                                R.string.recents_block_number
+                            }
+                        ),
+                        tint = if (isBlocked) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.primary
+                        }
                     )
                 }
             }
