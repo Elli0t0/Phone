@@ -39,7 +39,8 @@ private sealed interface ContactsNavDestination {
 @Composable
 fun ContactsScreen(
     modifier: Modifier = Modifier,
-    onNavigateToSettings: () -> Unit = {}
+    onNavigateToSettings: () -> Unit = {},
+    onShowBottomBarChanged: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val app = context.applicationContext as PhoneApplication
@@ -58,6 +59,11 @@ fun ContactsScreen(
     var currentDestination by remember { mutableStateOf<ContactsNavDestination>(ContactsNavDestination.List) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+
+    // The bottom bar shows only on the contact list, not on detail/edit/groups.
+    LaunchedEffect(currentDestination) {
+        onShowBottomBarChanged(currentDestination is ContactsNavDestination.List)
+    }
 
     // Show user message from listViewModel if any
     val userMessageRes = uiState.userMessageRes

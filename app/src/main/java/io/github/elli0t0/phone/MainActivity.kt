@@ -6,10 +6,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -57,24 +59,30 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
     } else {
         appSettings.defaultStartTab.route
     }
+    // The Contacts tab manages its own sub-screens (list/detail/edit/groups)
+    // while the top-level route stays "contacts": it reports whether the
+    // list is showing, so the bar hides on detail/edit/groups.
+    var showContactsBar by remember { mutableStateOf(true) }
+    val showBottomBar = Screen.bottomNavItems.any { it.route == currentRoute } &&
+        (currentRoute != Screen.Contacts.route || showContactsBar)
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        bottomBar = {
-            if (currentRoute != Screen.Setup.route) {
-                PhoneBottomBar(
-                    navController = navController,
-                    currentRoute = currentRoute,
-                    showLabels = appSettings.showBottomBarLabels
-                )
-            }
-        }
-    ) { innerPadding ->
+    // The bottom bar is an overlay: content runs edge-to-edge behind it,
+    // and each list keeps its own bottom clearance above the bar.
+    Box(modifier = Modifier.fillMaxSize()) {
         PhoneNavHost(
             navController = navController,
             startDestination = startDestination,
             defaultStartTabRoute = appSettings.defaultStartTab.route,
-            modifier = Modifier.padding(innerPadding)
+            onContactsBarVisibilityChanged = { showContactsBar = it },
+            modifier = Modifier.fillMaxSize()
         )
+        if (showBottomBar) {
+            PhoneBottomBar(
+                navController = navController,
+                currentRoute = currentRoute,
+                showLabels = appSettings.showBottomBarLabels,
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
+        }
     }
 }

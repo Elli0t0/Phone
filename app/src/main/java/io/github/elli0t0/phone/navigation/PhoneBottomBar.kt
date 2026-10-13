@@ -9,15 +9,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -30,20 +29,25 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import io.github.elli0t0.phone.core.design.BottomBarDark
 import io.github.elli0t0.phone.core.design.BottomBarDarkSelected
+import io.github.elli0t0.phone.core.design.BottomBarDarkSelectedContent
+import io.github.elli0t0.phone.core.design.BottomBarDarkUnselected
 import io.github.elli0t0.phone.core.design.BottomBarLight
 import io.github.elli0t0.phone.core.design.BottomBarLightSelected
+import io.github.elli0t0.phone.core.design.BottomBarLightSelectedContent
+import io.github.elli0t0.phone.core.design.BottomBarLightUnselected
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.data.settings.model.ThemeMode
 
 /**
- * Compact floating pill bottom bar. Only the selected tab draws a
- * background pill; unselected tabs draw nothing behind their icon/label.
+ * Floating pill bottom bar, overlaid on content. The selected tab draws
+ * its own rounded pill (4dp horizontal inset) with the filled icon;
+ * unselected tabs show the outlined icon. The pill fades between tabs.
  */
 @Composable
 fun PhoneBottomBar(
@@ -58,42 +62,46 @@ fun PhoneBottomBar(
         ThemeMode.SYSTEM -> isSystemInDarkTheme()
     }
     val barColor = if (darkTheme) BottomBarDark else BottomBarLight
-    val selectedColor = if (darkTheme) BottomBarDarkSelected else BottomBarLightSelected
+    val selectedPillColor = if (darkTheme) BottomBarDarkSelected else BottomBarLightSelected
+    val selectedContentColor = if (darkTheme) BottomBarDarkSelectedContent else BottomBarLightSelectedContent
+    val unselectedContentColor = if (darkTheme) BottomBarDarkUnselected else BottomBarLightUnselected
+    val pillShape = RoundedCornerShape(PhoneDimens.bottomBarCornerPercent)
 
     Box(
         modifier = modifier
-            .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(bottom = PhoneDimens.bottomBarAboveNavBar)
+            .padding(bottom = PhoneDimens.bottomBarBottomMargin)
             .testTag("phone_bottom_bar"),
         contentAlignment = Alignment.Center
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth(PhoneDimens.bottomBarWidthFraction)
-                .widthIn(max = PhoneDimens.bottomBarMaxWidth)
-                .height(PhoneDimens.bottomBarHeight)
+                .width(PhoneDimens.bottomBarTotalWidth)
+                .heightIn(min = PhoneDimens.bottomBarMinHeight)
                 .shadow(
                     PhoneDimens.bottomBarElevation,
-                    RoundedCornerShape(PhoneDimens.bottomBarCorner)
+                    pillShape
                 )
-                .clip(RoundedCornerShape(PhoneDimens.bottomBarCorner))
-                .background(barColor)
-                .padding(PhoneDimens.bottomBarContentPadding),
-            horizontalArrangement = Arrangement.SpaceEvenly,
+                .clip(pillShape)
+                .background(barColor),
+            horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Screen.bottomNavItems.forEach { screen ->
                 val selected = currentRoute == screen.route
                 val pillColor by animateColorAsState(
-                    targetValue = if (selected) selectedColor else Color.Transparent,
+                    targetValue = if (selected) selectedPillColor else Color.Transparent,
                     label = "tab_pill"
                 )
-                Column(
+                val contentColor by animateColorAsState(
+                    targetValue = if (selected) selectedContentColor else unselectedContentColor,
+                    label = "tab_content"
+                )
+                Box(
                     modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .clip(RoundedCornerShape(PhoneDimens.bottomBarSelectedCorner))
+                        .width(PhoneDimens.bottomBarItemWidth)
+                        .padding(horizontal = PhoneDimens.bottomBarItemInset)
+                        .clip(pillShape)
                         .background(pillColor)
                         .clickable {
                             if (currentRoute != screen.route) {
@@ -106,40 +114,39 @@ fun PhoneBottomBar(
                                 }
                             }
                         }
-                        .padding(
-                            horizontal = PhoneDimens.bottomBarItemPaddingHorizontal,
-                            vertical = PhoneDimens.bottomBarItemPaddingVertical
-                        )
                         .testTag("tab_${screen.route}"),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        painter = painterResource(id = screen.iconRes),
-                        contentDescription = stringResource(id = screen.contentDescriptionRes),
-                        tint = if (selected) {
-                            MaterialTheme.colorScheme.onSurface
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                    )
-                    if (showLabels) {
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = stringResource(id = screen.titleRes),
-                            style = MaterialTheme.typography.labelMedium.copy(
+                    Column(
+                        modifier = Modifier.padding(
+                            vertical = PhoneDimens.bottomBarItemPaddingVertical
+                        ),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(
+                                id = if (selected) screen.iconResSelected else screen.iconRes
+                            ),
+                            contentDescription = stringResource(id = screen.contentDescriptionRes),
+                            tint = contentColor,
+                            modifier = Modifier.size(PhoneDimens.bottomBarIconSize)
+                        )
+                        if (showLabels) {
+                            Spacer(modifier = Modifier.height(PhoneDimens.bottomBarLabelIconGap))
+                            Text(
+                                text = stringResource(id = screen.titleRes),
+                                fontSize = PhoneDimens.bottomBarLabelSize,
                                 fontWeight = if (selected) {
-                                    FontWeight.Bold
+                                    FontWeight.SemiBold
                                 } else {
                                     FontWeight.Normal
-                                }
-                            ),
-                            color = if (selected) {
-                                MaterialTheme.colorScheme.onSurface
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            }
-                        )
+                                },
+                                color = contentColor,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 }
             }

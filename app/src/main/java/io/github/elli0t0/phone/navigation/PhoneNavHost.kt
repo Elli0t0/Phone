@@ -15,7 +15,8 @@ fun PhoneNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     startDestination: String = Screen.Recents.route,
-    defaultStartTabRoute: String = Screen.Recents.route
+    defaultStartTabRoute: String = Screen.Recents.route,
+    onContactsBarVisibilityChanged: (Boolean) -> Unit = {}
 ) {
     NavHost(
         navController = navController,
@@ -46,7 +47,8 @@ fun PhoneNavHost(
             ContactsScreen(
                 onNavigateToSettings = {
                     navController.navigate(Screen.Settings.route)
-                }
+                },
+                onShowBottomBarChanged = onContactsBarVisibilityChanged
             )
         }
         composable(route = Screen.Dialpad.route) {

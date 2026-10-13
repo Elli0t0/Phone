@@ -10,8 +10,12 @@ val OnAccentBlue = Color(0xFFFFFFFF)
 // Bottom bar island: solid pill, follows the theme
 val BottomBarDark = Color(0xFF2C2C2E)
 val BottomBarDarkSelected = Color(0xFF48484A)
-val BottomBarLight = Color(0xFFECEEF1)
-val BottomBarLightSelected = Color(0xFFD9D9DE)
+val BottomBarDarkSelectedContent = Color(0xFFFFFFFF)
+val BottomBarDarkUnselected = Color(0xFFB0B0B5)
+val BottomBarLight = Color(0xFFEBEBED)
+val BottomBarLightSelected = Color(0xFFD6D6DA)
+val BottomBarLightSelectedContent = Color(0xFF1C1C1E)
+val BottomBarLightUnselected = Color(0xFF6E6E73)
 
 // Favorite contact card gradients (reference-style colorful cards)
 val FavoriteCardGradients = listOf(

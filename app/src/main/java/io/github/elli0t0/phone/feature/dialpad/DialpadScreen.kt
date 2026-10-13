@@ -19,6 +19,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateBottomPadding
+import androidx.compose.foundation.layout.calculateTopPadding
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.runtime.DisposableEffect
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -61,6 +67,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.telecom.CallManager
 import io.github.elli0t0.phone.feature.contacts.ui.ContactSearchBar
 import io.github.elli0t0.phone.feature.setup.SetupWarningCard
@@ -182,6 +189,14 @@ fun DialpadScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = spacing.screenHorizontalPadding)
+            // Top: status-bar inset (the dialpad has no Scaffold of its own).
+            // Bottom: clearance above the overlaid bottom bar
+            // (bar height + nav-bar inset + 16dp gap).
+            .padding(
+                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
+                bottom = PhoneDimens.bottomBarReservedHeight +
+                    WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+            )
             .testTag("dialpad_screen"),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

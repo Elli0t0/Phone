@@ -4,11 +4,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateBottomPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -34,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.permissions.ContactsPermissionState
 import io.github.elli0t0.phone.core.permissions.ContactsPermissionStatus
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
@@ -222,7 +227,14 @@ private fun ContactsContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = spacing.screenHorizontalPadding)
-                .testTag("contacts_lazy_column")
+                .testTag("contacts_lazy_column"),
+            // Clearance above the overlaid bottom bar:
+            // bar height + nav-bar inset + 16dp gap.
+            contentPadding = PaddingValues(
+                bottom = PhoneDimens.bottomBarReservedHeight +
+                    WindowInsets.navigationBars.asPaddingValues()
+                        .calculateBottomPadding()
+            )
         ) {
             item {
                 Column(
@@ -350,10 +362,6 @@ private fun ContactsContent(
                         onContactClick = onContactClick
                     )
                 }
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(80.dp))
             }
         }
         }

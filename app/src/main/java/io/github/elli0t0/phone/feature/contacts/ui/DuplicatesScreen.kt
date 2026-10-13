@@ -4,11 +4,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateBottomPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -35,6 +40,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.data.contacts.model.DuplicateGroup
 import io.github.elli0t0.phone.data.contacts.model.DuplicateReason
 import io.github.elli0t0.phone.feature.contacts.ContactsUiState
@@ -115,7 +121,14 @@ fun DuplicatesScreen(
                 else -> {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(spacing.medium)
+                        verticalArrangement = Arrangement.spacedBy(spacing.medium),
+                        // Clearance above the overlaid bottom bar:
+                        // bar height + nav-bar inset + 16dp gap.
+                        contentPadding = PaddingValues(
+                            bottom = PhoneDimens.bottomBarReservedHeight +
+                                WindowInsets.navigationBars.asPaddingValues()
+                                    .calculateBottomPadding()
+                        )
                     ) {
                         items(
                             items = uiState.duplicateGroups,
@@ -125,9 +138,6 @@ fun DuplicatesScreen(
                                 group = group,
                                 onMergeClick = { onMergeRequest(group) }
                             )
-                        }
-                        item {
-                            Spacer(modifier = Modifier.height(80.dp))
                         }
                     }
                 }
