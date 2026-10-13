@@ -9,12 +9,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -42,9 +42,8 @@ import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.data.settings.model.ThemeMode
 
 /**
- * Compact floating pill bottom bar: 3 items of ~80dp, 60dp minimum height
- * (it grows with the font scale so labels never clip). Only the selected tab
- * draws a background pill; unselected tabs draw nothing behind their icon.
+ * Compact floating pill bottom bar. Only the selected tab draws a
+ * background pill; unselected tabs draw nothing behind their icon/label.
  */
 @Composable
 fun PhoneBottomBar(
@@ -71,17 +70,17 @@ fun PhoneBottomBar(
     ) {
         Row(
             modifier = Modifier
-                .heightIn(min = PhoneDimens.bottomBarHeight)
+                .fillMaxWidth(PhoneDimens.bottomBarWidthFraction)
+                .widthIn(max = PhoneDimens.bottomBarMaxWidth)
+                .height(PhoneDimens.bottomBarHeight)
                 .shadow(
                     PhoneDimens.bottomBarElevation,
-                    RoundedCornerShape(PhoneDimens.bottomBarCorner),
-                    spotColor = Color.Black.copy(alpha = 0.10f),
-                    ambientColor = Color.Black.copy(alpha = 0.08f)
+                    RoundedCornerShape(PhoneDimens.bottomBarCorner)
                 )
                 .clip(RoundedCornerShape(PhoneDimens.bottomBarCorner))
                 .background(barColor)
                 .padding(PhoneDimens.bottomBarContentPadding),
-            horizontalArrangement = Arrangement.Center,
+            horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Screen.bottomNavItems.forEach { screen ->
@@ -90,10 +89,10 @@ fun PhoneBottomBar(
                     targetValue = if (selected) selectedColor else Color.Transparent,
                     label = "tab_pill"
                 )
-                Box(
+                Column(
                     modifier = Modifier
-                        .width(PhoneDimens.bottomBarItemWidth)
-                        .padding(PhoneDimens.bottomBarItemPadding)
+                        .weight(1f)
+                        .fillMaxHeight()
                         .clip(RoundedCornerShape(PhoneDimens.bottomBarSelectedCorner))
                         .background(pillColor)
                         .clickable {
@@ -107,44 +106,40 @@ fun PhoneBottomBar(
                                 }
                             }
                         }
+                        .padding(
+                            horizontal = PhoneDimens.bottomBarItemPaddingHorizontal,
+                            vertical = PhoneDimens.bottomBarItemPaddingVertical
+                        )
                         .testTag("tab_${screen.route}"),
-                    contentAlignment = Alignment.Center
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Column(
-                        modifier = Modifier.padding(vertical = PhoneDimens.bottomBarItemPaddingVertical),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(
-                                id = if (selected) screen.iconResSelected else screen.iconRes
+                    Icon(
+                        painter = painterResource(id = screen.iconRes),
+                        contentDescription = stringResource(id = screen.contentDescriptionRes),
+                        tint = if (selected) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
+                    if (showLabels) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = stringResource(id = screen.titleRes),
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontWeight = if (selected) {
+                                    FontWeight.Bold
+                                } else {
+                                    FontWeight.Normal
+                                }
                             ),
-                            contentDescription = stringResource(id = screen.contentDescriptionRes),
-                            tint = if (selected) {
+                            color = if (selected) {
                                 MaterialTheme.colorScheme.onSurface
                             } else {
                                 MaterialTheme.colorScheme.onSurfaceVariant
                             }
                         )
-                        if (showLabels) {
-                            Spacer(modifier = Modifier.height(PhoneDimens.bottomBarLabelGap))
-                            Text(
-                                text = stringResource(id = screen.titleRes),
-                                style = MaterialTheme.typography.labelMedium.copy(
-                                    fontSize = PhoneDimens.bottomBarLabelSize,
-                                    fontWeight = if (selected) {
-                                        FontWeight.SemiBold
-                                    } else {
-                                        FontWeight.Normal
-                                    }
-                                ),
-                                color = if (selected) {
-                                    MaterialTheme.colorScheme.onSurface
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                }
-                            )
-                        }
                     }
                 }
             }

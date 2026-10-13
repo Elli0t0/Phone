@@ -12,10 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,7 +35,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
-import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.data.contacts.model.DuplicateGroup
 import io.github.elli0t0.phone.data.contacts.model.DuplicateReason
 import io.github.elli0t0.phone.feature.contacts.ContactsUiState
@@ -230,51 +226,43 @@ private fun DuplicateGroupItem(
 ) {
     val spacing = LocalSpacing.current
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(PhoneDimens.sectionCardRadius),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    Column(
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(spacing.medium)
-        ) {
-            Text(
-                text = when (group.reason) {
-                    DuplicateReason.SAME_NUMBER -> stringResource(id = R.string.duplicates_reason_number)
-                    DuplicateReason.SAME_NAME -> stringResource(id = R.string.duplicates_reason_name)
-                },
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(spacing.small))
-            group.contacts.forEach { contact ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = spacing.small)
-                ) {
+        Text(
+            text = when (group.reason) {
+                DuplicateReason.SAME_NUMBER -> stringResource(id = R.string.duplicates_reason_number)
+                DuplicateReason.SAME_NAME -> stringResource(id = R.string.duplicates_reason_name)
+            },
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(spacing.small))
+        group.contacts.forEach { contact ->
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = spacing.small)
+            ) {
+                Text(
+                    text = contact.displayName,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                contact.primaryNumberPreview?.takeIf { it.isNotBlank() }?.let { number ->
                     Text(
-                        text = contact.displayName,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface
+                        text = number,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    contact.primaryNumberPreview?.takeIf { it.isNotBlank() }?.let { number ->
-                        Text(
-                            text = number,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 }
             }
-            OutlinedButton(
-                onClick = onMergeClick,
-                modifier = Modifier.testTag("duplicates_merge_${group.contacts.firstOrNull()?.id}")
-            ) {
-                Text(text = stringResource(id = R.string.duplicates_merge))
-            }
+        }
+        OutlinedButton(
+            onClick = onMergeClick,
+            modifier = Modifier.testTag("duplicates_merge_${group.contacts.firstOrNull()?.id}")
+        ) {
+            Text(text = stringResource(id = R.string.duplicates_merge))
         }
     }
 }

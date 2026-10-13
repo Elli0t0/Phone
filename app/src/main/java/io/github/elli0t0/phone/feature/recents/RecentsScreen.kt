@@ -6,8 +6,6 @@ import android.provider.ContactsContract
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -46,13 +43,14 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
-import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.permissions.CallLogPermissionStatus
 import io.github.elli0t0.phone.core.permissions.rememberCallLogPermissionState
 import io.github.elli0t0.phone.core.telecom.CallManager
@@ -60,7 +58,6 @@ import io.github.elli0t0.phone.feature.contacts.ui.ContactSearchBar
 import io.github.elli0t0.phone.feature.contacts.ui.PermissionCard
 import io.github.elli0t0.phone.feature.setup.SetupWarningCard
 import io.github.elli0t0.phone.feature.recents.ui.CallLogRow
-import io.github.elli0t0.phone.navigation.CollapsingPageHeader
 import io.github.elli0t0.phone.feature.recents.ui.DaySectionCard
 import io.github.elli0t0.phone.feature.recents.ui.RecentsEmptyState
 import kotlinx.coroutines.launch
@@ -97,7 +94,6 @@ fun RecentsScreen(
     var searchVisible by remember { mutableStateOf(uiState.searchQuery.isNotEmpty()) }
     var menuExpanded by remember { mutableStateOf(false) }
     var filterMenuExpanded by remember { mutableStateOf(false) }
-    val listState = rememberLazyListState()
     val simAccounts = remember(context) { io.github.elli0t0.phone.core.telecom.TelecomHelper.getCallCapablePhoneAccounts(context) }
     val recentsScope = androidx.compose.runtime.rememberCoroutineScope()
 
@@ -149,11 +145,34 @@ fun RecentsScreen(
                 .padding(innerPadding)
                 .padding(horizontal = spacing.screenHorizontalPadding)
         ) {
-            CollapsingPageHeader(
-                title = stringResource(id = R.string.app_name),
-                subtitle = null,
-                listState = listState
+            Spacer(modifier = Modifier.height(spacing.screenTopPadding))
+
+            SetupWarningCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = spacing.small)
+            )
+
+            // App title with search and menu actions: the title takes the
+            // remaining width so it can never overlap the icon row.
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = spacing.small),
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                Text(
+                    text = stringResource(id = R.string.app_name),
+                    style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    modifier = Modifier.weight(1f)
+                )
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Box {
                         androidx.compose.material3.IconButton(
                             onClick = { filterMenuExpanded = true },
@@ -224,13 +243,8 @@ fun RecentsScreen(
                             )
                         }
                     }
+                }
             }
-
-            SetupWarningCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = spacing.small)
-            )
 
             // Search Bar with "Search calls" placeholder, shown when the search icon is tapped
             if (searchVisible) {
@@ -251,11 +265,8 @@ fun RecentsScreen(
             when (val status = permissionState.status) {
                 is CallLogPermissionStatus.Granted -> {
                     LazyColumn(
-                        state = listState,
-                        contentPadding = PaddingValues(bottom = PhoneDimens.listAboveBarPadding),
                         modifier = Modifier
                             .fillMaxSize()
-                            .navigationBarsPadding()
                             .testTag("recents_call_list")
                     ) {
                         // Error State

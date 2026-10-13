@@ -83,23 +83,14 @@ fun DialKeyView(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            if (dialKey.digit == '*') {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_asterisk),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(28.dp)
-                )
-            } else {
-                Text(
-                    text = dialKey.digit.toString(),
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontSize = PhoneDimens.keypadDigitSize,
-                        fontWeight = FontWeight.Normal
-                    ),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
+            Text(
+                text = dialKey.digit.toString(),
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontSize = PhoneDimens.keypadDigitSize,
+                    fontWeight = FontWeight.Light
+                ),
+                color = MaterialTheme.colorScheme.onSurface
+            )
             if (dialKey.digit == '1') {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_voicemail),

@@ -10,29 +10,8 @@ val OnAccentBlue = Color(0xFFFFFFFF)
 // Bottom bar island: solid pill, follows the theme
 val BottomBarDark = Color(0xFF2C2C2E)
 val BottomBarDarkSelected = Color(0xFF48484A)
-val BottomBarLight = Color(0xFFEBEBED)
-val BottomBarLightSelected = Color(0xFFD6D6DA)
-
-// Call button: muted green, always enabled-looking
-val CallButtonDark = Color(0xFF4AA564)
-val CallButtonLight = Color(0xFF3DAA5C)
-
-// Swipe-to-action reveal colors on Recents rows
-val CallSwipeGreen = Color(0xFF4AA564)
-val MessageSwipeBlue = Color(0xFF3E89FF)
-
-// Keypad page background (dark theme only; light uses the page background)
-val KeypadBackgroundDark = Color(0xFF161618)
-
-// Avatar gradients: soft two-tone pastel circles, deterministic per name
-val AvatarGradients = listOf(
-    Color(0xFFB8C6FF) to Color(0xFF8FA8F5),
-    Color(0xFFFFC9D6) to Color(0xFFFF9EBB),
-    Color(0xFFB5E8C9) to Color(0xFF8FD6A8),
-    Color(0xFFFFE0A8) to Color(0xFFFBC96B),
-    Color(0xFFD8C2FF) to Color(0xFFB28DFF),
-    Color(0xFFA8E0F0) to Color(0xFF7CC8E0)
-)
+val BottomBarLight = Color(0xFFECEEF1)
+val BottomBarLightSelected = Color(0xFFD9D9DE)
 
 // Favorite contact card gradients (reference-style colorful cards)
 val FavoriteCardGradients = listOf(
@@ -53,7 +32,7 @@ val InCallControlActive = Color(0xFFFFFFFF)
 val InCallControlActiveContent = Color(0xFF000000)
 
 // Light theme colors
-val LightBackground = Color(0xFFF6F6F6)
+val LightBackground = Color(0xFFF7F8FA)
 val LightSurface = Color(0xFFFFFFFF)
 val LightSurfaceVariant = Color(0xFFEFF1F4)
 val LightSurfaceContainerLow = Color(0xFFF4F6F8)
@@ -66,14 +45,14 @@ val LightOnSurfaceVariant = Color(0xFF74777F)
 val LightOutline = Color(0xFFC4C7C5)
 val LightOutlineVariant = Color(0xFFE0E2EC)
 
-// Dark theme colors: pages are pure black, cards are #1C1C1E
+// Dark theme colors
 val DarkBackground = Color(0xFF000000)
-val DarkSurface = Color(0xFF1C1C1E)
-val DarkSurfaceVariant = Color(0xFF1C1C1E)
-val DarkSurfaceContainerLow = Color(0xFF1C1C1E)
-val DarkSurfaceContainer = Color(0xFF1C1C1E)
-val DarkSurfaceContainerHigh = Color(0xFF242428)
-val DarkSurfaceContainerHighest = Color(0xFF2C2C30)
+val DarkSurface = Color(0xFF121316)
+val DarkSurfaceVariant = Color(0xFF1E2024)
+val DarkSurfaceContainerLow = Color(0xFF17181C)
+val DarkSurfaceContainer = Color(0xFF1E2024)
+val DarkSurfaceContainerHigh = Color(0xFF27292F)
+val DarkSurfaceContainerHighest = Color(0xFF32343B)
 val DarkOnBackground = Color(0xFFE2E2E6)
 val DarkOnSurface = Color(0xFFE2E2E6)
 val DarkOnSurfaceVariant = Color(0xFF8E9099)

@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -25,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,7 +41,6 @@ import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.FavoriteCardGradients
 import io.github.elli0t0.phone.core.design.FavoriteHintOrange
 import io.github.elli0t0.phone.core.design.LocalSpacing
-import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 
 @Composable
@@ -151,7 +150,7 @@ fun ContactGroupCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(bottom = spacing.small),
-        shape = RoundedCornerShape(PhoneDimens.sectionCardRadius),
+        shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         contacts.forEachIndexed { index, contact ->
@@ -160,14 +159,10 @@ fun ContactGroupCard(
                 onClick = { onContactClick(contact) }
             )
             if (index < contacts.lastIndex) {
-                // Divider starts at the text: row padding + avatar + gap.
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.outlineVariant,
                     thickness = 1.dp,
-                    modifier = Modifier.padding(
-                        start = spacing.medium + 40.dp + spacing.medium,
-                        end = spacing.medium
-                    )
+                    modifier = Modifier.padding(horizontal = spacing.medium)
                 )
             }
         }
@@ -187,27 +182,32 @@ private fun ContactGroupRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(56.dp)
             .clickable(onClick = onClick)
             .testTag("contact_item_${contact.id}")
-            .padding(horizontal = spacing.medium),
+            .padding(spacing.medium),
         verticalAlignment = Alignment.CenterVertically
     ) {
         ContactAvatar(
             photoUri = contact.photoUri,
             displayName = displayName,
-            size = 40.dp,
+            size = 46.dp,
             modifier = Modifier.testTag("avatar_${contact.id}")
         )
         Spacer(modifier = Modifier.width(spacing.medium))
-        Text(
-            text = displayName,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f)
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = displayName,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            if (!contact.primaryNumberPreview.isNullOrBlank() && contact.primaryNumberPreview != displayName) {
+                Text(
+                    text = contact.primaryNumberPreview,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
     }
 }
 
@@ -223,7 +223,7 @@ fun FavoritesHintRow(
             .padding(bottom = spacing.small)
             .clickable(onClick = onClick)
             .testTag("favorites_hint_row"),
-        shape = RoundedCornerShape(PhoneDimens.rowCardRadius),
+        shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
@@ -272,31 +272,36 @@ fun ProfileRow(
             .padding(bottom = spacing.small)
             .clickable(onClick = onClick)
             .testTag("profile_row"),
-        shape = RoundedCornerShape(PhoneDimens.rowCardRadius),
+        shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp)
-                .padding(horizontal = spacing.medium),
+                .padding(spacing.medium),
             verticalAlignment = Alignment.CenterVertically
         ) {
             ContactAvatar(
                 photoUri = contact.photoUri,
                 displayName = displayName,
-                size = 40.dp,
+                size = 46.dp,
                 modifier = Modifier.testTag("avatar_profile")
             )
             Spacer(modifier = Modifier.width(spacing.medium))
-            Text(
-                text = displayName,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = displayName,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                if (!contact.primaryNumberPreview.isNullOrBlank() && contact.primaryNumberPreview != displayName) {
+                    Text(
+                        text = contact.primaryNumberPreview,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
     }
 }
@@ -309,62 +314,46 @@ fun DuplicatesCard(
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
-    // Compact centered card (~70% width): centered text, a Merge pill below
-    // it, and a small circular X at its top-right.
-    Box(
+    Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(bottom = spacing.small),
-        contentAlignment = Alignment.Center
+            .padding(bottom = spacing.small)
+            .testTag("duplicates_card"),
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Card(
+        Row(
             modifier = Modifier
-                .fillMaxWidth(0.7f)
-                .testTag("duplicates_card"),
-            shape = RoundedCornerShape(PhoneDimens.rowCardRadius),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                .fillMaxWidth()
+                .padding(
+                    start = spacing.medium,
+                    top = spacing.small,
+                    bottom = spacing.small,
+                    end = spacing.small
+                ),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            start = spacing.medium,
-                            end = spacing.medium,
-                            top = spacing.medium,
-                            bottom = spacing.small
-                        ),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.duplicates_card_message, duplicateCount),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(spacing.small))
-                    Button(
-                        onClick = onMergeClick,
-                        modifier = Modifier.testTag("button_duplicates_card_merge")
-                    ) {
-                        Text(text = stringResource(id = R.string.duplicates_merge))
-                    }
-                }
-                IconButton(
-                    onClick = onDismiss,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(2.dp)
-                        .size(32.dp)
-                        .testTag("button_duplicates_card_dismiss")
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_close),
-                        contentDescription = stringResource(id = R.string.cd_dismiss),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
+            Text(
+                text = stringResource(id = R.string.duplicates_card_message, duplicateCount),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
+            )
+            TextButton(
+                onClick = onMergeClick,
+                modifier = Modifier.testTag("button_duplicates_card_merge")
+            ) {
+                Text(text = stringResource(id = R.string.duplicates_merge))
+            }
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier.testTag("button_duplicates_card_dismiss")
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_close),
+                    contentDescription = stringResource(id = R.string.cd_dismiss),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
@@ -382,7 +371,7 @@ fun GroupsRow(
             .padding(bottom = spacing.small)
             .clickable(onClick = onClick)
             .testTag("groups_row"),
-        shape = RoundedCornerShape(PhoneDimens.rowCardRadius),
+        shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
@@ -391,20 +380,12 @@ fun GroupsRow(
                 .padding(spacing.medium),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_group),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
+            Icon(
+                painter = painterResource(id = R.drawable.ic_group),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(24.dp)
+            )
             Spacer(modifier = Modifier.width(spacing.medium))
             Text(
                 text = stringResource(id = R.string.groups_title),

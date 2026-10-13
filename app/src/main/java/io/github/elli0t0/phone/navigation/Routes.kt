@@ -8,14 +8,12 @@ sealed class Screen(
     val route: String,
     @StringRes val titleRes: Int,
     @DrawableRes val iconRes: Int,
-    @DrawableRes val iconResSelected: Int,
     @StringRes val contentDescriptionRes: Int
 ) {
     data object Recents : Screen(
         route = "recents",
         titleRes = R.string.tab_recents,
-        iconRes = R.drawable.ic_nav_call_log_outline,
-        iconResSelected = R.drawable.ic_nav_call_log,
+        iconRes = R.drawable.ic_nav_call_log,
         contentDescriptionRes = R.string.cd_tab_recents
     )
 
@@ -23,15 +21,13 @@ sealed class Screen(
         route = "contacts",
         titleRes = R.string.tab_contacts,
         iconRes = R.drawable.ic_nav_contacts,
-        iconResSelected = R.drawable.ic_contacts,
         contentDescriptionRes = R.string.cd_tab_contacts
     )
 
     data object Dialpad : Screen(
         route = "dialpad",
         titleRes = R.string.tab_dialpad,
-        iconRes = R.drawable.ic_nav_dialpad_outline,
-        iconResSelected = R.drawable.ic_nav_dialpad,
+        iconRes = R.drawable.ic_nav_dialpad,
         contentDescriptionRes = R.string.cd_tab_dialpad
     )
 
@@ -39,7 +35,6 @@ sealed class Screen(
         route = "settings",
         titleRes = R.string.settings_title,
         iconRes = R.drawable.ic_settings,
-        iconResSelected = R.drawable.ic_settings,
         contentDescriptionRes = R.string.cd_settings
     )
 
@@ -47,7 +42,6 @@ sealed class Screen(
         route = "setup",
         titleRes = R.string.setup_title,
         iconRes = R.drawable.ic_settings,
-        iconResSelected = R.drawable.ic_settings,
         contentDescriptionRes = R.string.cd_setup
     )
 
