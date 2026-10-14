@@ -10,6 +10,8 @@ object PhoneDimens {
     // its item with a 4dp inset. Very soft shadow, alpha <= 10%.
     val bottomBarWidth = 250.dp
     val bottomBarWidthFraction = 0.85f
+    // Contact details bottom action bar: same pill, 70% of screen width.
+    val detailBottomBarWidthFraction = 0.7f
     val bottomBarHeight = 60.dp
     val bottomBarBottomMargin = 12.dp
     val bottomBarCornerPercent = 50

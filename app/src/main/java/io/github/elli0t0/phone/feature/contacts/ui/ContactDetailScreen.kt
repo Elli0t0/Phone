@@ -26,6 +26,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateBottomPadding
+import androidx.compose.foundation.layout.calculateTopPadding
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -47,8 +53,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -59,10 +63,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
@@ -78,7 +86,6 @@ import io.github.elli0t0.phone.data.favorites.ContactSimRepository
 import io.github.elli0t0.phone.feature.call.ui.DualSimPickerDialog
 import java.util.Date
 import kotlinx.coroutines.launch
-import androidx.compose.ui.graphics.Color
 import io.github.elli0t0.phone.data.contacts.model.ContactDetail
 import io.github.elli0t0.phone.data.contacts.model.ContactEmail
 import io.github.elli0t0.phone.data.contacts.model.ContactPhone
@@ -332,18 +339,6 @@ fun ContactDetailScreen(
                 )
             }
         },
-        topBar = {
-            TopAppBar(
-                modifier = Modifier.padding(top = spacing.small),
-                title = { },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick, modifier = Modifier.testTag("btn_detail_back")) {
-                        Icon(painter = painterResource(id = R.drawable.ic_arrow_back), contentDescription = stringResource(id = R.string.cd_back))
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
-            )
-        }
     ) { innerPadding ->
         if (uiState.isLoading) {
             Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
@@ -357,20 +352,31 @@ fun ContactDetailScreen(
                         ?: stringResource(id = R.string.contact_unknown)
                 }
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background)
-                        .verticalScroll(rememberScrollState())
-                        .padding(innerPadding)
-                        .padding(horizontal = spacing.screenHorizontalPadding),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+                val scrollState = rememberScrollState()
+                var headerHeightPx by remember { mutableStateOf(0) }
+                val density = LocalDensity.current
+                val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+                val topBarHeight = statusBarTop + 56.dp
+                val collapseThresholdPx = headerHeightPx + with(density) { spacing.medium.toPx() }
+                val showSolidBar = scrollState.value >= collapseThresholdPx
+                val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.background)
+                            .verticalScroll(scrollState)
+                            .padding(horizontal = spacing.screenHorizontalPadding)
+                            .padding(top = topBarHeight)
+                            .padding(bottom = navBarBottom + PhoneDimens.bottomBarReservedHeight),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                     Spacer(modifier = Modifier.height(spacing.medium))
 
                     // Top card: avatar, name, organization, primary number
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth()
+                            .onGloballyPositioned { headerHeightPx = it.size.height },
                         shape = MaterialTheme.shapes.large,
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                     ) {
@@ -637,6 +643,41 @@ fun ContactDetailScreen(
                     }
 
                     Spacer(modifier = Modifier.height(spacing.large))
+                    }
+
+                    // Overlay top bar: status-bar inset + 56dp, transparent at
+                    // the top, solid page color with the name once the header
+                    // card has scrolled away. Content scrolls underneath it.
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(topBarHeight)
+                            .background(
+                                if (showSolidBar) MaterialTheme.colorScheme.background
+                                else Color.Transparent
+                            )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(top = statusBarTop),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(onClick = onBackClick, modifier = Modifier.testTag("btn_detail_back")) {
+                                Icon(painter = painterResource(id = R.drawable.ic_arrow_back), contentDescription = stringResource(id = R.string.cd_back))
+                            }
+                            if (showSolidBar) {
+                                Text(
+                                    text = displayName,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -837,19 +878,16 @@ private fun ContactDetailBottomBar(
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val spacing = LocalSpacing.current
     Box(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(
-                horizontal = spacing.screenHorizontalPadding,
-                vertical = PhoneDimens.bottomBarBottomMargin
-            )
+            .padding(vertical = PhoneDimens.bottomBarBottomMargin),
+        contentAlignment = Alignment.Center
     ) {
         Surface(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(PhoneDimens.detailBottomBarWidthFraction)
                 .height(PhoneDimens.bottomBarHeight),
             shape = RoundedCornerShape(PhoneDimens.bottomBarCornerPercent),
             color = MaterialTheme.colorScheme.surfaceContainerHigh,

@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.9] - 2026-10-14
+
+### Fixed
+- Contact details top bar: status-bar inset + 56dp, transparent at the top, solid page-color bar with the name once the header card scrolls away. Content scrolls underneath with no blank gap.
+- Contact details bottom action bar is now 70% of the screen width, and the content clears it (bar height + gap + 16dp), so the last History rows are no longer covered.
+
 ## [0.5.8] - 2026-10-14
 
 ### Fixed
