@@ -42,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -328,7 +329,6 @@ private fun ExpandedCallDetails(
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
-    val durationText = formatDuration(call.durationSeconds, call.type)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val canBlock = remember {
@@ -350,59 +350,50 @@ private fun ExpandedCallDetails(
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = stringResource(id = call.type.titleRes),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = durationText,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        Spacer(modifier = Modifier.height(spacing.small))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            IconButton(onClick = onCallClick) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_phone),
-                    contentDescription = stringResource(id = R.string.action_call),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-            IconButton(onClick = onMessageClick) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_message),
-                    contentDescription = stringResource(id = R.string.action_message),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
+            ExpandedActionButton(
+                iconRes = R.drawable.ic_phone,
+                contentDescription = stringResource(id = R.string.action_call),
+                tint = MaterialTheme.colorScheme.primary,
+                onClick = onCallClick
+            )
+            ExpandedActionButton(
+                iconRes = R.drawable.ic_message,
+                contentDescription = stringResource(id = R.string.action_message),
+                tint = MaterialTheme.colorScheme.primary,
+                onClick = onMessageClick
+            )
             if (call.contactId != null) {
-                IconButton(onClick = onOpenContactClick) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_person),
-                        contentDescription = stringResource(id = R.string.action_open_contact),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
+                ExpandedActionButton(
+                    iconRes = R.drawable.ic_person,
+                    contentDescription = stringResource(id = R.string.action_open_contact),
+                    tint = MaterialTheme.colorScheme.primary,
+                    onClick = onOpenContactClick
+                )
             } else {
-                IconButton(onClick = onAddContactClick) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_add),
-                        contentDescription = stringResource(id = R.string.action_add_contact),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
+                ExpandedActionButton(
+                    iconRes = R.drawable.ic_add,
+                    contentDescription = stringResource(id = R.string.action_add_contact),
+                    tint = MaterialTheme.colorScheme.primary,
+                    onClick = onAddContactClick
+                )
             }
             if (canBlock) {
-                IconButton(
+                ExpandedActionButton(
+                    iconRes = R.drawable.ic_block,
+                    contentDescription = stringResource(
+                        id = if (isBlocked) {
+                            R.string.recents_unblock_number
+                        } else {
+                            R.string.recents_block_number
+                        }
+                    ),
+                    tint = if (isBlocked) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    },
                     onClick = {
                         scope.launch(Dispatchers.IO) {
                             val succeeded = runCatching {
@@ -427,25 +418,34 @@ private fun ExpandedCallDetails(
                         }
                     },
                     modifier = Modifier.testTag("block_button_${call.id}")
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_block),
-                        contentDescription = stringResource(
-                            id = if (isBlocked) {
-                                R.string.recents_unblock_number
-                            } else {
-                                R.string.recents_block_number
-                            }
-                        ),
-                        tint = if (isBlocked) {
-                            MaterialTheme.colorScheme.error
-                        } else {
-                            MaterialTheme.colorScheme.primary
-                        }
-                    )
-                }
+                )
             }
         }
+    }
+}
+
+// One circular action button in the expanded call details.
+@Composable
+private fun ExpandedActionButton(
+    iconRes: Int,
+    contentDescription: String,
+    tint: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = modifier
+            .size(56.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Icon(
+            painter = painterResource(id = iconRes),
+            contentDescription = contentDescription,
+            tint = tint,
+            modifier = Modifier.size(24.dp)
+        )
     }
 }
 
