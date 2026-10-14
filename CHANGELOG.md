@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.13] - 2026-10-14
+
+### Added
+- Call background picker in Settings > Calls: Default / Dark / Accent, wired to the 0.6.12 storage. Not applied to the call screens yet — that ships in 0.7.2.
+
 ## [0.6.12] - 2026-10-14
 
 ### Added
