@@ -13,6 +13,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -24,6 +27,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneTheme
 import io.github.elli0t0.phone.core.telecom.PhoneInCallService
 import io.github.elli0t0.phone.data.call.CallRepository
@@ -98,41 +102,64 @@ class CallActivity : ComponentActivity() {
                     }
                 }
 
-                // Finish activity when call is removed or disconnected
+                // Finish activity when call is removed or disconnected.
+                // On disconnect, wait out the Motion end-call exit
+                // animation, then finish as the fade completes.
                 LaunchedEffect(ongoingCall) {
                     if (ongoingCall == null) {
                         finish()
                     } else if (ongoingCall?.state == CallState.DISCONNECTED) {
-                        delay(600L)
+                        delay(Motion.innerDurationMs(settings.animationOption).toLong())
                         finish()
                     }
                 }
 
                 val currentModel = ongoingCall
                 if (currentModel != null) {
-                    if (currentModel.state == CallState.RINGING) {
-                        IncomingCallScreen(
-                            callModel = currentModel,
-                            onAnswer = { CallRepository.answerCall() },
-                            onDecline = { CallRepository.rejectCall() },
-                            onDeclineWithMessage = { CallRepository.rejectCallWithMessage(it) },
-                            quickDeclineMessages = quickDeclineMessages
-                        )
-                    } else {
-                        OngoingCallScreen(
-                            callModel = currentModel,
-                            onMuteToggle = { muted -> PhoneInCallService.setMuted(muted) },
-                            onAudioRouteSelect = { route -> PhoneInCallService.setAudioRoute(route) },
-                            onHoldToggle = { hold ->
-                                if (hold) CallRepository.holdCall() else CallRepository.unholdCall()
+                    // Incoming entrance, incoming -> ongoing, and the
+                    // end-call exit all run through Motion (On / Reduced
+                    // / Off). The exit fade plays while the effect above
+                    // waits out the same duration.
+                    AnimatedVisibility(
+                        visible = currentModel.state != CallState.DISCONNECTED,
+                        enter = EnterTransition.None,
+                        exit = Motion.innerContentTransform(
+                            settings.animationOption, 1
+                        ).initialContentExit,
+                        label = "call_end"
+                    ) {
+                        AnimatedContent(
+                            targetState = currentModel.state == CallState.RINGING,
+                            transitionSpec = {
+                                Motion.innerContentTransform(settings.animationOption, 1)
                             },
-                            onDtmfDigit = { digit -> CallRepository.playDtmfTone(digit) },
-                            onEndCall = { CallRepository.disconnectCall() },
-                            onRequestBluetoothPermission = {
-                                bluetoothPermissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
-                            },
-                            hasBluetoothPermission = hasBluetoothPermission
-                        )
+                            label = "call_state"
+                        ) { ringing ->
+                            if (ringing) {
+                                IncomingCallScreen(
+                                    callModel = currentModel,
+                                    onAnswer = { CallRepository.answerCall() },
+                                    onDecline = { CallRepository.rejectCall() },
+                                    onDeclineWithMessage = { CallRepository.rejectCallWithMessage(it) },
+                                    quickDeclineMessages = quickDeclineMessages
+                                )
+                            } else {
+                                OngoingCallScreen(
+                                    callModel = currentModel,
+                                    onMuteToggle = { muted -> PhoneInCallService.setMuted(muted) },
+                                    onAudioRouteSelect = { route -> PhoneInCallService.setAudioRoute(route) },
+                                    onHoldToggle = { hold ->
+                                        if (hold) CallRepository.holdCall() else CallRepository.unholdCall()
+                                    },
+                                    onDtmfDigit = { digit -> CallRepository.playDtmfTone(digit) },
+                                    onEndCall = { CallRepository.disconnectCall() },
+                                    onRequestBluetoothPermission = {
+                                        bluetoothPermissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
+                                    },
+                                    hasBluetoothPermission = hasBluetoothPermission
+                                )
+                            }
+                        }
                     }
                 }
             }

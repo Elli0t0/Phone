@@ -35,6 +35,15 @@ object Motion {
     }
 
     /**
+     * Inner-screen transition duration (slide/fade).
+     */
+    fun innerDurationMs(option: AnimationOption): Int = when (option) {
+        AnimationOption.ON -> 200
+        AnimationOption.REDUCED -> 100
+        AnimationOption.OFF -> 0
+    }
+
+    /**
      * Inner-screen transition (pushed screens: Settings, contact
      * detail/edit, groups, history). direction > 0 slides the new
      * screen in from the right, < 0 from the left, 0 fades only.
@@ -44,7 +53,7 @@ object Motion {
         if (option == AnimationOption.OFF) {
             return ContentTransform(EnterTransition.None, ExitTransition.None)
         }
-        val duration = if (option == AnimationOption.ON) 200 else 100
+        val duration = innerDurationMs(option)
         val fadeIn = fadeIn(animationSpec = tween(durationMillis = duration))
         val fadeOut = fadeOut(animationSpec = tween(durationMillis = duration))
         if (option == AnimationOption.REDUCED || direction == 0) {

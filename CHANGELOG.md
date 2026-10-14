@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.11] - 2026-10-14
+
+### Changed
+- Call-screen animations through `Motion`: the incoming screen fades + slides in, answering transitions incoming -> ongoing with the same slide + fade, and ending a call fades + slides the screen out before the activity finishes (the finish now waits out the Motion exit duration instead of a fixed 600ms). Reduced fades only, Off swaps instantly.
+
 ## [0.6.10] - 2026-10-14
 
 ### Changed
