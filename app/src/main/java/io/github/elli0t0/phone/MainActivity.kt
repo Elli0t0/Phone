@@ -4,8 +4,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,6 +21,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import io.github.elli0t0.phone.core.design.PhoneTheme
 import io.github.elli0t0.phone.core.permissions.SetupPermissions
+import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.navigation.PhoneBottomBar
 import io.github.elli0t0.phone.navigation.PhoneNavHost
@@ -38,7 +41,12 @@ class MainActivity : ComponentActivity() {
             )
             PhoneTheme(appSettings = settings) {
                 if (setupCompleted == null) {
-                    Box(modifier = Modifier.fillMaxSize())
+                    // Opaque theme background while the setup state loads:
+                    // the window background must never show through.
+                    Box(
+                        modifier = Modifier.fillMaxSize()
+                            .background(MaterialTheme.colorScheme.background)
+                    )
                 } else {
                     PhoneApp(appSettings = settings, setupCompleted = setupCompleted == true)
                 }
@@ -68,11 +76,17 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
 
     // The bottom bar is an overlay: content runs edge-to-edge behind it,
     // and each list keeps its own bottom clearance above the bar.
-    Box(modifier = Modifier.fillMaxSize()) {
+    // The root Box paints one opaque theme background so the window
+    // background never shows through during a tab transition.
+    Box(
+        modifier = Modifier.fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
         PhoneNavHost(
             navController = navController,
             startDestination = startDestination,
             defaultStartTabRoute = appSettings.defaultStartTab.route,
+            animationsEnabled = appSettings.animationOption != AnimationOption.OFF,
             onContactsBarVisibilityChanged = { showContactsBar = it },
             modifier = Modifier.fillMaxSize()
         )

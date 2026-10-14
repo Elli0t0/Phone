@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.7] - 2026-10-14
+
+### Fixed
+- Tab-switch flicker: the root layout now paints one opaque theme background, and the window background in the light and dark themes is the same color, so nothing from the window ever shows through during a transition. The keypad no longer uses its own gray: every tab screen uses exactly the theme background.
+- Tab transitions: switching between Keypad, Recents and Contacts uses a short 120ms fade-in with no exit animation instead of the default crossfade, so the old screen never turns semi-transparent over a different background. The bottom bar stays outside the navigation host and never animates with the screens. Animation Off means no transition.
+- Tab state: switching tabs keeps each tab's saved state (including list scroll position) via saveState/restoreState with launchSingleTop.
+
 ## [0.4.6] - 2026-10-14
 
 ### Changed

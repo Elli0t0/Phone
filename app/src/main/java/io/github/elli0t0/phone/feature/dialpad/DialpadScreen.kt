@@ -65,8 +65,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
-import io.github.elli0t0.phone.core.design.KeypadBackgroundDark
-import io.github.elli0t0.phone.core.design.KeypadBackgroundLight
 import io.github.elli0t0.phone.core.design.KeypadCallButtonGreenDark
 import io.github.elli0t0.phone.core.design.KeypadCallButtonGreenLight
 import io.github.elli0t0.phone.core.design.LocalAppSettings
@@ -95,8 +93,8 @@ fun DialpadScreen(
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val spacing = LocalSpacing.current
-    // Keypad page background follows the theme setting (Light/Dark/System),
-    // same logic as the bottom bar.
+    // Whether the call button uses its dark or light green, following the
+    // theme setting (Light/Dark/System), same logic as the bottom bar.
     val darkTheme = when (LocalAppSettings.current.themeMode) {
         ThemeMode.LIGHT -> false
         ThemeMode.DARK -> true
@@ -196,10 +194,12 @@ fun DialpadScreen(
         }
     }
 
+    // Keypad page background: exactly the theme background, same as every
+    // other tab screen (the keypad used to have its own gray).
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(if (darkTheme) KeypadBackgroundDark else KeypadBackgroundLight)
+            .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = spacing.screenHorizontalPadding)
             // Top: status-bar inset (the dialpad has no Scaffold of its own).
             // Bottom: clearance above the overlaid bottom bar

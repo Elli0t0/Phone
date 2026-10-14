@@ -30,10 +30,7 @@ val InCallGradientTop = Color(0xFF6E1B0C)
 val InCallGradientBottom = Color(0xFF000000)
 val CallDeclineRed = Color(0xFFE53935)
 val CallAnswerGreen = Color(0xFF43A047)
-// Keypad: page background (dark gray, not pure black) and call button green.
-// Light keypad background is the same #F7F8FA as every other light screen.
-val KeypadBackgroundDark = Color(0xFF161618)
-val KeypadBackgroundLight = Color(0xFFF7F8FA)
+// Keypad call button green.
 val KeypadCallButtonGreenDark = Color(0xFF4AA564)
 val KeypadCallButtonGreenLight = Color(0xFF3DAA5C)
 val FavoriteHintOrange = Color(0xFFFFA726)

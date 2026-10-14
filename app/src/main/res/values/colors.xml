@@ -7,4 +7,6 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <!-- Window background = light theme background (opaque). -->
+    <color name="window_background">#FFF7F8FA</color>
 </resources>

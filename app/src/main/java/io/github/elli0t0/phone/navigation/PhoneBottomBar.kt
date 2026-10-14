@@ -120,12 +120,19 @@ fun PhoneBottomBar(
                         .background(pillColor)
                         .clickable {
                             if (currentRoute != screen.route) {
-                                // Plain popUpTo + launchSingleTop: no saveState/restoreState.
-                                // The saved-state machinery could resurrect a popped
-                                // destination (e.g. Settings) when switching tabs.
+                                // saveState/restoreState: switching tabs keeps
+                                // each tab's saved state (including list
+                                // scroll position) instead of recreating it.
+                                // The popped tabs stay popped — only their
+                                // saved state is restored on return, so no
+                                // popped destination (e.g. Settings) comes
+                                // back.
                                 navController.navigate(screen.route) {
-                                    popUpTo(navController.graph.findStartDestination().id)
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
                                     launchSingleTop = true
+                                    restoreState = true
                                 }
                             }
                         }
