@@ -12,10 +12,12 @@ import io.github.elli0t0.phone.data.calllog.util.CallLogGroupingHelper
 import io.github.elli0t0.phone.data.contacts.ContactsRepository
 import io.github.elli0t0.phone.data.favorites.FavoritesRepository
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -109,7 +111,11 @@ class RecentsViewModel(
             userMessageRes = filterState.messageRes,
             errorMessage = logData.errorMsg
         )
-    }.stateIn(
+    }
+    // Filter + group + sort run on Default: the transform touches every
+    // call-log row and must never block the main thread.
+    .flowOn(Dispatchers.Default)
+    .stateIn(
         scope = activeScope ?: CoroutineScope(kotlinx.coroutines.Dispatchers.Main.immediate),
         started = SharingStarted.WhileSubscribed(5000),
         // Loading until the first emission: a fresh ViewModel must show the

@@ -15,12 +15,14 @@ import io.github.elli0t0.phone.data.settings.SettingsRepository
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.ContactNameFormat
 import io.github.elli0t0.phone.data.settings.model.ContactSortOrder
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -42,6 +44,9 @@ class ContactsViewModel(
     private val _duplicatesCardDismissed = MutableStateFlow(false)
 
     // Raw contacts (before name-format display changes) for duplicate detection.
+    // Written by the uiState transform (now on Default) and read by
+    // findDuplicates: volatile for safe cross-thread visibility.
+    @Volatile
     private var latestContacts: List<ContactSummary> = emptyList()
 
     private val activeScope = coroutineScope ?: try {
@@ -159,7 +164,11 @@ class ContactsViewModel(
             pendingMergeGroup = extras.pendingMergeGroup,
             isMerging = extras.isMerging
         )
-    }.stateIn(
+    }
+    // Name formatting + search filter + grouping run on Default: the
+    // transform touches every contact and must never block the main thread.
+    .flowOn(Dispatchers.Default)
+    .stateIn(
         scope = activeScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = ContactsUiState(isLoading = true)

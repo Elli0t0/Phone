@@ -27,6 +27,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -106,6 +107,7 @@ fun ContactRow(
             .clickable(onClick = onClick)
             .testTag("contact_item_${contact.id}"),
         shape = MaterialTheme.shapes.extraLarge,
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
@@ -150,6 +152,7 @@ fun ContactGroupCard(
             .fillMaxWidth()
             .padding(bottom = spacing.small),
         shape = MaterialTheme.shapes.extraLarge,
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         contacts.forEachIndexed { index, contact ->
@@ -223,6 +226,7 @@ fun FavoritesHintRow(
             .clickable(onClick = onClick)
             .testTag("favorites_hint_row"),
         shape = RoundedCornerShape(PhoneDimens.contactsPillCornerPercent),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
@@ -275,6 +279,7 @@ fun ProfileRow(
             .clickable(onClick = onClick)
             .testTag("profile_row"),
         shape = RoundedCornerShape(PhoneDimens.contactsPillCornerPercent),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
@@ -324,6 +329,7 @@ fun DuplicatesCard(
             modifier = Modifier
                 .fillMaxWidth(PhoneDimens.contactsDuplicatesCardWidthFraction),
             shape = MaterialTheme.shapes.extraLarge,
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column(
@@ -386,6 +392,7 @@ fun GroupsRow(
             .clickable(onClick = onClick)
             .testTag("groups_row"),
         shape = RoundedCornerShape(PhoneDimens.contactsPillCornerPercent),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
@@ -433,6 +440,7 @@ fun PermissionCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(
@@ -475,6 +483,7 @@ fun EmptyContactsState(
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.large,
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column(
@@ -543,16 +552,15 @@ fun FavoriteContactCard(
     val gradientIndex =
         ((contact.id % FavoriteCardGradients.size) + FavoriteCardGradients.size) % FavoriteCardGradients.size
     val gradient = FavoriteCardGradients[gradientIndex.toInt()]
+    val gradientBrush = remember(gradient) {
+        Brush.linearGradient(colors = listOf(gradient.first, gradient.second))
+    }
 
     Box(
         modifier = modifier
             .aspectRatio(1f)
             .clip(MaterialTheme.shapes.large)
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(gradient.first, gradient.second)
-                )
-            )
+            .background(gradientBrush)
             .clickable(onClick = onClick)
             .testTag("favorite_card_${contact.id}")
             .padding(12.dp),

@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -14,6 +15,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -30,13 +32,25 @@ fun ContactAvatar(
     textStyle: TextStyle = MaterialTheme.typography.titleMedium
 ) {
     val initial = displayName.trim().take(1).uppercase().ifBlank { "?" }
-    // Soft two-tone pastel gradient, deterministic per name.
+    // Soft two-tone pastel gradient, deterministic per name. The brush is
+    // remembered: rebuilding it every composition re-created the shader.
     val gradientIndex =
         ((displayName.hashCode() % ContactAvatarGradients.size) + ContactAvatarGradients.size) % ContactAvatarGradients.size
     val gradient = ContactAvatarGradients[gradientIndex]
-    val fallbackBackground = Brush.linearGradient(
-        colors = listOf(gradient.first, gradient.second)
-    )
+    val fallbackBackground = remember(gradient) {
+        Brush.linearGradient(colors = listOf(gradient.first, gradient.second))
+    }
+    // Sized request: decode at the displayed pixel size, not full resolution.
+    // The request itself is remembered so it is not rebuilt per composition.
+    val context = LocalContext.current
+    val density = LocalDensity.current
+    val imageRequest = remember(photoUri, size, context, density) {
+        ImageRequest.Builder(context)
+            .data(photoUri)
+            .size(with(density) { size.roundToPx() })
+            .crossfade(true)
+            .build()
+    }
 
     Box(
         modifier = modifier
@@ -47,10 +61,7 @@ fun ContactAvatar(
     ) {
         if (!photoUri.isNullOrBlank()) {
             SubcomposeAsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(photoUri)
-                    .crossfade(true)
-                    .build(),
+                model = imageRequest,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier

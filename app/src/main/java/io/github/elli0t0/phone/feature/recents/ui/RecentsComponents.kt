@@ -87,8 +87,7 @@ fun CallLogRow(
 ) {
     val spacing = LocalSpacing.current
     var showMenu by remember { mutableStateOf(false) }
-    val timeFormat = remember { SimpleDateFormat("h:mm a", Locale.getDefault()) }
-    val formattedTime = remember(group.date) { timeFormat.format(Date(group.date)) }
+    val formattedTime = remember(group.date) { sharedTimeFormat.format(Date(group.date)) }
 
     // Icon color by call type: incoming green, outgoing accent blue,
     // missed red, rejected/blocked orange.
@@ -307,6 +306,7 @@ fun DaySectionCard(
             .fillMaxWidth()
             .padding(bottom = spacing.small),
         shape = RoundedCornerShape(PhoneDimens.recentsDayCardCornerRadius),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         calls.forEachIndexed { index, group ->
@@ -470,6 +470,11 @@ private fun ExpandedActionButton(
         )
     }
 }
+
+// Shared across all recents rows: one formatter instead of one per row.
+// SimpleDateFormat is not thread-safe, but all composition runs on the
+// main thread, so sharing one instance here is safe.
+private val sharedTimeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
 
 private fun formatDuration(durationSeconds: Long, type: CallType): String {
     if (type == CallType.Missed || type == CallType.Rejected || type == CallType.Blocked) {
