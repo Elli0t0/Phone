@@ -14,6 +14,7 @@ import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.CallDisplay
+import io.github.elli0t0.phone.data.settings.model.DefaultSim
 import io.github.elli0t0.phone.data.settings.model.CardStyle
 import io.github.elli0t0.phone.data.settings.model.ContactNameFormat
 import io.github.elli0t0.phone.data.settings.model.ContactSortOrder
@@ -41,6 +42,7 @@ interface SettingsRepository {
     suspend fun setContactNameFormat(format: ContactNameFormat)
     suspend fun setCallDisplay(display: CallDisplay)
     suspend fun setCallBackground(background: CallBackground)
+    suspend fun setDefaultSim(defaultSim: DefaultSim)
     suspend fun setQuickDeclineMessages(messages: List<String>)
     suspend fun resetToDefaults()
 }
@@ -65,6 +67,7 @@ class DataStoreSettingsRepository(
         val CONTACT_NAME_FORMAT = stringPreferencesKey("contact_name_format")
         val CALL_DISPLAY = stringPreferencesKey("call_display")
         val CALL_BACKGROUND = stringPreferencesKey("call_background")
+        val DEFAULT_SIM = stringPreferencesKey("default_sim")
         val QUICK_DECLINE_MESSAGES = stringPreferencesKey("quick_decline_messages")
     }
 
@@ -104,6 +107,9 @@ class DataStoreSettingsRepository(
         val callBackgroundStr = prefs[Keys.CALL_BACKGROUND]
         val callBackground = callBackgroundStr?.let { runCatching { CallBackground.valueOf(it) }.getOrNull() } ?: CallBackground.DEFAULT
 
+        val defaultSimStr = prefs[Keys.DEFAULT_SIM]
+        val defaultSim = defaultSimStr?.let { runCatching { DefaultSim.valueOf(it) }.getOrNull() } ?: DefaultSim.ASK
+
         val quickDeclineStored = prefs[Keys.QUICK_DECLINE_MESSAGES] ?: ""
         val quickDeclineOverrides = (quickDeclineStored.split("\n") + listOf("", "", ""))
             .take(3)
@@ -124,6 +130,7 @@ class DataStoreSettingsRepository(
             contactNameFormat = nameFormat,
             callDisplay = callDisplay,
             callBackground = callBackground,
+            defaultSim = defaultSim,
             quickDeclineOverrides = quickDeclineOverrides
         )
     }
@@ -211,6 +218,12 @@ class DataStoreSettingsRepository(
     override suspend fun setCallBackground(background: CallBackground) {
         dataStore.edit { prefs ->
             prefs[Keys.CALL_BACKGROUND] = background.name
+        }
+    }
+
+    override suspend fun setDefaultSim(defaultSim: DefaultSim) {
+        dataStore.edit { prefs ->
+            prefs[Keys.DEFAULT_SIM] = defaultSim.name
         }
     }
 

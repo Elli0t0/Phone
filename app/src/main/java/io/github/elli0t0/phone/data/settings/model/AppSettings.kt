@@ -62,6 +62,12 @@ enum class CallBackground(val label: String) {
     ACCENT("Accent")
 }
 
+enum class DefaultSim(val label: String) {
+    ASK("Ask every time"),
+    SIM_1("SIM 1"),
+    SIM_2("SIM 2")
+}
+
 data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val accentColor: Long = AccentPreset.ONE_UI_BLUE.colorValue,
@@ -78,6 +84,7 @@ data class AppSettings(
     val contactNameFormat: ContactNameFormat = ContactNameFormat.FIRST_NAME_FIRST,
     val callDisplay: CallDisplay = CallDisplay.FULL_SCREEN,
     val callBackground: CallBackground = CallBackground.DEFAULT,
+    val defaultSim: DefaultSim = DefaultSim.ASK,
     // Quick-decline message overrides, one per reply chip. A blank entry
     // falls back to the built-in default message for that slot, so an
     // untouched setting keeps the localized defaults.
