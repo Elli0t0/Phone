@@ -20,9 +20,11 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
 import androidx.core.content.ContextCompat
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
 import io.github.elli0t0.phone.core.notifications.CallNotificationChannels
 import io.github.elli0t0.phone.data.call.CallRepository
+import io.github.elli0t0.phone.data.settings.model.CallDisplay
 import io.github.elli0t0.phone.feature.call.CallActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -39,6 +41,12 @@ class PhoneInCallService : InCallService() {
 
     @Volatile
     private var isActivityVisible = false
+
+    // Cached call-display setting (default = current behavior). Collected
+    // in onCreate; until the first emission arrives the default applies.
+    @Volatile
+    private var cachedCallDisplay: CallDisplay = CallDisplay.FULL_SCREEN
+    private var settingsJob: Job? = null
 
     @Volatile
     private var currentForegroundId: Int = -1
@@ -574,9 +582,10 @@ class PhoneInCallService : InCallService() {
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setStyle(callStyle)
 
-            // Always set full-screen intent. The system shows heads-up when
-            // unlocked and full-screen only when locked. Gating it to locked
-            // removes the heads-up pop on unlocked devices.
+            // Full-screen intent only when the call-display setting is
+            // Full screen. With Pop-up the notification shows heads-up /
+            // banner only and never takes over the screen. Gating it to
+            // locked removes the heads-up pop on unlocked devices.
             val canUseFullScreen = if (Build.VERSION.SDK_INT >= 34) {
                 try {
                     notificationManager.canUseFullScreenIntent()
@@ -587,7 +596,7 @@ class PhoneInCallService : InCallService() {
             } else {
                 true
             }
-            if (canUseFullScreen) {
+            if (canUseFullScreen && cachedCallDisplay == CallDisplay.FULL_SCREEN) {
                 try {
                     builder.setFullScreenIntent(fullScreenPendingIntent, true)
                 } catch (e: SecurityException) {
@@ -962,6 +971,12 @@ class PhoneInCallService : InCallService() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        settingsJob = serviceScope.launch {
+            runCatching {
+                (application as? PhoneApplication)?.container?.settingsRepository?.settingsFlow
+                    ?.collect { cachedCallDisplay = it.callDisplay }
+            }
+        }
         try {
             CallNotificationChannels.createAll(this)
         } catch (e: Exception) {
@@ -977,6 +992,8 @@ class PhoneInCallService : InCallService() {
     override fun onDestroy() {
         super.onDestroy()
         instance = null
+        settingsJob?.cancel()
+        settingsJob = null
         lookupJob?.cancel()
         callStartTimeoutJob?.cancel()
         callStartTimeoutJob = null

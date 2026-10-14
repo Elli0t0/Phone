@@ -12,6 +12,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AppSettings
+import io.github.elli0t0.phone.data.settings.model.CallDisplay
 import io.github.elli0t0.phone.data.settings.model.CardStyle
 import io.github.elli0t0.phone.data.settings.model.ContactNameFormat
 import io.github.elli0t0.phone.data.settings.model.ContactSortOrder
@@ -37,6 +38,7 @@ interface SettingsRepository {
     suspend fun setDefaultStartTab(tab: StartTab)
     suspend fun setContactSortOrder(order: ContactSortOrder)
     suspend fun setContactNameFormat(format: ContactNameFormat)
+    suspend fun setCallDisplay(display: CallDisplay)
     suspend fun resetToDefaults()
 }
 
@@ -58,6 +60,7 @@ class DataStoreSettingsRepository(
         val DEFAULT_START_TAB = stringPreferencesKey("default_start_tab")
         val CONTACT_SORT_ORDER = stringPreferencesKey("contact_sort_order")
         val CONTACT_NAME_FORMAT = stringPreferencesKey("contact_name_format")
+        val CALL_DISPLAY = stringPreferencesKey("call_display")
     }
 
     override val settingsFlow: Flow<AppSettings> = dataStore.data.map { prefs ->
@@ -90,6 +93,9 @@ class DataStoreSettingsRepository(
         val formatStr = prefs[Keys.CONTACT_NAME_FORMAT]
         val nameFormat = formatStr?.let { runCatching { ContactNameFormat.valueOf(it) }.getOrNull() } ?: ContactNameFormat.FIRST_NAME_FIRST
 
+        val callDisplayStr = prefs[Keys.CALL_DISPLAY]
+        val callDisplay = callDisplayStr?.let { runCatching { CallDisplay.valueOf(it) }.getOrNull() } ?: CallDisplay.FULL_SCREEN
+
         AppSettings(
             themeMode = themeMode,
             accentColor = accent,
@@ -103,7 +109,8 @@ class DataStoreSettingsRepository(
             showBottomBarLabels = showLabels,
             defaultStartTab = startTab,
             contactSortOrder = sortOrder,
-            contactNameFormat = nameFormat
+            contactNameFormat = nameFormat,
+            callDisplay = callDisplay
         )
     }
 
@@ -178,6 +185,12 @@ class DataStoreSettingsRepository(
     override suspend fun setContactNameFormat(format: ContactNameFormat) {
         dataStore.edit { prefs ->
             prefs[Keys.CONTACT_NAME_FORMAT] = format.name
+        }
+    }
+
+    override suspend fun setCallDisplay(display: CallDisplay) {
+        dataStore.edit { prefs ->
+            prefs[Keys.CALL_DISPLAY] = display.name
         }
     }
 

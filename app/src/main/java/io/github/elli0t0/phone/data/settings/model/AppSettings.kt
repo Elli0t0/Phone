@@ -51,6 +51,11 @@ enum class ThemeMode(val label: String) {
     DARK("Dark")
 }
 
+enum class CallDisplay(val label: String) {
+    FULL_SCREEN("Full screen"),
+    POPUP("Pop-up")
+}
+
 data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val accentColor: Long = AccentPreset.ONE_UI_BLUE.colorValue,
@@ -64,5 +69,6 @@ data class AppSettings(
     val showBottomBarLabels: Boolean = true,
     val defaultStartTab: StartTab = StartTab.KEYPAD,
     val contactSortOrder: ContactSortOrder = ContactSortOrder.FIRST_NAME,
-    val contactNameFormat: ContactNameFormat = ContactNameFormat.FIRST_NAME_FIRST
+    val contactNameFormat: ContactNameFormat = ContactNameFormat.FIRST_NAME_FIRST,
+    val callDisplay: CallDisplay = CallDisplay.FULL_SCREEN
 )
