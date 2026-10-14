@@ -38,7 +38,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -53,6 +54,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -192,7 +194,7 @@ fun ContactEditScreen(
                     )
                 },
                 navigationIcon = {
-                    TextButton(onClick = onCancelClick, modifier = Modifier.testTag("btn_edit_cancel")) {
+                    TextButton(onClick = onCancelClick, modifier = Modifier.padding(start = spacing.screenHorizontalPadding).testTag("btn_edit_cancel")) {
                         Text(text = stringResource(id = R.string.action_cancel))
                     }
                 },
@@ -203,7 +205,7 @@ fun ContactEditScreen(
                         Button(
                             onClick = onSaveClick,
                             shape = MaterialTheme.shapes.medium,
-                            modifier = Modifier.padding(end = spacing.small).testTag("btn_edit_save")
+                            modifier = Modifier.padding(end = spacing.screenHorizontalPadding).testTag("btn_edit_save")
                         ) {
                             Text(text = stringResource(id = R.string.action_save))
                         }
@@ -297,20 +299,22 @@ fun ContactEditScreen(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column(modifier = Modifier.padding(spacing.medium)) {
-                    OutlinedTextField(
+                    TextField(
                         value = uiState.displayName,
                         onValueChange = onNameChanged,
                         label = { Text(stringResource(id = R.string.contact_field_name)) },
                         shape = MaterialTheme.shapes.medium,
+                        colors = EditFieldColors(),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth().testTag("input_contact_name")
                     )
                     Spacer(modifier = Modifier.height(spacing.medium))
-                    OutlinedTextField(
+                    TextField(
                         value = uiState.organization,
                         onValueChange = onOrganizationChanged,
                         label = { Text(stringResource(id = R.string.contact_field_organization)) },
                         shape = MaterialTheme.shapes.medium,
+                        colors = EditFieldColors(),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth().testTag("input_contact_org")
                     )
@@ -475,12 +479,13 @@ private fun PhoneInputField(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        OutlinedTextField(
+        TextField(
             value = phone.number,
             onValueChange = onNumberChange,
             label = { Text(stringResource(id = R.string.contact_field_phone)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
             shape = MaterialTheme.shapes.medium,
+            colors = EditFieldColors(),
             singleLine = true,
             modifier = Modifier.weight(1f).testTag("input_phone_$index")
         )
@@ -492,13 +497,14 @@ private fun PhoneInputField(
             onExpandedChange = { expanded = it },
             modifier = Modifier.width(PhoneDimens.editTypeDropdownWidth)
         ) {
-            OutlinedTextField(
+            TextField(
                 value = selectedLabel,
                 onValueChange = {},
                 readOnly = true,
                 singleLine = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 shape = MaterialTheme.shapes.medium,
+                colors = EditFieldColors(),
                 modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable)
             )
             ExposedDropdownMenu(
@@ -550,12 +556,13 @@ private fun EmailInputField(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        OutlinedTextField(
+        TextField(
             value = email.address,
             onValueChange = onAddressChange,
             label = { Text(stringResource(id = R.string.contact_field_email)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             shape = MaterialTheme.shapes.medium,
+            colors = EditFieldColors(),
             singleLine = true,
             modifier = Modifier.weight(1f).testTag("input_email_$index")
         )
@@ -567,13 +574,14 @@ private fun EmailInputField(
             onExpandedChange = { expanded = it },
             modifier = Modifier.width(PhoneDimens.editTypeDropdownWidth)
         ) {
-            OutlinedTextField(
+            TextField(
                 value = selectedLabel,
                 onValueChange = {},
                 readOnly = true,
                 singleLine = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 shape = MaterialTheme.shapes.medium,
+                colors = EditFieldColors(),
                 modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable)
             )
             ExposedDropdownMenu(
@@ -601,3 +609,12 @@ private fun EmailInputField(
         }
     }
 }
+
+@Composable
+private fun EditFieldColors() = TextFieldDefaults.colors(
+    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+    focusedIndicatorColor = Color.Transparent,
+    unfocusedIndicatorColor = Color.Transparent,
+    disabledIndicatorColor = Color.Transparent
+)
