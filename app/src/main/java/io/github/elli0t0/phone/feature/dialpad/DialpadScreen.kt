@@ -372,10 +372,12 @@ fun DialpadScreen(
                     softWrap = false,
                     onTextLayout = { layoutResult ->
                         if (layoutResult.hasVisualOverflow) {
-                            displayFontSize = maxOf(
-                                PhoneDimens.keypadNumberDisplayMinSize,
-                                displayFontSize * PhoneDimens.keypadNumberDisplayShrinkFactor
-                            )
+                            val shrunk = displayFontSize * PhoneDimens.keypadNumberDisplayShrinkFactor
+                            displayFontSize = if (shrunk.value < PhoneDimens.keypadNumberDisplayMinSize.value) {
+                                PhoneDimens.keypadNumberDisplayMinSize
+                            } else {
+                                shrunk
+                            }
                         }
                     }
                 )
