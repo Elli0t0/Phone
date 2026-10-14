@@ -54,6 +54,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.permissions.CallLogPermissionStatus
@@ -98,6 +99,9 @@ fun RecentsScreen(
         }
     )
     val spacing = LocalSpacing.current
+    // Read here, not inside initiateCall: the handler is not a
+    // @Composable context, so it cannot read a CompositionLocal.
+    val defaultSim = LocalAppSettings.current.defaultSim
     val clipboardManager = LocalClipboardManager.current
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -116,7 +120,8 @@ fun RecentsScreen(
         }
         recentsScope.launch {
             when (val res = io.github.elli0t0.phone.core.telecom.SimCallHelper.resolveSim(
-                context, number, lookupKey, simAccounts, app.container.contactSimRepository
+                context, number, lookupKey, simAccounts, app.container.contactSimRepository,
+                defaultSim
             )) {
                 is io.github.elli0t0.phone.core.telecom.SimCallResolution.UseSim ->
                     CallManager.placeCall(context, number, res.sim.handle)

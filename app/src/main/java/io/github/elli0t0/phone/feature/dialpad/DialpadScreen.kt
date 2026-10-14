@@ -106,6 +106,9 @@ fun DialpadScreen(
         ThemeMode.DARK -> true
         ThemeMode.SYSTEM -> isSystemInDarkTheme()
     }
+    // Read here, not inside dialNumber: the handler is not a
+    // @Composable context, so it cannot read a CompositionLocal.
+    val defaultSim = LocalAppSettings.current.defaultSim
     val view = LocalView.current
     val clipboardManager = LocalClipboardManager.current
     val coroutineScope = rememberCoroutineScope()
@@ -122,7 +125,8 @@ fun DialpadScreen(
         }
         coroutineScope.launch {
             when (val res = io.github.elli0t0.phone.core.telecom.SimCallHelper.resolveSim(
-                context, number, lookupKey, simAccounts, app.container.contactSimRepository
+                context, number, lookupKey, simAccounts, app.container.contactSimRepository,
+                defaultSim
             )) {
                 is io.github.elli0t0.phone.core.telecom.SimCallResolution.UseSim ->
                     CallManager.placeCall(context, number, res.sim.handle)

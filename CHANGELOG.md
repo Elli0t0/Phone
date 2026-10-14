@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.18] - 2026-10-14
+
+### Changed
+- Default calling SIM now applies when placing calls from the keypad and Recents. Contact details ships in 0.6.19, Settings UI in 0.6.20.
+
 ## [0.6.17] - 2026-10-14
 
 ### Added
