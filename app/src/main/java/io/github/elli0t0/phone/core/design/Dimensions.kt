@@ -5,20 +5,23 @@ import androidx.compose.ui.unit.sp
 
 /** Bottom bar island and keypad dimensions. */
 object PhoneDimens {
-    // Bottom bar: floating pill, 3 items of 80dp, min height 60dp.
-    val bottomBarItemWidth = 80.dp
-    val bottomBarTotalWidth = bottomBarItemWidth * 3
-    val bottomBarMinHeight = 60.dp
-    val bottomBarBottomMargin = 8.dp
+    // Bottom bar: floating pill, 250dp wide (capped at 85% of screen
+    // width), 60dp tall, 3 equal-width items. The selected pill fills
+    // its item with a 4dp inset. Very soft shadow, alpha <= 10%.
+    val bottomBarWidth = 250.dp
+    val bottomBarWidthFraction = 0.85f
+    val bottomBarHeight = 60.dp
+    val bottomBarBottomMargin = 12.dp
     val bottomBarCornerPercent = 50
     val bottomBarItemInset = 4.dp
-    val bottomBarElevation = 4.dp
+    val bottomBarElevation = 2.dp
+    val bottomBarShadowAlpha = 0.08f
     val bottomBarIconSize = 24.dp
     val bottomBarLabelSize = 12.sp
     val bottomBarLabelIconGap = 2.dp
-    val bottomBarItemPaddingVertical = 8.dp
-    // Space kept clear above the bar: min bar height (60dp) + 16dp gap.
-    val bottomBarReservedHeight = 76.dp
+    // Space kept clear above the bar: bar height (60dp) + gap (12dp)
+    // + 16dp, plus the navigation-bar inset added at the call site.
+    val bottomBarReservedHeight = 88.dp
     // Collapsing page header (Recents, Contacts): tall expanded area
     // that shrinks to a small top bar as the list scrolls.
     val headerExpandedFraction = 0.3f
@@ -32,8 +35,8 @@ object PhoneDimens {
     val keypadTouchSize = 64.dp
     val keypadNumberDisplaySize = 36.sp
     val callButtonSize = 70.dp
-    // Space below the call-button row: 16dp + 76dp reserved − 68dp bar
-    // (60dp bar + 8dp margin) = ~24dp clear space above the bottom bar.
+    // Space below the call-button row: 16dp + 88dp reserved − 72dp bar
+    // (60dp bar + 12dp gap) = ~32dp clear space above the bottom bar.
     val keypadCallButtonBottomPadding = 16.dp
     val keypadAsteriskSize = 28.dp
     val keypadVoicemailIconSize = 20.dp

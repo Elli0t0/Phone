@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.6] - 2026-10-14
+
+### Changed
+- Bottom bar: fixed 250dp width (capped at 85% of screen width), 60dp height, three equal-width items, selected pill with a 4dp inset, very soft shadow, and a gap of navigation-bar inset + 12dp so it floats above the gesture handle. Nothing overflows or clips.
+- Bottom bar icons: keypad is a clean 12-dot grid (4 rows of 3), Recents is a handset with incoming and outgoing arrows. Selected tabs use filled icons, unselected tabs use outlined icons.
+- Lists on the Keypad, Recents and Contacts tabs keep clearance of bar height + gap + 16dp above the bar, so the last row is fully reachable.
+- Theme: one light background (#F7F8FA) everywhere, including the keypad. Dark: pages #000, cards #1C1C1E, keypad #161618. Bottom bar colors: light #EBEBED with #D9D9DD selected pill, dark #2C2C2E with #48484A selected pill.
+
 ## [0.4.5] - 2026-10-14
 
 ### Changed

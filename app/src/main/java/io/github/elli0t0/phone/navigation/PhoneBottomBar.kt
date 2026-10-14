@@ -5,12 +5,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -45,9 +45,12 @@ import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.data.settings.model.ThemeMode
 
 /**
- * Floating pill bottom bar, overlaid on content. The selected tab draws
- * its own rounded pill (4dp horizontal inset) with the filled icon;
- * unselected tabs show the outlined icon. The pill fades between tabs.
+ * Floating pill bottom bar, overlaid on content. 250dp wide (capped at
+ * 85% of the screen), 60dp tall, three equal-width items. The selected
+ * tab draws its own fully rounded pill with a 4dp inset and the filled
+ * icon; unselected tabs show the outlined icon. The pill fades between
+ * tabs. The bar floats above the gesture handle: navigation-bar inset
+ * + 12dp gap. Very soft shadow, alpha <= 10%.
  */
 @Composable
 fun PhoneBottomBar(
@@ -67,20 +70,30 @@ fun PhoneBottomBar(
     val unselectedContentColor = if (darkTheme) BottomBarDarkUnselected else BottomBarLightUnselected
     val pillShape = RoundedCornerShape(PhoneDimens.bottomBarCornerPercent)
 
-    Box(
+    // Width 250dp, capped at 85% of the screen so the bar never
+    // overflows small screens. Height fixed at 60dp; the three items
+    // share the width equally via weight, so nothing can overflow
+    // or clip.
+    BoxWithConstraints(
         modifier = modifier
             .navigationBarsPadding()
             .padding(bottom = PhoneDimens.bottomBarBottomMargin)
             .testTag("phone_bottom_bar"),
         contentAlignment = Alignment.Center
     ) {
+        val barWidth = minOf(
+            PhoneDimens.bottomBarWidth,
+            maxWidth * PhoneDimens.bottomBarWidthFraction
+        )
         Row(
             modifier = Modifier
-                .width(PhoneDimens.bottomBarTotalWidth)
-                .heightIn(min = PhoneDimens.bottomBarMinHeight)
+                .width(barWidth)
+                .height(PhoneDimens.bottomBarHeight)
                 .shadow(
                     PhoneDimens.bottomBarElevation,
-                    pillShape
+                    pillShape,
+                    spotColor = Color.Black.copy(alpha = PhoneDimens.bottomBarShadowAlpha),
+                    ambientColor = Color.Black.copy(alpha = PhoneDimens.bottomBarShadowAlpha)
                 )
                 .clip(pillShape)
                 .background(barColor),
@@ -99,8 +112,9 @@ fun PhoneBottomBar(
                 )
                 Box(
                     modifier = Modifier
-                        .width(PhoneDimens.bottomBarItemWidth)
-                        .padding(horizontal = PhoneDimens.bottomBarItemInset)
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .padding(PhoneDimens.bottomBarItemInset)
                         .clip(pillShape)
                         .background(pillColor)
                         .clickable {
@@ -118,9 +132,6 @@ fun PhoneBottomBar(
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
-                        modifier = Modifier.padding(
-                            vertical = PhoneDimens.bottomBarItemPaddingVertical
-                        ),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
