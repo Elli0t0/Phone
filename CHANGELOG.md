@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.10] - 2026-10-14
+
+### Changed
+- Inner-screen transitions through `Motion`: pushed screens (Settings, Setup, contact detail/edit/create, groups, history) slide + fade (200ms) on On, fade only (100ms) on Reduced, and swap instantly on Off. The Contacts sub-screens slide by navigation depth (forward in from the right, back in from the left, same level fades).
+
 ## [0.6.9] - 2026-10-14
 
 ### Changed

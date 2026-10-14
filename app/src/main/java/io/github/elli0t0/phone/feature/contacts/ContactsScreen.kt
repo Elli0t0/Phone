@@ -1,6 +1,7 @@
 package io.github.elli0t0.phone.feature.contacts
 
 import androidx.activity.ComponentActivity
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -21,6 +22,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.permissions.rememberContactsPermissionState
 import io.github.elli0t0.phone.data.contacts.model.ContactDetail
 import io.github.elli0t0.phone.feature.contacts.ui.ContactDetailScreen
@@ -37,6 +40,16 @@ private sealed interface ContactsNavDestination {
     data object Create : ContactsNavDestination
     data class Edit(val contact: ContactDetail) : ContactsNavDestination
     data object Groups : ContactsNavDestination
+}
+
+/** Navigation depth: drives the inner-screen slide direction. */
+private fun destinationDepth(destination: ContactsNavDestination): Int = when (destination) {
+    ContactsNavDestination.List -> 0
+    ContactsNavDestination.Groups -> 1
+    is ContactsNavDestination.Detail -> 2
+    is ContactsNavDestination.Create -> 2
+    is ContactsNavDestination.History -> 3
+    is ContactsNavDestination.Edit -> 3
 }
 
 @Composable
@@ -87,7 +100,15 @@ fun ContactsScreen(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            when (val dest = currentDestination) {
+            AnimatedContent(
+                targetState = currentDestination,
+                transitionSpec = {
+                    val direction = destinationDepth(targetState) - destinationDepth(initialState)
+                    Motion.innerContentTransform(LocalAppSettings.current.animationOption, direction)
+                },
+                label = "contacts_destination"
+            ) { dest ->
+                when (dest) {
                 is ContactsNavDestination.List -> {
                     ContactListScreen(
                         uiState = uiState,
@@ -281,6 +302,7 @@ fun ContactsScreen(
                     )
                 }
 
+                }
             }
         }
     }

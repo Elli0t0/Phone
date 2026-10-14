@@ -40,12 +40,28 @@ fun PhoneNavHost(
         }
     val tabExitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition =
         { ExitTransition.None }
+    // Inner screens (Setup, Settings) slide + fade through Motion;
+    // tabs only fade (see tabEnterTransition above).
+    val innerEnterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition =
+        { Motion.innerEnterTransition(animationOption) }
+    val innerExitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition =
+        { Motion.innerExitTransition(animationOption) }
+    val innerPopEnterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition =
+        { Motion.innerPopEnterTransition(animationOption) }
+    val innerPopExitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition =
+        { Motion.innerPopExitTransition(animationOption) }
     NavHost(
         navController = navController,
         startDestination = startDestination,
         modifier = modifier
     ) {
-        composable(route = Screen.Setup.route) {
+        composable(
+            route = Screen.Setup.route,
+            enterTransition = innerEnterTransition,
+            exitTransition = innerExitTransition,
+            popEnterTransition = innerPopEnterTransition,
+            popExitTransition = innerPopExitTransition
+        ) {
             SetupScreen(
                 onSetupFinished = {
                     navController.navigate(defaultStartTabRoute) {
@@ -98,7 +114,13 @@ fun PhoneNavHost(
                 }
             )
         }
-        composable(route = Screen.Settings.route) {
+        composable(
+            route = Screen.Settings.route,
+            enterTransition = innerEnterTransition,
+            exitTransition = innerExitTransition,
+            popEnterTransition = innerPopEnterTransition,
+            popExitTransition = innerPopExitTransition
+        ) {
             io.github.elli0t0.phone.feature.settings.SettingsScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
