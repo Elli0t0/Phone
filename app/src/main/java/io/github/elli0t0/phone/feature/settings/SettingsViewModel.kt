@@ -8,6 +8,7 @@ import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.CallDisplay
+import io.github.elli0t0.phone.data.settings.model.DefaultSim
 import io.github.elli0t0.phone.data.settings.model.CardStyle
 import io.github.elli0t0.phone.data.settings.model.ContactNameFormat
 import io.github.elli0t0.phone.data.settings.model.ContactSortOrder
@@ -127,6 +128,13 @@ class SettingsViewModel(
         }
     }
     fun setCallBackground(background: CallBackground) = onCallBackgroundChanged(background)
+
+    fun onDefaultSimChanged(defaultSim: DefaultSim) {
+        viewModelScope.launch {
+            settingsRepository.setDefaultSim(defaultSim)
+        }
+    }
+    fun setDefaultSim(defaultSim: DefaultSim) = onDefaultSimChanged(defaultSim)
 
     fun onQuickDeclineMessagesChanged(messages: List<String>) {
         viewModelScope.launch {

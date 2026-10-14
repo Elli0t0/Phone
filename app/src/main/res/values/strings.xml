@@ -66,6 +66,7 @@
     <string name="settings_call_waiting">Call waiting</string>
     <string name="settings_call_display">Incoming call display</string>
     <string name="settings_call_background">Call background</string>
+    <string name="settings_default_sim">Default calling SIM</string>
     <string name="settings_quick_decline">Quick decline messages</string>
     <string name="call_waiting_desc">Lets a second call come through while you are on a call. Managed by your carrier.</string>
     <string name="call_waiting_activate">Activate</string>

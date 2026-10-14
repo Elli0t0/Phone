@@ -87,6 +87,7 @@ import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.CallDisplay
+import io.github.elli0t0.phone.data.settings.model.DefaultSim
 import io.github.elli0t0.phone.data.settings.model.CardStyle
 import io.github.elli0t0.phone.data.settings.model.ContactNameFormat
 import io.github.elli0t0.phone.data.settings.model.ContactSortOrder
@@ -141,6 +142,7 @@ fun SettingsScreen(
     var showFormatDialog by remember { mutableStateOf(false) }
     var showCallDisplayDialog by remember { mutableStateOf(false) }
     var showCallBackgroundDialog by remember { mutableStateOf(false) }
+    var showDefaultSimDialog by remember { mutableStateOf(false) }
     var showQuickDeclineDialog by remember { mutableStateOf(false) }
     var showBlockedNumbers by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
@@ -449,6 +451,16 @@ fun SettingsScreen(
             selected = settings.callBackground,
             onSelect = { viewModel.setCallBackground(it); showCallBackgroundDialog = false },
             onDismiss = { showCallBackgroundDialog = false }
+        )
+    }
+
+    if (showDefaultSimDialog) {
+        SettingsChoiceDialog(
+            title = stringResource(id = R.string.settings_default_sim),
+            options = DefaultSim.entries.map { it.label to it },
+            selected = settings.defaultSim,
+            onSelect = { viewModel.setDefaultSim(it); showDefaultSimDialog = false },
+            onDismiss = { showDefaultSimDialog = false }
         )
     }
 
@@ -985,6 +997,16 @@ fun SettingsScreen(
                             title = stringResource(id = R.string.settings_call_background),
                             subtitle = settings.callBackground.label,
                             onClick = { showCallBackgroundDialog = true }
+                        )
+
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        Spacer(modifier = Modifier.height(spacing.small))
+
+                        SettingsRow(
+                            title = stringResource(id = R.string.settings_default_sim),
+                            subtitle = settings.defaultSim.label,
+                            onClick = { showDefaultSimDialog = true }
                         )
 
                         Spacer(modifier = Modifier.height(spacing.small))
