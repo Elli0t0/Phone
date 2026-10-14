@@ -219,6 +219,7 @@
     <string name="photo_crop_preview_title">Set contact photo</string>
     <string name="contact_details_ringtone">Ringtone</string>
     <string name="contact_details_history">History</string>
+    <string name="contact_details_history_show_all">Show all</string>
     <string name="contact_details_history_empty">No calls with this contact yet</string>
     <string name="ringtone_default">Default ringtone</string>
     <string name="ringtone_silent">Silent</string>

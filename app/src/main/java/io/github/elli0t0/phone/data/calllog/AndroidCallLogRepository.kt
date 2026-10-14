@@ -13,6 +13,8 @@ import android.os.SystemClock
 import android.provider.CallLog
 import android.util.Log
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
+import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
+import io.github.elli0t0.phone.data.calllog.model.CallHistoryPage
 import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import io.github.elli0t0.phone.data.calllog.model.CallType
 import io.github.elli0t0.phone.data.contacts.ContactNameIndex
@@ -185,36 +187,8 @@ class AndroidCallLogRepository(
 
             var count = 0
             while (c.moveToNext()) {
-                val id = if (idIdx >= 0) c.getLong(idIdx) else 0L
-                val rawNumber = if (numberIdx >= 0) c.getString(numberIdx) ?: "" else ""
-                val cachedName = if (cachedNameIdx >= 0) c.getString(cachedNameIdx) else null
-                val typeCode = if (typeIdx >= 0) c.getInt(typeIdx) else 0
-                val date = if (dateIdx >= 0) c.getLong(dateIdx) else 0L
-                val duration = if (durationIdx >= 0) c.getLong(durationIdx) else 0L
-                val phoneAccountId = if (accountIdIdx >= 0) c.getString(accountIdIdx) else null
-
-                val callType = mapCallType(typeCode)
-                val simInfo = phoneAccountId?.let { "SIM ${it.take(2)}" }
-
-                // Resolve from the in-memory index: one map lookup, no queries.
-                val indexed = if (rawNumber.isNotBlank()) ContactNameIndex.resolve(rawNumber) else null
-                val displayName = indexed?.displayName ?: cachedName
-
                 entries.add(
-                    CallLogEntry(
-                        id = id,
-                        number = rawNumber,
-                        formattedNumber = PhoneNumberFormatter.format(rawNumber),
-                        cachedName = cachedName,
-                        contactName = displayName,
-                        contactId = indexed?.contactId,
-                        contactLookupKey = indexed?.lookupKey,
-                        contactPhotoUri = indexed?.photoUri,
-                        type = callType,
-                        date = date,
-                        durationSeconds = duration,
-                        simInfo = simInfo
-                    )
+                    mapRow(c, idIdx, numberIdx, cachedNameIdx, typeIdx, dateIdx, durationIdx, accountIdIdx)
                 )
 
                 count++
@@ -308,6 +282,39 @@ class AndroidCallLogRepository(
         }
     }
 
+    // One cursor row to a CallLogEntry. Shared by the full-log query
+    // and the paged history query so both map rows identically.
+    private fun mapRow(
+        c: Cursor,
+        idIdx: Int,
+        numberIdx: Int,
+        cachedNameIdx: Int,
+        typeIdx: Int,
+        dateIdx: Int,
+        durationIdx: Int,
+        accountIdIdx: Int
+    ): CallLogEntry {
+        val rawNumber = if (numberIdx >= 0) c.getString(numberIdx) ?: "" else ""
+        val cachedName = if (cachedNameIdx >= 0) c.getString(cachedNameIdx) else null
+        val phoneAccountId = if (accountIdIdx >= 0) c.getString(accountIdIdx) else null
+        // Resolve from the in-memory index: one map lookup, no queries.
+        val indexed = if (rawNumber.isNotBlank()) ContactNameIndex.resolve(rawNumber) else null
+        return CallLogEntry(
+            id = if (idIdx >= 0) c.getLong(idIdx) else 0L,
+            number = rawNumber,
+            formattedNumber = PhoneNumberFormatter.format(rawNumber),
+            cachedName = cachedName,
+            contactName = indexed?.displayName ?: cachedName,
+            contactId = indexed?.contactId,
+            contactLookupKey = indexed?.lookupKey,
+            contactPhotoUri = indexed?.photoUri,
+            type = mapCallType(if (typeIdx >= 0) c.getInt(typeIdx) else 0),
+            date = if (dateIdx >= 0) c.getLong(dateIdx) else 0L,
+            durationSeconds = if (durationIdx >= 0) c.getLong(durationIdx) else 0L,
+            simInfo = phoneAccountId?.let { "SIM ${it.take(2)}" }
+        )
+    }
+
     private fun mapCallType(typeCode: Int): CallType {
         return when (typeCode) {
             CallLog.Calls.INCOMING_TYPE -> CallType.Incoming
@@ -334,5 +341,105 @@ class AndroidCallLogRepository(
         } catch (_: Exception) {
             false
         }
+    }
+
+
+    // Paged history for one contact. The provider query pages raw rows
+    // newest-first (Bundle QUERY_ARG_LIMIT/OFFSET on R+, LIMIT/OFFSET in
+    // the sort string below it); each chunk is filtered with the same
+    // normalized matcher the detail screen uses, so formatting variants
+    // of the contact's numbers all match. Scanning stops once the page
+    // plus one probe match are collected, or the log is exhausted.
+    override suspend fun getCallHistoryPage(
+        numbers: List<String>,
+        limit: Int,
+        offset: Int
+    ): CallHistoryPage = withContext(Dispatchers.IO) {
+        if (numbers.isEmpty() || limit <= 0 || offset < 0) {
+            return@withContext CallHistoryPage(emptyList(), false)
+        }
+        val projection = arrayOf(
+            CallLog.Calls._ID,
+            CallLog.Calls.NUMBER,
+            CallLog.Calls.CACHED_NAME,
+            CallLog.Calls.TYPE,
+            CallLog.Calls.DATE,
+            CallLog.Calls.DURATION,
+            CallLog.Calls.PHONE_ACCOUNT_ID
+        )
+        val collected = mutableListOf<CallLogEntry>()
+        var skipped = 0
+        var rawOffset = 0
+        var exhausted = false
+        while (collected.size <= limit && !exhausted) {
+            val cursor: Cursor? = try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    val queryArgs = Bundle().apply {
+                        putInt(ContentResolver.QUERY_ARG_LIMIT, HISTORY_CHUNK_SIZE)
+                        putInt(ContentResolver.QUERY_ARG_OFFSET, rawOffset)
+                        putStringArray(
+                            ContentResolver.QUERY_ARG_SORT_COLUMNS,
+                            arrayOf(CallLog.Calls.DATE)
+                        )
+                        putInt(
+                            ContentResolver.QUERY_ARG_SORT_DIRECTION,
+                            ContentResolver.QUERY_SORT_DIRECTION_DESCENDING
+                        )
+                    }
+                    contentResolver.query(CallLog.Calls.CONTENT_URI, projection, queryArgs, null)
+                } else {
+                    contentResolver.query(
+                        CallLog.Calls.CONTENT_URI,
+                        projection,
+                        null,
+                        null,
+                        "${CallLog.Calls.DATE} DESC LIMIT $HISTORY_CHUNK_SIZE OFFSET $rawOffset"
+                    )
+                }
+            } catch (e: SecurityException) {
+                Log.e(tag, "SecurityException querying call history page", e)
+                return@withContext CallHistoryPage(emptyList(), false)
+            } catch (e: Exception) {
+                Log.e(tag, "Error querying call history page", e)
+                return@withContext CallHistoryPage(emptyList(), false)
+            }
+            if (cursor == null) break
+            var chunkSize = 0
+            cursor.use { c ->
+                val idIdx = c.getColumnIndex(CallLog.Calls._ID)
+                val numberIdx = c.getColumnIndex(CallLog.Calls.NUMBER)
+                val cachedNameIdx = c.getColumnIndex(CallLog.Calls.CACHED_NAME)
+                val typeIdx = c.getColumnIndex(CallLog.Calls.TYPE)
+                val dateIdx = c.getColumnIndex(CallLog.Calls.DATE)
+                val durationIdx = c.getColumnIndex(CallLog.Calls.DURATION)
+                val accountIdIdx = c.getColumnIndex(CallLog.Calls.PHONE_ACCOUNT_ID)
+                while (c.moveToNext()) {
+                    chunkSize++
+                    val rawNumber = if (numberIdx >= 0) c.getString(numberIdx) ?: "" else ""
+                    if (rawNumber.isBlank() || numbers.none { PhoneNumberMatcher.matches(it, rawNumber) }) {
+                        continue
+                    }
+                    if (skipped < offset) {
+                        skipped++
+                        continue
+                    }
+                    collected.add(
+                        mapRow(c, idIdx, numberIdx, cachedNameIdx, typeIdx, dateIdx, durationIdx, accountIdIdx)
+                    )
+                    if (collected.size > limit) break
+                }
+            }
+            rawOffset += chunkSize
+            if (chunkSize < HISTORY_CHUNK_SIZE) exhausted = true
+        }
+        val hasMore = collected.size > limit
+        CallHistoryPage(
+            entries = if (hasMore) collected.dropLast(1) else collected,
+            hasMore = hasMore
+        )
+    }
+
+    companion object {
+        private const val HISTORY_CHUNK_SIZE = 100
     }
 }

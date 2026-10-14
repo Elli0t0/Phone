@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.5] - 2026-10-14
+
+### Changed
+- Contact History screen now pages 50 calls at a time (ContentResolver limit/offset, newest first), matching all of the contact's numbers with normalized matching. The details History button is now labeled Show all.
+
 ## [0.6.4] - 2026-10-14
 
 ### Changed

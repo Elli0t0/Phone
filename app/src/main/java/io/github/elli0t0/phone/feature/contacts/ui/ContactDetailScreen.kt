@@ -646,7 +646,7 @@ fun ContactDetailScreen(
                                     onClick = onShowAllHistoryClick,
                                     modifier = Modifier.testTag("btn_show_all_history")
                                 ) {
-                                    Text(text = stringResource(id = R.string.contact_details_history))
+                                    Text(text = stringResource(id = R.string.contact_details_history_show_all))
                                 }
                             }
                         }
