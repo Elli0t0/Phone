@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-10-15
+
+### Added
+- Motion tokens in core/design: duration tokens (Micro 100ms, Short 180, Medium 280, Long 420), easing tokens (Standard, Emphasized, Exit), spring tokens (Snappy, Bouncy), plus option-aware helpers (scaled duration, tween spec, first-load stagger). New `pressScale` (press to 0.92, ON only), `PulseRings` (expanding rings, ON only), and a light-haptic helper that follows the system haptics setting. Existing Motion behavior is unchanged; screens adopt the tokens in the following versions.
+
 ## [0.7.0] - 2026-10-14
 
 ### Added
