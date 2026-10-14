@@ -46,6 +46,66 @@ object PhoneNumberFormatter {
     }
 
     /**
+     * Live-typing display: same grouping as [format], applied progressively
+     * while the number is still incomplete. USSD/short codes stay as typed.
+     * The raw digits stay the source of truth; this only affects display.
+     */
+    fun formatPartial(rawNumber: String, defaultCountryIso: String = PhoneNumberMatcher.deviceRegionIso()): String {
+        if (rawNumber.isBlank()) return ""
+        if (rawNumber.contains('*') || rawNumber.contains('#')) return rawNumber
+        val trimmed = rawNumber.trim()
+        val digits = trimmed.filter { it.isDigit() }
+        if (digits.isEmpty()) return rawNumber
+        val region = defaultCountryIso.uppercase()
+        if (trimmed.startsWith("+") || trimmed.startsWith("00")) {
+            val intlDigits = digits.removePrefix("00")
+            val intl = "+$intlDigits"
+            val ownCountry = PhoneNumberMatcher.countryIsoForE164(intl) ?: region
+            if (ownCountry == "IR" && intlDigits.startsWith("98")) {
+                val rest = intlDigits.removePrefix("98")
+                val chunks = if (rest.startsWith("9")) intArrayOf(3, 3, 4) else intArrayOf(2, 4, 4)
+                return "+98" + if (rest.isEmpty()) "" else " " + groupProgressive(rest, chunks)
+            }
+            return try {
+                PhoneNumberUtils.formatNumber(intl, ownCountry)?.takeIf { it.isNotBlank() && it != intl }
+            } catch (_: Exception) {
+                null
+            } ?: intl
+        }
+        if (region == "IR") {
+            if (digits.startsWith("0")) {
+                val chunks = if (digits.startsWith("09")) intArrayOf(4, 3, 4) else intArrayOf(3, 4, 4)
+                return groupProgressive(digits, chunks)
+            }
+            if (digits.length < 5) return rawNumber
+            val chunks = if (digits.startsWith("9")) intArrayOf(3, 3, 4) else intArrayOf(2, 4, 4)
+            return groupProgressive(digits, chunks)
+        }
+        return try {
+            PhoneNumberUtils.formatNumber(digits, region)?.takeIf { it.isNotBlank() && it != digits }
+        } catch (_: Exception) {
+            null
+        } ?: rawNumber
+    }
+
+    /** Groups [digits] into [chunks]-sized groups separated by single spaces. */
+    private fun groupProgressive(digits: String, chunks: IntArray): String {
+        val sb = StringBuilder()
+        var index = 0
+        for ((chunkIndex, size) in chunks.withIndex()) {
+            if (index >= digits.length) break
+            if (chunkIndex > 0) sb.append(' ')
+            val end = minOf(index + size, digits.length)
+            sb.append(digits.substring(index, end))
+            index = end
+        }
+        if (index < digits.length) {
+            sb.append(' ').append(digits.substring(index))
+        }
+        return sb.toString()
+    }
+
+    /**
      * Unit tests run against stubbed android.jar, so formatNumber returns
      * null or throws there. A US number gets its own grouping in that case;
      * every other country stays as typed (never US grouping as a default).

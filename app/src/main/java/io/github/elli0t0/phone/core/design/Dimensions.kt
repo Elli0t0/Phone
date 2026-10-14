@@ -34,7 +34,9 @@ object PhoneDimens {
     val keypadDigitSize = 40.sp
     val keypadLetterSize = 11.sp
     val keypadTouchSize = 64.dp
-    val keypadNumberDisplaySize = 36.sp
+    val keypadNumberDisplaySize = 40.sp
+    val keypadNumberDisplayMinSize = 20.sp
+    val keypadNumberDisplayShrinkFactor = 0.92f
     val callButtonSize = 70.dp
     // Space below the call-button row: 16dp + 88dp reserved − 72dp bar
     // (60dp bar + 12dp gap) = ~32dp clear space above the bottom bar.

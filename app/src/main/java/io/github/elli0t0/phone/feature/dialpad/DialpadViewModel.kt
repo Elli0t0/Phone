@@ -32,7 +32,7 @@ class DialpadViewModel(
     private val _uiState = MutableStateFlow(
         DialpadUiState(
             rawNumber = _rawNumber.value,
-            formattedNumber = PhoneNumberFormatter.format(_rawNumber.value),
+            formattedNumber = PhoneNumberFormatter.formatPartial(_rawNumber.value),
             canCall = _rawNumber.value.isNotBlank()
         )
     )
@@ -165,7 +165,7 @@ class DialpadViewModel(
         savedStateHandle[KEY_RAW_NUMBER] = number
         _uiState.value = _uiState.value.copy(
             rawNumber = number,
-            formattedNumber = PhoneNumberFormatter.format(number),
+            formattedNumber = PhoneNumberFormatter.formatPartial(number),
             isSearching = number.isNotBlank(),
             canCall = number.isNotBlank()
         )

@@ -46,7 +46,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -60,6 +62,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -331,8 +334,14 @@ fun DialpadScreen(
         }
 
         // Formatted Number Display (supports long click to paste).
-        // Shown only when there are digits.
+        // Shown only when there are digits. Number centered, regular weight,
+        // auto-shrinks on overflow; backspace sits at its right.
         if (uiState.rawNumber.isNotEmpty()) {
+            val displayText = uiState.formattedNumber.ifBlank { uiState.rawNumber }
+            var displayFontSize by remember { mutableStateOf(PhoneDimens.keypadNumberDisplaySize) }
+            LaunchedEffect(displayText) {
+                displayFontSize = PhoneDimens.keypadNumberDisplaySize
+            }
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -351,16 +360,65 @@ fun DialpadScreen(
                     .testTag("dialpad_number_display"),
                 contentAlignment = Alignment.Center
             ) {
-                val displayText = uiState.formattedNumber.ifBlank { uiState.rawNumber }
                 Text(
                     text = displayText,
                     style = MaterialTheme.typography.displayLarge.copy(
-                        fontSize = io.github.elli0t0.phone.core.design.PhoneDimens.keypadNumberDisplaySize
+                        fontSize = displayFontSize,
+                        fontWeight = FontWeight.Normal
                     ),
                     color = MaterialTheme.colorScheme.onBackground,
                     textAlign = TextAlign.Center,
-                    maxLines = 1
+                    maxLines = 1,
+                    softWrap = false,
+                    onTextLayout = { layoutResult ->
+                        if (layoutResult.hasVisualOverflow) {
+                            displayFontSize = maxOf(
+                                PhoneDimens.keypadNumberDisplayMinSize,
+                                displayFontSize * PhoneDimens.keypadNumberDisplayShrinkFactor
+                            )
+                        }
+                    }
                 )
+                // Backspace at the right of the number, with accelerated repeat deletion.
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .size(56.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = uiState.rawNumber.isNotEmpty(),
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .pointerInput(Unit) {
+                                    awaitEachGesture {
+                                        awaitFirstDown(requireUnconsumed = false)
+                                        performHaptic()
+                                        viewModel.onBackspacePressed()
+                                        viewModel.startBackspaceRepeat(onTickHaptic = { performTickHaptic() })
+                                        try {
+                                            waitForUpOrCancellation()
+                                        } finally {
+                                            viewModel.stopBackspaceRepeat()
+                                        }
+                                    }
+                                }
+                                .testTag("btn_backspace"),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_backspace),
+                                contentDescription = stringResource(id = R.string.cd_backspace_button),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(spacing.small))
@@ -437,44 +495,8 @@ fun DialpadScreen(
                 )
             }
 
-            // Backspace Button with accelerated repeat deletion
-            Box(
-                modifier = Modifier.size(56.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                androidx.compose.animation.AnimatedVisibility(
-                    visible = uiState.rawNumber.isNotEmpty(),
-                    enter = fadeIn(),
-                    exit = fadeOut()
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .pointerInput(Unit) {
-                                awaitEachGesture {
-                                    awaitFirstDown(requireUnconsumed = false)
-                                    performHaptic()
-                                    viewModel.onBackspacePressed()
-                                    viewModel.startBackspaceRepeat(onTickHaptic = { performTickHaptic() })
-                                    try {
-                                        waitForUpOrCancellation()
-                                    } finally {
-                                        viewModel.stopBackspaceRepeat()
-                                    }
-                                }
-                            }
-                            .testTag("btn_backspace"),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_backspace),
-                            contentDescription = stringResource(id = R.string.cd_backspace_button),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
+            // Right spacer for balance (backspace now sits by the number display).
+            Box(modifier = Modifier.size(56.dp))
         }
     }
 }
