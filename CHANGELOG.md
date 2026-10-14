@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-10-14
+
+### Changed
+- Favorites tiles are calm now: soft muted pastel gradients (same family as the avatar palette) instead of the loud saturated colors. Layout, photos, names, and tap/long-press behavior are unchanged.
+- Duplicate Merge button is now a tonal button (theme tonal style) instead of the loud filled accent button. Merging still asks for confirmation first.
+
 ## [0.4.9] - 2026-10-14
 
 ### Added

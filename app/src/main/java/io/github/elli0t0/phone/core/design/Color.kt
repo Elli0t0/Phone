@@ -17,14 +17,15 @@ val BottomBarLightSelected = Color(0xFFD9D9DD)
 val BottomBarLightSelectedContent = Color(0xFF1C1C1E)
 val BottomBarLightUnselected = Color(0xFF6E6E73)
 
-// Favorite contact card gradients (reference-style colorful cards)
+// Favorite contact card gradients: calm muted pastels,
+// same family as the avatar palette, white name text on top.
 val FavoriteCardGradients = listOf(
-    Color(0xFFFFB75E) to Color(0xFFFF8C42),
-    Color(0xFFFF9EBB) to Color(0xFFFF6B9D),
-    Color(0xFF8EC5FF) to Color(0xFF5B8DEF),
-    Color(0xFF9BE7C4) to Color(0xFF4ECB9B),
-    Color(0xFFD5A6FF) to Color(0xFF9B5DE5),
-    Color(0xFFFFD166) to Color(0xFFFFB703)
+    Color(0xFFFFD6D6) to Color(0xFFFFA8A8),
+    Color(0xFFFFE3C4) to Color(0xFFFFBE8A),
+    Color(0xFFC9E8FF) to Color(0xFF8EC5FF),
+    Color(0xFFD3F5D3) to Color(0xFF9BE7C4),
+    Color(0xFFE3D3FF) to Color(0xFFC4A6F5),
+    Color(0xFFFFEFC4) to Color(0xFFFFD166)
 )
 val InCallGradientTop = Color(0xFF6E1B0C)
 val InCallGradientBottom = Color(0xFF000000)
