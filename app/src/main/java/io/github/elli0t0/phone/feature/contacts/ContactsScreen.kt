@@ -37,7 +37,7 @@ private sealed interface ContactsNavDestination {
     data object List : ContactsNavDestination
     data class Detail(val contactId: Long, val lookupKey: String) : ContactsNavDestination
     data class History(val contactId: Long, val lookupKey: String) : ContactsNavDestination
-    data object Create : ContactsNavDestination
+    data class Create(val initialPhone: String = "") : ContactsNavDestination
     data class Edit(val contact: ContactDetail) : ContactsNavDestination
     data object Groups : ContactsNavDestination
 }
@@ -56,7 +56,9 @@ private fun destinationDepth(destination: ContactsNavDestination): Int = when (d
 fun ContactsScreen(
     modifier: Modifier = Modifier,
     onNavigateToSettings: () -> Unit = {},
-    onShowBottomBarChanged: (Boolean) -> Unit = {}
+    onShowBottomBarChanged: (Boolean) -> Unit = {},
+    pendingCreateNumber: String? = null,
+    onPendingCreateNumberConsumed: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val app = context.applicationContext as PhoneApplication
@@ -79,6 +81,15 @@ fun ContactsScreen(
     var currentDestination by remember { mutableStateOf<ContactsNavDestination>(ContactsNavDestination.List) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+
+    // A number from the keypad with no matching contact opens the
+    // editor prefilled with it, then clears the pending value.
+    LaunchedEffect(pendingCreateNumber) {
+        if (pendingCreateNumber != null) {
+            currentDestination = ContactsNavDestination.Create(pendingCreateNumber)
+            onPendingCreateNumberConsumed()
+        }
+    }
 
     // The bottom bar shows only on the contact list, not on detail/edit/groups.
     LaunchedEffect(currentDestination) {
@@ -124,7 +135,7 @@ fun ContactsScreen(
                             currentDestination = ContactsNavDestination.Detail(contact.id, contact.lookupKey)
                         },
                         onAddContactClick = {
-                            currentDestination = ContactsNavDestination.Create
+                            currentDestination = ContactsNavDestination.Create()
                         },
                         onFindDuplicates = listViewModel::findDuplicates,
                         onShowFavoritesHint = {
@@ -226,8 +237,10 @@ fun ContactsScreen(
 
                 is ContactsNavDestination.Create -> {
                     val createViewModel: ContactEditViewModel = viewModel(
-                        key = "create_contact",
-                        factory = ContactEditViewModel.provideFactory(repository, null)
+                        // Keyed by the prefilled number: a fresh editor
+                        // for each number, never a stale previous input.
+                        key = "create_contact_${dest.initialPhone}",
+                        factory = ContactEditViewModel.provideFactory(repository, null, dest.initialPhone)
                     )
                     val createUiState by createViewModel.uiState.collectAsStateWithLifecycle()
 

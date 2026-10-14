@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -111,6 +112,55 @@ fun DialKeyView(
                 ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+    }
+}
+
+/**
+ * Actions for a dialed number that matches no contact: create a new
+ * contact prefilled with the number, or message the number.
+ */
+@Composable
+fun DialpadNoMatchActions(
+    onCreateContact: () -> Unit,
+    onMessage: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = stringResource(id = R.string.dialpad_empty_search),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilledTonalButton(
+                onClick = onCreateContact,
+                modifier = Modifier.testTag("dialpad_no_match_create")
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_add),
+                    contentDescription = null
+                )
+                Spacer(modifier = Modifier.size(4.dp))
+                Text(text = stringResource(id = R.string.dialpad_create_contact))
+            }
+            FilledTonalButton(
+                onClick = onMessage,
+                modifier = Modifier.testTag("dialpad_no_match_message")
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_message),
+                    contentDescription = null
+                )
+                Spacer(modifier = Modifier.size(4.dp))
+                Text(text = stringResource(id = R.string.dialpad_message))
+            }
         }
     }
 }

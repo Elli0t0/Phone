@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.15] - 2026-10-14
+
+### Added
+- Keypad no-match actions: when a dialed number matches no contact, the keypad shows "No matching contacts" with Create new contact and Message actions. Create opens the contact editor prefilled with the number; Message opens the messaging app for the number.
+
 ## [0.6.14] - 2026-10-14
 
 ### Removed

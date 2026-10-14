@@ -6,8 +6,13 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -50,6 +55,9 @@ fun PhoneNavHost(
         { Motion.innerPopEnterTransition(animationOption) }
     val innerPopExitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition =
         { Motion.innerPopExitTransition(animationOption) }
+    // Number from the keypad with no matching contact: the Contacts tab
+    // opens the editor prefilled with it, then clears the pending value.
+    var pendingCreateNumber by remember { mutableStateOf<String?>(null) }
     NavHost(
         navController = navController,
         startDestination = startDestination,
@@ -98,7 +106,9 @@ fun PhoneNavHost(
                 onNavigateToSettings = {
                     navController.navigate(Screen.Settings.route)
                 },
-                onShowBottomBarChanged = onContactsBarVisibilityChanged
+                onShowBottomBarChanged = onContactsBarVisibilityChanged,
+                pendingCreateNumber = pendingCreateNumber,
+                onPendingCreateNumberConsumed = { pendingCreateNumber = null }
             )
         }
         composable(
@@ -111,6 +121,16 @@ fun PhoneNavHost(
             DialpadScreen(
                 onNavigateToSettings = {
                     navController.navigate(Screen.Settings.route)
+                },
+                onCreateContact = { number ->
+                    pendingCreateNumber = number
+                    navController.navigate(Screen.Contacts.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
                 }
             )
         }

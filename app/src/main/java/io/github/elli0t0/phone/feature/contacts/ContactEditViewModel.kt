@@ -18,7 +18,8 @@ import kotlinx.coroutines.launch
 
 class ContactEditViewModel(
     private val contactsRepository: ContactsRepository,
-    initialContact: ContactDetail? = null
+    initialContact: ContactDetail? = null,
+    initialPhone: String = ""
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -38,7 +39,7 @@ class ContactEditViewModel(
         } else {
             ContactEditUiState(
                 isNewContact = true,
-                phones = listOf(ContactPhone(number = "")),
+                phones = listOf(ContactPhone(number = initialPhone)),
                 emails = emptyList()
             )
         }
@@ -232,11 +233,12 @@ class ContactEditViewModel(
     companion object {
         fun provideFactory(
             repository: ContactsRepository,
-            initialContact: ContactDetail? = null
+            initialContact: ContactDetail? = null,
+            initialPhone: String = ""
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return ContactEditViewModel(repository, initialContact) as T
+                return ContactEditViewModel(repository, initialContact, initialPhone) as T
             }
         }
     }

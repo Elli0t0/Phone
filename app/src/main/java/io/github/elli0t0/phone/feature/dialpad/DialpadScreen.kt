@@ -2,6 +2,8 @@ package io.github.elli0t0.phone.feature.dialpad
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.provider.Settings
 import android.view.HapticFeedbackConstants
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -82,6 +84,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun DialpadScreen(
     onNavigateToSettings: () -> Unit = {},
+    onCreateContact: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -314,6 +317,24 @@ fun DialpadScreen(
                         )
                     }
                 }
+            } else if (uiState.rawNumber.isNotEmpty()) {
+                // No matching contact: offer real actions for the number.
+                DialpadNoMatchActions(
+                    onCreateContact = {
+                        performHaptic()
+                        onCreateContact(uiState.rawNumber)
+                    },
+                    onMessage = {
+                        performHaptic()
+                        context.startActivity(
+                            Intent(
+                                Intent.ACTION_SENDTO,
+                                Uri.parse("smsto:${Uri.encode(uiState.rawNumber)}")
+                            )
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
 
