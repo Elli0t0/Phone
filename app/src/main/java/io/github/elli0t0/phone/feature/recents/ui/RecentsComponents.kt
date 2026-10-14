@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.sp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.AccentBlue
 import io.github.elli0t0.phone.core.design.CallAnswerGreen
+import io.github.elli0t0.phone.core.design.CallRejectedOrange
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.OnAccentBlue
 import io.github.elli0t0.phone.core.design.PhoneDimens
@@ -81,6 +82,7 @@ fun CallLogRow(
     onCopyNumberClick: () -> Unit,
     onDeleteClick: () -> Unit,
     showDivider: Boolean = true,
+    showSim: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
@@ -88,14 +90,17 @@ fun CallLogRow(
     val timeFormat = remember { SimpleDateFormat("h:mm a", Locale.getDefault()) }
     val formattedTime = remember(group.date) { timeFormat.format(Date(group.date)) }
 
-    val isMissed = group.type == CallType.Missed || group.type == CallType.Rejected || group.type == CallType.Blocked
-    val typeColor = if (isMissed) {
-        MaterialTheme.colorScheme.error
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
+    // Icon color by call type: incoming green, outgoing accent blue,
+    // missed red, rejected/blocked orange.
+    val typeColor = when (group.type) {
+        CallType.Incoming -> CallAnswerGreen
+        CallType.Outgoing -> AccentBlue
+        CallType.Missed -> MaterialTheme.colorScheme.error
+        CallType.Rejected, CallType.Blocked -> CallRejectedOrange
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
-    // The name color, reused by the group count so it never shows blue.
-    val nameColor = if (isMissed) {
+    // Only a missed name is red; rejected/blocked names stay default.
+    val nameColor = if (group.type == CallType.Missed) {
         MaterialTheme.colorScheme.error
     } else {
         MaterialTheme.colorScheme.onSurface
@@ -151,16 +156,17 @@ fun CallLogRow(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = PhoneDimens.recentsRowVerticalPadding)
                     .combinedClickable(
                         onClick = onRowClick,
                         onLongClick = { showMenu = true }
                     )
                     .testTag("call_row_${group.id}")
             ) {
-                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = spacing.medium, vertical = spacing.small)) {
+                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = spacing.medium)) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(PhoneDimens.recentsRowHeight),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Call Type Icon
@@ -179,7 +185,7 @@ fun CallLogRow(
                         Text(
                             text = group.displayTitle,
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                            color = if (isMissed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                            color = nameColor,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -192,15 +198,16 @@ fun CallLogRow(
                         }
                     }
 
+                    // Subtitle: number type and SIM (SIM only on dual-SIM phones).
+                    // Type and duration live in the expanded card.
                     val subtitleParts = buildList {
-                        add(stringResource(id = group.type.titleRes))
-                        if (!isMissed) {
-                            add(formatDuration(group.primaryCall.durationSeconds, group.type))
+                        add(stringResource(id = R.string.type_phone_mobile))
+                        if (showSim) {
+                            group.primaryCall.simInfo?.let { add(it) }
                         }
-                        group.primaryCall.simInfo?.let { add(it) }
                     }
                     Text(
-                        text = subtitleParts.joinToString(" - "),
+                        text = subtitleParts.joinToString(" · "),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -274,7 +281,7 @@ fun CallLogRow(
         }
         if (showDivider) {
             HorizontalDivider(
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = PhoneDimens.recentsDividerAlpha),
                 modifier = Modifier.padding(
                     start = spacing.medium + PhoneDimens.recentsRowIconSize + spacing.medium,
                     end = spacing.medium
@@ -306,7 +313,7 @@ fun DaySectionCard(
             rowContent(group)
             if (index < calls.lastIndex) {
                 HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = PhoneDimens.recentsDividerAlpha),
                     modifier = Modifier.padding(
                         // Divider starts at the text, not at the row edge:
                         // row padding + icon + gap.
@@ -348,6 +355,21 @@ private fun ExpandedCallDetails(
             .padding(top = spacing.small)
             .testTag("expanded_call_details_${call.id}")
     ) {
+        // Call type and duration, moved here from the collapsed row subtitle.
+        val showDuration = call.type == CallType.Incoming || call.type == CallType.Outgoing ||
+            call.type == CallType.Voicemail || call.type == CallType.Unknown
+        val typeLabel = stringResource(id = call.type.titleRes)
+        val typeAndDuration = if (showDuration && call.durationSeconds > 0) {
+            "$typeLabel · ${formatDuration(call.durationSeconds, call.type)}"
+        } else {
+            typeLabel
+        }
+        Text(
+            text = typeAndDuration,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = spacing.small)
+        )
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly

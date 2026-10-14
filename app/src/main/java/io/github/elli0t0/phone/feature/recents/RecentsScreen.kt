@@ -328,7 +328,7 @@ fun RecentsScreen(
                                     Text(
                                         text = section.title,
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        color = MaterialTheme.colorScheme.outline,
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(top = spacing.small, bottom = spacing.extraSmall)
@@ -342,6 +342,7 @@ fun RecentsScreen(
                                             group = group,
                                             isExpanded = uiState.expandedCallId == group.id,
                                             canWriteCallLog = permissionState.hasWritePermission,
+                                            showSim = simAccounts.size > 1,
                                             onRowClick = { viewModel.onToggleExpandCall(group.id) },
                                             onCallClick = { initiateCall(group.number) },
                                             onMessageClick = {

@@ -31,6 +31,7 @@ val InCallGradientTop = Color(0xFF6E1B0C)
 val InCallGradientBottom = Color(0xFF000000)
 val CallDeclineRed = Color(0xFFE53935)
 val CallAnswerGreen = Color(0xFF43A047)
+val CallRejectedOrange = Color(0xFFFB8C00)
 // Keypad call button green.
 val KeypadCallButtonGreenDark = Color(0xFF4AA564)
 val KeypadCallButtonGreenLight = Color(0xFF3DAA5C)

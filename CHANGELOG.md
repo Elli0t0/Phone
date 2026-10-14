@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.3] - 2026-10-14
+
+### Changed
+- Recents rows: icon color by call type (incoming green, outgoing accent blue, missed red, rejected/blocked orange); only a missed name is red. Row is a colored arrow, name, subtitle "Mobile · SIM 1" (SIM only on dual-SIM phones), time on the right. Type and duration moved into the expanded card. 64dp rows, lighter dividers, softer date headers.
+
 ## [0.6.2] - 2026-10-14
 
 ### Fixed
