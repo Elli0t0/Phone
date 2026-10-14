@@ -65,7 +65,8 @@ import io.github.elli0t0.phone.feature.setup.SetupWarningCard
 import io.github.elli0t0.phone.feature.recents.ui.CallLogRow
 import io.github.elli0t0.phone.feature.recents.ui.DaySectionCard
 import io.github.elli0t0.phone.feature.recents.ui.RecentsEmptyState
-import io.github.elli0t0.phone.navigation.CollapsingPageHeader
+import io.github.elli0t0.phone.navigation.PageHeaderItem
+import io.github.elli0t0.phone.navigation.PinnedPageBar
 import kotlinx.coroutines.launch
 
 @Composable
@@ -162,12 +163,10 @@ fun RecentsScreen(
                     .padding(bottom = spacing.small)
             )
 
-            // Collapsing header: big centered title that shrinks to a
-            // small top bar as the list scrolls. The filter, search and
-            // menu actions keep their existing behavior.
-            CollapsingPageHeader(
+            // Pinned top bar: background and title fade in as the list
+            // scrolls; the filter, search and menu actions stay visible.
+            PinnedPageBar(
                 title = stringResource(id = R.string.app_name),
-                subtitle = null,
                 listState = listState
             ) {
                 Row(
@@ -277,6 +276,13 @@ fun RecentsScreen(
                                     .calculateBottomPadding()
                         )
                     ) {
+                        // Large header as the first list item: scrolls away naturally.
+                        item(key = "recents_header") {
+                            PageHeaderItem(
+                                title = stringResource(id = R.string.app_name),
+                                subtitle = null
+                            )
+                        }
                         // Error State
                         if (uiState.errorMessage != null) {
                             item(key = "recents_error") {

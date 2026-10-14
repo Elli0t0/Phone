@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] - 2026-10-14
+
+### Fixed
+- Scroll jump in Recents and Contacts: the large header is now the first list item with fixed height and scrolls away naturally, and the small pinned top bar fades in via graphicsLayer alpha from the scroll offset. No snap, no scroll-driven size change.
+
 ## [0.6.1] - 2026-10-14
 
 ### Fixed

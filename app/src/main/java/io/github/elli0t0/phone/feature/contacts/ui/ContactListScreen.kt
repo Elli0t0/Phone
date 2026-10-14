@@ -43,7 +43,8 @@ import io.github.elli0t0.phone.core.permissions.ContactsPermissionStatus
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 import io.github.elli0t0.phone.data.contacts.model.DuplicateGroup
 import io.github.elli0t0.phone.feature.contacts.ContactsUiState
-import io.github.elli0t0.phone.navigation.CollapsingPageHeader
+import io.github.elli0t0.phone.navigation.PageHeaderItem
+import io.github.elli0t0.phone.navigation.PinnedPageBar
 
 @Composable
 fun ContactListScreen(
@@ -153,12 +154,10 @@ private fun ContactsContent(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // Collapsing header: big centered title that shrinks to a
-        // small top bar as the list scrolls. The add, search and
-        // menu actions keep their existing behavior.
-        CollapsingPageHeader(
+        // Pinned top bar: background and title fade in as the list
+        // scrolls; the add, search and menu actions stay visible.
+        PinnedPageBar(
             title = stringResource(id = R.string.tab_contacts),
-            subtitle = countText,
             listState = listState
         ) {
             Row(
@@ -252,6 +251,13 @@ private fun ContactsContent(
                         .calculateBottomPadding()
             )
         ) {
+            // Large header as the first list item: scrolls away naturally.
+            item(key = "contacts_header") {
+                PageHeaderItem(
+                    title = stringResource(id = R.string.tab_contacts),
+                    subtitle = countText
+                )
+            }
             if (uiState.showDuplicatesCard && uiState.searchQuery.isEmpty()) {
                 item(key = "duplicates_card") {
                     DuplicatesCard(
