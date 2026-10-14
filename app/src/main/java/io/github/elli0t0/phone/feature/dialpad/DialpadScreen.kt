@@ -3,6 +3,7 @@ package io.github.elli0t0.phone.feature.dialpad
 import android.Manifest
 import android.content.Context
 import android.provider.Settings
+import android.telephony.TelephonyManager
 import android.view.HapticFeedbackConstants
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -124,6 +125,21 @@ fun DialpadScreen(
                     simPickerTargetNumber = number
                 }
             }
+        }
+    }
+
+    // Long-press 1 calls voicemail using the real carrier voicemail
+    // number (TelephonyManager.getVoiceMailNumber). If the carrier
+    // has no voicemail number configured, or the permission is
+    // missing, long-press 1 does nothing.
+    fun callVoicemail() {
+        val voicemailNumber = try {
+            context.getSystemService(TelephonyManager::class.java)?.voiceMailNumber
+        } catch (_: Exception) {
+            null
+        }
+        if (!voicemailNumber.isNullOrBlank()) {
+            dialNumber(voicemailNumber)
         }
     }
 
@@ -374,6 +390,11 @@ fun DialpadScreen(
                                 {
                                     performHaptic()
                                     viewModel.onLongPressZero()
+                                }
+                            } else if (dialKey.digit == '1') {
+                                {
+                                    performHaptic()
+                                    callVoicemail()
                                 }
                             } else null
                         )
