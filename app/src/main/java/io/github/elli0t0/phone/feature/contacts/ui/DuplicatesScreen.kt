@@ -16,16 +16,23 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,10 +53,11 @@ import io.github.elli0t0.phone.feature.contacts.ContactsUiState
 
 /**
  * Lists duplicate contacts (same normalized number or same name). Merging a
- * group keeps the first contact, moves the others numbers and emails into it,
+ * group keeps the first contact, moves the others' numbers and emails into it,
  * and deletes the merged contacts — only after the user confirms in the dialog.
  * Nothing is deleted without confirmation.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DuplicatesScreen(
     uiState: ContactsUiState,
@@ -62,7 +70,24 @@ fun DuplicatesScreen(
     val spacing = LocalSpacing.current
 
     Scaffold(
-        modifier = modifier.fillMaxSize().testTag("duplicates_screen")
+        modifier = modifier.fillMaxSize().testTag("duplicates_screen"),
+        topBar = {
+            TopAppBar(
+                title = { Text(text = stringResource(id = R.string.duplicates_title)) },
+                navigationIcon = {
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier.testTag("duplicates_back")
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_arrow_back),
+                            contentDescription = stringResource(id = R.string.cd_back)
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+            )
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -70,28 +95,9 @@ fun DuplicatesScreen(
                 .padding(innerPadding)
                 .padding(horizontal = spacing.screenHorizontalPadding)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(top = spacing.small)
-            ) {
-                IconButton(
-                    onClick = onBack,
-                    modifier = Modifier.testTag("duplicates_back")
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_arrow_back),
-                        contentDescription = stringResource(id = R.string.cd_back)
-                    )
-                }
-                Text(
-                    text = stringResource(id = R.string.duplicates_title),
-                    style = MaterialTheme.typography.displayLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }
             Text(
                 text = stringResource(id = R.string.duplicates_description),
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = spacing.small, bottom = spacing.medium)
             )
@@ -156,17 +162,18 @@ fun DuplicatesScreen(
             .joinToString(", ") { it.displayName }
         AlertDialog(
             onDismissRequest = { if (!uiState.isMerging) onDismissMerge() },
+            shape = RoundedCornerShape(PhoneDimens.dialogCornerRadius),
             title = {
                 Text(
                     text = stringResource(id = R.string.duplicates_merge_title),
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleLarge
                 )
             },
             text = {
                 Column {
                     Text(
                         text = stringResource(id = R.string.duplicates_choose_keep),
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyLarge
                     )
                     Spacer(modifier = Modifier.height(spacing.small))
                     pendingGroup.contacts.forEach { contact ->
@@ -204,7 +211,7 @@ fun DuplicatesScreen(
                             kept.displayName,
                             removedNames
                         ),
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyLarge
                     )
                 }
             },
@@ -235,43 +242,58 @@ private fun DuplicateGroupItem(
 ) {
     val spacing = LocalSpacing.current
 
-    Column(
-        modifier = Modifier.fillMaxWidth()
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Text(
-            text = when (group.reason) {
-                DuplicateReason.SAME_NUMBER -> stringResource(id = R.string.duplicates_reason_number)
-                DuplicateReason.SAME_NAME -> stringResource(id = R.string.duplicates_reason_name)
-            },
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Spacer(modifier = Modifier.height(spacing.small))
-        group.contacts.forEach { contact ->
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = spacing.small)
-            ) {
-                Text(
-                    text = contact.displayName,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                contact.primaryNumberPreview?.takeIf { it.isNotBlank() }?.let { number ->
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(spacing.medium)
+        ) {
+            Text(
+                text = when (group.reason) {
+                    DuplicateReason.SAME_NUMBER -> stringResource(id = R.string.duplicates_reason_number)
+                    DuplicateReason.SAME_NAME -> stringResource(id = R.string.duplicates_reason_name)
+                },
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(spacing.small))
+            group.contacts.forEachIndexed { index, contact ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = spacing.small)
+                ) {
                     Text(
-                        text = number,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = contact.displayName,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    contact.primaryNumberPreview?.takeIf { it.isNotBlank() }?.let { number ->
+                        Text(
+                            text = number,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                if (index < group.contacts.lastIndex) {
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                        thickness = 1.dp
                     )
                 }
             }
-        }
-        OutlinedButton(
-            onClick = onMergeClick,
-            modifier = Modifier.testTag("duplicates_merge_${group.contacts.firstOrNull()?.id}")
-        ) {
-            Text(text = stringResource(id = R.string.duplicates_merge))
+            Spacer(modifier = Modifier.height(spacing.small))
+            Button(
+                onClick = onMergeClick,
+                modifier = Modifier.testTag("duplicates_merge_${group.contacts.firstOrNull()?.id}")
+            ) {
+                Text(text = stringResource(id = R.string.duplicates_merge))
+            }
         }
     }
 }

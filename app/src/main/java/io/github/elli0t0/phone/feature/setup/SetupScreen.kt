@@ -39,13 +39,13 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.permissions.SetupItemId
 import io.github.elli0t0.phone.core.permissions.SetupItemState
 import io.github.elli0t0.phone.core.permissions.SetupPermissions
@@ -74,7 +74,7 @@ fun SetupScreen(
             Spacer(modifier = Modifier.height(spacing.large))
             Text(
                 text = stringResource(id = R.string.setup_title),
-                style = MaterialTheme.typography.displayLarge,
+                style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onBackground
             )
             Spacer(modifier = Modifier.height(spacing.small))
@@ -216,7 +216,7 @@ fun SetupChecklist(
 
     Column(
         modifier = checklistModifier,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(PhoneDimens.setupItemSpacing)
     ) {
         visibleItems.forEach { item ->
             SetupItemCard(
@@ -344,10 +344,13 @@ private fun SetupItemCard(
                 painter = painterResource(id = iconRes),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(PhoneDimens.setupItemIconSize)
             )
             Column(
-                modifier = Modifier.weight(1f).padding(start = 12.dp, end = 8.dp)
+                modifier = Modifier.weight(1f).padding(
+                    start = PhoneDimens.setupCardTextPaddingStart,
+                    end = PhoneDimens.setupCardTextPaddingEnd
+                )
             ) {
                 Text(
                     text = stringResource(id = titleRes),
@@ -356,7 +359,7 @@ private fun SetupItemCard(
                 )
                 Text(
                     text = stringResource(id = descRes),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -365,7 +368,7 @@ private fun SetupItemCard(
                     painter = painterResource(id = R.drawable.ic_check),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(PhoneDimens.setupItemIconSize)
                 )
             } else if (buttonTextRes != null) {
                 OutlinedButton(
@@ -420,7 +423,7 @@ fun SetupWarningCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
-                modifier = Modifier.weight(1f).padding(end = 8.dp)
+                modifier = Modifier.weight(1f).padding(end = PhoneDimens.setupCardTextPaddingEnd)
             ) {
                 Text(
                     text = stringResource(id = R.string.setup_warning_title),
@@ -429,7 +432,7 @@ fun SetupWarningCard(
                 )
                 Text(
                     text = stringResource(id = R.string.setup_warning_message),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
