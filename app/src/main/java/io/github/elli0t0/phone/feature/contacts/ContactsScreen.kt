@@ -85,6 +85,10 @@ fun ContactsScreen(
         onShowBottomBarChanged(currentDestination is ContactsNavDestination.List)
     }
 
+    // Read here, not inside transitionSpec: the spec lambda is not a
+    // @Composable context, so it cannot read a CompositionLocal.
+    val animationOption = LocalAppSettings.current.animationOption
+
     // Show user message from listViewModel if any
     val userMessageRes = uiState.userMessageRes
     val messageText = userMessageRes?.let { stringResource(id = it) }
@@ -104,7 +108,7 @@ fun ContactsScreen(
                 targetState = currentDestination,
                 transitionSpec = {
                     val direction = destinationDepth(targetState) - destinationDepth(initialState)
-                    Motion.innerContentTransform(LocalAppSettings.current.animationOption, direction)
+                    Motion.innerContentTransform(animationOption, direction)
                 },
                 label = "contacts_destination"
             ) { dest ->
