@@ -3,6 +3,7 @@ package io.github.elli0t0.phone.feature.recents
 import android.content.Intent
 import android.net.Uri
 import android.provider.ContactsContract
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -75,7 +76,11 @@ fun RecentsScreen(
 ) {
     val context = LocalContext.current
     val app = context.applicationContext as PhoneApplication
+    // Activity-scoped: the list data survives tab switches, so returning
+    // to the tab shows the previous list instantly (no skeleton, no empty
+    // state, no re-query).
     val viewModel: RecentsViewModel = viewModel(
+        viewModelStoreOwner = context as ComponentActivity,
         factory = RecentsViewModel.provideFactory(
             callLogRepository = app.container.callLogRepository,
             favoritesRepository = app.container.favoritesRepository,

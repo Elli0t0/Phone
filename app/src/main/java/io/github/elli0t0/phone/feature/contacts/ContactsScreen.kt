@@ -1,5 +1,6 @@
 package io.github.elli0t0.phone.feature.contacts
 
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -46,7 +47,11 @@ fun ContactsScreen(
     val app = context.applicationContext as PhoneApplication
     val repository = app.container.contactsRepository
 
+    // Activity-scoped: the list data survives tab switches, so returning
+    // to the tab shows the previous list instantly (no skeleton, no empty
+    // state, no re-query). Detail/edit/groups VMs stay entry-scoped.
     val listViewModel: ContactsViewModel = viewModel(
+        viewModelStoreOwner = context as ComponentActivity,
         factory = ContactsViewModel.provideFactory(
             repository,
             app.container.favoritesRepository,

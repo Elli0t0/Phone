@@ -110,10 +110,11 @@ class RecentsViewModel(
             errorMessage = logData.errorMsg
         )
     }.stateIn(
-
         scope = activeScope ?: CoroutineScope(kotlinx.coroutines.Dispatchers.Main.immediate),
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = RecentsUiState()
+        // Loading until the first emission: a fresh ViewModel must show the
+        // skeleton, never the empty state, while the first load runs.
+        initialValue = RecentsUiState(isLoading = true)
     )
 
     private fun filterCalls(

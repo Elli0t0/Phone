@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.8] - 2026-10-14
+
+### Fixed
+- No reload flash on tab switch: Recents, Contacts and favorites lists are cached in the repositories and exposed with stateIn(WhileSubscribed(5000)), so returning to a tab shows the previous list instantly. The loading skeleton and the empty state never appear when cached data exists; skeletons show only on the very first load. Queries do not re-run on every tab switch.
+- List ViewModels for Recents and Contacts are activity-scoped, so their state survives tab switches.
+
 ## [0.4.7] - 2026-10-14
 
 ### Fixed

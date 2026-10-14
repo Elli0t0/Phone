@@ -27,18 +27,28 @@ import io.github.elli0t0.phone.data.contacts.model.ContactGroup
 import io.github.elli0t0.phone.data.contacts.model.ContactInput
 import io.github.elli0t0.phone.data.contacts.model.ContactPhone
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.withContext
 
 class AndroidContactsRepository(
-    private val contentResolver: ContentResolver
+    private val contentResolver: ContentResolver,
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 ) : ContactsRepository {
 
-    override fun getContactsFlow(): Flow<List<ContactSummary>> = callbackFlow {
+    // One shared, cached contacts flow: the list is kept in memory in this
+    // singleton repository and every collector (Recents, Contacts, Dialpad)
+    // gets the last value instantly. The ContentObserver stays registered
+    // for the app's lifetime, so the cache is refreshed on any contacts
+    // change and the provider is never re-queried on a tab switch.
+    private val contactsFlow: StateFlow<List<ContactSummary>> = callbackFlow {
         val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
             override fun onChange(selfChange: Boolean, uri: Uri?) {
                 trySend(queryContactsSummaries())
@@ -64,6 +74,9 @@ class AndroidContactsRepository(
             } catch (_: Exception) {}
         }
     }.flowOn(Dispatchers.IO)
+        .stateIn(scope, SharingStarted.Lazily, emptyList())
+
+    override fun getContactsFlow(): Flow<List<ContactSummary>> = contactsFlow
 
     override fun getContactDetail(lookupKey: String, contactId: Long): Flow<ContactDetail?> = callbackFlow {
         val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {

@@ -5,7 +5,10 @@ import io.github.elli0t0.phone.data.favorites.model.FavoriteContactEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 interface FavoritesRepository {
@@ -21,10 +24,18 @@ class DefaultFavoritesRepository(
     private val externalScope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 ) : FavoritesRepository {
 
+    // One shared, cached favorites flow: built once and kept in memory in
+    // this singleton repository. Later collectors (Recents, Contacts)
+    // get the last value instantly instead of re-querying Room on every
+    // tab switch. All production callers pass the same contacts flow.
+    private var cachedFavoritesFlow: StateFlow<List<ContactSummary>>? = null
+
     override fun getFavoritesFlow(
         allContactsFlow: Flow<List<ContactSummary>>
     ): Flow<List<ContactSummary>> {
-        return combine(
+        val cached = cachedFavoritesFlow
+        if (cached != null) return cached
+        val shared = combine(
             favoritesDao.getAllFavorites(),
             allContactsFlow
         ) { favoriteEntities, contacts ->
@@ -54,8 +65,10 @@ class DefaultFavoritesRepository(
                 }
             }
 
-            validFavorites
-        }
+            validFavorites.toList()
+        }.stateIn(externalScope, SharingStarted.Lazily, emptyList())
+        cachedFavoritesFlow = shared
+        return shared
     }
 
     override fun isFavoriteFlow(lookupKey: String): Flow<Boolean> {
