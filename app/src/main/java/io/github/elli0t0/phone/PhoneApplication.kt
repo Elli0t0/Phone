@@ -13,6 +13,7 @@ import io.github.elli0t0.phone.data.favorites.DefaultContactSimRepository
 import io.github.elli0t0.phone.data.favorites.DefaultFavoritesRepository
 import io.github.elli0t0.phone.data.favorites.FavoritesRepository
 import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
+import io.github.elli0t0.phone.core.notifications.CallNotificationChannels
 import io.github.elli0t0.phone.data.settings.DataStoreSettingsRepository
 import io.github.elli0t0.phone.data.settings.DataStoreSetupRepository
 import io.github.elli0t0.phone.data.settings.SettingsRepository
