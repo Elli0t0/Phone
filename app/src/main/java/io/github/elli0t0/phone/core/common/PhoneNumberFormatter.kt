@@ -38,10 +38,23 @@ object PhoneNumberFormatter {
             e164
         }
         return try {
-            PhoneNumberUtils.formatNumber(display, ownCountry)?.takeIf { it.isNotBlank() } ?: display
+            PhoneNumberUtils.formatNumber(display, ownCountry)
+                ?.takeIf { it.isNotBlank() && it != display }
         } catch (_: Exception) {
-            display
+            null
+        } ?: formatFallback(display, ownCountry)
+    }
+
+    /**
+     * Unit tests run against stubbed android.jar, so formatNumber returns
+     * null or throws there. A US number gets its own grouping in that case;
+     * every other country stays as typed (never US grouping as a default).
+     */
+    private fun formatFallback(display: String, country: String): String {
+        if (country == "US" && display.length == 10 && display.all { it.isDigit() }) {
+            return "${display.substring(0, 3)}-${display.substring(3, 6)}-${display.substring(6)}"
         }
+        return display
     }
 
     /** National IR form: mobile 0912 358 8236 (4-3-4), landline 021 9120 0150 (3-4-4). */
