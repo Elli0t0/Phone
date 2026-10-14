@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.elli0t0.phone.data.settings.SettingsRepository
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AppSettings
+import io.github.elli0t0.phone.data.settings.model.CallDisplay
 import io.github.elli0t0.phone.data.settings.model.CardStyle
 import io.github.elli0t0.phone.data.settings.model.ContactNameFormat
 import io.github.elli0t0.phone.data.settings.model.ContactSortOrder
@@ -111,6 +112,13 @@ class SettingsViewModel(
         }
     }
     fun setContactNameFormat(format: ContactNameFormat) = onContactNameFormatChanged(format)
+
+    fun onCallDisplayChanged(display: CallDisplay) {
+        viewModelScope.launch {
+            settingsRepository.setCallDisplay(display)
+        }
+    }
+    fun setCallDisplay(display: CallDisplay) = onCallDisplayChanged(display)
 
     fun onResetToDefaults() {
         viewModelScope.launch {

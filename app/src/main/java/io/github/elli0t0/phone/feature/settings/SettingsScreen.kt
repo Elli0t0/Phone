@@ -85,6 +85,7 @@ import io.github.elli0t0.phone.core.telecom.UssdSim
 import io.github.elli0t0.phone.feature.setup.SetupChecklist
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
+import io.github.elli0t0.phone.data.settings.model.CallDisplay
 import io.github.elli0t0.phone.data.settings.model.CardStyle
 import io.github.elli0t0.phone.data.settings.model.ContactNameFormat
 import io.github.elli0t0.phone.data.settings.model.ContactSortOrder
@@ -137,6 +138,7 @@ fun SettingsScreen(
     var showAnimDialog by remember { mutableStateOf(false) }
     var showSortDialog by remember { mutableStateOf(false) }
     var showFormatDialog by remember { mutableStateOf(false) }
+    var showCallDisplayDialog by remember { mutableStateOf(false) }
     var showBlockedNumbers by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
     var showCallWaitingDialog by remember { mutableStateOf(false) }
@@ -424,6 +426,16 @@ fun SettingsScreen(
             selected = settings.contactNameFormat,
             onSelect = { viewModel.onContactNameFormatChanged(it); showFormatDialog = false },
             onDismiss = { showFormatDialog = false }
+        )
+    }
+
+    if (showCallDisplayDialog) {
+        SettingsChoiceDialog(
+            title = stringResource(id = R.string.settings_call_display),
+            options = CallDisplay.entries.map { it.label to it },
+            selected = settings.callDisplay,
+            onSelect = { viewModel.setCallDisplay(it); showCallDisplayDialog = false },
+            onDismiss = { showCallDisplayDialog = false }
         )
     }
 
@@ -914,6 +926,16 @@ fun SettingsScreen(
                         SettingsRow(
                             title = stringResource(id = R.string.settings_call_waiting),
                             onClick = { showCallWaitingDialog = true }
+                        )
+
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        Spacer(modifier = Modifier.height(spacing.small))
+
+                        SettingsRow(
+                            title = stringResource(id = R.string.settings_call_display),
+                            subtitle = settings.callDisplay.label,
+                            onClick = { showCallDisplayDialog = true }
                         )
                     }
                 }
