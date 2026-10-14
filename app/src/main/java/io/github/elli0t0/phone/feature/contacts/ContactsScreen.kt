@@ -58,7 +58,9 @@ fun ContactsScreen(
     onNavigateToSettings: () -> Unit = {},
     onShowBottomBarChanged: (Boolean) -> Unit = {},
     pendingCreateNumber: String? = null,
-    onPendingCreateNumberConsumed: () -> Unit = {}
+    onPendingCreateNumberConsumed: () -> Unit = {},
+    pendingOpenContactId: Long? = null,
+    onPendingOpenContactIdConsumed: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val app = context.applicationContext as PhoneApplication
@@ -88,6 +90,16 @@ fun ContactsScreen(
         if (pendingCreateNumber != null) {
             currentDestination = ContactsNavDestination.Create(pendingCreateNumber)
             onPendingCreateNumberConsumed()
+        }
+    }
+
+    // A contact id from Recents opens that contact's detail, then clears
+    // the pending value. The lookup key is empty here: the detail loads
+    // by id and picks up the real key from the loaded contact.
+    LaunchedEffect(pendingOpenContactId) {
+        if (pendingOpenContactId != null) {
+            currentDestination = ContactsNavDestination.Detail(pendingOpenContactId, "")
+            onPendingOpenContactIdConsumed()
         }
     }
 

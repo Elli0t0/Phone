@@ -58,6 +58,9 @@ fun PhoneNavHost(
     // Number from the keypad with no matching contact: the Contacts tab
     // opens the editor prefilled with it, then clears the pending value.
     var pendingCreateNumber by remember { mutableStateOf<String?>(null) }
+    // Contact id from Recents: the Contacts tab opens that contact's
+    // detail, then clears the pending value.
+    var pendingOpenContactId by remember { mutableStateOf<Long?>(null) }
     NavHost(
         navController = navController,
         startDestination = startDestination,
@@ -87,8 +90,15 @@ fun PhoneNavHost(
             popExitTransition = tabExitTransition
         ) {
             RecentsScreen(
-                onNavigateToContactDetail = {
-                    navController.navigate(Screen.Contacts.route)
+                onNavigateToContactDetail = { id ->
+                    pendingOpenContactId = id
+                    navController.navigate(Screen.Contacts.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
                 },
                 onNavigateToSettings = {
                     navController.navigate(Screen.Settings.route)
@@ -108,7 +118,9 @@ fun PhoneNavHost(
                 },
                 onShowBottomBarChanged = onContactsBarVisibilityChanged,
                 pendingCreateNumber = pendingCreateNumber,
-                onPendingCreateNumberConsumed = { pendingCreateNumber = null }
+                onPendingCreateNumberConsumed = { pendingCreateNumber = null },
+                pendingOpenContactId = pendingOpenContactId,
+                onPendingOpenContactIdConsumed = { pendingOpenContactId = null }
             )
         }
         composable(

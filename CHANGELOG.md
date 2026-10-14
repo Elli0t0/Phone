@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.3] - 2026-10-15
+
+### Fixed
+- Recents "open contact" now actually opens that contact's detail: the contact id was dropped and the tap only landed on the Contacts list. The id is now passed to the Contacts tab (same pending-value pattern as the keypad-to-editor flow) and the navigation uses single-top with saved state, so it no longer stacks a duplicate Contacts destination.
+
 ## [0.7.2] - 2026-10-15
 
 ### Added
