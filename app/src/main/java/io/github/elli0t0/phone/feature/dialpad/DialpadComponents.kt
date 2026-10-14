@@ -100,23 +100,17 @@ fun DialKeyView(
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
-            if (dialKey.digit == '1') {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_voicemail),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(PhoneDimens.keypadVoicemailIconSize)
-                )
-            } else if (dialKey.letters.isNotEmpty()) {
-                Text(
-                    text = dialKey.letters,
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontSize = PhoneDimens.keypadLetterSize,
-                        fontWeight = FontWeight.Normal
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            // Always emit the sublabel, even when empty: an empty Text
+            // still occupies one line height, so every key has the same
+            // height and the digits stay aligned.
+            Text(
+                text = dialKey.letters,
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontSize = PhoneDimens.keypadLetterSize,
+                    fontWeight = FontWeight.Normal
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

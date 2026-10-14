@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.14] - 2026-10-14
+
+### Removed
+- Keypad voicemail: the voicemail glyph on the 1 key and long-press 1 calling voicemail are gone; long-press 1 now just enters "1" like a tap.
+
+### Fixed
+- Keypad keys without a sublabel (1, *, #) now keep the same height as the lettered keys — the sublabel is always emitted, even when empty — so all digits stay aligned.
+
 ## [0.6.13] - 2026-10-14
 
 ### Added
