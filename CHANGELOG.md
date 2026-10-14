@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2] - 2026-10-14
+
+### Changed
+- Call background setting now applies to the real call screens: Default keeps the current gradient, Dark is solid black, Accent is a gradient of the chosen accent darkened so the white call UI stays legible.
+
 ## [0.6.15] - 2026-10-14
 
 ### Added

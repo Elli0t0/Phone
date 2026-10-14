@@ -141,7 +141,9 @@ class CallActivity : ComponentActivity() {
                                     onAnswer = { CallRepository.answerCall() },
                                     onDecline = { CallRepository.rejectCall() },
                                     onDeclineWithMessage = { CallRepository.rejectCallWithMessage(it) },
-                                    quickDeclineMessages = quickDeclineMessages
+                                    quickDeclineMessages = quickDeclineMessages,
+                                    callBackground = settings.callBackground,
+                                    accentColor = settings.accentColor
                                 )
                             } else {
                                 OngoingCallScreen(
@@ -156,7 +158,9 @@ class CallActivity : ComponentActivity() {
                                     onRequestBluetoothPermission = {
                                         bluetoothPermissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
                                     },
-                                    hasBluetoothPermission = hasBluetoothPermission
+                                    hasBluetoothPermission = hasBluetoothPermission,
+                                    callBackground = settings.callBackground,
+                                    accentColor = settings.accentColor
                                 )
                             }
                         }

@@ -25,7 +25,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -36,15 +35,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
+import io.github.elli0t0.phone.core.design.AccentPreset
 import io.github.elli0t0.phone.core.design.InCallControlActive
 import io.github.elli0t0.phone.core.design.InCallControlActiveContent
 import io.github.elli0t0.phone.core.design.InCallControlBackground
-import io.github.elli0t0.phone.core.design.InCallGradientBottom
-import io.github.elli0t0.phone.core.design.InCallGradientTop
 import io.github.elli0t0.phone.core.design.LiquidGlassEndCall
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.callBackgroundBrush
 import io.github.elli0t0.phone.data.call.CallState
 import io.github.elli0t0.phone.data.call.OngoingCallModel
+import io.github.elli0t0.phone.data.settings.model.CallBackground
 
 @Composable
 fun OngoingCallScreen(
@@ -56,6 +56,8 @@ fun OngoingCallScreen(
     onEndCall: () -> Unit,
     onRequestBluetoothPermission: () -> Unit = {},
     hasBluetoothPermission: Boolean = true,
+    callBackground: CallBackground = CallBackground.DEFAULT,
+    accentColor: Long = AccentPreset.ONE_UI_BLUE.colorValue,
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
@@ -123,11 +125,7 @@ fun OngoingCallScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(InCallGradientTop, InCallGradientBottom)
-                    )
-                )
+                .background(callBackgroundBrush(callBackground, accentColor))
         )
 
         Column(

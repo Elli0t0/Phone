@@ -24,7 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -35,12 +34,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
+import io.github.elli0t0.phone.core.design.AccentPreset
 import io.github.elli0t0.phone.core.design.CallAnswerGreen
 import io.github.elli0t0.phone.core.design.CallDeclineRed
-import io.github.elli0t0.phone.core.design.InCallGradientBottom
-import io.github.elli0t0.phone.core.design.InCallGradientTop
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.callBackgroundBrush
 import io.github.elli0t0.phone.data.call.OngoingCallModel
+import io.github.elli0t0.phone.data.settings.model.CallBackground
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -50,6 +50,8 @@ fun IncomingCallScreen(
     onDecline: () -> Unit,
     onDeclineWithMessage: (String) -> Unit = {},
     quickDeclineMessages: List<String>,
+    callBackground: CallBackground = CallBackground.DEFAULT,
+    accentColor: Long = AccentPreset.ONE_UI_BLUE.colorValue,
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
@@ -57,11 +59,7 @@ fun IncomingCallScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(InCallGradientTop, InCallGradientBottom)
-                )
-            )
+            .background(callBackgroundBrush(callBackground, accentColor))
             .padding(horizontal = spacing.screenHorizontalPadding, vertical = spacing.large)
             .testTag("incoming_call_screen"),
         horizontalAlignment = Alignment.CenterHorizontally,
