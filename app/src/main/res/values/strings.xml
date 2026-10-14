@@ -130,6 +130,8 @@
 
     <!-- Recents / Call Log -->
     <string name="recents_search_hint">Search calls</string>
+    <string name="recents_pick_date">Pick a date</string>
+    <string name="cd_clear_date_filter">Clear date filter</string>
     <string name="permission_call_log_title">Call log permission</string>
     <string name="permission_call_log_message">Phone needs access to your call history to display recent calls.</string>
     <string name="recents_empty_title">No recent calls</string>

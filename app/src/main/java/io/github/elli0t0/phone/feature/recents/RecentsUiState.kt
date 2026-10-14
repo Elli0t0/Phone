@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.data.calllog.util.DaySection
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
+import java.time.LocalDate
 
 enum class CallFilter(@StringRes val titleRes: Int) {
     ALL(R.string.filter_all),
@@ -17,6 +18,7 @@ data class RecentsUiState(
     val favorites: List<ContactSummary> = emptyList(),
     val selectedFilter: CallFilter = CallFilter.ALL,
     val searchQuery: String = "",
+    val selectedDate: LocalDate? = null,
     val expandedCallId: Long? = null,
     val isSearching: Boolean = false,
     val isLoading: Boolean = false,

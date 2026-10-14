@@ -11,6 +11,9 @@ import io.github.elli0t0.phone.data.calllog.model.CallType
 import io.github.elli0t0.phone.data.calllog.util.CallLogGroupingHelper
 import io.github.elli0t0.phone.data.contacts.ContactsRepository
 import io.github.elli0t0.phone.data.favorites.FavoritesRepository
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,6 +49,7 @@ class RecentsViewModel(
 
     private val _selectedFilter = MutableStateFlow(CallFilter.ALL)
     private val _searchQuery = MutableStateFlow("")
+    private val _selectedDate = MutableStateFlow<LocalDate?>(null)
     private val _expandedCallId = MutableStateFlow<Long?>(null)
     private val _userMessageRes = MutableStateFlow<Int?>(null)
     private val _reloadTrigger = MutableStateFlow(0L)
@@ -83,6 +87,7 @@ class RecentsViewModel(
     private data class FilterState(
         val filter: CallFilter,
         val query: String,
+        val date: LocalDate?,
         val expandedId: Long?,
         val messageRes: Int?
     )
@@ -90,17 +95,18 @@ class RecentsViewModel(
     private val filterStateFlow = combine(
         _selectedFilter,
         _searchQuery,
+        _selectedDate,
         _expandedCallId,
         _userMessageRes
-    ) { filter, query, expandedId, messageRes ->
-        FilterState(filter, query, expandedId, messageRes)
+    ) { filter, query, date, expandedId, messageRes ->
+        FilterState(filter, query, date, expandedId, messageRes)
     }
 
     val uiState: StateFlow<RecentsUiState> = combine(
         logDataFlow,
         filterStateFlow
     ) { logData, filterState ->
-        val filteredCalls = filterCalls(logData.calls, filterState.filter, filterState.query)
+        val filteredCalls = filterCalls(logData.calls, filterState.filter, filterState.query, filterState.date)
         val grouped = CallLogGroupingHelper.groupConsecutiveCalls(filteredCalls)
         val daySections = CallLogGroupingHelper.organizeIntoDaySections(grouped)
 
@@ -109,6 +115,7 @@ class RecentsViewModel(
             favorites = logData.favorites,
             selectedFilter = filterState.filter,
             searchQuery = filterState.query,
+            selectedDate = filterState.date,
             expandedCallId = filterState.expandedId,
             isSearching = filterState.query.isNotBlank(),
             isLoading = logData.isLoading && logData.calls.isEmpty(),
@@ -130,7 +137,8 @@ class RecentsViewModel(
     private fun filterCalls(
         calls: List<CallLogEntry>,
         filter: CallFilter,
-        query: String
+        query: String,
+        date: LocalDate?
     ): List<CallLogEntry> {
         val trimmedQuery = query.trim().lowercase()
 
@@ -149,12 +157,19 @@ class RecentsViewModel(
                     PhoneNumberMatcher.matchesQuery(call.number, trimmedQuery)
             }
 
-            matchesFilter && matchesQuery
+            val matchesDate = date == null ||
+                LocalDate.ofInstant(Instant.ofEpochMilli(call.date), ZoneId.systemDefault()) == date
+
+            matchesFilter && matchesQuery && matchesDate
         }
     }
 
     fun onFilterSelected(filter: CallFilter) {
         _selectedFilter.value = filter
+    }
+
+    fun onDateSelected(date: LocalDate?) {
+        _selectedDate.value = date
     }
 
     fun onSearchQueryChanged(query: String) {

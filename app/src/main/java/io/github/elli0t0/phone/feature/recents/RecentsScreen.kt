@@ -5,6 +5,7 @@ import android.net.Uri
 import android.provider.ContactsContract
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -23,10 +24,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,6 +40,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.draw.clip
 import androidx.compose.runtime.LaunchedEffect
@@ -68,8 +76,14 @@ import io.github.elli0t0.phone.feature.recents.ui.DaySectionCard
 import io.github.elli0t0.phone.feature.recents.ui.RecentsEmptyState
 import io.github.elli0t0.phone.navigation.PageHeaderItem
 import io.github.elli0t0.phone.navigation.PinnedPageBar
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecentsScreen(
     onNavigateToContactDetail: (Long) -> Unit = {},
@@ -109,6 +123,7 @@ fun RecentsScreen(
     var searchVisible by remember { mutableStateOf(uiState.searchQuery.isNotEmpty()) }
     var menuExpanded by remember { mutableStateOf(false) }
     var filterMenuExpanded by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val simAccounts = remember(context) { io.github.elli0t0.phone.core.telecom.TelecomHelper.getCallCapablePhoneAccounts(context) }
     val recentsScope = androidx.compose.runtime.rememberCoroutineScope()
@@ -210,6 +225,23 @@ fun RecentsScreen(
                                     modifier = Modifier.testTag("filter_menu_${filter.name.lowercase()}")
                                 )
                             }
+                            HorizontalDivider()
+                            DropdownMenuItem(
+                                text = { Text(text = stringResource(id = R.string.recents_pick_date)) },
+                                leadingIcon = if (uiState.selectedDate != null) {
+                                    {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.ic_check),
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                } else {
+                                    null
+                                },
+                                onClick = { filterMenuExpanded = false; showDatePicker = true },
+                                modifier = Modifier.testTag("filter_menu_date")
+                            )
                         }
                     }
                     androidx.compose.material3.IconButton(
@@ -264,6 +296,61 @@ fun RecentsScreen(
                         .fillMaxWidth()
                         .padding(bottom = spacing.small)
                 )
+            }
+
+            // Active date filter: tap to pick another date, X to clear.
+            if (uiState.selectedDate != null) {
+                AssistChip(
+                    onClick = { showDatePicker = true },
+                    label = {
+                        Text(
+                            text = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy", Locale.getDefault())
+                                .format(uiState.selectedDate)
+                        )
+                    },
+                    trailingIcon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_close),
+                            contentDescription = stringResource(id = R.string.cd_clear_date_filter),
+                            modifier = Modifier.clickable { viewModel.onDateSelected(null) }
+                        )
+                    },
+                    modifier = Modifier
+                        .padding(bottom = spacing.small)
+                        .testTag("recents_date_filter_chip")
+                )
+            }
+
+            // Date picker: filters the list to calls on the picked day.
+            if (showDatePicker) {
+                val pickerState = rememberDatePickerState(
+                    initialSelectedDateMillis = uiState.selectedDate
+                        ?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
+                )
+                DatePickerDialog(
+                    onDismissRequest = { showDatePicker = false },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                showDatePicker = false
+                                viewModel.onDateSelected(
+                                    pickerState.selectedDateMillis?.let {
+                                        LocalDate.ofInstant(Instant.ofEpochMilli(it), ZoneId.systemDefault())
+                                    }
+                                )
+                            }
+                        ) {
+                            Text(text = stringResource(id = R.string.action_ok))
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDatePicker = false }) {
+                            Text(text = stringResource(id = R.string.action_cancel))
+                        }
+                    }
+                ) {
+                    DatePicker(state = pickerState)
+                }
             }
 
             when (val status = permissionState.status) {
@@ -321,7 +408,7 @@ fun RecentsScreen(
                         } else if (uiState.errorMessage == null && uiState.daySections.isEmpty()) {
                             item(key = "empty_recents") {
                                 RecentsEmptyState(
-                                    isFiltered = uiState.selectedFilter != CallFilter.ALL || uiState.isSearching,
+                                    isFiltered = uiState.selectedFilter != CallFilter.ALL || uiState.isSearching || uiState.selectedDate != null,
                                     modifier = Modifier.fillParentMaxHeight()
                                 )
                             }
