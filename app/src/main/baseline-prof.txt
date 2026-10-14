@@ -1,0 +1,29 @@
+# Hand-written baseline profile: the app's own startup and first-screen
+# code paths. Flags: H = hot, S = startup, P = post-startup (same flag
+# combinations as the published profile examples). Compose and the other
+# AndroidX libraries ship their own baseline profiles; this file only
+# covers app code, so ART pre-compiles the app's startup path at install
+# time. Every rule below names a method verified to exist in the source.
+
+# --- App startup: Application + Activity entry points ---
+HSPLio/github/elli0t0/phone/PhoneApplication;->onCreate()V
+HSPLandroid/app/Application;->onCreate()V
+HSPLio/github/elli0t0/phone/MainActivity;->onCreate(Landroid/os/Bundle;)V
+HSPLandroidx/activity/ComponentActivity;->onCreate(Landroid/os/Bundle;)V
+
+# --- Startup work done by PhoneApplication.onCreate ---
+HSPLio/github/elli0t0/phone/core/common/PhoneNumberMatcher;->initRegion(Landroid/content/Context;)V
+HSPLio/github/elli0t0/phone/DefaultAppContainer;-><init>(Landroid/content/Context;)V
+HSPLio/github/elli0t0/phone/core/notifications/CallNotificationChannels;->createAll(Landroid/content/Context;)V
+HSPLio/github/elli0t0/phone/data/contacts/ContactNameIndex;->ensureStarted(Landroid/content/ContentResolver;)V
+HSPLio/github/elli0t0/phone/data/calllog/AndroidCallLogRepository;->preload()V
+
+# --- First screens: the lists the user lands on ---
+HLio/github/elli0t0/phone/feature/recents/RecentsViewModel;->getUiState()Lkotlinx/coroutines/flow/StateFlow;
+HLio/github/elli0t0/phone/feature/contacts/ContactsViewModel;->getUiState()Lkotlinx/coroutines/flow/StateFlow;
+HLio/github/elli0t0/phone/data/calllog/AndroidCallLogRepository;->getCallLogsFlow()Lkotlinx/coroutines/flow/Flow;
+HLio/github/elli0t0/phone/data/contacts/AndroidContactsRepository;->getContactsFlow()Lkotlinx/coroutines/flow/Flow;
+
+# --- Call entry points: incoming/ongoing call screens ---
+HSPLio/github/elli0t0/phone/feature/call/CallActivity;->onCreate(Landroid/os/Bundle;)V
+HSPLio/github/elli0t0/phone/core/telecom/PhoneInCallService;->onCreate()V

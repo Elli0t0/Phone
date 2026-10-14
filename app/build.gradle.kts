@@ -105,6 +105,9 @@ dependencies {
   implementation(libs.androidx.compose.material3)
   implementation(libs.coil.compose)
   implementation(libs.androidx.datastore.preferences)
+  // Installs the shipped baseline profile on first launch (via the
+  // library's App Startup initializer); no manual call is needed.
+  implementation(libs.androidx.profileinstaller)
 
   implementation(libs.androidx.room.runtime)
   implementation(libs.androidx.room.ktx)
