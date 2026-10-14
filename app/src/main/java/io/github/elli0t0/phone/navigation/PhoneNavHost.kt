@@ -11,6 +11,8 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import io.github.elli0t0.phone.core.design.Motion
+import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.feature.contacts.ContactsScreen
 import io.github.elli0t0.phone.feature.dialpad.DialpadScreen
 import io.github.elli0t0.phone.feature.recents.RecentsScreen
@@ -22,16 +24,20 @@ fun PhoneNavHost(
     modifier: Modifier = Modifier,
     startDestination: String = Screen.Recents.route,
     defaultStartTabRoute: String = Screen.Recents.route,
-    animationsEnabled: Boolean = true,
+    animationOption: AnimationOption = AnimationOption.ON,
     onContactsBarVisibilityChanged: (Boolean) -> Unit = {}
 ) {
     // Tab transitions: a short fade-in and NO exit animation, so the old
     // tab never turns semi-transparent over a different background (the
-    // default crossfade is what made tab switches flash). Animation Off
-    // means no transition at all. The bottom bar lives outside this
-    // NavHost (in MainActivity), so it never animates with the screens.
+    // default crossfade is what made tab switches flash). The fade
+    // duration comes from Motion: full on On, shorter on Reduced, none
+    // on Off. The bottom bar lives outside this NavHost (in
+    // MainActivity), so it never animates with the screens.
     val tabEnterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition =
-        { if (animationsEnabled) fadeIn(animationSpec = tween(120)) else EnterTransition.None }
+        {
+            if (animationOption == AnimationOption.OFF) EnterTransition.None
+            else fadeIn(animationSpec = tween(Motion.tabFadeDurationMs(animationOption)))
+        }
     val tabExitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition =
         { ExitTransition.None }
     NavHost(

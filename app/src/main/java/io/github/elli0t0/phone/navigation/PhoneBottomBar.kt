@@ -42,6 +42,7 @@ import io.github.elli0t0.phone.core.design.BottomBarLightSelected
 import io.github.elli0t0.phone.core.design.BottomBarLightSelectedContent
 import io.github.elli0t0.phone.core.design.BottomBarLightUnselected
 import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.data.settings.model.ThemeMode
 
@@ -50,8 +51,9 @@ import io.github.elli0t0.phone.data.settings.model.ThemeMode
  * width, 60dp tall, three equal-width items. The selected
  * tab draws its own fully rounded pill with a 4dp inset and the filled
  * icon; unselected tabs show the outlined icon. The pill fades between
- * tabs. Labels show unless the setting turns them off. The bar floats
- * above the gesture handle: navigation-bar inset + 12dp gap. Very soft
+ * tabs, with the color spec from Motion (full / shorter / instant per
+ * the Animations setting). Labels show unless the setting turns them
+ * off. The bar floats above the gesture handle: navigation-bar inset + 12dp gap. Very soft
  * shadow, alpha <= 10%.
  */
 @Composable
@@ -100,12 +102,15 @@ fun PhoneBottomBar(
         ) {
             Screen.bottomNavItems.forEach { screen ->
                 val selected = currentRoute == screen.route
+                val pillSpec = Motion.pillColorSpec(LocalAppSettings.current.animationOption)
                 val pillColor by animateColorAsState(
                     targetValue = if (selected) selectedPillColor else Color.Transparent,
+                    animationSpec = pillSpec,
                     label = "tab_pill"
                 )
                 val contentColor by animateColorAsState(
                     targetValue = if (selected) selectedContentColor else unselectedContentColor,
+                    animationSpec = pillSpec,
                     label = "tab_content"
                 )
                 Box(

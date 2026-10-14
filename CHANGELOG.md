@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.9] - 2026-10-14
+
+### Changed
+- Animations setting now drives bottom-bar and tab motion through a single `Motion` controller in `core/design`: On = tab fade 120ms + pill color 300ms, Reduced = tab fade 60ms + pill color 100ms, Off = no tab transition + instant pill color snap. Previously Reduced behaved like On and the bottom-bar pill ignored the setting.
+
 ## [0.6.8] - 2026-10-14
 
 ### Added

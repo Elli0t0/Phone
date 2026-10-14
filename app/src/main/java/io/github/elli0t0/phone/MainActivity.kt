@@ -21,7 +21,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import io.github.elli0t0.phone.core.design.PhoneTheme
 import io.github.elli0t0.phone.core.permissions.SetupPermissions
-import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.navigation.PhoneBottomBar
 import io.github.elli0t0.phone.navigation.PhoneNavHost
@@ -86,7 +85,7 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
             navController = navController,
             startDestination = startDestination,
             defaultStartTabRoute = appSettings.defaultStartTab.route,
-            animationsEnabled = appSettings.animationOption != AnimationOption.OFF,
+            animationOption = appSettings.animationOption,
             onContactsBarVisibilityChanged = { showContactsBar = it },
             modifier = Modifier.fillMaxSize()
         )
