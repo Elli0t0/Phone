@@ -15,6 +15,7 @@ import io.github.elli0t0.phone.data.settings.SettingsRepository
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.ContactNameFormat
 import io.github.elli0t0.phone.data.settings.model.ContactSortOrder
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -30,7 +31,10 @@ class ContactsViewModel(
     private val contactsRepository: ContactsRepository,
     private val favoritesRepository: FavoritesRepository? = null,
     private val settingsRepository: SettingsRepository? = null,
-    coroutineScope: kotlinx.coroutines.CoroutineScope? = null
+    coroutineScope: kotlinx.coroutines.CoroutineScope? = null,
+    // Injectable so tests can run the transform on the test scheduler;
+    // production uses Default.
+    private val transformDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -165,9 +169,10 @@ class ContactsViewModel(
             isMerging = extras.isMerging
         )
     }
-    // Name formatting + search filter + grouping run on Default: the
-    // transform touches every contact and must never block the main thread.
-    .flowOn(Dispatchers.Default)
+    // Name formatting + search filter + grouping run on
+    // transformDispatcher: the transform touches every contact and must
+    // never block the main thread.
+    .flowOn(transformDispatcher)
     .stateIn(
         scope = activeScope,
         started = SharingStarted.WhileSubscribed(5_000),

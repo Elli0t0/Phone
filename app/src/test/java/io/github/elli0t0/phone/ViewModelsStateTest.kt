@@ -74,7 +74,8 @@ class ViewModelsStateTest {
             callLogRepository = FakeCallLogRepository(),
             favoritesRepository = FakeFavoritesRepository(),
             contactsRepository = FakeContactsRepository(),
-            coroutineScope = backgroundScope
+            coroutineScope = backgroundScope,
+            transformDispatcher = testDispatcher
         )
         backgroundScope.launch { viewModel.uiState.collect() }
 
@@ -101,7 +102,8 @@ class ViewModelsStateTest {
         val viewModel = ContactsViewModel(
             contactsRepository = fakeRepo,
             favoritesRepository = FakeFavoritesRepository(),
-            coroutineScope = backgroundScope
+            coroutineScope = backgroundScope,
+            transformDispatcher = testDispatcher
         )
         backgroundScope.launch { viewModel.uiState.collect() }
 

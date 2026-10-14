@@ -11,6 +11,7 @@ import io.github.elli0t0.phone.data.calllog.model.CallType
 import io.github.elli0t0.phone.data.calllog.util.CallLogGroupingHelper
 import io.github.elli0t0.phone.data.contacts.ContactsRepository
 import io.github.elli0t0.phone.data.favorites.FavoritesRepository
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -31,7 +32,10 @@ class RecentsViewModel(
     private val callLogRepository: CallLogRepository,
     private val favoritesRepository: FavoritesRepository,
     private val contactsRepository: ContactsRepository,
-    coroutineScope: CoroutineScope? = null
+    coroutineScope: CoroutineScope? = null,
+    // Injectable so tests can run the transform on the test scheduler;
+    // production uses Default.
+    private val transformDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
     private val activeScope = coroutineScope ?: try {
@@ -112,9 +116,9 @@ class RecentsViewModel(
             errorMessage = logData.errorMsg
         )
     }
-    // Filter + group + sort run on Default: the transform touches every
-    // call-log row and must never block the main thread.
-    .flowOn(Dispatchers.Default)
+    // Filter + group + sort run on transformDispatcher: the transform
+    // touches every call-log row and must never block the main thread.
+    .flowOn(transformDispatcher)
     .stateIn(
         scope = activeScope ?: CoroutineScope(kotlinx.coroutines.Dispatchers.Main.immediate),
         started = SharingStarted.WhileSubscribed(5000),
