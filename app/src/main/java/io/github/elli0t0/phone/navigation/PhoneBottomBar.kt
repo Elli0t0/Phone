@@ -3,6 +3,8 @@ package io.github.elli0t0.phone.navigation
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.indication.LocalIndication
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,6 +47,8 @@ import io.github.elli0t0.phone.core.design.BottomBarLightUnselected
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.pressScale
+import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.settings.model.ThemeMode
 
 /**
@@ -73,6 +78,7 @@ fun PhoneBottomBar(
     val selectedContentColor = if (darkTheme) BottomBarDarkSelectedContent else BottomBarLightSelectedContent
     val unselectedContentColor = if (darkTheme) BottomBarDarkUnselected else BottomBarLightUnselected
     val pillShape = RoundedCornerShape(PhoneDimens.bottomBarCornerPercent)
+    val lightHaptic = rememberLightHaptic()
 
     // Width 60% of the screen. Height fixed at 60dp; the three items
     // share the width equally via weight, so nothing can overflow
@@ -113,6 +119,10 @@ fun PhoneBottomBar(
                     animationSpec = pillSpec,
                     label = "tab_content"
                 )
+                // Shared press interaction source: pressScale and the
+                // clickable observe the same press state, so the item
+                // scales to 0.92 while pressed, ripples, and haptics.
+                val itemSource = remember { MutableInteractionSource() }
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -120,8 +130,13 @@ fun PhoneBottomBar(
                         .padding(PhoneDimens.bottomBarItemInset)
                         .clip(pillShape)
                         .background(pillColor)
-                        .clickable {
+                        .pressScale(itemSource)
+                        .clickable(
+                            interactionSource = itemSource,
+                            indication = LocalIndication.current
+                        ) {
                             if (currentRoute != screen.route) {
+                                lightHaptic()
                                 // saveState/restoreState: switching tabs keeps
                                 // each tab's saved state (including list
                                 // scroll position) instead of recreating it.
