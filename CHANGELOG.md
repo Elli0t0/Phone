@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.4] - 2026-10-14
+
+### Changed
+- Contact details and edit contact screens now share the common card, avatar, header bar, and divider styling used elsewhere in the app.
+- Screen titles on these screens use the standard title style, and body text is 16sp.
+- Dialogs on these screens (delete, photo, phone picker) are rounded cards.
+
 ## [0.4.3] - 2026-10-14
 
 ### Changed

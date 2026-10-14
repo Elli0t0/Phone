@@ -37,11 +37,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.data.contacts.model.ContactPhone
 
 @Composable
@@ -57,7 +57,10 @@ fun ContactActionRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(
+                horizontal = PhoneDimens.detailActionRowHorizontalPadding,
+                vertical = PhoneDimens.detailActionRowVerticalPadding
+            ),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -108,12 +111,12 @@ fun ContactActionButton(
         modifier = modifier
             .clip(MaterialTheme.shapes.medium)
             .clickable(enabled = enabled, onClick = onClick)
-            .padding(8.dp)
+            .padding(PhoneDimens.detailActionButtonPadding)
             .testTag(testTag),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Surface(
-            modifier = Modifier.size(52.dp),
+            modifier = Modifier.size(PhoneDimens.detailActionButtonSize),
             shape = CircleShape,
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = contentAlpha)
         ) {
@@ -122,7 +125,7 @@ fun ContactActionButton(
                     painter = painterResource(id = icon),
                     contentDescription = label,
                     tint = tint.copy(alpha = contentAlpha),
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(PhoneDimens.detailActionIconSize)
                 )
             }
         }
@@ -147,7 +150,13 @@ fun PhotoCropPreviewDialog(
 
     AlertDialog(
         onDismissRequest = onDiscard,
-        title = { Text(text = stringResource(id = R.string.photo_crop_preview_title)) },
+        shape = RoundedCornerShape(PhoneDimens.dialogCornerRadius),
+        title = {
+            Text(
+                text = stringResource(id = R.string.photo_crop_preview_title),
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -159,7 +168,7 @@ fun PhotoCropPreviewDialog(
                         contentDescription = stringResource(id = R.string.cd_contact_avatar),
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
-                            .size(160.dp)
+                            .size(PhoneDimens.detailPhotoCropPreviewSize)
                             .clip(CircleShape)
                     )
                 }
@@ -186,6 +195,7 @@ fun PhotoFullPreviewDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(PhoneDimens.dialogCornerRadius),
         text = {
             Box(
                 modifier = Modifier.fillMaxWidth(),
@@ -200,8 +210,8 @@ fun PhotoFullPreviewDialog(
                         contentDescription = displayName,
                         contentScale = ContentScale.Fit,
                         modifier = Modifier
-                            .size(260.dp)
-                            .clip(RoundedCornerShape(16.dp))
+                            .size(PhoneDimens.detailPhotoFullPreviewSize)
+                            .clip(RoundedCornerShape(PhoneDimens.detailPhotoFullPreviewCornerRadius))
                     )
                 }
             }
@@ -224,7 +234,13 @@ fun ContactPhotoOptionsDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = stringResource(id = R.string.photo_preview_title)) },
+        shape = RoundedCornerShape(PhoneDimens.dialogCornerRadius),
+        title = {
+            Text(
+                text = stringResource(id = R.string.photo_preview_title),
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 if (hasPhoto) {
@@ -272,22 +288,28 @@ fun SelectPhoneDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = title) },
+        shape = RoundedCornerShape(PhoneDimens.dialogCornerRadius),
+        title = {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 phones.forEach { phone ->
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp)
+                            .padding(vertical = spacing.extraSmall)
                             .clickable { onSelectPhone(phone.number) },
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                     ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
+                        Column(modifier = Modifier.padding(spacing.small)) {
                             Text(
                                 text = phone.number,
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }

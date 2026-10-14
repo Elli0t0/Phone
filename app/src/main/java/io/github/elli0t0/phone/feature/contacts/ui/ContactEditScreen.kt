@@ -61,6 +61,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.data.contacts.model.ContactEmail
 import io.github.elli0t0.phone.data.contacts.model.ContactPhone
 import io.github.elli0t0.phone.data.contacts.util.ContactPhotoUtil
@@ -197,7 +198,7 @@ fun ContactEditScreen(
                 },
                 actions = {
                     if (uiState.isLoading) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp).padding(end = spacing.medium))
+                        CircularProgressIndicator(modifier = Modifier.size(PhoneDimens.editLoadingSize).padding(end = spacing.medium))
                     } else {
                         Button(
                             onClick = onSaveClick,
@@ -239,7 +240,7 @@ fun ContactEditScreen(
             // Top Avatar with camera edit badge
             Box(
                 modifier = Modifier
-                    .size(112.dp)
+                    .size(PhoneDimens.detailAvatarSize)
                     .testTag("edit_contact_avatar"),
                 contentAlignment = Alignment.Center
             ) {
@@ -248,7 +249,7 @@ fun ContactEditScreen(
                 ContactAvatar(
                     photoUri = effectivePhotoUri,
                     displayName = uiState.displayName.ifBlank { "?" },
-                    size = 112.dp,
+                    size = PhoneDimens.detailAvatarSize,
                     textStyle = MaterialTheme.typography.displayMedium,
                     modifier = Modifier.clickable {
                         if (hasEffectivePhoto) {
@@ -262,7 +263,7 @@ fun ContactEditScreen(
                 // Camera/Edit photo badge
                 Surface(
                     modifier = Modifier
-                        .size(36.dp)
+                        .size(PhoneDimens.detailPhotoBadgeSize)
                         .align(Alignment.BottomEnd)
                         .clip(CircleShape)
                         .clickable {
@@ -281,7 +282,7 @@ fun ContactEditScreen(
                             painter = painterResource(id = R.drawable.ic_camera),
                             contentDescription = stringResource(id = R.string.cd_edit_photo),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(PhoneDimens.detailPhotoBadgeIconSize)
                         )
                     }
                 }
@@ -427,7 +428,7 @@ fun ContactEditScreen(
                             painter = painterResource(id = R.drawable.ic_notifications),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(PhoneDimens.detailRowIconSize)
                         )
                         Spacer(modifier = Modifier.width(spacing.medium))
                         Column(modifier = Modifier.weight(1f)) {
@@ -446,7 +447,7 @@ fun ContactEditScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(PhoneDimens.editBottomSpacer))
         }
     }
 }
@@ -484,12 +485,12 @@ private fun PhoneInputField(
             modifier = Modifier.weight(1f).testTag("input_phone_$index")
         )
 
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(PhoneDimens.editFieldGap))
 
         ExposedDropdownMenuBox(
             expanded = expanded,
             onExpandedChange = { expanded = it },
-            modifier = Modifier.width(135.dp)
+            modifier = Modifier.width(PhoneDimens.editTypeDropdownWidth)
         ) {
             OutlinedTextField(
                 value = selectedLabel,
@@ -559,12 +560,12 @@ private fun EmailInputField(
             modifier = Modifier.weight(1f).testTag("input_email_$index")
         )
 
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(PhoneDimens.editFieldGap))
 
         ExposedDropdownMenuBox(
             expanded = expanded,
             onExpandedChange = { expanded = it },
-            modifier = Modifier.width(135.dp)
+            modifier = Modifier.width(PhoneDimens.editTypeDropdownWidth)
         ) {
             OutlinedTextField(
                 value = selectedLabel,

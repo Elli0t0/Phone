@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -34,6 +35,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -62,6 +64,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.telecom.CallManager
 import io.github.elli0t0.phone.core.telecom.SimCallHelper
 import io.github.elli0t0.phone.core.telecom.SimCallResolution
@@ -209,8 +212,19 @@ fun ContactDetailScreen(
 
         AlertDialog(
             onDismissRequest = onDismissDeleteDialog,
-            title = { Text(text = stringResource(id = R.string.contact_delete_dialog_title)) },
-            text = { Text(text = stringResource(id = R.string.contact_delete_dialog_message, contactName)) },
+            shape = RoundedCornerShape(PhoneDimens.dialogCornerRadius),
+            title = {
+                Text(
+                    text = stringResource(id = R.string.contact_delete_dialog_title),
+                    style = MaterialTheme.typography.titleLarge
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(id = R.string.contact_delete_dialog_message, contactName),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            },
             confirmButton = {
                 TextButton(onClick = onConfirmDelete, modifier = Modifier.testTag("button_confirm_delete")) {
                     Text(text = stringResource(id = R.string.contact_delete_confirm), color = MaterialTheme.colorScheme.error)
@@ -359,14 +373,14 @@ fun ContactDetailScreen(
                     // Large Avatar with camera badge
                     Box(
                         modifier = Modifier
-                            .size(112.dp)
+                            .size(PhoneDimens.detailAvatarSize)
                             .testTag("contact_detail_avatar"),
                         contentAlignment = Alignment.Center
                     ) {
                         ContactAvatar(
                             photoUri = contact.photoUri,
                             displayName = displayName,
-                            size = 112.dp,
+                            size = PhoneDimens.detailAvatarSize,
                             textStyle = MaterialTheme.typography.displayMedium,
                             modifier = Modifier
                                 .clickable {
@@ -381,7 +395,7 @@ fun ContactDetailScreen(
                         // Camera/Edit photo badge
                         Surface(
                             modifier = Modifier
-                                .size(36.dp)
+                                .size(PhoneDimens.detailPhotoBadgeSize)
                                 .align(Alignment.BottomEnd)
                                 .clip(CircleShape)
                                 .clickable {
@@ -400,7 +414,7 @@ fun ContactDetailScreen(
                                     painter = painterResource(id = R.drawable.ic_camera),
                                     contentDescription = stringResource(id = R.string.cd_edit_photo),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(PhoneDimens.detailPhotoBadgeIconSize)
                                 )
                             }
                         }
@@ -457,7 +471,7 @@ fun ContactDetailScreen(
                     // Phone Numbers Section
                     if (contact.phones.isNotEmpty()) {
                         DetailSectionCard(title = stringResource(id = R.string.contact_details_phones)) {
-                            contact.phones.forEach { phone ->
+                            contact.phones.forEachIndexed { index, phone ->
                                 PhoneRowItem(
                                     phone = phone,
                                     onCall = { placeCallWithSim(phone.number) },
@@ -468,6 +482,17 @@ fun ContactDetailScreen(
                                         context.startActivity(smsIntent)
                                     }
                                 )
+                                if (index < contact.phones.lastIndex) {
+                                    HorizontalDivider(
+                                        color = MaterialTheme.colorScheme.outlineVariant,
+                                        thickness = 1.dp,
+                                        // Divider starts at the text: card padding + icon + spacer.
+                                        modifier = Modifier.padding(
+                                            start = spacing.medium +
+                                                PhoneDimens.detailRowIconSize + spacing.medium
+                                        )
+                                    )
+                                }
                             }
                         }
                         Spacer(modifier = Modifier.height(spacing.medium))
@@ -476,7 +501,7 @@ fun ContactDetailScreen(
                     // Email Addresses Section
                     if (contact.emails.isNotEmpty()) {
                         DetailSectionCard(title = stringResource(id = R.string.contact_details_emails)) {
-                            contact.emails.forEach { email ->
+                            contact.emails.forEachIndexed { index, email ->
                                 EmailRowItem(
                                     email = email,
                                     onEmail = {
@@ -486,6 +511,17 @@ fun ContactDetailScreen(
                                         context.startActivity(emailIntent)
                                     }
                                 )
+                                if (index < contact.emails.lastIndex) {
+                                    HorizontalDivider(
+                                        color = MaterialTheme.colorScheme.outlineVariant,
+                                        thickness = 1.dp,
+                                        // Divider starts at the text: card padding + icon + spacer.
+                                        modifier = Modifier.padding(
+                                            start = spacing.medium +
+                                                PhoneDimens.detailRowIconSize + spacing.medium
+                                        )
+                                    )
+                                }
                             }
                         }
                         Spacer(modifier = Modifier.height(spacing.medium))
@@ -518,7 +554,7 @@ fun ContactDetailScreen(
                                     painter = painterResource(id = R.drawable.ic_sim_card),
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(PhoneDimens.detailRowIconSize)
                                 )
                                 Spacer(modifier = Modifier.width(spacing.medium))
                                 Column(modifier = Modifier.weight(1f)) {
@@ -559,7 +595,7 @@ private fun DetailSectionCard(
         Column(modifier = Modifier.padding(spacing.medium)) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = spacing.small)
             )
@@ -590,7 +626,7 @@ private fun PhoneRowItem(
             painter = painterResource(id = R.drawable.ic_phone),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(PhoneDimens.detailRowIconSize)
         )
         Spacer(modifier = Modifier.width(spacing.medium))
         Column(modifier = Modifier.weight(1f)) {
@@ -605,20 +641,20 @@ private fun PhoneRowItem(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        IconButton(onClick = onCall, modifier = Modifier.size(36.dp)) {
+        IconButton(onClick = onCall, modifier = Modifier.size(PhoneDimens.detailRowActionButtonSize)) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_phone),
                 contentDescription = stringResource(id = R.string.action_call),
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(PhoneDimens.detailRowIconSize)
             )
         }
-        IconButton(onClick = onMessage, modifier = Modifier.size(36.dp)) {
+        IconButton(onClick = onMessage, modifier = Modifier.size(PhoneDimens.detailRowActionButtonSize)) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_message),
                 contentDescription = stringResource(id = R.string.action_message),
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(PhoneDimens.detailRowIconSize)
             )
         }
     }
@@ -644,7 +680,7 @@ private fun EmailRowItem(
             painter = painterResource(id = R.drawable.ic_email),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(PhoneDimens.detailRowIconSize)
         )
         Spacer(modifier = Modifier.width(spacing.medium))
         Column(modifier = Modifier.weight(1f)) {
@@ -659,12 +695,12 @@ private fun EmailRowItem(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        IconButton(onClick = onEmail, modifier = Modifier.size(36.dp)) {
+        IconButton(onClick = onEmail, modifier = Modifier.size(PhoneDimens.detailRowActionButtonSize)) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_email),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(PhoneDimens.detailRowIconSize)
             )
         }
     }
@@ -706,7 +742,7 @@ private fun RingtoneRowItem(
             painter = painterResource(id = R.drawable.ic_notifications),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(PhoneDimens.detailRowIconSize)
         )
         Spacer(modifier = Modifier.width(spacing.medium))
         Column(modifier = Modifier.weight(1f)) {

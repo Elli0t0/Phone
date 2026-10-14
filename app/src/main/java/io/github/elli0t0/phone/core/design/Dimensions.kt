@@ -62,4 +62,34 @@ object PhoneDimens {
     val settingsSliderThumbHeight = 24.dp
     val settingsSliderTickSize = 4.dp
     val settingsSliderCornerRadius = 2.dp
+    // Common dialog shape: rounded card, regardless of the card-style
+    // setting, for dialogs on the detail / edit / duplicates screens.
+    val dialogCornerRadius = 28.dp
+    // Contact detail / edit: large avatar with camera badge.
+    val detailAvatarSize = 112.dp
+    val detailPhotoBadgeSize = 36.dp
+    val detailPhotoBadgeIconSize = 18.dp
+    // Contact detail: action row (call / message / favorite / more).
+    val detailActionRowHorizontalPadding = 16.dp
+    val detailActionRowVerticalPadding = 8.dp
+    val detailActionButtonPadding = 8.dp
+    val detailActionButtonSize = 52.dp
+    val detailActionIconSize = 24.dp
+    // Contact detail: row icons and trailing action buttons.
+    val detailRowIconSize = 20.dp
+    val detailRowActionButtonSize = 36.dp
+    // Contact detail dialogs: photo preview sizes.
+    val detailPhotoCropPreviewSize = 160.dp
+    val detailPhotoFullPreviewSize = 260.dp
+    val detailPhotoFullPreviewCornerRadius = 16.dp
+    // Contact edit: input rows and bottom spacing.
+    val editFieldGap = 8.dp
+    val editTypeDropdownWidth = 135.dp
+    val editLoadingSize = 24.dp
+    val editBottomSpacer = 40.dp
+    // Permissions setup: checklist spacing and item icons.
+    val setupItemSpacing = 12.dp
+    val setupItemIconSize = 24.dp
+    val setupCardTextPaddingStart = 12.dp
+    val setupCardTextPaddingEnd = 8.dp
 }
