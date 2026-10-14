@@ -1,1 +1,97 @@
-cGFja2FnZSBpby5naXRodWIuZWxsaTB0MC5waG9uZS5jb3JlLmRlc2lnbgoKaW1wb3J0IGFuZHJvaWR4LmNvbXBvc2UuZm91bmRhdGlvbi5iYWNrZ3JvdW5kCmltcG9ydCBhbmRyb2lkeC5jb21wb3NlLmZvdW5kYXRpb24uYm9yZGVyCmltcG9ydCBhbmRyb2lkeC5jb21wb3NlLmZvdW5kYXRpb24ubGF5b3V0LkJveAppbXBvcnQgYW5kcm9pZHguY29tcG9zZS5mb3VuZGF0aW9uLmxheW91dC5Cb3hTY29wZQppbXBvcnQgYW5kcm9pZHguY29tcG9zZS5mb3VuZGF0aW9uLnNoYXBlLkdlbmVyaWNTaGFwZQppbXBvcnQgYW5kcm9pZHguY29tcG9zZS5mb3VuZGF0aW9uLnNoYXBlLlJvdW5kZWRDb3JuZXJTaGFwZQppbXBvcnQgYW5kcm9pZHguY29tcG9zZS5ydW50aW1lLkNvbXBvc2FibGUKaW1wb3J0IGFuZHJvaWR4LmNvbXBvc2UudWkuTW9kaWZpZXIKaW1wb3J0IGFuZHJvaWR4LmNvbXBvc2UudWkuZHJhdy5jbGlwCmltcG9ydCBhbmRyb2lkeC5jb21wb3NlLnVpLmdyYXBoaWNzLkNvbG9yCmltcG9ydCBhbmRyb2lkeC5jb21wb3NlLnVpLmdyYXBoaWNzLlNoYXBlCmltcG9ydCBhbmRyb2lkeC5jb21wb3NlLnVpLnVuaXQuZHAKaW1wb3J0IGtvdGxpbi5tYXRoLlBJCmltcG9ydCBrb3RsaW4ubWF0aC5hYnMKaW1wb3J0IGtvdGxpbi5tYXRoLmNvcwppbXBvcnQga290bGluLm1hdGgucG93CmltcG9ydCBrb3RsaW4ubWF0aC5zaWduCmltcG9ydCBrb3RsaW4ubWF0aC5zaW4KCi8vIExpcXVpZCBnbGFzcyBkZXNpZ24gdG9rZW5zOiBmcm9zdGVkIHRyYW5zbHVjZW50IHN1cmZhY2VzLCBzb2Z0IGdyYWRpZW50cywKLy8gYW5kIHNxdWlyY2xlIHNoYXBlcyB1c2VkIG9uIHRoZSBpbi1jYWxsIHNjcmVlbi4KCnZhbCBMaXF1aWRHbGFzc0JhY2tncm91bmRUb3AgPSBDb2xvcigweEZGMkIyQTM2KQp2YWwgTGlxdWlkR2xhc3NCYWNrZ3JvdW5kQm90dG9tID0gQ29sb3IoMHhGRjEwMEYxNSkKdmFsIExpcXVpZEdsYXNzR2xvd1ByaW1hcnkgPSBDb2xvcigweEZGNEE3Q0ZGKQp2YWwgTGlxdWlkR2xhc3NHbG93U2Vjb25kYXJ5ID0gQ29sb3IoMHhGRjlCNkRGRikKdmFsIExpcXVpZEdsYXNzU3VyZmFjZSA9IENvbG9yLldoaXRlLmNvcHkoYWxwaGEgPSAwLjEwZikKdmFsIExpcXVpZEdsYXNzU3VyZmFjZVN0cm9uZyA9IENvbG9yLldoaXRlLmNvcHkoYWxwaGEgPSAwLjE2ZikKdmFsIExpcXVpZEdsYXNzQm9yZGVyID0gQ29sb3IuV2hpdGUuY29weShhbHBoYSA9IDAuMjJmKQp2YWwgTGlxdWlkR2xhc3NPblN1cmZhY2UgPSBDb2xvci5XaGl0ZQp2YWwgTGlxdWlkR2xhc3NPblN1cmZhY2VNdXRlZCA9IENvbG9yLldoaXRlLmNvcHkoYWxwaGEgPSAwLjc1ZikKdmFsIExpcXVpZEdsYXNzT25TdXJmYWNlRmFpbnQgPSBDb2xvci5XaGl0ZS5jb3B5KGFscGhhID0gMC41NWYpCnZhbCBMaXF1aWRHbGFzc0FjdGl2ZSA9IENvbG9yLldoaXRlCnZhbCBMaXF1aWRHbGFzc0FjdGl2ZUNvbnRlbnQgPSBDb2xvcigweEZGMUMxQjFGKQp2YWwgTGlxdWlkR2xhc3NFbmRDYWxsID0gQ29sb3IoMHhGRkU1MzkzNSkKdmFsIExpcXVpZEdsYXNzSG9sZCA9IENvbG9yKDB4RkZGRkI3NEQpCgovKiogRnVsbHkgcm91bmRlZCBwaWxsIHNoYXBlIGZvciB0aGUgZG9jayBhbmQgdGhlIGVuZC1jYWxsIGJ1dHRvbi4gKi8KdmFsIExpcXVpZEdsYXNzUGlsbFNoYXBlID0gUm91bmRlZENvcm5lclNoYXBlKDMyLmRwKQoKLyoqIExhcmdlIHJvdW5kZWQgc2hhcGUgZm9yIGZsb2F0aW5nIGdsYXNzIGNvbnRhaW5lcnMuICovCnZhbCBMaXF1aWRHbGFzc0RvY2tTaGFwZSA9IFJvdW5kZWRDb3JuZXJTaGFwZSgzNi5kcCkKCi8qKgogKiBTcXVpcmNsZSAoc3VwZXJlbGxpcHNlKSBzaGFwZTogYSBzcXVhcmUgd2l0aCBjb250aW51b3VzbHkgY3VydmVkIGNvcm5lcnMsCiAqIHJvdW5kZXIgdGhhbiBhIHJvdW5kZWQgcmVjdGFuZ2xlLiBFeHBvbmVudCA0IHNpdHMgYmV0d2VlbiBhIGNpcmNsZSAoMikKICogYW5kIGEgc3F1YXJlIChpbmZpbml0eSkuCiAqLwp2YWwgU3F1aXJjbGVTaGFwZTogU2hhcGUgPSBHZW5lcmljU2hhcGUgeyBzaXplLCBfIC0+CiAgICB2YWwgd2lkdGggPSBzaXplLndpZHRoCiAgICB2YWwgaGVpZ2h0ID0gc2l6ZS5oZWlnaHQKICAgIHZhbCBjZW50ZXJYID0gd2lkdGggLyAyZgogICAgdmFsIGNlbnRlclkgPSBoZWlnaHQgLyAyZgogICAgdmFsIGV4cG9uZW50ID0gMmYgLyA0ZgogICAgdmFsIHN0ZXBzID0gNDgKICAgIGZvciAoaSBpbiAwLi5zdGVwcykgewogICAgICAgIHZhbCBhbmdsZSA9IChpLnRvRmxvYXQoKSAvIHN0ZXBzKSAqICgyZiAqIFBJLnRvRmxvYXQoKSkKICAgICAgICB2YWwgY29zQW5nbGUgPSBjb3MoYW5nbGUpCiAgICAgICAgdmFsIHNpbkFuZ2xlID0gc2luKGFuZ2xlKQogICAgICAgIHZhbCB4ID0gY2VudGVyWCArICh3aWR0aCAvIDJmKSAqIHNpZ24oY29zQW5nbGUpICogYWJzKGNvc0FuZ2xlKS5wb3coZXhwb25lbnQpCiAgICAgICAgdmFsIHkgPSBjZW50ZXJZICsgKGhlaWdodCAvIDJmKSAqIHNpZ24oc2luQW5nbGUpICogYWJzKHNpbkFuZ2xlKS5wb3coZXhwb25lbnQpCiAgICAgICAgaWYgKGkgPT0gMCkgewogICAgICAgICAgICBtb3ZlVG8oeCwgeSkKICAgICAgICB9IGVsc2UgewogICAgICAgICAgICBsaW5lVG8oeCwgeSkKICAgICAgICB9CiAgICB9CiAgICBjbG9zZSgpCn0KCi8qKgogKiBSZXVzYWJsZSBnbGFzcyBzdXJmYWNlOiBhIHRyYW5zbHVjZW50IGZpbGwgd2l0aCBhIHRoaW4gdHJhbnNsdWNlbnQgYm9yZGVyLgogKiBQbGFjZWQgb3ZlciBhIGdyYWRpZW50IG9yIGltYWdlIGJhY2tncm91bmQgaXQgcmVhZHMgYXMgZnJvc3RlZCBnbGFzcy4KICoKICogUmVhbCBibHVyIChIYXplKSB3YXMgY2hlY2tlZCBmaXJzdDogSGF6ZSAyLjAuMSBpcyB0aGUgbGF0ZXN0IHN0YWJsZSByZWxlYXNlLAogKiBidXQgaXRzIG5ldyBtb2R1bGFyIDIueCBBUEkgaXMgdW52ZXJpZmllZCBhZ2FpbnN0IHRoaXMgcHJvamVjdCdzIENvbXBvc2UKICogdmVyc2lvbiBhbmQgY2Fubm90IGJlIGNvbXBpbGUtY2hlY2tlZCBsb2NhbGx5LCBzbyB0aGlzIHZlcnNpb24gc2hpcHMgdGhlCiAqIHRyYW5zbHVjZW50IGZhbGxiYWNrLiBObyBibHVyIGlzIGZha2VkOiB0aGUgc3VyZmFjZSBpcyBob25lc3RseSB0cmFuc2x1Y2VudC4KICovCkBDb21wb3NhYmxlCmZ1biBHbGFzc1N1cmZhY2UoCiAgICBtb2RpZmllcjogTW9kaWZpZXIgPSBNb2RpZmllciwKICAgIHNoYXBlOiBTaGFwZSA9IExpcXVpZEdsYXNzRG9ja1NoYXBlLAogICAgY29udGFpbmVyQ29sb3I6IENvbG9yID0gTGlxdWlkR2xhc3NTdXJmYWNlLAogICAgYm9yZGVyQ29sb3I6IENvbG9yID0gTGlxdWlkR2xhc3NCb3JkZXIsCiAgICBjb250ZW50OiBAQ29tcG9zYWJsZSBCb3hTY29wZS4oKSAtPiBVbml0CikgewogICAgQm94KAogICAgICAgIG1vZGlmaWVyID0gbW9kaWZpZXIKICAgICAgICAgICAgLmNsaXAoc2hhcGUpCiAgICAgICAgICAgIC5iYWNrZ3JvdW5kKGNvbnRhaW5lckNvbG9yKQogICAgICAgICAgICAuYm9yZGVyKDEuZHAsIGJvcmRlckNvbG9yLCBzaGFwZSksCiAgICAgICAgY29udGVudCA9IGNvbnRlbnQKICAgICkKfQo=
+package io.github.elli0t0.phone.core.design
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.shape.GenericShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.unit.dp
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.sign
+import kotlin.math.sin
+
+// Liquid glass design tokens: frosted translucent surfaces, soft gradients,
+// and squircle shapes used on the in-call screen.
+
+val LiquidGlassBackgroundTop = Color(0xFF2B2A36)
+val LiquidGlassBackgroundBottom = Color(0xFF100F15)
+val LiquidGlassGlowPrimary = Color(0xFF4A7CFF)
+val LiquidGlassGlowSecondary = Color(0xFF9B6DFF)
+val LiquidGlassSurface = Color.White.copy(alpha = 0.10f)
+val LiquidGlassSurfaceStrong = Color.White.copy(alpha = 0.16f)
+val LiquidGlassBorder = Color.White.copy(alpha = 0.22f)
+val LiquidGlassOnSurface = Color.White
+val LiquidGlassOnSurfaceMuted = Color.White.copy(alpha = 0.75f)
+val LiquidGlassOnSurfaceFaint = Color.White.copy(alpha = 0.55f)
+val LiquidGlassActive = Color.White
+val LiquidGlassActiveContent = Color(0xFF1C1B1F)
+val LiquidGlassEndCall = Color(0xFFE53935)
+val LiquidGlassHold = Color(0xFFFFB74D)
+
+/** Fully rounded pill shape for the dock and the end-call button. */
+val LiquidGlassPillShape = RoundedCornerShape(32.dp)
+
+/** Large rounded shape for floating glass containers. */
+val LiquidGlassDockShape = RoundedCornerShape(36.dp)
+
+/**
+ * Squircle (superellipse) shape: a square with continuously curved corners,
+ * rounder than a rounded rectangle. Exponent 4 sits between a circle (2)
+ * and a square (infinity).
+ */
+val SquircleShape: Shape = GenericShape { size, _ ->
+    val width = size.width
+    val height = size.height
+    val centerX = width / 2f
+    val centerY = height / 2f
+    val exponent = 2f / 4f
+    val steps = 48
+    for (i in 0..steps) {
+        val angle = (i.toFloat() / steps) * (2f * PI.toFloat())
+        val cosAngle = cos(angle)
+        val sinAngle = sin(angle)
+        val x = centerX + (width / 2f) * sign(cosAngle) * abs(cosAngle).pow(exponent)
+        val y = centerY + (height / 2f) * sign(sinAngle) * abs(sinAngle).pow(exponent)
+        if (i == 0) {
+            moveTo(x, y)
+        } else {
+            lineTo(x, y)
+        }
+    }
+    close()
+}
+
+/**
+ * Reusable glass surface: a translucent fill with a thin translucent border.
+ * Placed over a gradient or image background it reads as frosted glass.
+ *
+ * Real blur (Haze) was checked first: Haze 2.0.1 is the latest stable release,
+ * but its new modular 2.x API is unverified against this project's Compose
+ * version and cannot be compile-checked locally, so this version ships the
+ * translucent fallback. No blur is faked: the surface is honestly translucent.
+ */
+@Composable
+fun GlassSurface(
+    modifier: Modifier = Modifier,
+    shape: Shape = LiquidGlassDockShape,
+    containerColor: Color = LiquidGlassSurface,
+    borderColor: Color = LiquidGlassBorder,
+    content: @Composable BoxScope.() -> Unit
+) {
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .background(containerColor)
+            .border(1.dp, borderColor, shape),
+        content = content
+    )
+}
