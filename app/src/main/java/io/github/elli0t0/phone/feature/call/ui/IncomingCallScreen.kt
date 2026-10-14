@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
-import io.github.elli0t0.phone.core.design.AccentPreset
+import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.core.design.CallAnswerGreen
 import io.github.elli0t0.phone.core.design.CallDeclineRed
 import io.github.elli0t0.phone.core.design.LocalSpacing
