@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.elli0t0.phone.PhoneApplication
+import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.PhoneTheme
 import io.github.elli0t0.phone.core.telecom.PhoneInCallService
 import io.github.elli0t0.phone.data.call.CallRepository
@@ -72,6 +73,16 @@ class CallActivity : ComponentActivity() {
                 }
             }
 
+            val quickDeclineMessages = listOf(
+                R.string.quick_reply_cant_talk,
+                R.string.quick_reply_call_back,
+                R.string.quick_reply_in_meeting
+            ).mapIndexed { index, res ->
+                settings.quickDeclineOverrides.getOrNull(index)
+                    ?.takeIf { it.isNotBlank() }
+                    ?: getString(res)
+            }
+
             PhoneTheme(appSettings = settings) {
                 val ongoingCall by CallRepository.ongoingCallModel.collectAsStateWithLifecycle()
 
@@ -104,7 +115,8 @@ class CallActivity : ComponentActivity() {
                             callModel = currentModel,
                             onAnswer = { CallRepository.answerCall() },
                             onDecline = { CallRepository.rejectCall() },
-                            onDeclineWithMessage = { CallRepository.rejectCallWithMessage(it) }
+                            onDeclineWithMessage = { CallRepository.rejectCallWithMessage(it) },
+                            quickDeclineMessages = quickDeclineMessages
                         )
                     } else {
                         OngoingCallScreen(

@@ -49,6 +49,7 @@ fun IncomingCallScreen(
     onAnswer: () -> Unit,
     onDecline: () -> Unit,
     onDeclineWithMessage: (String) -> Unit = {},
+    quickDeclineMessages: List<String>,
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
@@ -137,12 +138,7 @@ fun IncomingCallScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                listOf(
-                    R.string.quick_reply_cant_talk,
-                    R.string.quick_reply_call_back,
-                    R.string.quick_reply_in_meeting
-                ).forEach { messageRes ->
-                    val message = stringResource(id = messageRes)
+                quickDeclineMessages.forEachIndexed { index, message ->
                     AssistChip(
                         onClick = { onDeclineWithMessage(message) },
                         label = { Text(text = message) },
@@ -150,7 +146,7 @@ fun IncomingCallScreen(
                             containerColor = Color.White.copy(alpha = 0.12f),
                             labelColor = Color.White
                         ),
-                        modifier = Modifier.testTag("quick_reply_${messageRes}")
+                        modifier = Modifier.testTag("quick_reply_$index")
                     )
                 }
             }

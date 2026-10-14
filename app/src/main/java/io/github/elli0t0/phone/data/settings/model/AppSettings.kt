@@ -70,5 +70,9 @@ data class AppSettings(
     val defaultStartTab: StartTab = StartTab.KEYPAD,
     val contactSortOrder: ContactSortOrder = ContactSortOrder.FIRST_NAME,
     val contactNameFormat: ContactNameFormat = ContactNameFormat.FIRST_NAME_FIRST,
-    val callDisplay: CallDisplay = CallDisplay.FULL_SCREEN
+    val callDisplay: CallDisplay = CallDisplay.FULL_SCREEN,
+    // Quick-decline message overrides, one per reply chip. A blank entry
+    // falls back to the built-in default message for that slot, so an
+    // untouched setting keeps the localized defaults.
+    val quickDeclineOverrides: List<String> = emptyList()
 )

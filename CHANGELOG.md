@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.13] - 2026-10-14
+
+### Changed
+- Incoming-call quick replies now resolve from the stored quick-decline setting (built-in defaults until edited). The Settings editor to change the three messages lands in 0.5.14.
+- Declining an incoming call really rejects it through the telecom stack, with or without a reply message, from both the full-screen call screen and the incoming-call notification.
+
 ## [0.5.12] - 2026-10-14
 
 ### Added

@@ -39,6 +39,7 @@ interface SettingsRepository {
     suspend fun setContactSortOrder(order: ContactSortOrder)
     suspend fun setContactNameFormat(format: ContactNameFormat)
     suspend fun setCallDisplay(display: CallDisplay)
+    suspend fun setQuickDeclineMessages(messages: List<String>)
     suspend fun resetToDefaults()
 }
 
@@ -61,6 +62,7 @@ class DataStoreSettingsRepository(
         val CONTACT_SORT_ORDER = stringPreferencesKey("contact_sort_order")
         val CONTACT_NAME_FORMAT = stringPreferencesKey("contact_name_format")
         val CALL_DISPLAY = stringPreferencesKey("call_display")
+        val QUICK_DECLINE_MESSAGES = stringPreferencesKey("quick_decline_messages")
     }
 
     override val settingsFlow: Flow<AppSettings> = dataStore.data.map { prefs ->
@@ -96,6 +98,10 @@ class DataStoreSettingsRepository(
         val callDisplayStr = prefs[Keys.CALL_DISPLAY]
         val callDisplay = callDisplayStr?.let { runCatching { CallDisplay.valueOf(it) }.getOrNull() } ?: CallDisplay.FULL_SCREEN
 
+        val quickDeclineStored = prefs[Keys.QUICK_DECLINE_MESSAGES] ?: ""
+        val quickDeclineOverrides = (quickDeclineStored.split("\n") + listOf("", "", ""))
+            .take(3)
+
         AppSettings(
             themeMode = themeMode,
             accentColor = accent,
@@ -110,7 +116,8 @@ class DataStoreSettingsRepository(
             defaultStartTab = startTab,
             contactSortOrder = sortOrder,
             contactNameFormat = nameFormat,
-            callDisplay = callDisplay
+            callDisplay = callDisplay,
+            quickDeclineOverrides = quickDeclineOverrides
         )
     }
 
@@ -191,6 +198,14 @@ class DataStoreSettingsRepository(
     override suspend fun setCallDisplay(display: CallDisplay) {
         dataStore.edit { prefs ->
             prefs[Keys.CALL_DISPLAY] = display.name
+        }
+    }
+
+    override suspend fun setQuickDeclineMessages(messages: List<String>) {
+        dataStore.edit { prefs ->
+            prefs[Keys.QUICK_DECLINE_MESSAGES] = (messages.map { it.replace("\n", " ") } + listOf("", "", ""))
+                .take(3)
+                .joinToString("\n")
         }
     }
 
