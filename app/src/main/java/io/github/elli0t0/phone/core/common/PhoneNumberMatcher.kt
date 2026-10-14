@@ -158,6 +158,40 @@ object PhoneNumberMatcher {
     }
 
     /**
+     * Normalizes a phone number to E.164 ("+<country code><national number>")
+     * using the device region. Returns "" when the input cannot be identified
+     * reliably: too short (short codes, emergency numbers, partial input) or
+     * no digits. Explicitly international forms ("+..." / "00...") keep their
+     * country code; a trunk "0" is replaced with the device region's code;
+     * bare plausibly-complete numbers (10+ digits) get the device code, unless
+     * they already start with it.
+     */
+    fun toE164(number: String, regionIso: String = deviceRegionIso()): String {
+        val trimmed = number.trim()
+        if (trimmed.isEmpty()) return ""
+        val digits = trimmed.filter { it.isDigit() }
+        if (digits.isEmpty()) return ""
+        if (trimmed.startsWith("+")) return "+$digits"
+        if (trimmed.startsWith("00") && digits.length > 2) return "+" + digits.substring(2)
+        val code = countryCallingCode(regionIso)
+        if (digits.startsWith("0")) {
+            val national = digits.drop(1).trimStart('0')
+            if (national.length < MIN_SIGNIFICANT_DIGITS) return ""
+            if (code == null) return "+$digits"
+            return "+$code$national"
+        }
+        // Bare digits: only canonicalize plausibly complete numbers.
+        if (digits.length < 10) return ""
+        if (code != null && digits.startsWith(code) &&
+            digits.length - code.length >= MIN_SIGNIFICANT_DIGITS
+        ) {
+            return "+$digits"
+        }
+        if (code != null) return "+$code$digits"
+        return "+$digits"
+    }
+
+    /**
      * Grouping key for duplicate detection: normalized number reduced to its last
      * 10 digits. Null when the number is too short to identify a contact safely.
      */

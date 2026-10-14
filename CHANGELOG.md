@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.7] - 2026-10-14
+
+### Fixed
+- One number format: every number normalizes to E.164 using the device region, Recents groups by that key, and one formatter renders device-country numbers nationally and all others internationally — so the same number never shows in two formats on one screen. Short codes, emergency numbers, USSD codes and partial input are shown as typed. The call screen and contact details get the same rendering in 0.5.8.
+
 ## [0.5.6] - 2026-10-14
 
 ### Fixed

@@ -1,5 +1,6 @@
 package io.github.elli0t0.phone.data.calllog.util
 
+import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
 import io.github.elli0t0.phone.data.calllog.model.CallGroup
 import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import io.github.elli0t0.phone.data.calllog.model.CallType
@@ -111,7 +112,14 @@ object CallLogGroupingHelper {
         return sections
     }
 
+    /**
+     * Grouping key: the E.164 form, so the same number stored as "0901..."
+     * and "+98 901..." groups together. Falls back to raw digits for short
+     * numbers that cannot be normalized.
+     */
     private fun normalizeForComparison(number: String): String {
-        return number.filter { it.isDigit() || it == '+' }
+        return PhoneNumberMatcher.toE164(number).ifBlank {
+            number.filter { it.isDigit() || it == '+' }
+        }
     }
 }

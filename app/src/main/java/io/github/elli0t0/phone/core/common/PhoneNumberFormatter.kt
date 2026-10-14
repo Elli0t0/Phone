@@ -14,6 +14,16 @@ import java.util.Locale
  */
 object PhoneNumberFormatter {
 
+    /**
+     * One display format for every number: normalize to E.164 first, then
+     * format the device-country numbers in national form (trunk 0, except NANP
+     * which has no trunk) and all
+     * others in international form. The same number therefore renders
+     * identically no matter how it was stored ("0901 766 4791" and
+     * "+98 901 766 4791" both become "0901 766 4791" on a device set to IR).
+     * USSD codes, short codes, emergency numbers and partial input are
+     * returned as typed.
+     */
     fun format(rawNumber: String, defaultCountryIso: String = Locale.getDefault().country.ifBlank { "US" }): String {
         if (rawNumber.isBlank()) return ""
 
@@ -22,13 +32,27 @@ object PhoneNumberFormatter {
             return rawNumber
         }
 
+        val e164 = PhoneNumberMatcher.toE164(rawNumber, defaultCountryIso)
+        if (e164.isBlank()) return rawNumber
+
+        val code = PhoneNumberMatcher.countryCallingCode(defaultCountryIso)
+        val digits = e164.removePrefix("+")
+        val display = if (code != null && digits.startsWith(code)) {
+            // Device-country number: national form. Most regions use trunk 0;
+            // NANP (country code 1) has no trunk prefix.
+            val trunk = if (code == "1") "" else "0"
+            trunk + digits.removePrefix(code)
+        } else {
+            // Foreign number: international form.
+            e164
+        }
+
         try {
-            val formatted = PhoneNumberUtils.formatNumber(rawNumber, defaultCountryIso)
+            val formatted = PhoneNumberUtils.formatNumber(display, defaultCountryIso)
             // formatNumber returns the input unchanged when it cannot parse
-            // it for the device region (e.g. a national number from another
-            // region). In that case fall through to the chunking fallback
-            // so all rows format consistently instead of some staying raw.
-            if (!formatted.isNullOrBlank() && formatted != rawNumber) {
+            // it for the device region. In that case fall through to the
+            // chunking fallback so all rows format consistently.
+            if (!formatted.isNullOrBlank() && formatted != display) {
                 return formatted
             }
         } catch (_: Exception) {
@@ -36,7 +60,7 @@ object PhoneNumberFormatter {
         }
 
         // Lightweight fallback formatting if PhoneNumberUtils returns null (e.g. unit tests or rapid typing)
-        return formatFallback(rawNumber)
+        return formatFallback(display)
     }
 
     private fun formatFallback(number: String): String {

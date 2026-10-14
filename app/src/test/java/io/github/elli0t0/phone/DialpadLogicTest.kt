@@ -22,9 +22,11 @@ class DialpadLogicTest {
     }
 
     @Test
-    fun phoneNumberFormatter_formatsInternationalPlusNumbers() {
+    fun phoneNumberFormatter_formatsDeviceCountryPlusNumbersNationally() {
+        // A device-country number renders in national form, even when stored
+        // with the international prefix: one format per number.
         val formattedIntl = PhoneNumberFormatter.format("+989121234567", defaultCountryIso = "IR")
-        assertTrue(formattedIntl.startsWith("+98"))
+        assertEquals("0912 123 4567", formattedIntl)
     }
 
     @Test
