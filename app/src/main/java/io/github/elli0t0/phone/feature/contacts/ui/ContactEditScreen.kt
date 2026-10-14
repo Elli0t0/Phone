@@ -184,6 +184,7 @@ fun ContactEditScreen(
         modifier = modifier.fillMaxSize().testTag("contact_edit_screen"),
         topBar = {
             TopAppBar(
+                modifier = Modifier.padding(top = spacing.small),
                 title = {
                     Text(
                         text = if (uiState.isNewContact) {

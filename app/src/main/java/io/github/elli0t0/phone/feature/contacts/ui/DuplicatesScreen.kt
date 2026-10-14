@@ -73,6 +73,7 @@ fun DuplicatesScreen(
         modifier = modifier.fillMaxSize().testTag("duplicates_screen"),
         topBar = {
             TopAppBar(
+                modifier = Modifier.padding(top = spacing.small),
                 title = { Text(text = stringResource(id = R.string.duplicates_title)) },
                 navigationIcon = {
                     IconButton(

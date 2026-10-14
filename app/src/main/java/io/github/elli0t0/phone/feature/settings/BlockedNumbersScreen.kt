@@ -120,6 +120,7 @@ fun BlockedNumbersScreen(
         modifier = modifier.fillMaxSize().testTag("blocked_numbers_screen"),
         topBar = {
             TopAppBar(
+                modifier = Modifier.padding(top = spacing.small),
                 title = { Text(text = stringResource(id = R.string.blocked_numbers_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
