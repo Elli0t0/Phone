@@ -5,11 +5,10 @@ import androidx.compose.ui.unit.sp
 
 /** Bottom bar island and keypad dimensions. */
 object PhoneDimens {
-    // Bottom bar: floating pill, 250dp wide (capped at 85% of screen
-    // width), 60dp tall, 3 equal-width items. The selected pill fills
-    // its item with a 4dp inset. Very soft shadow, alpha <= 10%.
-    val bottomBarWidth = 250.dp
-    val bottomBarWidthFraction = 0.85f
+    // Bottom bar: floating pill, 60% of screen width, 60dp tall,
+    // 3 equal-width items. The selected pill fills its item with a
+    // 4dp inset. Very soft shadow, alpha <= 10%.
+    val bottomBarWidthFraction = 0.6f
     // Contact details bottom action bar: same pill, 70% of screen width.
     val detailBottomBarWidthFraction = 0.7f
     val bottomBarHeight = 60.dp

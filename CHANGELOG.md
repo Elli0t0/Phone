@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.10] - 2026-10-14
+
+### Changed
+- Main bottom bar is now 60% of the screen width (was capped at 250dp / 85%). Height stays 60dp, three equal-width items, selected pill with 4dp inset.
+- Bottom bar labels stay on by default and only disappear when the "Bottom bar labels" setting is turned off.
+
 ## [0.5.9] - 2026-10-14
 
 ### Fixed

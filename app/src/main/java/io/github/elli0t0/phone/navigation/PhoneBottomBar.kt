@@ -46,12 +46,13 @@ import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.data.settings.model.ThemeMode
 
 /**
- * Floating pill bottom bar, overlaid on content. 250dp wide (capped at
- * 85% of the screen), 60dp tall, three equal-width items. The selected
+ * Floating pill bottom bar, overlaid on content. 60% of the screen
+ * width, 60dp tall, three equal-width items. The selected
  * tab draws its own fully rounded pill with a 4dp inset and the filled
  * icon; unselected tabs show the outlined icon. The pill fades between
- * tabs. The bar floats above the gesture handle: navigation-bar inset
- * + 12dp gap. Very soft shadow, alpha <= 10%.
+ * tabs. Labels show unless the setting turns them off. The bar floats
+ * above the gesture handle: navigation-bar inset + 12dp gap. Very soft
+ * shadow, alpha <= 10%.
  */
 @Composable
 fun PhoneBottomBar(
@@ -71,8 +72,7 @@ fun PhoneBottomBar(
     val unselectedContentColor = if (darkTheme) BottomBarDarkUnselected else BottomBarLightUnselected
     val pillShape = RoundedCornerShape(PhoneDimens.bottomBarCornerPercent)
 
-    // Width 250dp, capped at 85% of the screen so the bar never
-    // overflows small screens. Height fixed at 60dp; the three items
+    // Width 60% of the screen. Height fixed at 60dp; the three items
     // share the width equally via weight, so nothing can overflow
     // or clip.
     BoxWithConstraints(
@@ -82,10 +82,7 @@ fun PhoneBottomBar(
             .testTag("phone_bottom_bar"),
         contentAlignment = Alignment.Center
     ) {
-        val barWidth = minOf(
-            PhoneDimens.bottomBarWidth,
-            maxWidth * PhoneDimens.bottomBarWidthFraction
-        )
+        val barWidth = maxWidth * PhoneDimens.bottomBarWidthFraction
         Row(
             modifier = Modifier
                 .width(barWidth)
