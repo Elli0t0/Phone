@@ -72,6 +72,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
+import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.telecom.CallManager
@@ -117,6 +118,9 @@ fun ContactDetailScreen(
     BackHandler(onBack = onBackClick)
     val context = LocalContext.current
     val spacing = LocalSpacing.current
+    // Read here, not inside placeCallWithSim: the handler is not a
+    // @Composable context, so it cannot read a CompositionLocal.
+    val defaultSim = LocalAppSettings.current.defaultSim
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
@@ -137,7 +141,7 @@ fun ContactDetailScreen(
             return
         }
         coroutineScope.launch {
-            when (val res = SimCallHelper.resolveSim(context, number, uiState.contact?.lookupKey, simAccounts, repo)) {
+            when (val res = SimCallHelper.resolveSim(context, number, uiState.contact?.lookupKey, simAccounts, repo, defaultSim)) {
                 is SimCallResolution.UseSim -> CallManager.placeCall(context, number, res.sim.handle)
                 is SimCallResolution.ShowDialog -> simPickerNumber = number
             }
