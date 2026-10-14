@@ -344,12 +344,11 @@ class AndroidCallLogRepository(
     }
 
 
-    // Paged history for one contact. The provider query pages raw rows
-    // newest-first (Bundle QUERY_ARG_LIMIT/OFFSET on R+, LIMIT/OFFSET in
-    // the sort string below it); each chunk is filtered with the same
-    // normalized matcher the detail screen uses, so formatting variants
-    // of the contact's numbers all match. Scanning stops once the page
-    // plus one probe match are collected, or the log is exhausted.
+    // Paged history for one contact. Raw rows are scanned newest-first
+    // in chunks; each chunk is filtered with the same normalized matcher
+    // the detail screen uses, so formatting variants of the contact's
+    // numbers all match. Scanning stops once the page plus one probe
+    // match are collected, or the log is exhausted.
     override suspend fun getCallHistoryPage(
         numbers: List<String>,
         limit: Int,
@@ -372,11 +371,19 @@ class AndroidCallLogRepository(
         var rawOffset = 0
         var exhausted = false
         while (collected.size <= limit && !exhausted) {
+            // Growing LIMIT, no OFFSET: the call-log provider does not
+            // honor QUERY_ARG_OFFSET on all devices, and a dropped
+            // offset re-reads the same rows, returning duplicate entries
+            // (which crashed the list on duplicate keys) or spinning
+            // forever when a window held no matches. Each chunk query
+            // reads the prefix up to the window end; rows before the
+            // window are skipped in memory, so paging never depends on
+            // the provider's offset support.
+            val queryLimit = rawOffset + HISTORY_CHUNK_SIZE
             val cursor: Cursor? = try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     val queryArgs = Bundle().apply {
-                        putInt(ContentResolver.QUERY_ARG_LIMIT, HISTORY_CHUNK_SIZE)
-                        putInt(ContentResolver.QUERY_ARG_OFFSET, rawOffset)
+                        putInt(ContentResolver.QUERY_ARG_LIMIT, queryLimit)
                         putStringArray(
                             ContentResolver.QUERY_ARG_SORT_COLUMNS,
                             arrayOf(CallLog.Calls.DATE)
@@ -393,7 +400,7 @@ class AndroidCallLogRepository(
                         projection,
                         null,
                         null,
-                        "${CallLog.Calls.DATE} DESC LIMIT $HISTORY_CHUNK_SIZE OFFSET $rawOffset"
+                        "${CallLog.Calls.DATE} DESC LIMIT $queryLimit"
                     )
                 }
             } catch (e: SecurityException) {
@@ -404,7 +411,8 @@ class AndroidCallLogRepository(
                 return@withContext CallHistoryPage(emptyList(), false)
             }
             if (cursor == null) break
-            var chunkSize = 0
+            var processed = 0
+            var rowIndex = 0
             cursor.use { c ->
                 val idIdx = c.getColumnIndex(CallLog.Calls._ID)
                 val numberIdx = c.getColumnIndex(CallLog.Calls.NUMBER)
@@ -414,7 +422,13 @@ class AndroidCallLogRepository(
                 val durationIdx = c.getColumnIndex(CallLog.Calls.DURATION)
                 val accountIdIdx = c.getColumnIndex(CallLog.Calls.PHONE_ACCOUNT_ID)
                 while (c.moveToNext()) {
-                    chunkSize++
+                    if (rowIndex < rawOffset) {
+                        rowIndex++
+                        continue
+                    }
+                    if (processed >= HISTORY_CHUNK_SIZE) break
+                    rowIndex++
+                    processed++
                     val rawNumber = if (numberIdx >= 0) c.getString(numberIdx) ?: "" else ""
                     if (rawNumber.isBlank() || numbers.none { PhoneNumberMatcher.matches(it, rawNumber) }) {
                         continue
@@ -428,9 +442,12 @@ class AndroidCallLogRepository(
                     )
                     if (collected.size > limit) break
                 }
+                // The cursor ended before the window filled: no more rows.
+                if (collected.size <= limit && rowIndex < rawOffset + HISTORY_CHUNK_SIZE) {
+                    exhausted = true
+                }
             }
-            rawOffset += chunkSize
-            if (chunkSize < HISTORY_CHUNK_SIZE) exhausted = true
+            rawOffset += processed
         }
         val hasMore = collected.size > limit
         CallHistoryPage(

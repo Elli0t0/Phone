@@ -57,8 +57,10 @@ class ContactHistoryViewModel(
         viewModelScope.launch {
             val page = callLogRepository.getCallHistoryPage(numbers, PAGE_SIZE, state.entries.size)
             _uiState.update {
+                // Dedupe by call id: a page must never repeat a row, or
+                // the LazyColumn crashes on duplicate keys.
                 it.copy(
-                    entries = it.entries + page.entries,
+                    entries = (it.entries + page.entries).distinctBy { entry -> entry.id },
                     isLoading = false,
                     isLoadingMore = false,
                     hasMore = page.hasMore

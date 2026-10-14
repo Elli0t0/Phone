@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.6] - 2026-10-14
+
+### Fixed
+- Crash opening a contact's History: the call-log provider does not honor the paging offset on all devices, so the paged query re-read the same rows and returned duplicate entries, crashing the list on duplicate keys. Paging now uses a growing limit with in-memory windowing instead of an offset, and appended pages are deduplicated by call id.
+
 ## [0.6.5] - 2026-10-14
 
 ### Changed
