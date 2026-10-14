@@ -5,7 +5,7 @@ import android.content.Context
 import io.github.elli0t0.phone.data.calllog.AndroidCallLogRepository
 import io.github.elli0t0.phone.data.calllog.CallLogRepository
 import io.github.elli0t0.phone.data.contacts.AndroidContactsRepository
-import io.github.elli0t0.phone.data.contacts.ContactsRepository
+import io.github.elli0t0.phone.data.contacts.ContactNameIndex
 import io.github.elli0t0.phone.data.favorites.AppDatabase
 import io.github.elli0t0.phone.data.favorites.ContactSimRepository
 import io.github.elli0t0.phone.data.favorites.DefaultContactSimRepository
@@ -38,7 +38,7 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
     }
 
     override val callLogRepository: CallLogRepository by lazy {
-        AndroidCallLogRepository(context.contentResolver)
+        AndroidCallLogRepository(context.contentResolver, context.cacheDir)
     }
 
     override val favoritesRepository: FavoritesRepository by lazy {
@@ -67,6 +67,13 @@ class PhoneApplication : Application() {
         super.onCreate()
         container = DefaultAppContainer(this)
         CallNotificationChannels.createAll(this)
+        if (androidx.core.content.ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.READ_CONTACTS
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            ContactNameIndex.ensureStarted(contentResolver)
+        }
         if (androidx.core.content.ContextCompat.checkSelfPermission(
                 this,
                 android.Manifest.permission.READ_CALL_LOG

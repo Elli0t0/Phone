@@ -8,10 +8,8 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
-import android.provider.ContactsContract
 import android.telecom.Call
 import android.telecom.CallAudioState
 import android.telecom.InCallService
@@ -21,9 +19,9 @@ import androidx.core.app.Person
 import androidx.core.content.ContextCompat
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.PhoneApplication
-import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
 import io.github.elli0t0.phone.core.notifications.CallNotificationChannels
 import io.github.elli0t0.phone.data.call.CallRepository
+import io.github.elli0t0.phone.data.contacts.ContactNameIndex
 import io.github.elli0t0.phone.data.settings.model.CallDisplay
 import io.github.elli0t0.phone.feature.call.CallActivity
 import kotlinx.coroutines.CoroutineScope
@@ -317,45 +315,17 @@ class PhoneInCallService : InCallService() {
                 Manifest.permission.READ_CONTACTS
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            val asIs = queryPhoneLookup(rawNumber)
-            if (asIs != null) return asIs
-
-            // Shared normalization (device region + trunk prefix), then the same
-            // number with an explicit "+" prefix, for stored numbers in a
-            // different format than the incoming number.
-            val normalized = PhoneNumberMatcher.normalize(rawNumber)
-            if (normalized.isNotBlank() && normalized != rawNumber.filter { it.isDigit() }) {
-                val fromNormalized = queryPhoneLookup(normalized)
-                if (fromNormalized != null) return fromNormalized
-                val fromPlusNormalized = queryPhoneLookup("+$normalized")
-                if (fromPlusNormalized != null) return fromPlusNormalized
+            // Resolve from the single in-memory contact index: one map lookup,
+            // no per-call PhoneLookup query.
+            ContactNameIndex.ensureStarted(contentResolver)
+            val indexed = ContactNameIndex.resolve(rawNumber)
+            if (!indexed?.displayName.isNullOrBlank()) {
+                return indexed.displayName
             }
         }
 
         return call.details?.contactDisplayName?.takeIf { it.isNotBlank() }
             ?: call.details?.callerDisplayName?.takeIf { it.isNotBlank() }
-    }
-
-    private fun queryPhoneLookup(number: String): String? {
-        return try {
-            val uri = Uri.withAppendedPath(
-                ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
-                Uri.encode(number)
-            )
-            val projection = arrayOf(ContactsContract.PhoneLookup.DISPLAY_NAME)
-            contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
-                if (cursor.moveToFirst()) {
-                    val idx = cursor.getColumnIndex(ContactsContract.PhoneLookup.DISPLAY_NAME)
-                    if (idx >= 0) cursor.getString(idx)?.takeIf { it.isNotBlank() } else null
-                } else null
-            }
-        } catch (e: SecurityException) {
-            Log.e(TAG, "queryPhoneLookup SecurityException", e)
-            null
-        } catch (e: Exception) {
-            Log.e(TAG, "queryPhoneLookup failed", e)
-            null
-        }
     }
 
     private fun updateCallNotification(call: Call, cachedDisplayName: String? = null) {

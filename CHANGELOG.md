@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.6] - 2026-10-14
+
+### Fixed
+- Recents names now resolve instantly from a single in-memory contact index (one contacts query, rebuilt when contacts change) instead of a lookup per row. No more raw-number rows while names load: the last resolved list shows instantly on cold start and refreshes silently, or a skeleton on first run. The same index powers incoming-call names. Index build time and first data emit are logged (PhoneBoot).
+
 ## [0.5.5] - 2026-10-14
 
 ### Added

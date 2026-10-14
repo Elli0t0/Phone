@@ -9,13 +9,13 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.provider.CallLog
-import android.provider.ContactsContract
 import android.util.Log
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
-import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
 import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import io.github.elli0t0.phone.data.calllog.model.CallType
+import io.github.elli0t0.phone.data.contacts.ContactNameIndex
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -25,23 +25,25 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.concurrent.ConcurrentHashMap
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.File
 
 class AndroidCallLogRepository(
     private val contentResolver: ContentResolver,
+    private val cacheDir: File,
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 ) : CallLogRepository {
 
     private val tag = "CallLogRepository"
 
-    private data class ResolvedContact(
-        val displayName: String?,
-        val contactId: Long?,
-        val lookupKey: String?,
-        val photoUri: String?
-    )
+    private val cacheFile: File
+        get() = File(cacheDir, "call_log_cache.json")
 
-    private val resolvedContactsCache = ConcurrentHashMap<String, ResolvedContact>()
+    private val createdAt = SystemClock.uptimeMillis()
+    private var firstEmitLogged = false
+    private var freshLoadStarted = false
+
     private val _callLogsFlow = MutableStateFlow<List<CallLogEntry>>(emptyList())
     private val _isLoadingFlow = MutableStateFlow(true)
 
@@ -53,6 +55,9 @@ class AndroidCallLogRepository(
 
     init {
         registerObserverIfNeeded()
+        // Show the last resolved list instantly on cold start; the fresh
+        // query refreshes it silently right after.
+        scope.launch { loadCachedList() }
     }
 
     override fun reload() {
@@ -87,7 +92,7 @@ class AndroidCallLogRepository(
 
     override fun getCallLogsFlow(): Flow<List<CallLogEntry>> {
         registerObserverIfNeeded()
-        if (_callLogsFlow.value.isEmpty()) {
+        if (!freshLoadStarted) {
             loadCallLogs()
         }
         return _callLogsFlow
@@ -95,6 +100,7 @@ class AndroidCallLogRepository(
 
     @Synchronized
     private fun loadCallLogs() {
+        freshLoadStarted = true
         queryJob?.cancel()
         queryJob = scope.launch(Dispatchers.IO) {
             try {
@@ -114,6 +120,13 @@ class AndroidCallLogRepository(
     }
 
     private suspend fun executeStreamingQuery() = withContext(Dispatchers.IO) {
+        // Wait for the contact index so the first render already has names:
+        // never emit rows with raw numbers while the index is still loading.
+        // Falls through on failure/timeout (cached names only).
+        ContactNameIndex.ensureStarted(contentResolver)
+        ContactNameIndex.ensureBuilt()
+        ContactNameIndex.awaitReady()
+
         val projection = arrayOf(
             CallLog.Calls._ID,
             CallLog.Calls.NUMBER,
@@ -159,7 +172,6 @@ class AndroidCallLogRepository(
         }
 
         val entries = mutableListOf<CallLogEntry>()
-        val unlookupedNumbers = mutableSetOf<String>()
         var emittedFirst50 = false
 
         cursor.use { c ->
@@ -184,13 +196,9 @@ class AndroidCallLogRepository(
                 val callType = mapCallType(typeCode)
                 val simInfo = phoneAccountId?.let { "SIM ${it.take(2)}" }
 
-                // Check in-memory cache without blocking
-                val cachedContact = if (rawNumber.isNotBlank()) resolvedContactsCache[rawNumber] else null
-                if (cachedContact == null && rawNumber.isNotBlank()) {
-                    unlookupedNumbers.add(rawNumber)
-                }
-
-                val displayName = cachedContact?.displayName ?: cachedName
+                // Resolve from the in-memory index: one map lookup, no queries.
+                val indexed = if (rawNumber.isNotBlank()) ContactNameIndex.resolve(rawNumber) else null
+                val displayName = indexed?.displayName ?: cachedName
 
                 entries.add(
                     CallLogEntry(
@@ -199,9 +207,9 @@ class AndroidCallLogRepository(
                         formattedNumber = PhoneNumberFormatter.format(rawNumber),
                         cachedName = cachedName,
                         contactName = displayName,
-                        contactId = cachedContact?.contactId,
-                        contactLookupKey = cachedContact?.lookupKey,
-                        contactPhotoUri = cachedContact?.photoUri,
+                        contactId = indexed?.contactId,
+                        contactLookupKey = indexed?.lookupKey,
+                        contactPhotoUri = indexed?.photoUri,
                         type = callType,
                         date = date,
                         durationSeconds = duration,
@@ -215,6 +223,7 @@ class AndroidCallLogRepository(
                     emittedFirst50 = true
                     _callLogsFlow.value = entries.toList()
                     _isLoadingFlow.value = false
+                    logFirstEmit()
                 }
             }
         }
@@ -222,101 +231,81 @@ class AndroidCallLogRepository(
         // Full emit of all rows
         _callLogsFlow.value = entries.toList()
         _isLoadingFlow.value = false
+        logFirstEmit()
+        saveCachedList(entries)
+    }
 
-        // Background pass: resolve names in batch for un-looked-up numbers
-        if (unlookupedNumbers.isNotEmpty()) {
-            resolveContactsInBatch(unlookupedNumbers, entries)
+    private fun logFirstEmit() {
+        if (!firstEmitLogged) {
+            firstEmitLogged = true
+            Log.d(
+                "PhoneBoot",
+                "first call-log emit in ${SystemClock.uptimeMillis() - createdAt}ms"
+            )
         }
     }
 
-    private suspend fun resolveContactsInBatch(
-        numbers: Set<String>,
-        currentEntries: List<CallLogEntry>
-    ) = withContext(Dispatchers.IO) {
-        var didResolveAny = false
-        for (num in numbers) {
-            if (resolvedContactsCache.containsKey(num)) continue
-            val resolved = querySinglePhoneLookup(num)
-            resolvedContactsCache[num] = resolved
-            if (!resolved.displayName.isNullOrBlank()) {
-                didResolveAny = true
-            }
-        }
-
-        if (didResolveAny) {
-            val updated = currentEntries.map { entry ->
-                val cached = resolvedContactsCache[entry.number]
-                if (cached != null && (!cached.displayName.isNullOrBlank() || cached.photoUri != null)) {
-                    entry.copy(
-                        contactName = cached.displayName ?: entry.cachedName,
-                        contactId = cached.contactId ?: entry.contactId,
-                        contactLookupKey = cached.lookupKey ?: entry.contactLookupKey,
-                        contactPhotoUri = cached.photoUri ?: entry.contactPhotoUri
-                    )
-                } else {
-                    entry
-                }
-            }
-            _callLogsFlow.value = updated
-        }
-    }
-
-    private fun querySinglePhoneLookup(number: String): ResolvedContact {
-        if (number.isBlank()) return ResolvedContact(null, null, null, null)
-
-        // Try the number as-is, then the shared normalized form (device region +
-        // trunk prefix), then the normalized form with an explicit "+" prefix.
-        // PhoneLookup already normalizes, but the stored number may use a different
-        // format than the call log number, so the extra attempts close that gap.
-        val normalized = PhoneNumberMatcher.normalize(number)
-        val candidates = listOfNotNull(
-            number,
-            // takeIf: ifBlank/ifEmpty must return a non-null String, they cannot yield null.
-            normalized.takeIf { it.isNotBlank() },
-            "+$normalized".takeIf { normalized.isNotBlank() }
-        ).distinct()
-        for (candidate in candidates) {
-            val resolved = queryPhoneLookupRow(candidate)
-            if (resolved != null) return resolved
-        }
-        return ResolvedContact(null, null, null, null)
-    }
-
-    private fun queryPhoneLookupRow(number: String): ResolvedContact? {
-        val uri = Uri.withAppendedPath(
-            ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
-            Uri.encode(number)
-        )
-        val projection = arrayOf(
-            ContactsContract.PhoneLookup._ID,
-            ContactsContract.PhoneLookup.LOOKUP_KEY,
-            ContactsContract.PhoneLookup.DISPLAY_NAME,
-            ContactsContract.PhoneLookup.PHOTO_THUMBNAIL_URI
-        )
-
-        var cursor: Cursor? = null
+    private fun saveCachedList(entries: List<CallLogEntry>) {
         try {
-            cursor = contentResolver.query(uri, projection, null, null, null)
-            if (cursor != null && cursor.moveToFirst()) {
-                val idIdx = cursor.getColumnIndex(ContactsContract.PhoneLookup._ID)
-                val lookupKeyIdx = cursor.getColumnIndex(ContactsContract.PhoneLookup.LOOKUP_KEY)
-                val nameIdx = cursor.getColumnIndex(ContactsContract.PhoneLookup.DISPLAY_NAME)
-                val photoIdx = cursor.getColumnIndex(ContactsContract.PhoneLookup.PHOTO_THUMBNAIL_URI)
+            val array = JSONArray()
+            for (entry in entries) {
+                val obj = JSONObject()
+                obj.put("id", entry.id)
+                obj.put("number", entry.number)
+                obj.put("formattedNumber", entry.formattedNumber)
+                obj.put("cachedName", entry.cachedName)
+                obj.put("contactName", entry.contactName)
+                obj.put("contactId", entry.contactId)
+                obj.put("contactLookupKey", entry.contactLookupKey)
+                obj.put("contactPhotoUri", entry.contactPhotoUri)
+                obj.put("type", entry.type.name)
+                obj.put("date", entry.date)
+                obj.put("durationSeconds", entry.durationSeconds)
+                obj.put("simInfo", entry.simInfo)
+                array.put(obj)
+            }
+            cacheFile.writeText(array.toString())
+        } catch (e: Exception) {
+            Log.w(tag, "Failed to save cached call log", e)
+        }
+    }
 
-                return ResolvedContact(
-                    contactId = if (idIdx >= 0) cursor.getLong(idIdx) else null,
-                    lookupKey = if (lookupKeyIdx >= 0) cursor.getString(lookupKeyIdx) else null,
-                    displayName = if (nameIdx >= 0) cursor.getString(nameIdx) else null,
-                    photoUri = if (photoIdx >= 0) cursor.getString(photoIdx) else null
+    private fun loadCachedList() {
+        try {
+            if (!cacheFile.exists()) return
+            val text = cacheFile.readText()
+            if (text.isBlank()) return
+            val array = JSONArray(text)
+            val entries = mutableListOf<CallLogEntry>()
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                val type = runCatching { CallType.valueOf(obj.optString("type")) }.getOrNull()
+                    ?: CallType.Unknown
+                entries.add(
+                    CallLogEntry(
+                        id = obj.optLong("id"),
+                        number = obj.optString("number"),
+                        formattedNumber = obj.optString("formattedNumber"),
+                        cachedName = obj.optString("cachedName").takeIf { it.isNotEmpty() },
+                        contactName = obj.optString("contactName").takeIf { it.isNotEmpty() },
+                        contactId = obj.optLong("contactId").takeIf { it != 0L },
+                        contactLookupKey = obj.optString("contactLookupKey").takeIf { it.isNotEmpty() },
+                        contactPhotoUri = obj.optString("contactPhotoUri").takeIf { it.isNotEmpty() },
+                        type = type,
+                        date = obj.optLong("date"),
+                        durationSeconds = obj.optLong("durationSeconds"),
+                        simInfo = obj.optString("simInfo").takeIf { it.isNotEmpty() }
+                    )
                 )
             }
-        } catch (_: Exception) {
-            // Permission revoked or not granted
-        } finally {
-            cursor?.close()
+            // Only fill when nothing fresher arrived meanwhile.
+            if (_callLogsFlow.value.isEmpty() && entries.isNotEmpty()) {
+                _callLogsFlow.value = entries
+                _isLoadingFlow.value = false
+            }
+        } catch (e: Exception) {
+            Log.w(tag, "Failed to load cached call log", e)
         }
-
-        return null
     }
 
     private fun mapCallType(typeCode: Int): CallType {
@@ -337,7 +326,9 @@ class AndroidCallLogRepository(
             val deletedRows = contentResolver.delete(uri, null, null)
             if (deletedRows > 0) {
                 // Update in-memory state immediately
-                _callLogsFlow.value = _callLogsFlow.value.filter { it.id != id }
+                val updated = _callLogsFlow.value.filter { it.id != id }
+                _callLogsFlow.value = updated
+                saveCachedList(updated)
                 true
             } else false
         } catch (_: Exception) {
