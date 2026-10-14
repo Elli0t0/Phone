@@ -1,7 +1,7 @@
 package io.github.elli0t0.phone.feature.dialpad
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,7 +23,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -32,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 
 data class DialKey(
@@ -59,24 +59,21 @@ fun DialKeyView(
         else -> dialKey.digit.toString()
     }
 
+    // Shared press source: pressScale and combinedClickable observe the
+    // same press state, so the key scales to 0.92 while pressed and ripples.
+    val keySource = remember { MutableInteractionSource() }
     Box(
         modifier = modifier
             .size(PhoneDimens.keypadTouchSize)
-            .pointerInput(dialKey) {
-                detectTapGestures(
-                    onPress = {
-                        tryAwaitRelease()
-                    },
-                    onTap = { onClick() },
-                    onLongPress = {
-                        if (onLongClick != null) {
-                            onLongClick()
-                        } else {
-                            onClick()
-                        }
-                    }
-                )
-            }
+            .pressScale(keySource)
+            .combinedClickable(
+                interactionSource = keySource,
+                indication = ripple(),
+                onClick = onClick,
+                onLongClick = {
+                    if (onLongClick != null) onLongClick() else onClick()
+                }
+            )
             .testTag("dial_key_$keyTag"),
         contentAlignment = Alignment.Center
     ) {

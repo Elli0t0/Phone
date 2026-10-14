@@ -4,8 +4,6 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.provider.Settings
-import android.view.HapticFeedbackConstants
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -59,7 +57,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -75,6 +72,7 @@ import io.github.elli0t0.phone.core.design.KeypadCallButtonGreenLight
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.core.telecom.CallManager
 import io.github.elli0t0.phone.data.settings.model.ThemeMode
 import io.github.elli0t0.phone.feature.contacts.ui.ContactSearchBar
@@ -109,7 +107,6 @@ fun DialpadScreen(
     // Read here, not inside dialNumber: the handler is not a
     // @Composable context, so it cannot read a CompositionLocal.
     val defaultSim = LocalAppSettings.current.defaultSim
-    val view = LocalView.current
     val clipboardManager = LocalClipboardManager.current
     val coroutineScope = rememberCoroutineScope()
 
@@ -160,35 +157,9 @@ fun DialpadScreen(
         dialNumber(uiState.rawNumber)
     }
 
-    fun performHaptic() {
-        val hapticEnabled = try {
-            Settings.System.getInt(
-                context.contentResolver,
-                Settings.System.HAPTIC_FEEDBACK_ENABLED,
-                1
-            ) != 0
-        } catch (_: Exception) {
-            true
-        }
-        if (hapticEnabled) {
-            view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-        }
-    }
-
-    fun performTickHaptic() {
-        val hapticEnabled = try {
-            Settings.System.getInt(
-                context.contentResolver,
-                Settings.System.HAPTIC_FEEDBACK_ENABLED,
-                1
-            ) != 0
-        } catch (_: Exception) {
-            true
-        }
-        if (hapticEnabled) {
-            view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
-        }
-    }
+    // Shared light haptic for every keypad tap (follows the system
+    // haptics setting), replacing the two local View-based helpers.
+    val lightHaptic = rememberLightHaptic()
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -306,13 +277,13 @@ fun DialpadScreen(
                         DialpadSearchRow(
                             contact = contact,
                             onClick = {
-                                performHaptic()
+                                lightHaptic()
                                 viewModel.onContactSelected(contact)
                                 viewModel.onNameSearchQueryChanged("")
                                 searchVisible = false
                             },
                             onCallClick = {
-                                performHaptic()
+                                lightHaptic()
                                 val num = contact.primaryNumberPreview ?: ""
                                 if (num.isNotBlank()) {
                                     dialNumber(num, contact.lookupKey)
@@ -325,11 +296,11 @@ fun DialpadScreen(
                 // No matching contact: offer real actions for the number.
                 DialpadNoMatchActions(
                     onCreateContact = {
-                        performHaptic()
+                        lightHaptic()
                         onCreateContact(uiState.rawNumber)
                     },
                     onMessage = {
-                        performHaptic()
+                        lightHaptic()
                         context.startActivity(
                             Intent(
                                 Intent.ACTION_SENDTO,
@@ -360,7 +331,7 @@ fun DialpadScreen(
                             onLongPress = {
                                 val clipText = clipboardManager.getText()?.text
                                 if (!clipText.isNullOrBlank()) {
-                                    performHaptic()
+                                    lightHaptic()
                                     viewModel.onNumberPasted(clipText)
                                 }
                             }
@@ -409,9 +380,9 @@ fun DialpadScreen(
                                 .pointerInput(Unit) {
                                     awaitEachGesture {
                                         awaitFirstDown(requireUnconsumed = false)
-                                        performHaptic()
+                                        lightHaptic()
                                         viewModel.onBackspacePressed()
-                                        viewModel.startBackspaceRepeat(onTickHaptic = { performTickHaptic() })
+                                        viewModel.startBackspaceRepeat(onTickHaptic = { lightHaptic() })
                                         try {
                                             waitForUpOrCancellation()
                                         } finally {
@@ -452,12 +423,12 @@ fun DialpadScreen(
                         DialKeyView(
                             dialKey = dialKey,
                             onClick = {
-                                performHaptic()
+                                lightHaptic()
                                 viewModel.onKeyPressed(dialKey.digit)
                             },
                             onLongClick = if (dialKey.digit == '0') {
                                 {
-                                    performHaptic()
+                                    lightHaptic()
                                     viewModel.onLongPressZero()
                                 }
                             } else null
@@ -482,7 +453,7 @@ fun DialpadScreen(
             FloatingActionButton(
                 onClick = {
                     if (uiState.canCall) {
-                        performHaptic()
+                        lightHaptic()
                         callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
                     }
                 },
