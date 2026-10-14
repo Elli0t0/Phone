@@ -1,5 +1,6 @@
 package io.github.elli0t0.phone.feature.dialpad
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -46,6 +47,7 @@ val DIAL_KEYS_GRID = listOf(
     listOf(DialKey('*', ""), DialKey('0', "+"), DialKey('#', ""))
 )
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DialKeyView(
     dialKey: DialKey,
