@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.elli0t0.phone.data.settings.SettingsRepository
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AppSettings
+import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.CallDisplay
 import io.github.elli0t0.phone.data.settings.model.CardStyle
 import io.github.elli0t0.phone.data.settings.model.ContactNameFormat
@@ -119,6 +120,13 @@ class SettingsViewModel(
         }
     }
     fun setCallDisplay(display: CallDisplay) = onCallDisplayChanged(display)
+
+    fun onCallBackgroundChanged(background: CallBackground) {
+        viewModelScope.launch {
+            settingsRepository.setCallBackground(background)
+        }
+    }
+    fun setCallBackground(background: CallBackground) = onCallBackgroundChanged(background)
 
     fun onQuickDeclineMessagesChanged(messages: List<String>) {
         viewModelScope.launch {

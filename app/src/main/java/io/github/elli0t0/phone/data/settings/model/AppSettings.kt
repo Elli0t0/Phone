@@ -56,6 +56,12 @@ enum class CallDisplay(val label: String) {
     POPUP("Pop-up")
 }
 
+enum class CallBackground(val label: String) {
+    DEFAULT("Default"),
+    DARK("Dark"),
+    ACCENT("Accent")
+}
+
 data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val accentColor: Long = AccentPreset.ONE_UI_BLUE.colorValue,
@@ -71,6 +77,7 @@ data class AppSettings(
     val contactSortOrder: ContactSortOrder = ContactSortOrder.FIRST_NAME,
     val contactNameFormat: ContactNameFormat = ContactNameFormat.FIRST_NAME_FIRST,
     val callDisplay: CallDisplay = CallDisplay.FULL_SCREEN,
+    val callBackground: CallBackground = CallBackground.DEFAULT,
     // Quick-decline message overrides, one per reply chip. A blank entry
     // falls back to the built-in default message for that slot, so an
     // untouched setting keeps the localized defaults.

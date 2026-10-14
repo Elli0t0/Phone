@@ -12,6 +12,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AppSettings
+import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.CallDisplay
 import io.github.elli0t0.phone.data.settings.model.CardStyle
 import io.github.elli0t0.phone.data.settings.model.ContactNameFormat
@@ -39,6 +40,7 @@ interface SettingsRepository {
     suspend fun setContactSortOrder(order: ContactSortOrder)
     suspend fun setContactNameFormat(format: ContactNameFormat)
     suspend fun setCallDisplay(display: CallDisplay)
+    suspend fun setCallBackground(background: CallBackground)
     suspend fun setQuickDeclineMessages(messages: List<String>)
     suspend fun resetToDefaults()
 }
@@ -62,6 +64,7 @@ class DataStoreSettingsRepository(
         val CONTACT_SORT_ORDER = stringPreferencesKey("contact_sort_order")
         val CONTACT_NAME_FORMAT = stringPreferencesKey("contact_name_format")
         val CALL_DISPLAY = stringPreferencesKey("call_display")
+        val CALL_BACKGROUND = stringPreferencesKey("call_background")
         val QUICK_DECLINE_MESSAGES = stringPreferencesKey("quick_decline_messages")
     }
 
@@ -98,6 +101,9 @@ class DataStoreSettingsRepository(
         val callDisplayStr = prefs[Keys.CALL_DISPLAY]
         val callDisplay = callDisplayStr?.let { runCatching { CallDisplay.valueOf(it) }.getOrNull() } ?: CallDisplay.FULL_SCREEN
 
+        val callBackgroundStr = prefs[Keys.CALL_BACKGROUND]
+        val callBackground = callBackgroundStr?.let { runCatching { CallBackground.valueOf(it) }.getOrNull() } ?: CallBackground.DEFAULT
+
         val quickDeclineStored = prefs[Keys.QUICK_DECLINE_MESSAGES] ?: ""
         val quickDeclineOverrides = (quickDeclineStored.split("\n") + listOf("", "", ""))
             .take(3)
@@ -117,6 +123,7 @@ class DataStoreSettingsRepository(
             contactSortOrder = sortOrder,
             contactNameFormat = nameFormat,
             callDisplay = callDisplay,
+            callBackground = callBackground,
             quickDeclineOverrides = quickDeclineOverrides
         )
     }
@@ -198,6 +205,12 @@ class DataStoreSettingsRepository(
     override suspend fun setCallDisplay(display: CallDisplay) {
         dataStore.edit { prefs ->
             prefs[Keys.CALL_DISPLAY] = display.name
+        }
+    }
+
+    override suspend fun setCallBackground(background: CallBackground) {
+        dataStore.edit { prefs ->
+            prefs[Keys.CALL_BACKGROUND] = background.name
         }
     }
 
