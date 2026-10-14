@@ -120,6 +120,13 @@ class SettingsViewModel(
     }
     fun setCallDisplay(display: CallDisplay) = onCallDisplayChanged(display)
 
+    fun onQuickDeclineMessagesChanged(messages: List<String>) {
+        viewModelScope.launch {
+            settingsRepository.setQuickDeclineMessages(messages)
+        }
+    }
+    fun setQuickDeclineMessages(messages: List<String>) = onQuickDeclineMessagesChanged(messages)
+
     fun onResetToDefaults() {
         viewModelScope.launch {
             settingsRepository.resetToDefaults()

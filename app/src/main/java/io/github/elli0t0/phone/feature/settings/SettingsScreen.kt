@@ -139,6 +139,7 @@ fun SettingsScreen(
     var showSortDialog by remember { mutableStateOf(false) }
     var showFormatDialog by remember { mutableStateOf(false) }
     var showCallDisplayDialog by remember { mutableStateOf(false) }
+    var showQuickDeclineDialog by remember { mutableStateOf(false) }
     var showBlockedNumbers by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
     var showCallWaitingDialog by remember { mutableStateOf(false) }
@@ -436,6 +437,32 @@ fun SettingsScreen(
             selected = settings.callDisplay,
             onSelect = { viewModel.setCallDisplay(it); showCallDisplayDialog = false },
             onDismiss = { showCallDisplayDialog = false }
+        )
+    }
+
+    if (showQuickDeclineDialog) {
+        val defaultMessages = listOf(
+            stringResource(id = R.string.quick_reply_cant_talk),
+            stringResource(id = R.string.quick_reply_call_back),
+            stringResource(id = R.string.quick_reply_in_meeting)
+        )
+        val effectiveMessages = defaultMessages.mapIndexed { index, default ->
+            settings.quickDeclineOverrides.getOrNull(index)
+                ?.takeIf { it.isNotBlank() } ?: default
+        }
+        QuickDeclineMessagesDialog(
+            initialMessages = effectiveMessages,
+            onSave = { edited ->
+                // Unchanged-from-default entries store blank, so a later
+                // locale change still picks up the translated default.
+                val overrides = edited.mapIndexed { index, text ->
+                    val trimmed = text.trim()
+                    if (trimmed == defaultMessages.getOrNull(index)) "" else trimmed
+                }
+                viewModel.setQuickDeclineMessages(overrides)
+                showQuickDeclineDialog = false
+            },
+            onDismiss = { showQuickDeclineDialog = false }
         )
     }
 
@@ -937,6 +964,15 @@ fun SettingsScreen(
                             subtitle = settings.callDisplay.label,
                             onClick = { showCallDisplayDialog = true }
                         )
+
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        Spacer(modifier = Modifier.height(spacing.small))
+
+                        SettingsRow(
+                            title = stringResource(id = R.string.settings_quick_decline),
+                            onClick = { showQuickDeclineDialog = true }
+                        )
                     }
                 }
             }
@@ -1288,6 +1324,58 @@ private fun UssdSimPickerDialog(
             }
         },
         confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(id = R.string.action_cancel))
+            }
+        }
+    )
+}
+
+// Editor for the three quick-decline messages shown on the incoming call
+// screen. Blank entries fall back to the built-in defaults.
+@Composable
+private fun QuickDeclineMessagesDialog(
+    initialMessages: List<String>,
+    onSave: (List<String>) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var message1 by remember { mutableStateOf(initialMessages.getOrNull(0) ?: "") }
+    var message2 by remember { mutableStateOf(initialMessages.getOrNull(1) ?: "") }
+    var message3 by remember { mutableStateOf(initialMessages.getOrNull(2) ?: "") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = stringResource(id = R.string.settings_quick_decline)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = message1,
+                    onValueChange = { message1 = it },
+                    label = { Text(text = "1") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = message2,
+                    onValueChange = { message2 = it },
+                    label = { Text(text = "2") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = message3,
+                    onValueChange = { message3 = it },
+                    label = { Text(text = "3") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onSave(listOf(message1, message2, message3)) }) {
+                Text(text = stringResource(id = R.string.action_save))
+            }
+        },
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text(text = stringResource(id = R.string.action_cancel))
