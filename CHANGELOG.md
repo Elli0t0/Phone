@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-10-14
+
+### Fixed
+- One number formatter everywhere: region is the SIM/network country (fallback IR), never the device locale. Iran mobiles render 0912 358 8236, landlines 021 9120 0150 / 013 3322 3782, +98 forms as +98 912 358 8236 / +98 21 9120 0150. Other countries format with their own country, never US as default. Short codes and USSD are not grouped. Recents, details, history, call screens and notifications all use it.
+
 ## [0.5.15] - 2026-10-14
 
 ### Changed

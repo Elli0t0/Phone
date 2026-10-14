@@ -20,6 +20,7 @@ import androidx.core.content.ContextCompat
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.core.notifications.CallNotificationChannels
+import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.data.call.CallRepository
 import io.github.elli0t0.phone.data.contacts.ContactNameIndex
 import io.github.elli0t0.phone.data.settings.model.CallDisplay
@@ -480,10 +481,10 @@ class PhoneInCallService : InCallService() {
                 ?: call.details?.callerDisplayName?.takeIf { it.isNotBlank() }
 
             val title = currentDisplayName?.takeIf { it.isNotBlank() }
-                ?: rawNumber.takeIf { it.isNotBlank() }
+                ?: PhoneNumberFormatter.format(rawNumber).takeIf { it.isNotBlank() }
                 ?: "Incoming call"
             val contentText = if (currentDisplayName != null && rawNumber.isNotBlank() && currentDisplayName != rawNumber) {
-                rawNumber
+                PhoneNumberFormatter.format(rawNumber)
             } else {
                 "Incoming call"
             }
@@ -595,7 +596,7 @@ class PhoneInCallService : InCallService() {
                 ?: call.details?.callerDisplayName?.takeIf { it.isNotBlank() }
 
             val title = currentDisplayName?.takeIf { it.isNotBlank() }
-                ?: rawNumber.takeIf { it.isNotBlank() }
+                ?: PhoneNumberFormatter.format(rawNumber).takeIf { it.isNotBlank() }
                 ?: "Call"
 
             val statusText = when (call.state) {
@@ -608,7 +609,7 @@ class PhoneInCallService : InCallService() {
             }
 
             val contentText = if (currentDisplayName != null && rawNumber.isNotBlank() && currentDisplayName != rawNumber) {
-                "$rawNumber • $statusText"
+                "${PhoneNumberFormatter.format(rawNumber)} • $statusText"
             } else {
                 statusText
             }
@@ -704,7 +705,7 @@ class PhoneInCallService : InCallService() {
                 ?: call.details?.callerDisplayName?.takeIf { it.isNotBlank() }
 
             val title = currentDisplayName?.takeIf { it.isNotBlank() }
-                ?: rawNumber.takeIf { it.isNotBlank() }
+                ?: PhoneNumberFormatter.format(rawNumber).takeIf { it.isNotBlank() }
                 ?: "Call"
 
             val statusText = when (call.state) {
@@ -717,7 +718,7 @@ class PhoneInCallService : InCallService() {
             }
 
             val contentText = if (currentDisplayName != null && rawNumber.isNotBlank() && currentDisplayName != rawNumber) {
-                "$rawNumber • $statusText"
+                "${PhoneNumberFormatter.format(rawNumber)} • $statusText"
             } else {
                 statusText
             }

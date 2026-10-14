@@ -1,6 +1,9 @@
 package io.github.elli0t0.phone.core.common
 
+import android.content.Context
+import android.telephony.TelephonyManager
 import java.util.Locale
+import kotlin.jvm.Volatile
 
 /**
  * Shared phone number matching used consistently by keypad search, contacts search,
@@ -91,12 +94,53 @@ object PhoneNumberMatcher {
     )
 
     /**
-     * Device region (ISO country code), same convention as [PhoneNumberFormatter].
+     * Device region (ISO country code): SIM country, else network country,
+     * else "IR". Never the device locale. Cached once per process from
+     * [initRegion]; tests and processes without init fall back to "IR".
      */
-    fun deviceRegionIso(): String = Locale.getDefault().country.ifBlank { "US" }
+    @Volatile
+    private var regionOverride: String? = null
+
+    fun initRegion(context: Context) {
+        if (regionOverride != null) return
+        regionOverride = resolveRegionIso(context)
+    }
+
+    @Suppress("DEPRECATION")
+    fun resolveRegionIso(context: Context): String {
+        return try {
+            val tm = context.getSystemService(Context.TELEPHONY_SERVICE) as? TelephonyManager
+            val sim = tm?.simCountryIso?.takeIf { it.length == 2 }?.uppercase()
+            val network = tm?.networkCountryIso?.takeIf { it.length == 2 }?.uppercase()
+            sim ?: network ?: "IR"
+        } catch (_: Exception) {
+            "IR"
+        }
+    }
+
+    fun deviceRegionIso(): String = regionOverride ?: "IR"
 
     fun countryCallingCode(regionIso: String): String? =
         COUNTRY_CALLING_CODES[regionIso.uppercase(Locale.ROOT)]
+
+    private val CALLING_CODE_TO_ISO: Map<String, String> by lazy {
+        val map = linkedMapOf<String, String>()
+        for ((iso, code) in COUNTRY_CALLING_CODES) {
+            map.putIfAbsent(code, iso)
+        }
+        map
+    }
+
+    /** ISO country for an E.164 number, from its calling code. Null if unknown. */
+    fun countryIsoForE164(e164: String): String? {
+        val digits = e164.removePrefix("+").filter { it.isDigit() }
+        for (len in 3 downTo 1) {
+            if (digits.length >= len) {
+                CALLING_CODE_TO_ISO[digits.substring(0, len)]?.let { return it }
+            }
+        }
+        return null
+    }
 
     /**
      * Normalizes a phone number to digits with the country code applied when it

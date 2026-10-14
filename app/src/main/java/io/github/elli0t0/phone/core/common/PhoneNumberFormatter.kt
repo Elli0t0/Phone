@@ -1,83 +1,69 @@
 package io.github.elli0t0.phone.core.common
 
 import android.telephony.PhoneNumberUtils
-import java.util.Locale
 
 /**
- * Formats telephone numbers for display purposes without mutating raw input.
- * Uses Android platform's PhoneNumberUtils.
- *
- * For international numbers starting with '+' or country codes, or local numbers
- * like Iranian '0912...', it formats them into standard readable phone chunks.
- * USSD codes, special character sequences ('*#...'), and short service codes
- * are kept unformatted to avoid breaking dial string presentation.
+ * One display format for every number. Region = SIM/network country
+ * (fallback "IR"), never the device locale. The input's form decides the
+ * output form: "+..."/"00..." renders international, trunk-0/bare renders
+ * national. USSD codes and short codes are returned as typed.
  */
 object PhoneNumberFormatter {
 
-    /**
-     * One display format for every number: normalize to E.164 first, then
-     * format the device-country numbers in national form (trunk 0, except NANP
-     * which has no trunk) and all
-     * others in international form. The same number therefore renders
-     * identically no matter how it was stored ("0901 766 4791" and
-     * "+98 901 766 4791" both become "0901 766 4791" on a device set to IR).
-     * USSD codes, short codes, emergency numbers and partial input are
-     * returned as typed.
-     */
-    fun format(rawNumber: String, defaultCountryIso: String = Locale.getDefault().country.ifBlank { "US" }): String {
+    fun format(rawNumber: String, defaultCountryIso: String = PhoneNumberMatcher.deviceRegionIso()): String {
         if (rawNumber.isBlank()) return ""
-
-        // Preserve USSD codes, short codes, or strings starting with * or # without spacing/dashes
-        if (rawNumber.startsWith("*") || rawNumber.startsWith("#") || rawNumber.endsWith("#") || rawNumber.contains("*") || rawNumber.contains("#")) {
-            return rawNumber
+        if (rawNumber.contains('*') || rawNumber.contains('#')) return rawNumber
+        val trimmed = rawNumber.trim()
+        val digits = trimmed.filter { it.isDigit() }
+        if (digits.isEmpty()) return rawNumber
+        val region = defaultCountryIso.uppercase()
+        val international = trimmed.startsWith("+") || trimmed.startsWith("00")
+        val e164 = when {
+            trimmed.startsWith("+") -> "+$digits"
+            trimmed.startsWith("00") && digits.length > 2 -> "+" + digits.substring(2)
+            else -> PhoneNumberMatcher.toE164(trimmed, region)
         }
-
-        val e164 = PhoneNumberMatcher.toE164(rawNumber, defaultCountryIso)
         if (e164.isBlank()) return rawNumber
-
-        val code = PhoneNumberMatcher.countryCallingCode(defaultCountryIso)
-        val digits = e164.removePrefix("+")
-        val display = if (code != null && digits.startsWith(code)) {
-            // Device-country number: national form. Most regions use trunk 0;
-            // NANP (country code 1) has no trunk prefix.
+        val ownCountry = PhoneNumberMatcher.countryIsoForE164(e164) ?: region
+        if (ownCountry == "IR") {
+            return if (international) formatIranianInternational(e164) else formatIranianNational(e164)
+        }
+        val code = PhoneNumberMatcher.countryCallingCode(ownCountry)
+        val display = if (!international && ownCountry == region && code != null &&
+            e164.removePrefix("+").startsWith(code)
+        ) {
             val trunk = if (code == "1") "" else "0"
-            trunk + digits.removePrefix(code)
+            trunk + e164.removePrefix("+").removePrefix(code)
         } else {
-            // Foreign number: international form.
             e164
         }
-
-        try {
-            val formatted = PhoneNumberUtils.formatNumber(display, defaultCountryIso)
-            // formatNumber returns the input unchanged when it cannot parse
-            // it for the device region. In that case fall through to the
-            // chunking fallback so all rows format consistently.
-            if (!formatted.isNullOrBlank() && formatted != display) {
-                return formatted
-            }
+        return try {
+            PhoneNumberUtils.formatNumber(display, ownCountry)?.takeIf { it.isNotBlank() } ?: display
         } catch (_: Exception) {
-            // JVM unit test fallback when android.jar is mocked or returns default/null
+            display
         }
-
-        // Lightweight fallback formatting if PhoneNumberUtils returns null (e.g. unit tests or rapid typing)
-        return formatFallback(display)
     }
 
-    private fun formatFallback(number: String): String {
-        // National 11-digit numbers (mobiles and landlines): 4-3-4 chunking,
-        // e.g. 0912 345 6789, 0133 322 3782.
-        if (number.length == 11 && number.startsWith("0") && number.all { it.isDigit() }) {
-            return "${number.substring(0, 4)} ${number.substring(4, 7)} ${number.substring(7)}"
+    /** National IR form: mobile 0912 358 8236 (4-3-4), landline 021 9120 0150 (3-4-4). */
+    private fun formatIranianNational(e164: String): String {
+        val national = "0" + e164.removePrefix("+").removePrefix("98")
+        if (national.length != 11 || !national.all { it.isDigit() }) return national
+        return if (national.startsWith("09")) {
+            "${national.substring(0, 4)} ${national.substring(4, 7)} ${national.substring(7)}"
+        } else {
+            "${national.substring(0, 3)} ${national.substring(3, 7)} ${national.substring(7)}"
         }
-        // International formatting fallback: +98 912 345 6789
-        if (number.startsWith("+98") && number.length == 13 && number.drop(1).all { it.isDigit() }) {
-            return "${number.substring(0, 3)} ${number.substring(3, 6)} ${number.substring(6, 9)} ${number.substring(9)}"
+    }
+
+    /** International IR form: +98 912 358 8236 (mobile), +98 21 9120 0150 (landline, trunk dropped). */
+    private fun formatIranianInternational(e164: String): String {
+        val rest = e164.removePrefix("+").removePrefix("98")
+        if (rest.length != 10 || !rest.all { it.isDigit() }) return e164
+        return if (rest.startsWith("9")) {
+            "+98 ${rest.substring(0, 3)} ${rest.substring(3, 6)} ${rest.substring(6)}"
+        } else {
+            "+98 ${rest.substring(0, 2)} ${rest.substring(2, 6)} ${rest.substring(6)}"
         }
-        // US 10-digit: 212-555-1212
-        if (number.length == 10 && number.all { it.isDigit() }) {
-            return "${number.substring(0, 3)}-${number.substring(3, 6)}-${number.substring(6)}"
-        }
-        return number
     }
 
     /**
