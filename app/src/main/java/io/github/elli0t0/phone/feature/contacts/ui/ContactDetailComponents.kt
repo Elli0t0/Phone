@@ -286,6 +286,7 @@ fun SelectPhoneDialog(
     onSelectPhone: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val spacing = LocalSpacing.current
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(PhoneDimens.dialogCornerRadius),
