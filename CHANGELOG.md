@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.4] - 2026-10-15
+
+### Changed
+- Headers (Recents, Contacts): the large header is now a compact fixed 144dp with the title and subtitle start-aligned at the bottom, instead of a centered title in a 30%-of-screen hero area. The pinned bar title is start-aligned with end padding reserved for the action icons, so it can no longer run under them on narrow screens. The bar fade still completes over the header scroll distance.
+
 ## [0.7.3] - 2026-10-15
 
 ### Fixed

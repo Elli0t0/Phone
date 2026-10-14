@@ -23,10 +23,14 @@ object PhoneDimens {
     // Space kept clear above the bar: bar height (60dp) + gap (12dp)
     // + 16dp, plus the navigation-bar inset added at the call site.
     val bottomBarReservedHeight = 88.dp
-    // Collapsing page header (Recents, Contacts): tall expanded area
-    // that shrinks to a small top bar as the list scrolls.
-    val headerExpandedFraction = 0.3f
+    // Collapsing page header (Recents, Contacts): compact fixed-height
+    // expanded header that scrolls away, title start-aligned at the
+    // bottom; the pinned bar fades in over the same scroll distance.
+    val headerExpandedHeight = 144.dp
     val headerCollapsedHeight = 56.dp
+    // End padding reserved in the pinned bar so its start-aligned title
+    // never runs under the action icons (3 x 48dp buttons + margin).
+    val headerBarActionsReservedWidth = 152.dp
     val headerTitleExpandedSize = 34.sp
     val headerTitleCollapsedSize = 20.sp
     val headerActionsBottomPaddingExpanded = 12.dp
