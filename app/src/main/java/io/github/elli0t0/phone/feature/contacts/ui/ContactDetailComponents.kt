@@ -4,7 +4,6 @@ import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -43,56 +42,6 @@ import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.data.contacts.model.ContactPhone
-
-@Composable
-fun ContactActionRow(
-    onCallClick: () -> Unit,
-    onMessageClick: () -> Unit,
-    onFavoriteClick: () -> Unit,
-    onMoreClick: () -> Unit,
-    isFavorite: Boolean,
-    hasPhones: Boolean,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(
-                horizontal = PhoneDimens.detailActionRowHorizontalPadding,
-                vertical = PhoneDimens.detailActionRowVerticalPadding
-            ),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        ContactActionButton(
-            icon = R.drawable.ic_phone,
-            label = stringResource(id = R.string.action_call),
-            onClick = onCallClick,
-            enabled = hasPhones,
-            testTag = "btn_action_call"
-        )
-        ContactActionButton(
-            icon = R.drawable.ic_message,
-            label = stringResource(id = R.string.action_message),
-            onClick = onMessageClick,
-            enabled = hasPhones,
-            testTag = "btn_action_message"
-        )
-        ContactActionButton(
-            icon = if (isFavorite) R.drawable.ic_star else R.drawable.ic_star_outline,
-            label = stringResource(id = R.string.action_favorite),
-            tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-            onClick = onFavoriteClick,
-            testTag = "btn_action_favorite"
-        )
-        ContactActionButton(
-            icon = R.drawable.ic_more_vert,
-            label = stringResource(id = R.string.action_more),
-            onClick = onMoreClick,
-            testTag = "btn_action_more"
-        )
-    }
-}
 
 @Composable
 fun ContactActionButton(

@@ -14,7 +14,9 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -69,10 +71,13 @@ import io.github.elli0t0.phone.core.telecom.CallManager
 import io.github.elli0t0.phone.core.telecom.SimCallHelper
 import io.github.elli0t0.phone.core.telecom.SimCallResolution
 import io.github.elli0t0.phone.core.telecom.TelecomHelper
-import io.github.elli0t0.phone.data.contacts.model.ContactDetail
+import android.text.format.DateFormat
+import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import io.github.elli0t0.phone.data.favorites.ContactSimRepository
 import io.github.elli0t0.phone.feature.call.ui.DualSimPickerDialog
-import kotlinx.coroutines.launch
+import java.util.Date
+import androidx.compose.ui.graphics.Color
+import io.github.elli0t0.phone.data.contacts.model.ContactDetail
 import io.github.elli0t0.phone.data.contacts.model.ContactEmail
 import io.github.elli0t0.phone.data.contacts.model.ContactPhone
 import io.github.elli0t0.phone.data.contacts.util.ContactPhotoUtil
@@ -298,50 +303,39 @@ fun ContactDetailScreen(
     Scaffold(
         modifier = modifier.fillMaxSize().testTag("contact_detail_screen"),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        bottomBar = {
+            if (uiState.contact != null) {
+                ContactDetailBottomBar(
+                    isFavorite = uiState.isFavorite,
+                    onFavoriteClick = onFavoriteToggle,
+                    onEditClick = onEditClick,
+                    onShareClick = {
+                        uiState.contact?.let { shareContact(context, it) }
+                    },
+                    showMoreMenu = showMoreMenu,
+                    onMoreClick = { showMoreMenu = true },
+                    onDismissMoreMenu = { showMoreMenu = false },
+                    onChangePhoto = {
+                        showMoreMenu = false
+                        photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    },
+                    onRingtoneClick = {
+                        showMoreMenu = false
+                        launchRingtonePicker(uiState.contact?.customRingtone)
+                    },
+                    onDeleteClick = {
+                        showMoreMenu = false
+                        onDeleteRequest()
+                    }
+                )
+            }
+        },
         topBar = {
             TopAppBar(
                 title = { },
                 navigationIcon = {
                     IconButton(onClick = onBackClick, modifier = Modifier.testTag("btn_detail_back")) {
                         Icon(painter = painterResource(id = R.drawable.ic_arrow_back), contentDescription = stringResource(id = R.string.cd_back))
-                    }
-                },
-                actions = {
-                    if (uiState.contact != null) {
-                        IconButton(onClick = onEditClick, modifier = Modifier.testTag("btn_detail_edit")) {
-                            Icon(painter = painterResource(id = R.drawable.ic_edit), contentDescription = stringResource(id = R.string.contact_action_edit))
-                        }
-                        Box {
-                            IconButton(onClick = { showMoreMenu = true }, modifier = Modifier.testTag("btn_detail_overflow")) {
-                                Icon(painter = painterResource(id = R.drawable.ic_more_vert), contentDescription = stringResource(id = R.string.cd_more_options))
-                            }
-                            DropdownMenu(
-                                expanded = showMoreMenu,
-                                onDismissRequest = { showMoreMenu = false }
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(id = R.string.action_change_photo)) },
-                                    onClick = {
-                                        showMoreMenu = false
-                                        photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(id = R.string.contact_details_ringtone)) },
-                                    onClick = {
-                                        showMoreMenu = false
-                                        launchRingtonePicker(uiState.contact.customRingtone)
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(id = R.string.contact_action_delete), color = MaterialTheme.colorScheme.error) },
-                                    onClick = {
-                                        showMoreMenu = false
-                                        onDeleteRequest()
-                                    }
-                                )
-                            }
-                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
@@ -370,51 +364,95 @@ fun ContactDetailScreen(
                 ) {
                     Spacer(modifier = Modifier.height(spacing.medium))
 
-                    // Large Avatar with camera badge
-                    Box(
-                        modifier = Modifier
-                            .size(PhoneDimens.detailAvatarSize)
-                            .testTag("contact_detail_avatar"),
-                        contentAlignment = Alignment.Center
+                    // Top card: avatar, name, organization, primary number
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.large,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                     ) {
-                        ContactAvatar(
-                            photoUri = contact.photoUri,
-                            displayName = displayName,
-                            size = PhoneDimens.detailAvatarSize,
-                            textStyle = MaterialTheme.typography.displayMedium,
+                        Column(
                             modifier = Modifier
-                                .clickable {
-                                    if (!contact.photoUri.isNullOrBlank()) {
-                                        onPhotoOptionsRequest()
-                                    } else {
-                                        photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                .fillMaxWidth()
+                                .padding(spacing.medium),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            // Large Avatar with camera badge
+                            Box(
+                                modifier = Modifier
+                                    .size(PhoneDimens.detailAvatarSize)
+                                    .testTag("contact_detail_avatar"),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                ContactAvatar(
+                                    photoUri = contact.photoUri,
+                                    displayName = displayName,
+                                    size = PhoneDimens.detailAvatarSize,
+                                    textStyle = MaterialTheme.typography.displayMedium,
+                                    modifier = Modifier
+                                        .clickable {
+                                            if (!contact.photoUri.isNullOrBlank()) {
+                                                onPhotoOptionsRequest()
+                                            } else {
+                                                photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                            }
+                                        }
+                                )
+
+                                // Camera/Edit photo badge
+                                Surface(
+                                    modifier = Modifier
+                                        .size(PhoneDimens.detailPhotoBadgeSize)
+                                        .align(Alignment.BottomEnd)
+                                        .clip(CircleShape)
+                                        .clickable {
+                                            if (!contact.photoUri.isNullOrBlank()) {
+                                                onPhotoOptionsRequest()
+                                            } else {
+                                                photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                            }
+                                        },
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                    shadowElevation = 2.dp
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.ic_camera),
+                                            contentDescription = stringResource(id = R.string.cd_edit_photo),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(PhoneDimens.detailPhotoBadgeIconSize)
+                                        )
                                     }
                                 }
-                        )
+                            }
 
-                        // Camera/Edit photo badge
-                        Surface(
-                            modifier = Modifier
-                                .size(PhoneDimens.detailPhotoBadgeSize)
-                                .align(Alignment.BottomEnd)
-                                .clip(CircleShape)
-                                .clickable {
-                                    if (!contact.photoUri.isNullOrBlank()) {
-                                        onPhotoOptionsRequest()
-                                    } else {
-                                        photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                                    }
-                                },
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            shadowElevation = 2.dp
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_camera),
-                                    contentDescription = stringResource(id = R.string.cd_edit_photo),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(PhoneDimens.detailPhotoBadgeIconSize)
+                            Spacer(modifier = Modifier.height(spacing.medium))
+
+                            // Large Contact Display Name
+                            Text(
+                                text = displayName,
+                                style = MaterialTheme.typography.headlineLarge,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+
+                            // Organization
+                            if (!contact.organization.isNullOrBlank()) {
+                                Spacer(modifier = Modifier.height(spacing.extraSmall))
+                                Text(
+                                    text = contact.organization,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            // Primary number
+                            val primaryNumber = contact.phones.firstOrNull()?.number
+                            if (!primaryNumber.isNullOrBlank()) {
+                                Spacer(modifier = Modifier.height(spacing.extraSmall))
+                                Text(
+                                    text = primaryNumber,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -422,49 +460,42 @@ fun ContactDetailScreen(
 
                     Spacer(modifier = Modifier.height(spacing.medium))
 
-                    // Large Contact Display Name
-                    Text(
-                        text = displayName,
-                        style = MaterialTheme.typography.headlineLarge,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-
-                    // Organization
-                    if (!contact.organization.isNullOrBlank()) {
-                        Spacer(modifier = Modifier.height(spacing.extraSmall))
-                        Text(
-                            text = contact.organization,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    // Call / Message row; the other actions are in the bottom bar.
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        ContactActionButton(
+                            icon = R.drawable.ic_phone,
+                            label = stringResource(id = R.string.action_call),
+                            onClick = {
+                                if (phones.size == 1) {
+                                    placeCallWithSim(phones.first().number)
+                                } else if (phones.size > 1) {
+                                    phonePickerAction = "call"
+                                }
+                            },
+                            enabled = phones.isNotEmpty(),
+                            testTag = "btn_action_call"
+                        )
+                        ContactActionButton(
+                            icon = R.drawable.ic_message,
+                            label = stringResource(id = R.string.action_message),
+                            onClick = {
+                                if (phones.size == 1) {
+                                    val smsIntent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:${Uri.encode(phones.first().number)}")).apply {
+                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    }
+                                    context.startActivity(smsIntent)
+                                } else if (phones.size > 1) {
+                                    phonePickerAction = "message"
+                                }
+                            },
+                            enabled = phones.isNotEmpty(),
+                            testTag = "btn_action_message"
                         )
                     }
-
-                    Spacer(modifier = Modifier.height(spacing.medium))
-
-                    // Action Row (Call, Message, Favorite, More)
-                    ContactActionRow(
-                        onCallClick = {
-                            if (phones.size == 1) {
-                                placeCallWithSim(phones.first().number)
-                            } else if (phones.size > 1) {
-                                phonePickerAction = "call"
-                            }
-                        },
-                        onMessageClick = {
-                            if (phones.size == 1) {
-                                val smsIntent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:${Uri.encode(phones.first().number)}")).apply {
-                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                }
-                                context.startActivity(smsIntent)
-                            } else if (phones.size > 1) {
-                                phonePickerAction = "message"
-                            }
-                        },
-                        onFavoriteClick = onFavoriteToggle,
-                        onMoreClick = { showMoreMenu = true },
-                        isFavorite = uiState.isFavorite,
-                        hasPhones = phones.isNotEmpty()
-                    )
 
                     Spacer(modifier = Modifier.height(spacing.large))
 
@@ -567,6 +598,34 @@ fun ContactDetailScreen(
                                         text = stringResource(id = R.string.contact_calling_sim_desc),
                                         style = MaterialTheme.typography.labelMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // History: this contact's calls.
+                    Spacer(modifier = Modifier.height(spacing.medium))
+                    DetailSectionCard(title = stringResource(id = R.string.contact_details_history)) {
+                        if (uiState.callHistory.isEmpty()) {
+                            Text(
+                                text = stringResource(id = R.string.contact_details_history_empty),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(vertical = spacing.small)
+                            )
+                        } else {
+                            uiState.callHistory.forEachIndexed { index, entry ->
+                                CallHistoryRowItem(entry = entry)
+                                if (index < uiState.callHistory.lastIndex) {
+                                    HorizontalDivider(
+                                        color = MaterialTheme.colorScheme.outlineVariant,
+                                        thickness = 1.dp,
+                                        // Divider starts at the text: card padding + icon + spacer.
+                                        modifier = Modifier.padding(
+                                            start = spacing.medium +
+                                                PhoneDimens.detailRowIconSize + spacing.medium
+                                        )
                                     )
                                 }
                             }
@@ -758,4 +817,224 @@ private fun RingtoneRowItem(
             )
         }
     }
+}
+
+@Composable
+private fun ContactDetailBottomBar(
+    isFavorite: Boolean,
+    onFavoriteClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onShareClick: () -> Unit,
+    showMoreMenu: Boolean,
+    onMoreClick: () -> Unit,
+    onDismissMoreMenu: () -> Unit,
+    onChangePhoto: () -> Unit,
+    onRingtoneClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val spacing = LocalSpacing.current
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(
+                horizontal = spacing.screenHorizontalPadding,
+                vertical = PhoneDimens.bottomBarBottomMargin
+            )
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(PhoneDimens.bottomBarHeight),
+            shape = RoundedCornerShape(PhoneDimens.bottomBarCornerPercent),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            shadowElevation = PhoneDimens.bottomBarElevation
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                DetailBottomBarAction(
+                    icon = if (isFavorite) R.drawable.ic_star else R.drawable.ic_star_outline,
+                    label = stringResource(id = R.string.action_favorite),
+                    tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    onClick = onFavoriteClick,
+                    testTag = "btn_detail_favorite",
+                    modifier = Modifier.weight(1f)
+                )
+                DetailBottomBarAction(
+                    icon = R.drawable.ic_edit,
+                    label = stringResource(id = R.string.contact_action_edit),
+                    onClick = onEditClick,
+                    testTag = "btn_detail_edit",
+                    modifier = Modifier.weight(1f)
+                )
+                DetailBottomBarAction(
+                    icon = R.drawable.ic_share,
+                    label = stringResource(id = R.string.action_share),
+                    onClick = onShareClick,
+                    testTag = "btn_detail_share",
+                    modifier = Modifier.weight(1f)
+                )
+                Box(modifier = Modifier.weight(1f)) {
+                    DetailBottomBarAction(
+                        icon = R.drawable.ic_more_vert,
+                        label = stringResource(id = R.string.action_more),
+                        onClick = onMoreClick,
+                        testTag = "btn_detail_overflow",
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    DropdownMenu(
+                        expanded = showMoreMenu,
+                        onDismissRequest = onDismissMoreMenu
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(id = R.string.action_change_photo)) },
+                            onClick = onChangePhoto
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(id = R.string.contact_details_ringtone)) },
+                            onClick = onRingtoneClick
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(id = R.string.contact_action_delete), color = MaterialTheme.colorScheme.error) },
+                            onClick = onDeleteClick
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DetailBottomBarAction(
+    icon: Int,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    tint: Color = MaterialTheme.colorScheme.onSurface,
+    testTag: String = ""
+) {
+    Column(
+        modifier = modifier
+            .clip(MaterialTheme.shapes.medium)
+            .clickable(onClick = onClick)
+            .padding(vertical = PhoneDimens.detailActionRowVerticalPadding)
+            .testTag(testTag),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            painter = painterResource(id = icon),
+            contentDescription = label,
+            tint = tint,
+            modifier = Modifier.size(PhoneDimens.bottomBarIconSize)
+        )
+        Spacer(modifier = Modifier.height(PhoneDimens.bottomBarLabelIconGap))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+@Composable
+private fun CallHistoryRowItem(
+    entry: CallLogEntry,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val spacing = LocalSpacing.current
+    val dateText = remember(entry.date) {
+        val date = Date(entry.date)
+        DateFormat.getMediumDateFormat(context).format(date) +
+            " · " + DateFormat.getTimeFormat(context).format(date)
+    }
+    val subtitleParts = buildList {
+        add(context.getString(entry.type.titleRes))
+        if (!entry.isMissedOrRejected) {
+            add(formatCallDuration(entry.durationSeconds))
+        }
+        entry.simInfo?.let { add(it) }
+    }
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = spacing.small),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(id = entry.type.iconRes),
+            contentDescription = stringResource(id = entry.type.titleRes),
+            tint = if (entry.isMissedOrRejected) {
+                MaterialTheme.colorScheme.error
+            } else {
+                MaterialTheme.colorScheme.primary
+            },
+            modifier = Modifier.size(PhoneDimens.detailRowIconSize)
+        )
+        Spacer(modifier = Modifier.width(spacing.medium))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = dateText,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = subtitleParts.joinToString(" - "),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun formatCallDuration(durationSeconds: Long): String {
+    if (durationSeconds <= 0L) {
+        return stringResource(id = R.string.call_duration_seconds, 0)
+    }
+    val hours = (durationSeconds / 3600).toInt()
+    val mins = ((durationSeconds % 3600) / 60).toInt()
+    val secs = (durationSeconds % 60).toInt()
+    return when {
+        hours > 0 -> stringResource(id = R.string.call_duration_hours, hours, mins)
+        mins > 0 -> stringResource(id = R.string.call_duration_minutes, mins, secs)
+        else -> stringResource(id = R.string.call_duration_seconds, secs)
+    }
+}
+
+// Share the contact as a vCard.
+private fun shareContact(context: Context, contact: ContactDetail) {
+    val vCard = buildString {
+        appendLine("BEGIN:VCARD")
+        appendLine("VERSION:3.0")
+        appendLine("FN:${contact.displayName}")
+        if (!contact.organization.isNullOrBlank()) {
+            appendLine("ORG:${contact.organization}")
+        }
+        contact.phones.forEach { phone ->
+            val type = when (phone.type) {
+                ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE -> "CELL"
+                ContactsContract.CommonDataKinds.Phone.TYPE_HOME -> "HOME"
+                ContactsContract.CommonDataKinds.Phone.TYPE_WORK -> "WORK"
+                else -> "VOICE"
+            }
+            appendLine("TEL;TYPE=$type:${phone.number}")
+        }
+        contact.emails.forEach { email ->
+            appendLine("EMAIL:${email.address}")
+        }
+        appendLine("END:VCARD")
+    }
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/x-vcard"
+        putExtra(Intent.EXTRA_TEXT, vCard)
+        putExtra(Intent.EXTRA_SUBJECT, contact.displayName)
+    }
+    context.startActivity(
+        Intent.createChooser(intent, context.getString(R.string.action_share))
+    )
 }

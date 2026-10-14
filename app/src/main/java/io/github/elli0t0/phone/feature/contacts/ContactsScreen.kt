@@ -136,7 +136,8 @@ fun ContactsScreen(
                             app.container.favoritesRepository,
                             dest.contactId,
                             dest.lookupKey,
-                            app.container.contactSimRepository
+                            app.container.contactSimRepository,
+                            app.container.callLogRepository
                         )
                     )
                     val detailUiState by detailViewModel.uiState.collectAsStateWithLifecycle()

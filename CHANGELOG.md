@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-10-14
+
+### Changed
+- Contact details redesigned: the avatar, name, organization, and primary number now sit in one top card, with a Call / Message row below it.
+- Contact details now show a History section with that contact's calls (type, date and time, duration, SIM), or a short empty message when there are none.
+- Contact details now have a floating pill bottom bar: Favorites (star toggle), Edit, Share (as a vCard), More (photo, ringtone, delete). The top-bar edit/overflow buttons moved into the bar.
+
 ## [0.5.0] - 2026-10-14
 
 ### Changed

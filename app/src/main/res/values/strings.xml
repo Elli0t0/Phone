@@ -202,6 +202,7 @@
     <!-- Contact Photos, Ringtones, and Redesign Actions -->
     <string name="action_favorite">Favorite</string>
     <string name="action_more">More</string>
+    <string name="action_share">Share</string>
     <string name="action_change_photo">Change photo</string>
     <string name="action_remove_photo">Remove photo</string>
     <string name="action_preview_photo">View photo</string>
@@ -210,6 +211,8 @@
     <string name="photo_preview_title">Contact photo</string>
     <string name="photo_crop_preview_title">Set contact photo</string>
     <string name="contact_details_ringtone">Ringtone</string>
+    <string name="contact_details_history">History</string>
+    <string name="contact_details_history_empty">No calls with this contact yet</string>
     <string name="ringtone_default">Default ringtone</string>
     <string name="ringtone_silent">Silent</string>
     <string name="ringtone_custom">Custom ringtone</string>

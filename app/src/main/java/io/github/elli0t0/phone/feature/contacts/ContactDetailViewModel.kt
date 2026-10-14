@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
+import io.github.elli0t0.phone.data.calllog.CallLogRepository
+import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import io.github.elli0t0.phone.data.contacts.ContactsRepository
 import io.github.elli0t0.phone.data.favorites.ContactSimRepository
 import io.github.elli0t0.phone.data.favorites.FavoritesRepository
@@ -18,18 +21,21 @@ class ContactDetailViewModel(
     private val favoritesRepository: FavoritesRepository,
     private val contactId: Long,
     private val lookupKey: String,
-    private val contactSimRepository: ContactSimRepository? = null
+    private val contactSimRepository: ContactSimRepository? = null,
+    private val callLogRepository: CallLogRepository? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ContactDetailUiState(isLoading = true))
     val uiState: StateFlow<ContactDetailUiState> = _uiState.asStateFlow()
     private var effectiveLookupKey: String = lookupKey
     private var callingSimJob: kotlinx.coroutines.Job? = null
+    private var latestCallLogs: List<CallLogEntry> = emptyList()
 
     init {
         loadContact()
         observeFavorite()
         observeCallingSim()
+        observeCallHistory()
     }
 
     private fun observeCallingSim() {
@@ -53,6 +59,31 @@ class ContactDetailViewModel(
         }
     }
 
+    private fun observeCallHistory() {
+        val repo = callLogRepository ?: return
+        viewModelScope.launch {
+            repo.getCallLogsFlow().collect { logs ->
+                latestCallLogs = logs
+                refreshCallHistory()
+            }
+        }
+    }
+
+    // This contact's calls from the shared call-log flow: match by lookup
+    // key / contact id, falling back to a normalized-number match.
+    private fun refreshCallHistory() {
+        val contact = _uiState.value.contact
+        val numbers = contact?.phones?.map { it.number } ?: emptyList()
+        val key = contact?.lookupKey?.takeIf { it.isNotBlank() } ?: effectiveLookupKey
+        val id = contact?.id ?: contactId
+        val history = latestCallLogs.filter { entry ->
+            (key.isNotBlank() && entry.contactLookupKey == key) ||
+                (id > 0 && entry.contactId == id) ||
+                numbers.any { PhoneNumberMatcher.matches(it, entry.number) }
+        }.sortedByDescending { it.date }
+        _uiState.update { it.copy(callHistory = history) }
+    }
+
     private fun loadContact() {
         viewModelScope.launch {
             contactsRepository.getContactDetail(lookupKey, contactId).collect { detail ->
@@ -67,6 +98,7 @@ class ContactDetailViewModel(
                         contact = detail
                     )
                 }
+                refreshCallHistory()
             }
         }
     }
@@ -183,7 +215,8 @@ class ContactDetailViewModel(
             favoritesRepository: FavoritesRepository,
             contactId: Long,
             lookupKey: String,
-            contactSimRepository: ContactSimRepository? = null
+            contactSimRepository: ContactSimRepository? = null,
+            callLogRepository: CallLogRepository? = null
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -192,7 +225,8 @@ class ContactDetailViewModel(
                     favoritesRepository,
                     contactId,
                     lookupKey,
-                    contactSimRepository
+                    contactSimRepository,
+                    callLogRepository
                 ) as T
             }
         }
