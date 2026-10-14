@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2] - 2026-10-15
+
+### Added
+- Theme-aware glass: GlassSurface now defaults to the current theme (white tints on dark, dark tints on light) instead of always using the dark set, with explicit colors still available for surfaces over a non-theme background such as the call background. New light-theme glass tokens, a GlassColors set with a `glassColors(dark)` resolver, and `isDarkGlassTheme()` (judged by theme background luminance, so it follows the ThemeMode setting, pure black mode, and dynamic color). Later sections adopt the glass surface.
+
 ## [0.7.1] - 2026-10-15
 
 ### Added

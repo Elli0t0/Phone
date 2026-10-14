@@ -6,11 +6,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
 import kotlin.math.PI
 import kotlin.math.abs
@@ -34,8 +36,66 @@ val LiquidGlassOnSurfaceMuted = Color.White.copy(alpha = 0.75f)
 val LiquidGlassOnSurfaceFaint = Color.White.copy(alpha = 0.55f)
 val LiquidGlassActive = Color.White
 val LiquidGlassActiveContent = Color(0xFF1C1B1F)
+// Light-theme glass: dark tints over a light background.
+val LiquidGlassSurfaceLight = Color.Black.copy(alpha = 0.06f)
+val LiquidGlassSurfaceStrongLight = Color.Black.copy(alpha = 0.10f)
+val LiquidGlassBorderLight = Color.Black.copy(alpha = 0.12f)
+val LiquidGlassOnSurfaceLight = Color(0xFF1C1C1E)
+val LiquidGlassOnSurfaceMutedLight = Color(0xFF1C1C1E).copy(alpha = 0.75f)
+val LiquidGlassOnSurfaceFaintLight = Color(0xFF1C1C1E).copy(alpha = 0.55f)
+val LiquidGlassActiveLight = Color(0xFF1C1C1E)
+val LiquidGlassActiveContentLight = Color.White
 val LiquidGlassEndCall = Color(0xFFE53935)
 val LiquidGlassHold = Color(0xFFFFB74D)
+
+/**
+ * Full glass color set for one theme. Screens that draw text or icons
+ * on a [GlassSurface] resolve this instead of hardcoding the dark set.
+ */
+data class GlassColors(
+    val container: Color,
+    val containerStrong: Color,
+    val border: Color,
+    val onSurface: Color,
+    val onSurfaceMuted: Color,
+    val onSurfaceFaint: Color,
+    val active: Color,
+    val activeContent: Color
+)
+
+/** Glass colors for the dark (white tints) or light (dark tints) theme. */
+fun glassColors(dark: Boolean): GlassColors = if (dark) {
+    GlassColors(
+        container = LiquidGlassSurface,
+        containerStrong = LiquidGlassSurfaceStrong,
+        border = LiquidGlassBorder,
+        onSurface = LiquidGlassOnSurface,
+        onSurfaceMuted = LiquidGlassOnSurfaceMuted,
+        onSurfaceFaint = LiquidGlassOnSurfaceFaint,
+        active = LiquidGlassActive,
+        activeContent = LiquidGlassActiveContent
+    )
+} else {
+    GlassColors(
+        container = LiquidGlassSurfaceLight,
+        containerStrong = LiquidGlassSurfaceStrongLight,
+        border = LiquidGlassBorderLight,
+        onSurface = LiquidGlassOnSurfaceLight,
+        onSurfaceMuted = LiquidGlassOnSurfaceMutedLight,
+        onSurfaceFaint = LiquidGlassOnSurfaceFaintLight,
+        active = LiquidGlassActiveLight,
+        activeContent = LiquidGlassActiveContentLight
+    )
+}
+
+/**
+ * Whether the currently applied theme is dark, judged by the theme
+ * background luminance. This follows the app ThemeMode setting, pure
+ * black dark mode, and dynamic color, unlike isSystemInDarkTheme().
+ */
+@Composable
+fun isDarkGlassTheme(): Boolean =
+    MaterialTheme.colorScheme.background.luminance() < 0.5f
 
 /** Fully rounded pill shape for the dock and the end-call button. */
 val LiquidGlassPillShape = RoundedCornerShape(32.dp)
@@ -74,6 +134,10 @@ val SquircleShape: Shape = GenericShape { size, _ ->
  * Reusable glass surface: a translucent fill with a thin translucent border.
  * Placed over a gradient or image background it reads as frosted glass.
  *
+ * Colors default to the current theme (white tints on dark, dark tints
+ * on light). Pass explicit colors when the surface sits over a background
+ * that does not follow the theme, e.g. the always-dark call background.
+ *
  * Real blur (Haze) was checked first: Haze 2.0.1 is the latest stable release,
  * but its new modular 2.x API is unverified against this project's Compose
  * version and cannot be compile-checked locally, so this version ships the
@@ -83,8 +147,9 @@ val SquircleShape: Shape = GenericShape { size, _ ->
 fun GlassSurface(
     modifier: Modifier = Modifier,
     shape: Shape = LiquidGlassDockShape,
-    containerColor: Color = LiquidGlassSurface,
-    borderColor: Color = LiquidGlassBorder,
+    dark: Boolean = isDarkGlassTheme(),
+    containerColor: Color = glassColors(dark).container,
+    borderColor: Color = glassColors(dark).border,
     content: @Composable BoxScope.() -> Unit
 ) {
     Box(
