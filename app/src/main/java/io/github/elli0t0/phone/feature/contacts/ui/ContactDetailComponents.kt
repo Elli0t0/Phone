@@ -1,6 +1,9 @@
 package io.github.elli0t0.phone.feature.contacts.ui
 
 import android.graphics.BitmapFactory
+import android.text.format.DateFormat
+import java.util.Date
+import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -273,4 +276,72 @@ fun SelectPhoneDialog(
             }
         }
     )
+}
+
+// One call-history row, shared by the detail screen (first 5) and the
+// full paged history screen.
+@Composable
+fun CallHistoryRowItem(
+    entry: CallLogEntry,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val spacing = LocalSpacing.current
+    val dateText = remember(entry.date) {
+        val date = Date(entry.date)
+        DateFormat.getMediumDateFormat(context).format(date) +
+            " · " + DateFormat.getTimeFormat(context).format(date)
+    }
+    val subtitleParts = buildList {
+        add(context.getString(entry.type.titleRes))
+        if (!entry.isMissedOrRejected) {
+            add(formatCallDuration(entry.durationSeconds))
+        }
+        entry.simInfo?.let { add(it) }
+    }
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = spacing.small),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(id = entry.type.iconRes),
+            contentDescription = stringResource(id = entry.type.titleRes),
+            tint = if (entry.isMissedOrRejected) {
+                MaterialTheme.colorScheme.error
+            } else {
+                MaterialTheme.colorScheme.primary
+            },
+            modifier = Modifier.size(PhoneDimens.detailRowIconSize)
+        )
+        Spacer(modifier = Modifier.width(spacing.medium))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = dateText,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = subtitleParts.joinToString(" - "),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+fun formatCallDuration(durationSeconds: Long): String {
+    if (durationSeconds <= 0L) {
+        return stringResource(id = R.string.call_duration_seconds, 0)
+    }
+    val hours = (durationSeconds / 3600).toInt()
+    val mins = ((durationSeconds % 3600) / 60).toInt()
+    val secs = (durationSeconds % 60).toInt()
+    return when {
+        hours > 0 -> stringResource(id = R.string.call_duration_hours, hours, mins)
+        mins > 0 -> stringResource(id = R.string.call_duration_minutes, mins, secs)
+        else -> stringResource(id = R.string.call_duration_seconds, secs)
+    }
 }

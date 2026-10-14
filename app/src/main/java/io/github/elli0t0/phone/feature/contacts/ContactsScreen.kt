@@ -25,6 +25,7 @@ import io.github.elli0t0.phone.core.permissions.rememberContactsPermissionState
 import io.github.elli0t0.phone.data.contacts.model.ContactDetail
 import io.github.elli0t0.phone.feature.contacts.ui.ContactDetailScreen
 import io.github.elli0t0.phone.feature.contacts.ui.ContactEditScreen
+import io.github.elli0t0.phone.feature.contacts.ui.ContactHistoryScreen
 import io.github.elli0t0.phone.feature.contacts.ui.ContactListScreen
 import io.github.elli0t0.phone.feature.contacts.ui.GroupsScreen
 import kotlinx.coroutines.launch
@@ -32,6 +33,7 @@ import kotlinx.coroutines.launch
 private sealed interface ContactsNavDestination {
     data object List : ContactsNavDestination
     data class Detail(val contactId: Long, val lookupKey: String) : ContactsNavDestination
+    data class History(val contactId: Long, val lookupKey: String) : ContactsNavDestination
     data object Create : ContactsNavDestination
     data class Edit(val contact: ContactDetail) : ContactsNavDestination
     data object Groups : ContactsNavDestination
@@ -171,7 +173,28 @@ fun ContactsScreen(
                         onDismissPhotoOptions = { detailViewModel.setPhotoOptionsDialogVisible(false) },
                         onRingtoneSelected = detailViewModel::onRingtoneSelected,
                         contactSimRepository = app.container.contactSimRepository,
-                        onCallingSimSelected = detailViewModel::setCallingSim
+                        onCallingSimSelected = detailViewModel::setCallingSim,
+                        onShowAllHistoryClick = {
+                            currentDestination = ContactsNavDestination.History(dest.contactId, dest.lookupKey)
+                        }
+                    )
+                }
+
+                is ContactsNavDestination.History -> {
+                    val historyViewModel: ContactHistoryViewModel = viewModel(
+                        key = "history_${dest.contactId}",
+                        factory = ContactHistoryViewModel.provideFactory(
+                            repository,
+                            app.container.callLogRepository,
+                            dest.contactId,
+                            dest.lookupKey
+                        )
+                    )
+                    ContactHistoryScreen(
+                        viewModel = historyViewModel,
+                        onBack = {
+                            currentDestination = ContactsNavDestination.Detail(dest.contactId, dest.lookupKey)
+                        }
                     )
                 }
 

@@ -111,6 +111,7 @@ fun ContactDetailScreen(
     onRingtoneSelected: (Uri?) -> Unit = {},
     contactSimRepository: ContactSimRepository? = null,
     onCallingSimSelected: (String?) -> Unit = {},
+    onShowAllHistoryClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     BackHandler(onBack = onBackClick)
@@ -623,9 +624,12 @@ fun ContactDetailScreen(
                                 modifier = Modifier.padding(vertical = spacing.small)
                             )
                         } else {
-                            uiState.callHistory.forEachIndexed { index, entry ->
+                            // Only the last 5 calls here; the rest live on the
+                            // separate paged history screen.
+                            val visibleHistory = uiState.callHistory.take(5)
+                            visibleHistory.forEachIndexed { index, entry ->
                                 CallHistoryRowItem(entry = entry)
-                                if (index < uiState.callHistory.lastIndex) {
+                                if (index < visibleHistory.lastIndex) {
                                     HorizontalDivider(
                                         color = MaterialTheme.colorScheme.outlineVariant,
                                         thickness = 1.dp,
@@ -635,6 +639,14 @@ fun ContactDetailScreen(
                                                 PhoneDimens.detailRowIconSize + spacing.medium
                                         )
                                     )
+                                }
+                            }
+                            if (uiState.callHistory.size > 5) {
+                                TextButton(
+                                    onClick = onShowAllHistoryClick,
+                                    modifier = Modifier.testTag("btn_show_all_history")
+                                ) {
+                                    Text(text = stringResource(id = R.string.contact_details_history))
                                 }
                             }
                         }
@@ -977,72 +989,6 @@ private fun DetailBottomBarAction(
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurface
         )
-    }
-}
-
-@Composable
-private fun CallHistoryRowItem(
-    entry: CallLogEntry,
-    modifier: Modifier = Modifier
-) {
-    val context = LocalContext.current
-    val spacing = LocalSpacing.current
-    val dateText = remember(entry.date) {
-        val date = Date(entry.date)
-        DateFormat.getMediumDateFormat(context).format(date) +
-            " · " + DateFormat.getTimeFormat(context).format(date)
-    }
-    val subtitleParts = buildList {
-        add(context.getString(entry.type.titleRes))
-        if (!entry.isMissedOrRejected) {
-            add(formatCallDuration(entry.durationSeconds))
-        }
-        entry.simInfo?.let { add(it) }
-    }
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = spacing.small),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            painter = painterResource(id = entry.type.iconRes),
-            contentDescription = stringResource(id = entry.type.titleRes),
-            tint = if (entry.isMissedOrRejected) {
-                MaterialTheme.colorScheme.error
-            } else {
-                MaterialTheme.colorScheme.primary
-            },
-            modifier = Modifier.size(PhoneDimens.detailRowIconSize)
-        )
-        Spacer(modifier = Modifier.width(spacing.medium))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = dateText,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = subtitleParts.joinToString(" - "),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-private fun formatCallDuration(durationSeconds: Long): String {
-    if (durationSeconds <= 0L) {
-        return stringResource(id = R.string.call_duration_seconds, 0)
-    }
-    val hours = (durationSeconds / 3600).toInt()
-    val mins = ((durationSeconds % 3600) / 60).toInt()
-    val secs = (durationSeconds % 60).toInt()
-    return when {
-        hours > 0 -> stringResource(id = R.string.call_duration_hours, hours, mins)
-        mins > 0 -> stringResource(id = R.string.call_duration_minutes, mins, secs)
-        else -> stringResource(id = R.string.call_duration_seconds, secs)
     }
 }
 
