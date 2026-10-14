@@ -42,6 +42,7 @@
     <string name="contact_delete_dialog_message">Are you sure you want to delete %1$s? This action cannot be undone.</string>
     <string name="contact_delete_confirm">Delete</string>
     <string name="action_cancel">Cancel</string>
+    <string name="action_ok">OK</string>
     <string name="action_save">Save</string>
     <string name="cd_back">Back</string>
 
@@ -67,6 +68,10 @@
     <string name="call_waiting_activate">Activate</string>
     <string name="call_waiting_deactivate">Deactivate</string>
     <string name="call_waiting_check">Check status</string>
+    <string name="ussd_result_title">Carrier response</string>
+    <string name="ussd_sending">Sending…</string>
+    <string name="ussd_error_failed">The carrier could not complete the request.</string>
+    <string name="ussd_error_unavailable">The carrier service is unavailable.</string>
     <string name="quick_reply_title">Reply with message</string>
     <string name="quick_reply_cant_talk">Can\'t talk now</string>
     <string name="quick_reply_call_back">I\'ll call you back</string>

@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.11] - 2026-10-14
+
+### Changed
+- Call waiting dialog redone: title, description, three full-width actions (Activate, Deactivate, Check status), Cancel bottom-right.
+- Call waiting codes (*43#, #43#, *#43#) now run on the chosen SIM via TelephonyManager USSD: dual-SIM phones pick the SIM first, and the carrier response or error is shown in a result dialog. When USSD cannot start, the code falls back to dialing it.
+- The Supplementary services row is hidden when no system call-settings screen handles it, instead of doing nothing when tapped.
+
 ## [0.5.10] - 2026-10-14
 
 ### Changed

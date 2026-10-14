@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.telecom.TelecomManager
+import android.telephony.TelephonyManager
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -33,6 +34,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -50,6 +52,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -62,6 +65,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -76,6 +80,8 @@ import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.permissions.SetupPermissions
 import io.github.elli0t0.phone.core.telecom.rememberDefaultDialerState
+import io.github.elli0t0.phone.core.telecom.UssdHelper
+import io.github.elli0t0.phone.core.telecom.UssdSim
 import io.github.elli0t0.phone.feature.setup.SetupChecklist
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
@@ -134,6 +140,71 @@ fun SettingsScreen(
     var showBlockedNumbers by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
     var showCallWaitingDialog by remember { mutableStateOf(false) }
+    // USSD flow: picked code -> SIM picker (dual SIM) -> sending -> result.
+    // ussdRequestId invalidates late carrier callbacks after dismissal.
+    var pendingUssdCode by remember { mutableStateOf<String?>(null) }
+    var ussdSims by remember { mutableStateOf<List<UssdSim>>(emptyList()) }
+    var showUssdSimPicker by remember { mutableStateOf(false) }
+    var ussdState by remember { mutableStateOf<UssdState?>(null) }
+    var ussdRequestId by remember { mutableIntStateOf(0) }
+    // The system call-settings screen is a dead row when nothing
+    // handles its intent, so it is hidden instead of doing nothing.
+    val showSupplementaryRow = remember {
+        Intent(TelecomManager.ACTION_SHOW_CALL_SETTINGS)
+            .resolveActivity(context.packageManager) != null
+    }
+    val dialUssdFallback: (String) -> Unit = { code ->
+        runCatching {
+            context.startActivity(
+                Intent(
+                    Intent.ACTION_DIAL,
+                    Uri.parse("tel:${Uri.encode(code)}")
+                )
+            )
+        }
+    }
+    val runUssd: (String, UssdSim) -> Unit = { code, sim ->
+        val requestId = ussdRequestId + 1
+        ussdRequestId = requestId
+        ussdState = UssdState.Sending(code, sim.label)
+        val started = UssdHelper.sendUssdRequest(
+            context,
+            sim.subscriptionId,
+            code,
+            onResponse = { response ->
+                if (requestId == ussdRequestId) {
+                    ussdState = UssdState.Result(response)
+                }
+            },
+            onCarrierError = { reason ->
+                if (requestId == ussdRequestId) {
+                    ussdState = UssdState.Result(
+                        if (reason == TelephonyManager.USSD_ERROR_SERVICE_UNAVAIL) {
+                            context.getString(R.string.ussd_error_unavailable)
+                        } else {
+                            context.getString(R.string.ussd_error_failed)
+                        }
+                    )
+                }
+            }
+        )
+        if (!started) {
+            ussdState = null
+            dialUssdFallback(code)
+        }
+    }
+    val pickSimForUssd: (String) -> Unit = { code ->
+        val sims = UssdHelper.getActiveSims(context)
+        when {
+            sims.size > 1 -> {
+                pendingUssdCode = code
+                ussdSims = sims
+                showUssdSimPicker = true
+            }
+            sims.size == 1 -> runUssd(code, sims[0])
+            else -> dialUssdFallback(code)
+        }
+    }
     var customColorHexInput by remember { mutableStateOf("") }
     var customColorError by remember { mutableStateOf(false) }
 
@@ -404,68 +475,66 @@ fun SettingsScreen(
     }
 
     if (showCallWaitingDialog) {
-        AlertDialog(
-            onDismissRequest = { showCallWaitingDialog = false },
-            title = { Text(text = stringResource(id = R.string.settings_call_waiting)) },
-            text = {
-                Text(text = stringResource(id = R.string.call_waiting_desc))
-            },
-            confirmButton = {
-                Column {
-                    TextButton(
-                        onClick = {
-                            showCallWaitingDialog = false
-                            runCatching {
-                                context.startActivity(
-                                    Intent(
-                                        Intent.ACTION_DIAL,
-                                        Uri.parse("tel:${Uri.encode("*43#")}")
-                                    )
-                                )
-                            }
-                        }
-                    ) {
-                        Text(text = stringResource(id = R.string.call_waiting_activate))
-                    }
-                    TextButton(
-                        onClick = {
-                            showCallWaitingDialog = false
-                            runCatching {
-                                context.startActivity(
-                                    Intent(
-                                        Intent.ACTION_DIAL,
-                                        Uri.parse("tel:${Uri.encode("#43#")}")
-                                    )
-                                )
-                            }
-                        }
-                    ) {
-                        Text(text = stringResource(id = R.string.call_waiting_deactivate))
-                    }
-                    TextButton(
-                        onClick = {
-                            showCallWaitingDialog = false
-                            runCatching {
-                                context.startActivity(
-                                    Intent(
-                                        Intent.ACTION_DIAL,
-                                        Uri.parse("tel:${Uri.encode("*#43#")}")
-                                    )
-                                )
-                            }
-                        }
-                    ) {
-                        Text(text = stringResource(id = R.string.call_waiting_check))
-                    }
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showCallWaitingDialog = false }) {
-                    Text(text = stringResource(id = R.string.action_cancel))
-                }
+        CallWaitingDialog(
+            onDismiss = { showCallWaitingDialog = false },
+            onAction = { code ->
+                showCallWaitingDialog = false
+                pickSimForUssd(code)
             }
         )
-    } else {
+    }
+
+    if (showUssdSimPicker) {
+        UssdSimPickerDialog(
+            sims = ussdSims,
+            onSimSelected = { sim ->
+                showUssdSimPicker = false
+                pendingUssdCode?.let { runUssd(it, sim) }
+                pendingUssdCode = null
+            },
+            onDismiss = {
+                showUssdSimPicker = false
+                pendingUssdCode = null
+            }
+        )
+    }
+
+    when (val state = ussdState) {
+        is UssdState.Sending -> {
+            AlertDialog(
+                onDismissRequest = {
+                    ussdRequestId += 1
+                    ussdState = null
+                },
+                title = { Text(text = stringResource(id = R.string.settings_call_waiting)) },
+                text = { Text(text = stringResource(id = R.string.ussd_sending)) },
+                confirmButton = {},
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            ussdRequestId += 1
+                            ussdState = null
+                        }
+                    ) {
+                        Text(text = stringResource(id = R.string.action_cancel))
+                    }
+                }
+            )
+        }
+        is UssdState.Result -> {
+            AlertDialog(
+                onDismissRequest = { ussdState = null },
+                title = { Text(text = stringResource(id = R.string.ussd_result_title)) },
+                text = { Text(text = state.message) },
+                confirmButton = {
+                    TextButton(onClick = { ussdState = null }) {
+                        Text(text = stringResource(id = R.string.action_ok))
+                    }
+                }
+            )
+        }
+        null -> Unit
+    }
     Scaffold(
         modifier = modifier.fillMaxSize().testTag("settings_screen"),
         topBar = {
@@ -819,20 +888,22 @@ fun SettingsScreen(
                             onClick = { showBlockedNumbers = true }
                         )
 
-                        Spacer(modifier = Modifier.height(spacing.small))
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                        Spacer(modifier = Modifier.height(spacing.small))
+                        if (showSupplementaryRow) {
+                            Spacer(modifier = Modifier.height(spacing.small))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                            Spacer(modifier = Modifier.height(spacing.small))
 
-                        SettingsRow(
-                            title = stringResource(id = R.string.settings_supplementary),
-                            onClick = {
-                                runCatching {
-                                    context.startActivity(
-                                        Intent(TelecomManager.ACTION_SHOW_CALL_SETTINGS)
-                                    )
+                            SettingsRow(
+                                title = stringResource(id = R.string.settings_supplementary),
+                                onClick = {
+                                    runCatching {
+                                        context.startActivity(
+                                            Intent(TelecomManager.ACTION_SHOW_CALL_SETTINGS)
+                                        )
+                                    }
                                 }
-                            }
-                        )
+                            )
+                        }
 
                         Spacer(modifier = Modifier.height(spacing.small))
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
@@ -922,7 +993,6 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(spacing.large))
             }
         }
-    }
     }
 }
 
@@ -1074,6 +1144,122 @@ private fun <T> SettingsChoiceDialog(
                         Text(
                             text = label,
                             style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(id = R.string.action_cancel))
+            }
+        }
+    )
+}
+
+// USSD request state for the Call waiting flow.
+private sealed interface UssdState {
+    data class Sending(val code: String, val simLabel: String) : UssdState
+    data class Result(val message: String) : UssdState
+}
+
+// Call waiting dialog: title, description, three full-width actions,
+// Cancel bottom-right. Tapping an action runs its MMI code on the
+// chosen SIM (SIM picker first on dual SIM).
+@Composable
+private fun CallWaitingDialog(
+    onDismiss: () -> Unit,
+    onAction: (String) -> Unit
+) {
+    val spacing = LocalSpacing.current
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = MaterialTheme.shapes.extraLarge,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        ) {
+            Column(modifier = Modifier.padding(spacing.large)) {
+                Text(
+                    text = stringResource(id = R.string.settings_call_waiting),
+                    style = MaterialTheme.typography.titleLarge
+                )
+                Spacer(modifier = Modifier.height(spacing.medium))
+                Text(
+                    text = stringResource(id = R.string.call_waiting_desc),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(spacing.medium))
+                FilledTonalButton(
+                    onClick = { onAction("*43#") },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = stringResource(id = R.string.call_waiting_activate))
+                }
+                Spacer(modifier = Modifier.height(spacing.small))
+                FilledTonalButton(
+                    onClick = { onAction("#43#") },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = stringResource(id = R.string.call_waiting_deactivate))
+                }
+                Spacer(modifier = Modifier.height(spacing.small))
+                FilledTonalButton(
+                    onClick = { onAction("*#43#") },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = stringResource(id = R.string.call_waiting_check))
+                }
+                Spacer(modifier = Modifier.height(spacing.medium))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text(text = stringResource(id = R.string.action_cancel))
+                    }
+                }
+            }
+        }
+    }
+}
+
+// SIM picker for the USSD flow: one row per active SIM, Cancel dismisses.
+@Composable
+private fun UssdSimPickerDialog(
+    sims: List<UssdSim>,
+    onSimSelected: (UssdSim) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val spacing = LocalSpacing.current
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = stringResource(id = R.string.call_sim_picker_title)) },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                sims.forEach { sim ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { onSimSelected(sim) }
+                            .padding(
+                                horizontal = spacing.small,
+                                vertical = spacing.medium
+                            ),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_sim_card),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(spacing.medium))
+                        Text(
+                            text = sim.label,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
