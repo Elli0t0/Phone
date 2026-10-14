@@ -333,6 +333,7 @@ fun ContactDetailScreen(
         },
         topBar = {
             TopAppBar(
+                modifier = Modifier.padding(top = spacing.small),
                 title = { },
                 navigationIcon = {
                     IconButton(onClick = onBackClick, modifier = Modifier.testTag("btn_detail_back")) {

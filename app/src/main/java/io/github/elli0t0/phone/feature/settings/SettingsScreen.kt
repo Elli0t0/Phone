@@ -470,6 +470,7 @@ fun SettingsScreen(
         modifier = modifier.fillMaxSize().testTag("settings_screen"),
         topBar = {
             TopAppBar(
+                modifier = Modifier.padding(top = spacing.small),
                 title = { Text(text = stringResource(id = R.string.settings_title)) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
