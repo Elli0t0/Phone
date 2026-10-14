@@ -65,6 +65,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.telecom.CallManager
@@ -352,7 +353,8 @@ fun ContactDetailScreen(
             val contact = uiState.contact
             if (contact != null) {
                 val displayName = contact.displayName.ifBlank {
-                    contact.phones.firstOrNull()?.number ?: stringResource(id = R.string.contact_unknown)
+                    contact.phones.firstOrNull()?.number?.let { PhoneNumberFormatter.format(it) }
+                        ?: stringResource(id = R.string.contact_unknown)
                 }
 
                 Column(
@@ -692,7 +694,7 @@ private fun PhoneRowItem(
         Spacer(modifier = Modifier.width(spacing.medium))
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = phone.number,
+                text = PhoneNumberFormatter.format(phone.number),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )

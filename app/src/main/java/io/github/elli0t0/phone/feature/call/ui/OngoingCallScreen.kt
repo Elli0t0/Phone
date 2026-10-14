@@ -35,6 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.core.design.InCallControlActive
 import io.github.elli0t0.phone.core.design.InCallControlActiveContent
 import io.github.elli0t0.phone.core.design.InCallControlBackground
@@ -74,7 +75,8 @@ fun OngoingCallScreen(
     }
 
     val hasName = !callModel.displayName.isNullOrBlank() && callModel.displayName != callModel.number
-    val titleText = if (hasName) callModel.displayName!! else callModel.number
+    val formattedNumber = PhoneNumberFormatter.format(callModel.number)
+    val titleText = if (hasName) callModel.displayName!! else formattedNumber
 
     val isSpeaker = (callModel.audioRoute and CallAudioState.ROUTE_SPEAKER) != 0
     val isBluetooth = (callModel.audioRoute and CallAudioState.ROUTE_BLUETOOTH) != 0
@@ -152,7 +154,7 @@ fun OngoingCallScreen(
                 )
                 if (hasName && callModel.number.isNotBlank()) {
                     Text(
-                        text = callModel.number,
+                        text = formattedNumber,
                         style = MaterialTheme.typography.bodyLarge.copy(fontSize = 17.sp),
                         color = Color.White.copy(alpha = 0.7f),
                         textAlign = TextAlign.Center,

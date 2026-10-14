@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.8] - 2026-10-14
+
+### Fixed
+- Same one-format number rendering on the call screen (incoming + ongoing) and contact details (header + phone rows): device-country numbers nationally, all others internationally.
+
 ## [0.5.7] - 2026-10-14
 
 ### Fixed

@@ -34,6 +34,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.core.design.CallAnswerGreen
 import io.github.elli0t0.phone.core.design.CallDeclineRed
 import io.github.elli0t0.phone.core.design.InCallGradientBottom
@@ -77,7 +78,8 @@ fun IncomingCallScreen(
             )
 
             val hasName = !callModel.displayName.isNullOrBlank() && callModel.displayName != callModel.number
-            val titleText = if (hasName) callModel.displayName!! else callModel.number
+            val formattedNumber = PhoneNumberFormatter.format(callModel.number)
+            val titleText = if (hasName) callModel.displayName!! else formattedNumber
             val initial = titleText.trim().take(1).uppercase().ifBlank { "?" }
 
             Box(
@@ -109,7 +111,7 @@ fun IncomingCallScreen(
 
             if (hasName && callModel.number.isNotBlank()) {
                 Text(
-                    text = callModel.number,
+                    text = formattedNumber,
                     style = MaterialTheme.typography.bodyLarge,
                     color = Color.White.copy(alpha = 0.8f),
                     textAlign = TextAlign.Center
