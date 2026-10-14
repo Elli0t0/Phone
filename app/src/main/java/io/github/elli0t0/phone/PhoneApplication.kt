@@ -6,6 +6,7 @@ import io.github.elli0t0.phone.data.calllog.AndroidCallLogRepository
 import io.github.elli0t0.phone.data.calllog.CallLogRepository
 import io.github.elli0t0.phone.data.contacts.AndroidContactsRepository
 import io.github.elli0t0.phone.data.contacts.ContactNameIndex
+import io.github.elli0t0.phone.data.contacts.ContactsRepository
 import io.github.elli0t0.phone.data.favorites.AppDatabase
 import io.github.elli0t0.phone.data.favorites.ContactSimRepository
 import io.github.elli0t0.phone.data.favorites.DefaultContactSimRepository
