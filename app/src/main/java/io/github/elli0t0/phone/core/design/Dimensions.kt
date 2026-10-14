@@ -51,4 +51,15 @@ object PhoneDimens {
     val contactsFavoritesHintIconSize = 22.dp
     val contactsGroupIconSize = 24.dp
     val contactsPillCornerPercent = 50
+    // Settings: cards, slider, switches.
+    val settingsSwitchWidth = 52.dp
+    val settingsSwitchHeight = 28.dp
+    val settingsSwitchThumbSize = 24.dp
+    val settingsSwitchThumbPadding = 2.dp
+    val settingsSwitchCornerPercent = 50
+    val settingsSliderTrackHeight = 4.dp
+    val settingsSliderThumbWidth = 4.dp
+    val settingsSliderThumbHeight = 24.dp
+    val settingsSliderTickSize = 4.dp
+    val settingsSliderCornerRadius = 2.dp
 }

@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.telecom.TelecomManager
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,9 +20,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -40,12 +43,14 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Switch
+import androidx.compose.material3.SliderState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,6 +64,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -69,6 +75,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.permissions.SetupPermissions
 import io.github.elli0t0.phone.core.telecom.rememberDefaultDialerState
 import io.github.elli0t0.phone.feature.setup.SetupChecklist
@@ -466,6 +473,9 @@ fun SettingsScreen(
         topBar = {
             TopAppBar(
                 title = { Text(text = stringResource(id = R.string.settings_title)) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                ),
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -496,7 +506,7 @@ fun SettingsScreen(
                 Card(
                     shape = MaterialTheme.shapes.extraLarge,
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        containerColor = MaterialTheme.colorScheme.surface
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -537,7 +547,7 @@ fun SettingsScreen(
                 item {
                     Card(
                         shape = MaterialTheme.shapes.extraLarge,
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(spacing.medium)) {
@@ -564,7 +574,7 @@ fun SettingsScreen(
             item {
                 Card(
                     shape = MaterialTheme.shapes.extraLarge,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
@@ -629,11 +639,72 @@ fun SettingsScreen(
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
+                        // Font size scale: thin 4dp track, vertical-bar thumb,
+                        // small tick marks at each stop.
+                        val fontScaleState = remember {
+                            SliderState(
+                                value = settings.fontSizeScale,
+                                steps = 8,
+                                valueRange = 0.85f..1.30f
+                            )
+                        }
+                        // Keep the state in sync when the stored setting
+                        // changes (e.g. first load from DataStore).
+                        LaunchedEffect(settings.fontSizeScale) {
+                            if (fontScaleState.value != settings.fontSizeScale) {
+                                fontScaleState.value = settings.fontSizeScale
+                            }
+                        }
                         Slider(
-                            value = settings.fontSizeScale,
+                            state = fontScaleState,
                             onValueChange = { viewModel.onFontSizeScaleChanged((it * 20).roundToInt() / 20f) },
-                            valueRange = 0.85f..1.30f,
-                            steps = 8
+                            thumb = {
+                                Box(
+                                    modifier = Modifier
+                                        .size(
+                                            width = PhoneDimens.settingsSliderThumbWidth,
+                                            height = PhoneDimens.settingsSliderThumbHeight
+                                        )
+                                        .clip(RoundedCornerShape(PhoneDimens.settingsSliderCornerRadius))
+                                        .background(MaterialTheme.colorScheme.primary)
+                                )
+                            },
+                            track = { sliderState ->
+                                val tickCount = 10
+                                val fraction = (
+                                    sliderState.value - sliderState.valueRange.start
+                                    ) / (sliderState.valueRange.endInclusive - sliderState.valueRange.start)
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(PhoneDimens.settingsSliderTrackHeight)
+                                        .clip(RoundedCornerShape(PhoneDimens.settingsSliderCornerRadius))
+                                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth(fraction)
+                                            .height(PhoneDimens.settingsSliderTrackHeight)
+                                            .background(MaterialTheme.colorScheme.primary)
+                                    )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        repeat(tickCount) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(PhoneDimens.settingsSliderTickSize)
+                                                    .clip(CircleShape)
+                                                    .background(
+                                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                                    )
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         )
                     }
                 }
@@ -647,7 +718,7 @@ fun SettingsScreen(
             item {
                 Card(
                     shape = MaterialTheme.shapes.extraLarge,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
@@ -678,7 +749,7 @@ fun SettingsScreen(
             item {
                 Card(
                     shape = MaterialTheme.shapes.extraLarge,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
@@ -720,7 +791,7 @@ fun SettingsScreen(
             item {
                 Card(
                     shape = MaterialTheme.shapes.extraLarge,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
@@ -751,7 +822,7 @@ fun SettingsScreen(
             item {
                 Card(
                     shape = MaterialTheme.shapes.extraLarge,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
@@ -797,7 +868,7 @@ fun SettingsScreen(
             item {
                 Card(
                     shape = MaterialTheme.shapes.extraLarge,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
@@ -826,7 +897,7 @@ fun SettingsScreen(
             item {
                 Card(
                     shape = MaterialTheme.shapes.extraLarge,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
@@ -846,7 +917,7 @@ fun SettingsScreen(
             item {
                 Card(
                     shape = MaterialTheme.shapes.extraLarge,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(spacing.medium)) {
@@ -935,9 +1006,52 @@ private fun SettingsSwitchRow(
                 )
             }
         }
-        Switch(
+        SettingsSwitch(
             checked = checked,
             onCheckedChange = onCheckedChange
+        )
+    }
+}
+
+// Custom switch: wide 52x28dp track with a large white round thumb.
+// Material3 Switch has a fixed size, so this draws the exact track/thumb.
+@Composable
+private fun SettingsSwitch(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    val thumbOffset by animateDpAsState(
+        targetValue = if (checked) {
+            PhoneDimens.settingsSwitchWidth - PhoneDimens.settingsSwitchThumbSize -
+                PhoneDimens.settingsSwitchThumbPadding * 2
+        } else {
+            PhoneDimens.settingsSwitchThumbPadding
+        }
+    )
+    Box(
+        modifier = Modifier
+            .size(
+                width = PhoneDimens.settingsSwitchWidth,
+                height = PhoneDimens.settingsSwitchHeight
+            )
+            .clip(RoundedCornerShape(PhoneDimens.settingsSwitchCornerPercent))
+            .background(
+                if (checked) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.surfaceVariant
+            )
+            .toggleable(
+                value = checked,
+                role = Role.Switch,
+                onValueChange = onCheckedChange
+            ),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Box(
+            modifier = Modifier
+                .offset(x = thumbOffset)
+                .size(PhoneDimens.settingsSwitchThumbSize)
+                .clip(CircleShape)
+                .background(Color.White)
         )
     }
 }
