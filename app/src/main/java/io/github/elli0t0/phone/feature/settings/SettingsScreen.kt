@@ -89,6 +89,8 @@ import io.github.elli0t0.phone.core.telecom.UssdSim
 import io.github.elli0t0.phone.feature.setup.SetupChecklist
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
+import io.github.elli0t0.phone.data.settings.model.BottomBarSize
+import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.CallDisplay
 import io.github.elli0t0.phone.data.settings.model.DefaultSim
@@ -143,6 +145,8 @@ fun SettingsScreen(
     var showCardStyleDialog by remember { mutableStateOf(false) }
     var showTabDialog by remember { mutableStateOf(false) }
     var showAnimDialog by remember { mutableStateOf(false) }
+    var showBottomBarStyleDialog by remember { mutableStateOf(false) }
+    var showBottomBarSizeDialog by remember { mutableStateOf(false) }
     var showSortDialog by remember { mutableStateOf(false) }
     var showFormatDialog by remember { mutableStateOf(false) }
     var showCallDisplayDialog by remember { mutableStateOf(false) }
@@ -422,6 +426,26 @@ fun SettingsScreen(
             selected = settings.animationOption,
             onSelect = { viewModel.onAnimationOptionChanged(it); showAnimDialog = false },
             onDismiss = { showAnimDialog = false }
+        )
+    }
+
+    if (showBottomBarStyleDialog) {
+        SettingsChoiceDialog(
+            title = stringResource(id = R.string.settings_bottom_bar_style),
+            options = BottomBarStyle.entries.map { it.label to it },
+            selected = settings.bottomBarStyle,
+            onSelect = { viewModel.onBottomBarStyleChanged(it); showBottomBarStyleDialog = false },
+            onDismiss = { showBottomBarStyleDialog = false }
+        )
+    }
+
+    if (showBottomBarSizeDialog) {
+        SettingsChoiceDialog(
+            title = stringResource(id = R.string.settings_bottom_bar_size),
+            options = BottomBarSize.entries.map { it.label to it },
+            selected = settings.bottomBarSize,
+            onSelect = { viewModel.onBottomBarSizeChanged(it); showBottomBarSizeDialog = false },
+            onDismiss = { showBottomBarSizeDialog = false }
         )
     }
 
@@ -898,6 +922,37 @@ fun SettingsScreen(
                             subtitle = stringResource(id = R.string.settings_bottom_labels_desc),
                             checked = settings.showBottomBarLabels,
                             onCheckedChange = { viewModel.onShowBottomBarLabelsChanged(it) }
+                        )
+
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        Spacer(modifier = Modifier.height(spacing.small))
+
+                        SettingsRow(
+                            title = stringResource(id = R.string.settings_bottom_bar_style),
+                            subtitle = settings.bottomBarStyle.label,
+                            onClick = { showBottomBarStyleDialog = true }
+                        )
+
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        Spacer(modifier = Modifier.height(spacing.small))
+
+                        SettingsRow(
+                            title = stringResource(id = R.string.settings_bottom_bar_size),
+                            subtitle = settings.bottomBarSize.label,
+                            onClick = { showBottomBarSizeDialog = true }
+                        )
+
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        Spacer(modifier = Modifier.height(spacing.small))
+
+                        SettingsSwitchRow(
+                            title = stringResource(id = R.string.settings_bottom_bar_shrink),
+                            subtitle = stringResource(id = R.string.settings_bottom_bar_shrink_desc),
+                            checked = settings.shrinkBottomBarOnScroll,
+                            onCheckedChange = { viewModel.onShrinkBottomBarOnScrollChanged(it) }
                         )
 
                         Spacer(modifier = Modifier.height(spacing.small))
