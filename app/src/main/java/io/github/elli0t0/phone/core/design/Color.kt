@@ -53,7 +53,7 @@ val InCallControlActive = Color(0xFFFFFFFF)
 val InCallControlActiveContent = Color(0xFF000000)
 
 // Light theme colors
-val LightBackground = Color(0xFFF7F8FA)
+val LightBackground = Color(0xFFF6F6F8)
 val LightSurface = Color(0xFFFFFFFF)
 val LightSurfaceVariant = Color(0xFFEFF1F4)
 val LightSurfaceContainerLow = Color(0xFFF4F6F8)
@@ -74,6 +74,8 @@ val DarkSurfaceContainerLow = Color(0xFF17181C)
 val DarkSurfaceContainer = Color(0xFF1E2024)
 val DarkSurfaceContainerHigh = Color(0xFF27292F)
 val DarkSurfaceContainerHighest = Color(0xFF32343B)
+// Dark keypad page: lighter than the pure-black page, per the reference.
+val KeypadPageDark = Color(0xFF161618)
 val DarkOnBackground = Color(0xFFE2E2E6)
 val DarkOnSurface = Color(0xFFE2E2E6)
 val DarkOnSurfaceVariant = Color(0xFF8E9099)

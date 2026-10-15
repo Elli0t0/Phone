@@ -10,6 +10,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.luminance
@@ -30,7 +32,6 @@ val LiquidGlassGlowPrimary = Color(0xFF4A7CFF)
 val LiquidGlassGlowSecondary = Color(0xFF9B6DFF)
 val LiquidGlassSurface = Color.White.copy(alpha = 0.10f)
 val LiquidGlassSurfaceStrong = Color.White.copy(alpha = 0.16f)
-val LiquidGlassBorder = Color.White.copy(alpha = 0.22f)
 val LiquidGlassOnSurface = Color.White
 val LiquidGlassOnSurfaceMuted = Color.White.copy(alpha = 0.75f)
 val LiquidGlassOnSurfaceFaint = Color.White.copy(alpha = 0.55f)
@@ -39,7 +40,6 @@ val LiquidGlassActiveContent = Color(0xFF1C1B1F)
 // Light-theme glass: dark tints over a light background.
 val LiquidGlassSurfaceLight = Color.Black.copy(alpha = 0.06f)
 val LiquidGlassSurfaceStrongLight = Color.Black.copy(alpha = 0.10f)
-val LiquidGlassBorderLight = Color.Black.copy(alpha = 0.12f)
 val LiquidGlassOnSurfaceLight = Color(0xFF1C1C1E)
 val LiquidGlassOnSurfaceMutedLight = Color(0xFF1C1C1E).copy(alpha = 0.75f)
 val LiquidGlassOnSurfaceFaintLight = Color(0xFF1C1C1E).copy(alpha = 0.55f)
@@ -55,7 +55,6 @@ val LiquidGlassHold = Color(0xFFFFB74D)
 data class GlassColors(
     val container: Color,
     val containerStrong: Color,
-    val border: Color,
     val onSurface: Color,
     val onSurfaceMuted: Color,
     val onSurfaceFaint: Color,
@@ -66,9 +65,8 @@ data class GlassColors(
 /** Glass colors for the dark (white tints) or light (dark tints) theme. */
 fun glassColors(dark: Boolean): GlassColors = if (dark) {
     GlassColors(
-        container = LiquidGlassSurface,
+        container = Color(0xFF2C2C2E).copy(alpha = 0.60f),
         containerStrong = LiquidGlassSurfaceStrong,
-        border = LiquidGlassBorder,
         onSurface = LiquidGlassOnSurface,
         onSurfaceMuted = LiquidGlassOnSurfaceMuted,
         onSurfaceFaint = LiquidGlassOnSurfaceFaint,
@@ -77,9 +75,8 @@ fun glassColors(dark: Boolean): GlassColors = if (dark) {
     )
 } else {
     GlassColors(
-        container = LiquidGlassSurfaceLight,
+        container = Color.White.copy(alpha = 0.72f),
         containerStrong = LiquidGlassSurfaceStrongLight,
-        border = LiquidGlassBorderLight,
         onSurface = LiquidGlassOnSurfaceLight,
         onSurfaceMuted = LiquidGlassOnSurfaceMutedLight,
         onSurfaceFaint = LiquidGlassOnSurfaceFaintLight,
@@ -131,7 +128,8 @@ val SquircleShape: Shape = GenericShape { size, _ ->
 }
 
 /**
- * Reusable glass surface: a translucent fill with a thin translucent border.
+ * Reusable glass surface: a translucent fill with a 1dp vertical-gradient
+ * border (white 35% to 5%) and a soft shadow (black, 10% alpha).
  * Placed over a gradient or image background it reads as frosted glass.
  *
  * Colors default to the current theme (white tints on dark, dark tints
@@ -149,14 +147,28 @@ fun GlassSurface(
     shape: Shape = LiquidGlassDockShape,
     dark: Boolean = isDarkGlassTheme(),
     containerColor: Color = glassColors(dark).container,
-    borderColor: Color = glassColors(dark).border,
     content: @Composable BoxScope.() -> Unit
 ) {
     Box(
         modifier = modifier
+            .shadow(
+                elevation = 8.dp,
+                shape = shape,
+                spotColor = Color.Black.copy(alpha = 0.10f),
+                ambientColor = Color.Black.copy(alpha = 0.10f)
+            )
             .clip(shape)
             .background(containerColor)
-            .border(1.dp, borderColor, shape),
+            .border(
+                width = 1.dp,
+                brush = Brush.verticalGradient(
+                    listOf(
+                        Color.White.copy(alpha = 0.35f),
+                        Color.White.copy(alpha = 0.05f)
+                    )
+                ),
+                shape = shape
+            ),
         content = content
     )
 }

@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.7] - 2026-10-15
+
+### Changed
+- Shared style: cards use 28dp corners, light page is #F6F6F8, dark keypad page is #161618. GlassSurface now uses the spec fill (light white 72%, dark #2C2C2E 60%), a 1dp vertical-gradient border (white 35% to 5%), and a soft 10% shadow. Real Haze blur stays out: its 2.x API is unverified against this Compose version, so the surface remains honestly translucent.
+
 ## [0.8.6] - 2026-10-15
 
 ### Changed
