@@ -6,9 +6,6 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -54,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -266,38 +264,8 @@ fun DialpadScreen(
                 .padding(top = spacing.small),
             contentAlignment = Alignment.BottomCenter
         ) {
-            val shownContacts = if (searchVisible && uiState.nameSearchQuery.isNotBlank()) {
-                uiState.nameSearchResults
-            } else {
-                uiState.matchingContacts
-            }
-            if (shownContacts.isNotEmpty()) {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("dialpad_search_results")
-                ) {
-                    items(shownContacts, key = { it.id }) { contact ->
-                        DialpadSearchRow(
-                            contact = contact,
-                            onClick = {
-                                lightHaptic()
-                                viewModel.onContactSelected(contact)
-                                viewModel.onNameSearchQueryChanged("")
-                                searchVisible = false
-                            },
-                            onCallClick = {
-                                lightHaptic()
-                                val num = contact.primaryNumberPreview ?: ""
-                                if (num.isNotBlank()) {
-                                    dialNumber(num, contact.lookupKey)
-                                }
-                            }
-                        )
-                    }
-                }
-            } else if (uiState.rawNumber.isNotEmpty()) {
-                // No matching contact: offer real actions for the number.
+            // No matching contact: offer real actions for the number.
+            val noMatchActions: @Composable () -> Unit = {
                 DialpadNoMatchActions(
                     onCreateContact = {
                         lightHaptic()
@@ -315,17 +283,60 @@ fun DialpadScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
+            if (searchVisible && uiState.nameSearchQuery.isNotBlank()) {
+                // Name search: full rows.
+                if (uiState.nameSearchResults.isNotEmpty()) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("dialpad_search_results")
+                    ) {
+                        items(uiState.nameSearchResults, key = { it.id }) { contact ->
+                            DialpadSearchRow(
+                                contact = contact,
+                                onClick = {
+                                    lightHaptic()
+                                    viewModel.onContactSelected(contact)
+                                    viewModel.onNameSearchQueryChanged("")
+                                    searchVisible = false
+                                },
+                                onCallClick = {
+                                    lightHaptic()
+                                    val num = contact.primaryNumberPreview ?: ""
+                                    if (num.isNotBlank()) {
+                                        dialNumber(num, contact.lookupKey)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                } else if (uiState.rawNumber.isNotEmpty()) {
+                    noMatchActions()
+                }
+            } else if (uiState.matchingContacts.isNotEmpty()) {
+                // T9: suggestion chips above the keypad; tap selects.
+                DialpadSuggestionChips(
+                    contacts = uiState.matchingContacts,
+                    onSelect = {
+                        lightHaptic()
+                        viewModel.onContactSelected(it)
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            } else if (uiState.rawNumber.isNotEmpty()) {
+                noMatchActions()
+            }
         }
 
         // Formatted Number Display (supports long click to paste).
-        // Shown only when there are digits. Number centered, regular weight,
+        // Always rendered: a fixed slot, so typing the first digit
+        // never shifts the layout. Number centered, regular weight,
         // auto-shrinks on overflow; backspace sits at its right.
-        if (uiState.rawNumber.isNotEmpty()) {
-            val displayText = uiState.formattedNumber.ifBlank { uiState.rawNumber }
-            var displayFontSize by remember { mutableStateOf(PhoneDimens.keypadNumberDisplaySize) }
-            LaunchedEffect(displayText) {
-                displayFontSize = PhoneDimens.keypadNumberDisplaySize
-            }
+        val displayText = uiState.formattedNumber.ifBlank { uiState.rawNumber }
+        var displayFontSize by remember { mutableStateOf(PhoneDimens.keypadNumberDisplaySize) }
+        LaunchedEffect(displayText) {
+            displayFontSize = PhoneDimens.keypadNumberDisplaySize
+        }
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -366,49 +377,52 @@ fun DialpadScreen(
                     }
                 )
                 // Backspace at the right of the number, with accelerated repeat deletion.
+                // Fixed slot: always visible; dimmed and inert with no digits.
                 Box(
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
                         .size(56.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    androidx.compose.animation.AnimatedVisibility(
-                        visible = uiState.rawNumber.isNotEmpty(),
-                        enter = fadeIn(),
-                        exit = fadeOut()
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .pointerInput(Unit) {
-                                    awaitEachGesture {
-                                        awaitFirstDown(requireUnconsumed = false)
-                                        lightHaptic()
-                                        viewModel.onBackspacePressed()
-                                        viewModel.startBackspaceRepeat(onTickHaptic = { lightHaptic() })
-                                        try {
-                                            waitForUpOrCancellation()
-                                        } finally {
-                                            viewModel.stopBackspaceRepeat()
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .then(
+                                if (uiState.rawNumber.isNotEmpty()) {
+                                    Modifier.pointerInput(Unit) {
+                                        awaitEachGesture {
+                                            awaitFirstDown(requireUnconsumed = false)
+                                            lightHaptic()
+                                            viewModel.onBackspacePressed()
+                                            viewModel.startBackspaceRepeat(onTickHaptic = { lightHaptic() })
+                                            try {
+                                                waitForUpOrCancellation()
+                                            } finally {
+                                                viewModel.stopBackspaceRepeat()
+                                            }
                                         }
                                     }
+                                } else {
+                                    Modifier
                                 }
-                                .testTag("btn_backspace"),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_backspace),
-                                contentDescription = stringResource(id = R.string.cd_backspace_button),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                        }
+                            .testTag("btn_backspace"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_backspace),
+                            contentDescription = stringResource(id = R.string.cd_backspace_button),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.graphicsLayer {
+                                alpha = if (uiState.rawNumber.isEmpty()) 0.38f else 1f
+                            }
+                        )
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(spacing.small))
-        }
 
         // Keypad Grid (Keys 1-9, *, 0, #)
         Column(

@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.6] - 2026-10-15
+
+### Changed
+- Keypad: T9 matches now show as suggestion chips above the keypad (tap selects the contact). The number row and backspace are always rendered, so typing the first digit never shifts the layout; backspace is dimmed and inert when empty. Each keypress plays one digit dip animation (0.1 scale, 0.3 alpha, spring stiffness 1000 / damping 0.7).
+
 ## [0.9.5] - 2026-10-15
 
 ### Changed
