@@ -3,6 +3,7 @@ package io.github.elli0t0.phone.feature.call.ui
 import android.telecom.CallAudioState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +44,8 @@ import io.github.elli0t0.phone.core.design.InCallControlBackground
 import io.github.elli0t0.phone.core.design.LiquidGlassEndCall
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.callBackgroundBrush
+import io.github.elli0t0.phone.core.design.pressScale
+import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.call.CallState
 import io.github.elli0t0.phone.data.call.OngoingCallModel
 import io.github.elli0t0.phone.data.settings.model.CallBackground
@@ -62,6 +66,8 @@ fun OngoingCallScreen(
 ) {
     val spacing = LocalSpacing.current
     var showKeypad by remember { mutableStateOf(false) }
+    val endCallSource = remember { MutableInteractionSource() }
+    val lightHaptic = rememberLightHaptic()
 
     val formattedDuration = remember(callModel.durationSeconds) {
         val mins = callModel.durationSeconds / 60
@@ -256,7 +262,11 @@ fun OngoingCallScreen(
                         .size(72.dp)
                         .clip(CircleShape)
                         .background(LiquidGlassEndCall)
-                        .clickable(onClick = onEndCall)
+                        .pressScale(endCallSource)
+                        .clickable(
+                            interactionSource = endCallSource,
+                            indication = ripple()
+                        ) { lightHaptic(); onEndCall() }
                         .testTag("end_call_button"),
                     contentAlignment = Alignment.Center
                 ) {
@@ -281,6 +291,8 @@ private fun InCallControlButton(
     testTag: String,
     modifier: Modifier = Modifier
 ) {
+    val controlSource = remember { MutableInteractionSource() }
+    val lightHaptic = rememberLightHaptic()
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -291,7 +303,11 @@ private fun InCallControlButton(
                 .size(64.dp)
                 .clip(CircleShape)
                 .background(if (isActive) InCallControlActive else InCallControlBackground)
-                .clickable(onClick = onClick)
+                .pressScale(controlSource)
+                .clickable(
+                    interactionSource = controlSource,
+                    indication = ripple()
+                ) { lightHaptic(); onClick() }
                 .testTag(testTag),
             contentAlignment = Alignment.Center
         ) {
@@ -337,12 +353,17 @@ private fun InCallKeypadGrid(
                 horizontalArrangement = Arrangement.spacedBy(32.dp)
             ) {
                 row.forEach { (digit, letters) ->
+                    val keySource = remember { MutableInteractionSource() }
                     Box(
                         modifier = Modifier
                             .size(64.dp)
                             .clip(CircleShape)
                             .background(InCallControlBackground)
-                            .clickable { onDigit(digit) }
+                            .pressScale(keySource)
+                            .clickable(
+                                interactionSource = keySource,
+                                indication = ripple()
+                            ) { onDigit(digit) }
                             .testTag("dtmf_key_$digit"),
                         contentAlignment = Alignment.Center
                     ) {
