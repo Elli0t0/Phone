@@ -3,7 +3,11 @@ package io.github.elli0t0.phone.feature.recents.ui
 import android.content.ContentValues
 import android.provider.BlockedNumberContract
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -57,7 +61,9 @@ import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.AccentBlue
 import io.github.elli0t0.phone.core.design.CallAnswerGreen
 import io.github.elli0t0.phone.core.design.CallRejectedOrange
+import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.OnAccentBlue
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.pressScale
@@ -65,6 +71,7 @@ import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.calllog.model.CallGroup
 import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import io.github.elli0t0.phone.data.calllog.model.CallType
+import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -92,6 +99,31 @@ fun CallLogRow(
     val spacing = LocalSpacing.current
     var showMenu by remember { mutableStateOf(false) }
     val formattedTime = remember(group.date) { sharedTimeFormat.format(Date(group.date)) }
+    // Expanded details respect the Animations setting: ON expands +
+    // fades, REDUCED fades only at ~60% duration, OFF is instant.
+    val animationOption = LocalAppSettings.current.animationOption
+    val detailsEnter: EnterTransition = when (animationOption) {
+        AnimationOption.ON -> expandVertically(
+            animationSpec = Motion.tweenSpec(Motion.Durations.Medium, Motion.Easings.Standard, animationOption)
+        ) + fadeIn(
+            animationSpec = Motion.tweenSpec(Motion.Durations.Medium, Motion.Easings.Standard, animationOption)
+        )
+        AnimationOption.REDUCED -> fadeIn(
+            animationSpec = Motion.tweenSpec(Motion.Durations.Medium, Motion.Easings.Standard, animationOption)
+        )
+        AnimationOption.OFF -> EnterTransition.None
+    }
+    val detailsExit: ExitTransition = when (animationOption) {
+        AnimationOption.ON -> shrinkVertically(
+            animationSpec = Motion.tweenSpec(Motion.Durations.Medium, Motion.Easings.Standard, animationOption)
+        ) + fadeOut(
+            animationSpec = Motion.tweenSpec(Motion.Durations.Medium, Motion.Easings.Standard, animationOption)
+        )
+        AnimationOption.REDUCED -> fadeOut(
+            animationSpec = Motion.tweenSpec(Motion.Durations.Medium, Motion.Easings.Standard, animationOption)
+        )
+        AnimationOption.OFF -> ExitTransition.None
+    }
     // Shared press source: pressScale and combinedClickable observe the
     // same press state, so the row scales to 0.92 while pressed and ripples.
     val rowSource = remember { MutableInteractionSource() }
@@ -277,8 +309,8 @@ fun CallLogRow(
             // Expanded Call Details
             AnimatedVisibility(
                 visible = isExpanded,
-                enter = expandVertically(),
-                exit = shrinkVertically()
+                enter = detailsEnter,
+                exit = detailsExit
             ) {
                 ExpandedCallDetails(
                     call = group.primaryCall,

@@ -392,7 +392,11 @@ fun DialpadScreen(
                                 if (uiState.rawNumber.isNotEmpty()) {
                                     Modifier.pointerInput(Unit) {
                                         awaitEachGesture {
-                                            awaitFirstDown(requireUnconsumed = false)
+                                            val down = awaitFirstDown(requireUnconsumed = false)
+                                            // Consume the press so the parent number
+                                            // row's long-press (paste) never fires
+                                            // from a backspace long-press.
+                                            down.consume()
                                             lightHaptic()
                                             viewModel.onBackspacePressed()
                                             viewModel.startBackspaceRepeat(onTickHaptic = { lightHaptic() })
