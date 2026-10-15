@@ -23,8 +23,7 @@ enum class CardStyle(val label: String) {
     OUTLINED("Outlined")
 }
 
-enum class AnimationOption(val label: String) {
-    ON("On"),
+enum class AnimationOption(val label: String) {    ON("On"),
     REDUCED("Reduced"),
     OFF("Off")
 }
@@ -68,6 +67,17 @@ enum class DefaultSim(val label: String) {
     SIM_2("SIM 2")
 }
 
+enum class BottomBarStyle(val label: String) {
+    GLASS("Glass"),
+    SOLID("Solid")
+}
+
+enum class BottomBarSize(val label: String) {
+    SMALL("Small"),
+    MEDIUM("Medium"),
+    LARGE("Large")
+}
+
 data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val accentColor: Long = AccentPreset.ONE_UI_BLUE.colorValue,
@@ -79,6 +89,9 @@ data class AppSettings(
     val fontSizeScale: Float = 1.0f,
     val animationOption: AnimationOption = AnimationOption.ON,
     val showBottomBarLabels: Boolean = true,
+    val bottomBarStyle: BottomBarStyle = BottomBarStyle.GLASS,
+    val bottomBarSize: BottomBarSize = BottomBarSize.MEDIUM,
+    val shrinkBottomBarOnScroll: Boolean = false,
     val defaultStartTab: StartTab = StartTab.KEYPAD,
     val contactSortOrder: ContactSortOrder = ContactSortOrder.FIRST_NAME,
     val contactNameFormat: ContactNameFormat = ContactNameFormat.FIRST_NAME_FIRST,

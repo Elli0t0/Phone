@@ -6,7 +6,8 @@ import androidx.lifecycle.viewModelScope
 import io.github.elli0t0.phone.data.settings.SettingsRepository
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AppSettings
-import io.github.elli0t0.phone.data.settings.model.CallBackground
+import io.github.elli0t0.phone.data.settings.model.BottomBarSize
+import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
 import io.github.elli0t0.phone.data.settings.model.CallDisplay
 import io.github.elli0t0.phone.data.settings.model.DefaultSim
 import io.github.elli0t0.phone.data.settings.model.CardStyle
@@ -93,6 +94,27 @@ class SettingsViewModel(
         }
     }
     fun setShowBottomBarLabels(show: Boolean) = onShowBottomBarLabelsChanged(show)
+
+    fun onBottomBarStyleChanged(style: BottomBarStyle) {
+        viewModelScope.launch {
+            settingsRepository.setBottomBarStyle(style)
+        }
+    }
+    fun setBottomBarStyle(style: BottomBarStyle) = onBottomBarStyleChanged(style)
+
+    fun onBottomBarSizeChanged(size: BottomBarSize) {
+        viewModelScope.launch {
+            settingsRepository.setBottomBarSize(size)
+        }
+    }
+    fun setBottomBarSize(size: BottomBarSize) = onBottomBarSizeChanged(size)
+
+    fun onShrinkBottomBarOnScrollChanged(shrink: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setShrinkBottomBarOnScroll(shrink)
+        }
+    }
+    fun setShrinkBottomBarOnScroll(shrink: Boolean) = onShrinkBottomBarOnScrollChanged(shrink)
 
     fun onDefaultStartTabChanged(tab: StartTab) {
         viewModelScope.launch {

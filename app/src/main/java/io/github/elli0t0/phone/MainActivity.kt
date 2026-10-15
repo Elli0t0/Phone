@@ -11,6 +11,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import io.github.elli0t0.phone.core.design.Motion
@@ -19,12 +20,17 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -83,6 +89,49 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
     val showBottomBar = Screen.bottomNavItems.any { it.route == currentRoute } &&
         (currentRoute != Screen.Contacts.route || showContactsBar)
 
+    // Shrink on scroll: scrolling down compacts the bar to icons only,
+    // scrolling up restores it. One animated target; the connection
+    // consumes nothing, so lists scroll untouched.
+    val shrinkEnabled = appSettings.shrinkBottomBarOnScroll
+    var barShrunk by remember { mutableStateOf(false) }
+    val barShrinkProgress = remember { Animatable(0f) }
+    LaunchedEffect(barShrunk, shrinkEnabled) {
+        barShrinkProgress.animateTo(
+            targetValue = if (barShrunk && shrinkEnabled) 1f else 0f,
+            animationSpec = Motion.tweenSpec(
+                Motion.Durations.Medium,
+                Motion.Easings.Emphasized,
+                appSettings.animationOption
+            )
+        )
+    }
+    val barScrollConnection = remember(shrinkEnabled) {
+        object : NestedScrollConnection {
+            override fun onPreScroll(
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset {
+                if (shrinkEnabled) {
+                    if (available.y < 0) barShrunk = true
+                    else if (available.y > 0) barShrunk = false
+                }
+                return Offset.Zero
+            }
+
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset {
+                if (shrinkEnabled) {
+                    if (consumed.y < 0) barShrunk = true
+                    else if (consumed.y > 0) barShrunk = false
+                }
+                return Offset.Zero
+            }
+        }
+    }
+
     // The bottom bar is an overlay: content runs edge-to-edge behind it,
     // and each list keeps its own bottom clearance above the bar.
     // The root Box paints one opaque theme background so the window
@@ -90,6 +139,7 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
     Box(
         modifier = Modifier.fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .nestedScroll(barScrollConnection)
     ) {
         PhoneNavHost(
             navController = navController,
@@ -148,7 +198,8 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
             PhoneBottomBar(
                 navController = navController,
                 currentRoute = currentRoute,
-                showLabels = appSettings.showBottomBarLabels
+                showLabels = appSettings.showBottomBarLabels,
+                shrinkProgress = { barShrinkProgress.value }
             )
         }
     }

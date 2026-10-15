@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.1] - 2026-10-15
+
+### Added
+- Bottom bar settings plumbing: style (Glass/Solid), size (S/M/L), and Shrink on scroll are stored and read by the bar (defaults Glass/Medium/off). The Settings rows to change them arrive in 0.9.2.
+
 ## [0.9.0] - 2026-10-15
 
 ### Changed

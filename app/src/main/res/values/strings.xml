@@ -273,6 +273,10 @@
     <string name="settings_default_tab_contacts">Contacts</string>
     <string name="settings_bottom_labels">Bottom bar labels</string>
     <string name="settings_bottom_labels_desc">Display tab text labels below icons in navigation bar</string>
+    <string name="settings_bottom_bar_style">Bottom bar style</string>
+    <string name="settings_bottom_bar_size">Bottom bar size</string>
+    <string name="settings_bottom_bar_shrink">Shrink on scroll</string>
+    <string name="settings_bottom_bar_shrink_desc">Compact the bottom bar to icons only while scrolling down</string>
     <string name="settings_animations">Animations</string>
     <string name="settings_animations_on">On</string>
     <string name="settings_animations_reduced">Reduced</string>

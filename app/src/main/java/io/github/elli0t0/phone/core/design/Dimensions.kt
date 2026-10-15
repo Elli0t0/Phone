@@ -1,7 +1,10 @@
 package io.github.elli0t0.phone.core.design
 
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.elli0t0.phone.data.settings.model.BottomBarSize
 
 /** Bottom bar island and keypad dimensions. */
 object PhoneDimens {
@@ -17,6 +20,8 @@ object PhoneDimens {
     val bottomBarItemInset = 4.dp
     // Extra width the shared selection pill gains mid-flight.
     val bottomBarPillStretch = 14.dp
+    // Height lost when the bar compacts on scroll (icons only).
+    val bottomBarShrinkDelta = 12.dp
     val bottomBarElevation = 2.dp
     val bottomBarShadowAlpha = 0.08f
     val bottomBarIconSize = 24.dp
@@ -101,4 +106,26 @@ object PhoneDimens {
     val setupItemIconSize = 24.dp
     val setupCardTextPaddingStart = 12.dp
     val setupCardTextPaddingEnd = 8.dp
+}
+
+/**
+ * Width, height, icon and label sizes for one bottom-bar size setting.
+ * Medium reuses the default bottom-bar tokens above.
+ */
+data class BottomBarSizeSpec(
+    val widthFraction: Float,
+    val height: Dp,
+    val iconSize: Dp,
+    val labelSize: TextUnit
+)
+
+fun bottomBarSizeSpec(size: BottomBarSize): BottomBarSizeSpec = when (size) {
+    BottomBarSize.SMALL -> BottomBarSizeSpec(0.5f, 52.dp, 20.dp, 11.sp)
+    BottomBarSize.MEDIUM -> BottomBarSizeSpec(
+        PhoneDimens.bottomBarWidthFraction,
+        PhoneDimens.bottomBarHeight,
+        PhoneDimens.bottomBarIconSize,
+        PhoneDimens.bottomBarLabelSize
+    )
+    BottomBarSize.LARGE -> BottomBarSizeSpec(0.7f, 68.dp, 28.dp, 13.sp)
 }

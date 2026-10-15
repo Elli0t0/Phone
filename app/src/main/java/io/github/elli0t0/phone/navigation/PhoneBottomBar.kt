@@ -17,9 +17,11 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.layout
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -37,6 +39,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -49,9 +53,11 @@ import androidx.compose.ui.util.lerp
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
+import io.github.elli0t0.phone.core.design.BottomBarDark
 import io.github.elli0t0.phone.core.design.BottomBarDarkSelected
 import io.github.elli0t0.phone.core.design.BottomBarDarkSelectedContent
 import io.github.elli0t0.phone.core.design.BottomBarDarkUnselected
+import io.github.elli0t0.phone.core.design.BottomBarLight
 import io.github.elli0t0.phone.core.design.BottomBarLightSelected
 import io.github.elli0t0.phone.core.design.BottomBarLightSelectedContent
 import io.github.elli0t0.phone.core.design.BottomBarLightUnselected
@@ -59,8 +65,10 @@ import io.github.elli0t0.phone.core.design.GlassSurface
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.bottomBarSizeSpec
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
+import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
 import io.github.elli0t0.phone.data.settings.model.ThemeMode
 import kotlin.math.PI
 import kotlin.math.roundToInt
@@ -78,14 +86,19 @@ import kotlin.math.sin
  * Normal and SemiBold with its color (Short). The bar is real glass:
  * content scrolls visibly behind it. Labels show unless the setting
  * turns them off. The bar floats above the gesture handle:
- * navigation-bar inset + 12dp gap.
+ * navigation-bar inset + 12dp gap. Style (Glass/Solid) and size
+ * (S/M/L) come from Settings; shrinkProgress compacts the bar to
+ * icons only as it goes 0 to 1.
  */
 @Composable
 fun PhoneBottomBar(
     navController: NavController,
     currentRoute: String?,
     showLabels: Boolean = true,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // 0 = full height with labels, 1 = compact icons-only. Read only
+    // in layout/draw lambdas, so shrinking never recomposes.
+    shrinkProgress: () -> Float = { 0f }
 ) {
     val darkTheme = when (LocalAppSettings.current.themeMode) {
         ThemeMode.LIGHT -> false
@@ -95,6 +108,8 @@ fun PhoneBottomBar(
     val selectedPillColor = if (darkTheme) BottomBarDarkSelected else BottomBarLightSelected
     val selectedContentColor = if (darkTheme) BottomBarDarkSelectedContent else BottomBarLightSelectedContent
     val unselectedContentColor = if (darkTheme) BottomBarDarkUnselected else BottomBarLightUnselected
+    val barColor = if (darkTheme) BottomBarDark else BottomBarLight
+    val sizeSpec = PhoneDimens.bottomBarSizeSpec(LocalAppSettings.current.bottomBarSize)
     val pillShape = RoundedCornerShape(PhoneDimens.bottomBarCornerPercent)
     val lightHaptic = rememberLightHaptic()
     val animationOption = LocalAppSettings.current.animationOption
@@ -138,7 +153,7 @@ fun PhoneBottomBar(
             .testTag("phone_bottom_bar"),
         contentAlignment = Alignment.Center
     ) {
-        val barWidth = maxWidth * PhoneDimens.bottomBarWidthFraction
+        val barWidth = maxWidth * sizeSpec.widthFraction
         val density = LocalDensity.current
         val itemWidthPx = with(density) {
             (barWidth / Screen.bottomNavItems.size).toPx()
@@ -159,12 +174,20 @@ fun PhoneBottomBar(
             easing = Motion.Easings.Standard
         )
 
-        GlassSurface(
-            shape = pillShape,
-            modifier = Modifier
-                .width(barWidth)
-                .height(PhoneDimens.bottomBarHeight)
-        ) {
+        // Bar height: shrinks by bottomBarShrinkDelta as the shrink
+        // progress goes 0 to 1. The progress is read only in this
+        // layout lambda, so shrinking never recomposes.
+        val barHeightModifier = Modifier.layout { measurable, constraints ->
+            val shrink = shrinkProgress().coerceIn(0f, 1f)
+            val h = with(this) {
+                (sizeSpec.height - PhoneDimens.bottomBarShrinkDelta * shrink).roundToPx()
+            }
+            val placeable = measurable.measure(
+                constraints.copy(minHeight = h, maxHeight = h)
+            )
+            layout(placeable.width, h) { placeable.place(0, 0) }
+        }
+        val barContent: @Composable BoxScope.() -> Unit = {
             // The one shared pill, behind the items.
             Box(
                 modifier = Modifier
@@ -292,42 +315,92 @@ fun PhoneBottomBar(
                                         } else {
                                             unselectedContentColor
                                         },
-                                        modifier = Modifier.size(PhoneDimens.bottomBarIconSize)
+                                        modifier = Modifier.size(sizeSpec.iconSize)
                                     )
                                 }
                             }
                             if (showLabels) {
-                                Spacer(
-                                    modifier = Modifier.height(
-                                        PhoneDimens.bottomBarLabelIconGap
+                                // Labels fade and collapse to zero height
+                                // as the bar compacts. Progress is read
+                                // only in layout/draw lambdas.
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier
+                                        .graphicsLayer {
+                                            alpha = 1f - shrinkProgress().coerceIn(0f, 1f)
+                                        }
+                                        .layout { measurable, constraints ->
+                                            val p = shrinkProgress().coerceIn(0f, 1f)
+                                            val maxH = if (constraints.hasBoundedHeight) {
+                                                (constraints.maxHeight * (1f - p))
+                                                    .roundToInt().coerceAtLeast(0)
+                                            } else {
+                                                constraints.maxHeight
+                                            }
+                                            val placeable = measurable.measure(
+                                                constraints.copy(maxHeight = maxH)
+                                            )
+                                            layout(placeable.width, placeable.height) {
+                                                placeable.place(0, 0)
+                                            }
+                                        }
+                                ) {
+                                    Spacer(
+                                        modifier = Modifier.height(
+                                            PhoneDimens.bottomBarLabelIconGap
+                                        )
                                     )
-                                )
-                                Crossfade(
-                                    targetState = selected,
-                                    animationSpec = iconSpec,
-                                    label = "tab_label"
-                                ) { isSelected ->
-                                    Text(
-                                        text = stringResource(id = screen.titleRes),
-                                        fontSize = PhoneDimens.bottomBarLabelSize,
-                                        fontWeight = if (isSelected) {
-                                            FontWeight.SemiBold
-                                        } else {
-                                            FontWeight.Normal
-                                        },
-                                        color = if (isSelected) {
-                                            selectedContentColor
-                                        } else {
-                                            unselectedContentColor
-                                        },
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
+                                    Crossfade(
+                                        targetState = selected,
+                                        animationSpec = iconSpec,
+                                        label = "tab_label"
+                                    ) { isSelected ->
+                                        Text(
+                                            text = stringResource(id = screen.titleRes),
+                                            fontSize = sizeSpec.labelSize,
+                                            fontWeight = if (isSelected) {
+                                                FontWeight.SemiBold
+                                            } else {
+                                                FontWeight.Normal
+                                            },
+                                            color = if (isSelected) {
+                                                selectedContentColor
+                                            } else {
+                                                unselectedContentColor
+                                            },
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
+            }
+        }
+        if (LocalAppSettings.current.bottomBarStyle == BottomBarStyle.GLASS) {
+            GlassSurface(
+                shape = pillShape,
+                modifier = Modifier.width(barWidth).then(barHeightModifier)
+            ) {
+                barContent()
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .width(barWidth)
+                    .then(barHeightModifier)
+                    .shadow(
+                        PhoneDimens.bottomBarElevation,
+                        pillShape,
+                        spotColor = Color.Black.copy(alpha = PhoneDimens.bottomBarShadowAlpha),
+                        ambientColor = Color.Black.copy(alpha = PhoneDimens.bottomBarShadowAlpha)
+                    )
+                    .clip(pillShape)
+                    .background(barColor)
+            ) {
+                barContent()
             }
         }
     }

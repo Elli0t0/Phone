@@ -12,7 +12,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AppSettings
-import io.github.elli0t0.phone.data.settings.model.CallBackground
+import io.github.elli0t0.phone.data.settings.model.BottomBarSize
+import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
 import io.github.elli0t0.phone.data.settings.model.CallDisplay
 import io.github.elli0t0.phone.data.settings.model.DefaultSim
 import io.github.elli0t0.phone.data.settings.model.CardStyle
@@ -37,6 +38,9 @@ interface SettingsRepository {
     suspend fun setFontSizeScale(scale: Float)
     suspend fun setAnimationOption(option: AnimationOption)
     suspend fun setShowBottomBarLabels(show: Boolean)
+    suspend fun setBottomBarStyle(style: BottomBarStyle)
+    suspend fun setBottomBarSize(size: BottomBarSize)
+    suspend fun setShrinkBottomBarOnScroll(shrink: Boolean)
     suspend fun setDefaultStartTab(tab: StartTab)
     suspend fun setContactSortOrder(order: ContactSortOrder)
     suspend fun setContactNameFormat(format: ContactNameFormat)
@@ -62,6 +66,9 @@ class DataStoreSettingsRepository(
         val FONT_SIZE_SCALE = floatPreferencesKey("font_size_scale")
         val ANIMATION_OPTION = stringPreferencesKey("animation_option")
         val BOTTOM_BAR_LABELS = booleanPreferencesKey("bottom_bar_labels")
+        val BOTTOM_BAR_STYLE = stringPreferencesKey("bottom_bar_style")
+        val BOTTOM_BAR_SIZE = stringPreferencesKey("bottom_bar_size")
+        val BOTTOM_BAR_SHRINK = booleanPreferencesKey("bottom_bar_shrink")
         val DEFAULT_START_TAB = stringPreferencesKey("default_start_tab")
         val CONTACT_SORT_ORDER = stringPreferencesKey("contact_sort_order")
         val CONTACT_NAME_FORMAT = stringPreferencesKey("contact_name_format")
@@ -91,6 +98,14 @@ class DataStoreSettingsRepository(
         val anim = animStr?.let { runCatching { AnimationOption.valueOf(it) }.getOrNull() } ?: AnimationOption.ON
 
         val showLabels = prefs[Keys.BOTTOM_BAR_LABELS] ?: true
+
+        val barStyleStr = prefs[Keys.BOTTOM_BAR_STYLE]
+        val barStyle = barStyleStr?.let { runCatching { BottomBarStyle.valueOf(it) }.getOrNull() } ?: BottomBarStyle.GLASS
+
+        val barSizeStr = prefs[Keys.BOTTOM_BAR_SIZE]
+        val barSize = barSizeStr?.let { runCatching { BottomBarSize.valueOf(it) }.getOrNull() } ?: BottomBarSize.MEDIUM
+
+        val barShrink = prefs[Keys.BOTTOM_BAR_SHRINK] ?: false
 
         val tabStr = prefs[Keys.DEFAULT_START_TAB]
         val startTab = tabStr?.let { runCatching { StartTab.valueOf(it) }.getOrNull() } ?: StartTab.KEYPAD
@@ -125,6 +140,9 @@ class DataStoreSettingsRepository(
             fontSizeScale = fontScale,
             animationOption = anim,
             showBottomBarLabels = showLabels,
+            bottomBarStyle = barStyle,
+            bottomBarSize = barSize,
+            shrinkBottomBarOnScroll = barShrink,
             defaultStartTab = startTab,
             contactSortOrder = sortOrder,
             contactNameFormat = nameFormat,
@@ -188,6 +206,24 @@ class DataStoreSettingsRepository(
     override suspend fun setShowBottomBarLabels(show: Boolean) {
         dataStore.edit { prefs ->
             prefs[Keys.BOTTOM_BAR_LABELS] = show
+        }
+    }
+
+    override suspend fun setBottomBarStyle(style: BottomBarStyle) {
+        dataStore.edit { prefs ->
+            prefs[Keys.BOTTOM_BAR_STYLE] = style.name
+        }
+    }
+
+    override suspend fun setBottomBarSize(size: BottomBarSize) {
+        dataStore.edit { prefs ->
+            prefs[Keys.BOTTOM_BAR_SIZE] = size.name
+        }
+    }
+
+    override suspend fun setShrinkBottomBarOnScroll(shrink: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.BOTTOM_BAR_SHRINK] = shrink
         }
     }
 
