@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -75,8 +76,8 @@ import io.github.elli0t0.phone.feature.setup.SetupWarningCard
 import io.github.elli0t0.phone.feature.recents.ui.CallLogRow
 import io.github.elli0t0.phone.feature.recents.ui.DaySectionCard
 import io.github.elli0t0.phone.feature.recents.ui.RecentsEmptyState
+import io.github.elli0t0.phone.navigation.FloatingActionsPill
 import io.github.elli0t0.phone.navigation.PageHeaderItem
-import io.github.elli0t0.phone.navigation.PinnedPageBar
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -190,12 +191,9 @@ fun RecentsScreen(
                     .padding(bottom = spacing.small)
             )
 
-            // Pinned top bar: background and title fade in as the list
-            // scrolls; the filter, search and menu actions stay visible.
-            PinnedPageBar(
-                title = stringResource(id = R.string.app_name),
-                listState = listState
-            ) {
+            // Header actions: filter, search, menu. Shared by the header's
+            // action row and the floating pill (same lambda, one menu).
+            val headerActions: @Composable RowScope.() -> Unit = {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -360,6 +358,7 @@ fun RecentsScreen(
                 }
             }
 
+            Box(modifier = Modifier.fillMaxSize()) {
             when (val status = permissionState.status) {
                 is CallLogPermissionStatus.Granted -> {
                     LazyColumn(
@@ -385,7 +384,8 @@ fun RecentsScreen(
                                 subtitle = null,
                                 modifier = Modifier
                                     .animateItem()
-                                    .firstLoadReveal(revealIndex++, listRevealed)
+                                    .firstLoadReveal(revealIndex++, listRevealed),
+                                actions = headerActions
                             )
                         }
                         // Error State
@@ -505,6 +505,16 @@ fun RecentsScreen(
                         modifier = Modifier.padding(top = spacing.medium)
                     )
                 }
+            }
+            // Floating glass pill with the header actions, overlaid at the
+            // top-right of the list area once the header scrolls off.
+            FloatingActionsPill(
+                listState = listState,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 8.dp),
+                actions = headerActions
+            )
             }
         }
     }

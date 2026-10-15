@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -45,8 +46,8 @@ import io.github.elli0t0.phone.core.permissions.ContactsPermissionStatus
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 import io.github.elli0t0.phone.data.contacts.model.DuplicateGroup
 import io.github.elli0t0.phone.feature.contacts.ContactsUiState
+import io.github.elli0t0.phone.navigation.FloatingActionsPill
 import io.github.elli0t0.phone.navigation.PageHeaderItem
-import io.github.elli0t0.phone.navigation.PinnedPageBar
 
 @Composable
 fun ContactListScreen(
@@ -161,19 +162,9 @@ private fun ContactsContent(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // Pinned top bar: background and title fade in as the list
-        // scrolls; the add, search and menu actions stay visible.
-        PinnedPageBar(
-            title = stringResource(id = R.string.tab_contacts),
-            listState = listState
-        ) {
-            Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = spacing.screenHorizontalPadding, vertical = spacing.small),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        // Header actions: add, search, menu. Shared by the header's
+        // action row and the floating pill (same lambda, one menu).
+        val headerActions: @Composable RowScope.() -> Unit = {
             IconButton(
                 onClick = onAddContactClick,
                 modifier = Modifier.testTag("button_add_contact")
@@ -226,7 +217,6 @@ private fun ContactsContent(
                 }
             }
         }
-        }
 
         if (searchVisible) {
             ContactSearchBar(
@@ -239,6 +229,7 @@ private fun ContactsContent(
             )
         }
 
+        Box(modifier = Modifier.fillMaxSize()) {
         if (uiState.allContacts.isEmpty() && !uiState.isLoading) {
             EmptyContactsState(onAddContactClick = onAddContactClick)
         } else if (uiState.filteredContacts.isEmpty() && uiState.searchQuery.isNotEmpty()) {
@@ -268,7 +259,8 @@ private fun ContactsContent(
                     subtitle = countText,
                     modifier = Modifier
                         .animateItem()
-                        .firstLoadReveal(revealIndex++, listRevealed)
+                        .firstLoadReveal(revealIndex++, listRevealed),
+                    actions = headerActions
                 )
             }
             if (uiState.showDuplicatesCard && uiState.searchQuery.isEmpty()) {
@@ -403,6 +395,16 @@ private fun ContactsContent(
                 }
             }
         }
+        }
+        // Floating glass pill with the header actions, overlaid at the
+        // top-right of the list area once the header scrolls off.
+        FloatingActionsPill(
+            listState = listState,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 8.dp),
+            actions = headerActions
+        )
         }
     }
 }
