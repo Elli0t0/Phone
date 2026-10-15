@@ -172,8 +172,10 @@ fun ContactGroupCard(
             )
             if (index < contacts.lastIndex) {
                 HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant,
-                    thickness = 1.dp,
+                    // Subtle divider like Recents and History.
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(
+                        alpha = PhoneDimens.recentsDividerAlpha
+                    ),
                     // Divider starts at the text: row padding + avatar + spacer.
                     modifier = Modifier.padding(
                         start = spacing.medium +
@@ -603,16 +605,16 @@ fun FavoriteContactCard(
                 indication = ripple()
             ) { lightHaptic(); onClick() }
             .testTag("favorite_card_${contact.id}")
-            .padding(12.dp),
+            .padding(PhoneDimens.contactsFavoriteCardPadding),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             ContactAvatar(
                 photoUri = contact.photoUri,
                 displayName = displayName,
-                size = 56.dp
+                size = PhoneDimens.contactsFavoriteAvatarSize
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(PhoneDimens.contactsFavoriteAvatarNameGap))
             Text(
                 text = displayName,
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),

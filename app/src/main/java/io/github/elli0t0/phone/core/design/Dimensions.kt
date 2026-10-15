@@ -64,6 +64,9 @@ object PhoneDimens {
     val contactsDuplicatesDismissIconSize = 14.dp
     val contactsFavoritesHintIconSize = 22.dp
     val contactsGroupIconSize = 24.dp
+    val contactsFavoriteAvatarSize = 56.dp
+    val contactsFavoriteCardPadding = 12.dp
+    val contactsFavoriteAvatarNameGap = 8.dp
     val contactsPillCornerPercent = 50
     // Settings: cards, slider, switches.
     val settingsSwitchWidth = 52.dp
