@@ -62,7 +62,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
@@ -291,7 +290,7 @@ fun ContactEditScreen(
                         },
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.surfaceVariant,
-                    shadowElevation = 2.dp
+                    shadowElevation = PhoneDimens.detailPhotoBadgeElevation
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
