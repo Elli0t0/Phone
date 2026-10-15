@@ -27,6 +27,10 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+// Compiled once: the old code recompiled this regex twice per contact
+// on every list transform (plus twice per sort comparison).
+private val whitespaceRegex = "\\s+".toRegex()
+
 class ContactsViewModel(
     private val contactsRepository: ContactsRepository,
     private val favoritesRepository: FavoritesRepository? = null,
@@ -87,13 +91,13 @@ class ContactsViewModel(
     }
 
     // kotlinx-coroutines 1.8.1 only provides combine() overloads for up to 5 flows,
-    // so the 10 inputs are grouped into two 5-flow combines first.
-    private data class ContactsData(
-        val contacts: List<ContactSummary>,
+    // so the inputs are grouped into combines of at most 5 flows.
+    private data class ContactsListData(
+        val formattedContacts: List<ContactSummary>,
+        val filteredContacts: List<ContactSummary>,
+        val groupedContacts: Map<String, List<ContactSummary>>,
         val favorites: List<ContactSummary>,
-        val settings: AppSettings,
-        val query: String,
-        val messageRes: Int?
+        val query: String
     )
 
     private data class ContactsUiExtras(
@@ -104,15 +108,47 @@ class ContactsViewModel(
         val isMerging: Boolean
     )
 
-    private val contactsDataFlow = combine(
+    // List transform (format + sort + filter + group): runs only when the
+    // contacts, favorites, settings, or query change — never when a
+    // snackbar, the duplicates card, or a merge dialog changes.
+    private val contactsListFlow = combine(
         contactsRepository.getContactsFlow(),
         favoritesFlow,
         settingsFlow,
-        _searchQuery,
-        _userMessageRes
-    ) { contacts, favorites, settings, query, messageRes ->
-        ContactsData(contacts, favorites, settings, query, messageRes)
+        _searchQuery
+    ) { contacts, favorites, settings, query ->
+        latestContacts = contacts
+        val formattedContacts = contacts.map { contact ->
+            val parts = contact.displayName.trim().split(whitespaceRegex)
+            val formattedName = if (settings.contactNameFormat == ContactNameFormat.LAST_NAME_FIRST && parts.size > 1) {
+                "${parts.last()}, ${parts.dropLast(1).joinToString(" ")}"
+            } else {
+                contact.displayName
+            }
+            contact.copy(displayName = formattedName)
+        }.sortedWith { a, b ->
+            if (settings.contactSortOrder == ContactSortOrder.LAST_NAME) {
+                val lastA = a.displayName.trim().split(whitespaceRegex).lastOrNull().orEmpty()
+                val lastB = b.displayName.trim().split(whitespaceRegex).lastOrNull().orEmpty()
+                lastA.compareTo(lastB, ignoreCase = true)
+            } else {
+                a.displayName.compareTo(b.displayName, ignoreCase = true)
+            }
+        }
+
+        val filtered = ContactSearchMatcher.filter(formattedContacts, query)
+        ContactsListData(
+            formattedContacts = formattedContacts,
+            filteredContacts = filtered,
+            groupedContacts = ContactGroupingUtil.groupContacts(filtered),
+            favorites = favorites,
+            query = query
+        )
     }
+    // Name formatting + search filter + grouping run on
+    // transformDispatcher: the transform touches every contact and must
+    // never block the main thread.
+    .flowOn(transformDispatcher)
 
     private val contactsUiExtrasFlow = combine(
         _duplicateGroups,
@@ -125,41 +161,20 @@ class ContactsViewModel(
     }
 
     val uiState: StateFlow<ContactsUiState> = combine(
-        contactsDataFlow,
+        contactsListFlow,
         contactsUiExtrasFlow,
         _profileContact,
-        _duplicatesCardDismissed
-    ) { data, extras, profileContact, duplicatesCardDismissed ->
-        latestContacts = data.contacts
-        val formattedContacts = data.contacts.map { contact ->
-            val parts = contact.displayName.trim().split("\\s+".toRegex())
-            val formattedName = if (data.settings.contactNameFormat == ContactNameFormat.LAST_NAME_FIRST && parts.size > 1) {
-                "${parts.last()}, ${parts.dropLast(1).joinToString(" ")}"
-            } else {
-                contact.displayName
-            }
-            contact.copy(displayName = formattedName)
-        }.sortedWith { a, b ->
-            if (data.settings.contactSortOrder == ContactSortOrder.LAST_NAME) {
-                val lastA = a.displayName.trim().split("\\s+".toRegex()).lastOrNull().orEmpty()
-                val lastB = b.displayName.trim().split("\\s+".toRegex()).lastOrNull().orEmpty()
-                lastA.compareTo(lastB, ignoreCase = true)
-            } else {
-                a.displayName.compareTo(b.displayName, ignoreCase = true)
-            }
-        }
-
-        val filtered = ContactSearchMatcher.filter(formattedContacts, data.query)
-        val grouped = ContactGroupingUtil.groupContacts(filtered)
-
+        _duplicatesCardDismissed,
+        _userMessageRes
+    ) { list, extras, profileContact, duplicatesCardDismissed, messageRes ->
         ContactsUiState(
-            searchQuery = data.query,
-            allContacts = formattedContacts,
-            favorites = data.favorites,
-            filteredContacts = filtered,
-            groupedContacts = grouped,
+            searchQuery = list.query,
+            allContacts = list.formattedContacts,
+            favorites = list.favorites,
+            filteredContacts = list.filteredContacts,
+            groupedContacts = list.groupedContacts,
             isLoading = false,
-            userMessageRes = data.messageRes,
+            userMessageRes = messageRes,
             duplicateGroups = extras.duplicateGroups,
             showDuplicates = extras.showDuplicates,
             profileContact = profileContact,
@@ -169,10 +184,6 @@ class ContactsViewModel(
             isMerging = extras.isMerging
         )
     }
-    // Name formatting + search filter + grouping run on
-    // transformDispatcher: the transform touches every contact and must
-    // never block the main thread.
-    .flowOn(transformDispatcher)
     .stateIn(
         scope = activeScope,
         started = SharingStarted.WhileSubscribed(5_000),

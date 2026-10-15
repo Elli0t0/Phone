@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.5] - 2026-10-16
+
+### Changed
+- Performance: Recents and Contacts list transforms (filter, sort, group) now run only when their inputs change — expanding a row, showing a message, or toggling the duplicates card no longer re-sorts the whole list. Recents date filter uses one epoch-millis range instead of a per-row date conversion, and name matching avoids a per-row lowercase copy. The contacts whitespace regex is compiled once instead of twice per contact per transform.
+
 ## [0.10.4] - 2026-10-16
 
 ### Changed
