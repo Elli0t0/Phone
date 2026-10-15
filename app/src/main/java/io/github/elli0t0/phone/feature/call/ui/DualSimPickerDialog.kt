@@ -1,6 +1,7 @@
 package io.github.elli0t0.phone.feature.call.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,7 +17,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,6 +29,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.pressScale
+import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.core.telecom.SimAccountInfo
 
 @Composable
@@ -36,6 +41,7 @@ fun DualSimPickerDialog(
     onDismiss: () -> Unit
 ) {
     val spacing = LocalSpacing.current
+    val lightHaptic = rememberLightHaptic()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -55,12 +61,17 @@ fun DualSimPickerDialog(
                 )
 
                 simAccounts.forEachIndexed { index, sim ->
+                    val rowSource = remember { MutableInteractionSource() }
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(min = 64.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .clickable { onSimSelected(sim) }
+                            .pressScale(rowSource)
+                            .clickable(
+                                interactionSource = rowSource,
+                                indication = ripple()
+                            ) { lightHaptic(); onSimSelected(sim) }
                             .padding(horizontal = spacing.small, vertical = spacing.small)
                             .testTag("sim_picker_option_${sim.label}"),
                         verticalAlignment = Alignment.CenterVertically

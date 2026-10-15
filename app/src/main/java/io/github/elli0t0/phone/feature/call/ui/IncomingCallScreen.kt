@@ -1,6 +1,8 @@
 package io.github.elli0t0.phone.feature.call.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,10 +19,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,6 +42,8 @@ import io.github.elli0t0.phone.core.design.CallAnswerGreen
 import io.github.elli0t0.phone.core.design.CallDeclineRed
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.callBackgroundBrush
+import io.github.elli0t0.phone.core.design.pressScale
+import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.call.OngoingCallModel
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 
@@ -55,6 +60,9 @@ fun IncomingCallScreen(
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
+    val declineSource = remember { MutableInteractionSource() }
+    val answerSource = remember { MutableInteractionSource() }
+    val lightHaptic = rememberLightHaptic()
 
     Column(
         modifier = modifier
@@ -160,13 +168,18 @@ fun IncomingCallScreen(
         ) {
             // Decline (Red)
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                IconButton(
-                    onClick = onDecline,
+                Box(
                     modifier = Modifier
                         .size(76.dp)
                         .clip(CircleShape)
                         .background(CallDeclineRed)
-                        .testTag("decline_call_button")
+                        .pressScale(declineSource)
+                        .clickable(
+                            interactionSource = declineSource,
+                            indication = ripple()
+                        ) { lightHaptic(); onDecline() }
+                        .testTag("decline_call_button"),
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_call_end),
@@ -185,13 +198,18 @@ fun IncomingCallScreen(
 
             // Answer (Green)
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                IconButton(
-                    onClick = onAnswer,
+                Box(
                     modifier = Modifier
                         .size(76.dp)
                         .clip(CircleShape)
                         .background(CallAnswerGreen)
-                        .testTag("answer_call_button")
+                        .pressScale(answerSource)
+                        .clickable(
+                            interactionSource = answerSource,
+                            indication = ripple()
+                        ) { lightHaptic(); onAnswer() }
+                        .testTag("answer_call_button"),
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_phone),

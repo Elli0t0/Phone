@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.2] - 2026-10-15
+
+### Changed
+- Call screens (incoming): answer and decline buttons now press-scale to 0.92 with ripple and a light haptic on tap (same size, shape, and colors). Dual-SIM picker rows now press-scale with ripple and a light haptic. Quick-reply chips and dialog buttons unchanged.
+
 ## [0.8.1] - 2026-10-15
 
 ### Changed
