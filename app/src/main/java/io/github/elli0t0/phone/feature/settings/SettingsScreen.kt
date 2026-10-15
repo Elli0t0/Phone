@@ -7,6 +7,7 @@ import android.os.Build
 import android.provider.Settings
 import android.telecom.TelecomManager
 import android.telephony.TelephonyManager
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -479,15 +480,6 @@ fun SettingsScreen(
         )
     }
 
-    if (showCallBackgroundPage) {
-        CallBackgroundScreen(
-            selected = settings.callBackground,
-            accentColor = settings.accentColor,
-            onSelect = { viewModel.setCallBackground(it) },
-            onNavigateBack = { showCallBackgroundPage = false }
-        )
-    }
-
     if (showDefaultSimDialog) {
         SettingsChoiceDialog(
             title = stringResource(id = R.string.settings_default_sim),
@@ -565,10 +557,6 @@ fun SettingsScreen(
                 }
             }
         )
-    }
-
-    if (showBlockedNumbers) {
-        BlockedNumbersScreen(onNavigateBack = { showBlockedNumbers = false })
     }
 
     if (showCallWaitingDialog) {
@@ -1160,6 +1148,26 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(spacing.large))
             }
         }
+    }
+
+    // Full-screen pages, emitted after the list Scaffold so they draw
+    // on top of it. Emitted before the Scaffold, they composed behind
+    // the list, so tapping the row visibly did nothing. System Back
+    // closes the open page instead of leaving Settings.
+    BackHandler(enabled = showCallBackgroundPage) { showCallBackgroundPage = false }
+    BackHandler(enabled = showBlockedNumbers) { showBlockedNumbers = false }
+
+    if (showCallBackgroundPage) {
+        CallBackgroundScreen(
+            selected = settings.callBackground,
+            accentColor = settings.accentColor,
+            onSelect = { viewModel.setCallBackground(it) },
+            onNavigateBack = { showCallBackgroundPage = false }
+        )
+    }
+
+    if (showBlockedNumbers) {
+        BlockedNumbersScreen(onNavigateBack = { showBlockedNumbers = false })
     }
 }
 
