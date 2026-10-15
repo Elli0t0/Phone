@@ -32,6 +32,7 @@ import io.github.elli0t0.phone.core.design.PhoneTheme
 import io.github.elli0t0.phone.core.telecom.PhoneInCallService
 import io.github.elli0t0.phone.data.call.CallRepository
 import io.github.elli0t0.phone.data.call.CallState
+import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.feature.call.ui.IncomingCallScreen
 import io.github.elli0t0.phone.feature.call.ui.OngoingCallScreen
@@ -143,7 +144,11 @@ class CallActivity : ComponentActivity() {
                                     onDeclineWithMessage = { CallRepository.rejectCallWithMessage(it) },
                                     quickDeclineMessages = quickDeclineMessages,
                                     callBackground = settings.callBackground,
-                                    accentColor = settings.accentColor,
+                                    accentColor = if (settings.callBackground == CallBackground.CUSTOM) {
+                                        settings.callBackgroundCustomColor
+                                    } else {
+                                        settings.accentColor
+                                    },
                                     dim = settings.callBackgroundDim,
                                     showNumber = settings.showNumberOnCallScreen
                                 )
@@ -162,7 +167,11 @@ class CallActivity : ComponentActivity() {
                                     },
                                     hasBluetoothPermission = hasBluetoothPermission,
                                     callBackground = settings.callBackground,
-                                    accentColor = settings.accentColor,
+                                    accentColor = if (settings.callBackground == CallBackground.CUSTOM) {
+                                        settings.callBackgroundCustomColor
+                                    } else {
+                                        settings.accentColor
+                                    },
                                     dim = settings.callBackgroundDim,
                                     showNumber = settings.showNumberOnCallScreen
                                 )

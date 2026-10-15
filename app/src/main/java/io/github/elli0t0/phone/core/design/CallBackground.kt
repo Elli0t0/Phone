@@ -9,6 +9,8 @@ import io.github.elli0t0.phone.data.settings.model.CallBackground
  * Background for the incoming + ongoing call screens, from the Call
  * background setting. White text and controls sit on all three, so
  * the Accent variant darkens the accent instead of using it raw.
+ * For CUSTOM, callers pass the custom background color as
+ * [accentColor] (CallActivity and the studio preview do this).
  */
 fun callBackgroundBrush(background: CallBackground, accentColor: Long): Brush = when (background) {
     CallBackground.DEFAULT -> Brush.verticalGradient(
@@ -31,6 +33,19 @@ fun callBackgroundBrush(background: CallBackground, accentColor: Long): Brush = 
     CallBackground.FOREST -> Brush.verticalGradient(
         colors = listOf(Color(0xFF0B3D2E), Color(0xFF2E7D5B))
     )
+    CallBackground.LAVENDER -> Brush.verticalGradient(
+        colors = listOf(Color(0xFF4C1D95), Color(0xFF8B5CF6))
+    )
+    CallBackground.ROSE -> Brush.verticalGradient(
+        colors = listOf(Color(0xFF831843), Color(0xFFF472B6))
+    )
+    CallBackground.MIDNIGHT -> Brush.verticalGradient(
+        colors = listOf(Color(0xFF0B1026), Color(0xFF1E3A8A))
+    )
+    CallBackground.AMBER -> Brush.verticalGradient(
+        colors = listOf(Color(0xFF7C2D12), Color(0xFFF59E0B))
+    )
+    CallBackground.CUSTOM -> SolidColor(Color(accentColor))
 }
 
 private fun Color.darken(factor: Float): Color =

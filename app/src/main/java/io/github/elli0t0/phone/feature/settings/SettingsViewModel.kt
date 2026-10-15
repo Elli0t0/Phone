@@ -159,6 +159,13 @@ class SettingsViewModel(
     }
     fun setCallBackgroundDim(dim: Float) = onCallBackgroundDimChanged(dim)
 
+    fun onCallBackgroundCustomColorChanged(color: Long) {
+        viewModelScope.launch {
+            settingsRepository.setCallBackgroundCustomColor(color)
+        }
+    }
+    fun setCallBackgroundCustomColor(color: Long) = onCallBackgroundCustomColorChanged(color)
+
     fun onShowNumberOnCallScreenChanged(show: Boolean) {
         viewModelScope.launch {
             settingsRepository.setShowNumberOnCallScreen(show)

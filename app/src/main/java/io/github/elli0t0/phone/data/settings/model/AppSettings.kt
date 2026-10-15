@@ -61,7 +61,12 @@ enum class CallBackground(val label: String) {
     ACCENT("Accent"),
     SUNSET("Sunset"),
     OCEAN("Ocean"),
-    FOREST("Forest")
+    FOREST("Forest"),
+    LAVENDER("Lavender"),
+    ROSE("Rose"),
+    MIDNIGHT("Midnight"),
+    AMBER("Amber"),
+    CUSTOM("Custom")
 }
 
 enum class DefaultSim(val label: String) {
@@ -101,6 +106,7 @@ data class AppSettings(
     val callDisplay: CallDisplay = CallDisplay.FULL_SCREEN,
     val callBackground: CallBackground = CallBackground.DEFAULT,
     val callBackgroundDim: Float = 0f,
+    val callBackgroundCustomColor: Long = AccentPreset.ONE_UI_BLUE.colorValue,
     val showNumberOnCallScreen: Boolean = true,
     val defaultSim: DefaultSim = DefaultSim.ASK,
     // Quick-decline message overrides, one per reply chip. A blank entry

@@ -3,6 +3,7 @@ package io.github.elli0t0.phone.feature.settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,12 +18,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
@@ -83,6 +87,16 @@ fun CallBackgroundScreen(
         factory = SettingsViewModel.provideFactory(app.container.settingsRepository)
     )
     var previewOngoing by remember { mutableStateOf(false) }
+    var showCustomColorDialog by remember { mutableStateOf(false) }
+    var customColorHexInput by remember { mutableStateOf("") }
+    var customColorError by remember { mutableStateOf(false) }
+    // The color the brush uses: the custom color when CUSTOM is
+    // selected, the accent otherwise (same rule as CallActivity).
+    val backgroundColor = if (selected == CallBackground.CUSTOM) {
+        settings.callBackgroundCustomColor
+    } else {
+        accentColor
+    }
     // Slider draft: the preview follows the drag live, and the value
     // is written to Settings once on release (not per frame).
     var dimDraft by remember(settings.callBackgroundDim) {
@@ -102,6 +116,66 @@ fun CallBackgroundScreen(
         stringResource(id = R.string.quick_reply_call_back),
         stringResource(id = R.string.quick_reply_in_meeting)
     )
+
+    // Custom color: hex dialog, same pattern as the accent picker.
+    // Saving picks the custom color and selects the CUSTOM style.
+    if (showCustomColorDialog) {
+        AlertDialog(
+            onDismissRequest = { showCustomColorDialog = false },
+            title = { Text(text = stringResource(id = R.string.settings_custom_color_dialog_title)) },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = customColorHexInput,
+                        onValueChange = {
+                            customColorHexInput = it
+                            customColorError = false
+                        },
+                        label = { Text("Hex code (e.g. #0072DE)") },
+                        singleLine = true,
+                        isError = customColorError
+                    )
+                    if (customColorError) {
+                        Text(
+                            text = "Invalid hex color format",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(top = spacing.small)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val cleaned = customColorHexInput.trim().removePrefix("#")
+                        try {
+                            val parsedColorLong = when (cleaned.length) {
+                                6 -> ("FF$cleaned".toLong(16))
+                                8 -> cleaned.toLong(16)
+                                else -> throw IllegalArgumentException()
+                            }
+                            settingsViewModel.onCallBackgroundCustomColorChanged(parsedColorLong)
+                            onSelect(CallBackground.CUSTOM)
+                            showCustomColorDialog = false
+                        } catch (e: Exception) {
+                            customColorError = true
+                        }
+                    }
+                ) {
+                    Text(text = stringResource(id = R.string.action_save))
+                }
+            },
+            dismissButton = {
+                Text(
+                    text = stringResource(id = R.string.action_cancel),
+                    modifier = Modifier
+                        .clickable { showCustomColorDialog = false }
+                        .padding(spacing.medium)
+                )
+            }
+        )
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize().testTag("call_background_screen"),
@@ -145,7 +219,7 @@ fun CallBackgroundScreen(
                         onDtmfDigit = {},
                         onEndCall = {},
                         callBackground = selected,
-                        accentColor = accentColor,
+                        accentColor = backgroundColor,
                         dim = dimDraft,
                         showNumber = settings.showNumberOnCallScreen
                     )
@@ -157,7 +231,7 @@ fun CallBackgroundScreen(
                         onDeclineWithMessage = {},
                         quickDeclineMessages = quickReplies,
                         callBackground = selected,
-                        accentColor = accentColor,
+                        accentColor = backgroundColor,
                         dim = dimDraft,
                         showNumber = settings.showNumberOnCallScreen
                     )
@@ -207,11 +281,17 @@ fun CallBackgroundScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(spacing.medium)
+                    horizontalArrangement = Arrangement.spacedBy(spacing.medium),
+                    modifier = Modifier.horizontalScroll(rememberScrollState())
                 ) {
                     CallBackground.entries.forEach { option ->
                         val isSelected = option == selected
                         val optionSource = remember { MutableInteractionSource() }
+                        val optionColor = if (option == CallBackground.CUSTOM) {
+                            settings.callBackgroundCustomColor
+                        } else {
+                            accentColor
+                        }
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier
@@ -219,14 +299,27 @@ fun CallBackgroundScreen(
                                 .clickable(
                                     interactionSource = optionSource,
                                     indication = ripple()
-                                ) { lightHaptic(); onSelect(option) }
+                                ) {
+                                    lightHaptic()
+                                    if (option == CallBackground.CUSTOM && isSelected) {
+                                        // Tapping the selected Custom swatch edits its color.
+                                        customColorHexInput = String.format(
+                                            "#%06X",
+                                            0xFFFFFF and settings.callBackgroundCustomColor.toInt()
+                                        )
+                                        customColorError = false
+                                        showCustomColorDialog = true
+                                    } else {
+                                        onSelect(option)
+                                    }
+                                }
                                 .testTag("call_background_option_${option.name}")
                         ) {
                             Box(
                                 modifier = Modifier
                                     .size(48.dp)
                                     .clip(CircleShape)
-                                    .background(callBackgroundBrush(option, accentColor))
+                                    .background(callBackgroundBrush(option, optionColor))
                                     .then(
                                         if (isSelected) {
                                             Modifier.border(
@@ -253,7 +346,7 @@ fun CallBackgroundScreen(
                     }
                 }
 
-                // Dim: black scrim over the background, 0-60%.
+                // Dim: black scrim over the background, 0-100%.
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -276,7 +369,7 @@ fun CallBackgroundScreen(
                     onValueChangeFinished = {
                         settingsViewModel.onCallBackgroundDimChanged(dimDraft)
                     },
-                    valueRange = 0f..0.6f,
+                    valueRange = 0f..1f,
                     modifier = Modifier.fillMaxWidth().testTag("call_background_dim_slider")
                 )
                 Text(

@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.6] - 2026-10-16
+
+- Call background: 5 new styles (Lavender, Rose, Midnight, Amber, Custom).
+- Call background: custom color via hex code (tap the selected Custom swatch to edit it), applied to real incoming and ongoing calls and to the preview.
+- Call background: dim range extended from 0-60% to 0-100%.
+- Call background: style swatch row scrolls horizontally so all 11 styles fit.
+
 ## [0.10.5] - 2026-10-16
 
 ### Changed
