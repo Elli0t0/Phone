@@ -86,6 +86,8 @@ object PhoneDimens {
     val detailAvatarSize = 112.dp
     val detailPhotoBadgeSize = 36.dp
     val detailPhotoBadgeIconSize = 18.dp
+    val detailPhotoBadgeElevation = 2.dp
+    val detailTopBarHeight = 56.dp
     // Contact detail: action row (call / message / favorite / more).
     val detailActionRowHorizontalPadding = 16.dp
     val detailActionRowVerticalPadding = 8.dp

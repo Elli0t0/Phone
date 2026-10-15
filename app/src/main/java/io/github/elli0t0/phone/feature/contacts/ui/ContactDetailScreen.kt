@@ -366,7 +366,7 @@ fun ContactDetailScreen(
                 var headerHeightPx by remember { mutableStateOf(0) }
                 val density = LocalDensity.current
                 val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-                val topBarHeight = statusBarTop + 56.dp
+                val topBarHeight = statusBarTop + PhoneDimens.detailTopBarHeight
                 val collapseThresholdPx = headerHeightPx + with(density) { spacing.medium.toPx() }
                 val showSolidBar = scrollState.value >= collapseThresholdPx
                 val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -438,7 +438,7 @@ fun ContactDetailScreen(
                                         },
                                     shape = CircleShape,
                                     color = MaterialTheme.colorScheme.surfaceVariant,
-                                    shadowElevation = 2.dp
+                                    shadowElevation = PhoneDimens.detailPhotoBadgeElevation
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Icon(
@@ -540,7 +540,9 @@ fun ContactDetailScreen(
                                 )
                                 if (index < contact.phones.lastIndex) {
                                     HorizontalDivider(
-                                        color = MaterialTheme.colorScheme.outlineVariant,
+                                        color = MaterialTheme.colorScheme.outlineVariant.copy(
+                                            alpha = PhoneDimens.recentsDividerAlpha
+                                        ),
                                         thickness = 1.dp,
                                         // Divider starts at the text: card padding + icon + spacer.
                                         modifier = Modifier.padding(
@@ -569,7 +571,9 @@ fun ContactDetailScreen(
                                 )
                                 if (index < contact.emails.lastIndex) {
                                     HorizontalDivider(
-                                        color = MaterialTheme.colorScheme.outlineVariant,
+                                        color = MaterialTheme.colorScheme.outlineVariant.copy(
+                                            alpha = PhoneDimens.recentsDividerAlpha
+                                        ),
                                         thickness = 1.dp,
                                         // Divider starts at the text: card padding + icon + spacer.
                                         modifier = Modifier.padding(
