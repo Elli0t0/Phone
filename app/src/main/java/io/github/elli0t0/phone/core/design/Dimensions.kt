@@ -45,6 +45,14 @@ object PhoneDimens {
     val keypadNumberDisplayMinSize = 20.sp
     val keypadNumberDisplayShrinkFactor = 0.92f
     val callButtonSize = 70.dp
+    // Incoming call screen: avatar, title, answer/decline buttons.
+    val incomingHeaderTopPadding = 48.dp
+    val incomingAvatarSize = 120.dp
+    val incomingTitleSize = 40.sp
+    val incomingChipSpacing = 8.dp
+    val incomingActionsBottomPadding = 48.dp
+    val incomingActionButtonSize = 76.dp
+    val incomingActionIconSize = 36.dp
     // Space below the call-button row: 16dp + 88dp reserved − 72dp bar
     // (60dp bar + 12dp gap) = ~32dp clear space above the bottom bar.
     val keypadCallButtonBottomPadding = 16.dp

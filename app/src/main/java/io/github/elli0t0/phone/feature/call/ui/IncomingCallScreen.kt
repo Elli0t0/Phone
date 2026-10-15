@@ -33,14 +33,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.core.design.CallAnswerGreen
 import io.github.elli0t0.phone.core.design.CallDeclineRed
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.callBackgroundBrush
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
@@ -89,7 +88,7 @@ fun IncomingCallScreen(
         ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(top = 48.dp)
+            modifier = Modifier.padding(top = PhoneDimens.incomingHeaderTopPadding)
         ) {
             Text(
                 text = stringResource(id = R.string.call_incoming),
@@ -105,7 +104,7 @@ fun IncomingCallScreen(
 
             Box(
                 modifier = Modifier
-                    .size(120.dp)
+                    .size(PhoneDimens.incomingAvatarSize)
                     .clip(CircleShape)
                     .background(Color.White.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
@@ -123,7 +122,7 @@ fun IncomingCallScreen(
                 text = titleText,
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = 40.sp
+                    fontSize = PhoneDimens.incomingTitleSize
                 ),
                 color = Color.White,
                 textAlign = TextAlign.Center,
@@ -154,8 +153,8 @@ fun IncomingCallScreen(
                 modifier = Modifier.padding(bottom = spacing.small)
             )
             FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(PhoneDimens.incomingChipSpacing, Alignment.CenterHorizontally),
+                verticalArrangement = Arrangement.spacedBy(PhoneDimens.incomingChipSpacing),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 quickDeclineMessages.forEachIndexed { index, message ->
@@ -176,7 +175,7 @@ fun IncomingCallScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 48.dp),
+                .padding(bottom = PhoneDimens.incomingActionsBottomPadding),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -184,7 +183,7 @@ fun IncomingCallScreen(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(
                     modifier = Modifier
-                        .size(76.dp)
+                        .size(PhoneDimens.incomingActionButtonSize)
                         .clip(CircleShape)
                         .background(CallDeclineRed)
                         .pressScale(declineSource)
@@ -199,7 +198,7 @@ fun IncomingCallScreen(
                         painter = painterResource(id = R.drawable.ic_call_end),
                         contentDescription = stringResource(id = R.string.call_action_decline),
                         tint = Color.White,
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(PhoneDimens.incomingActionIconSize)
                     )
                 }
                 Spacer(modifier = Modifier.height(spacing.extraSmall))
@@ -214,7 +213,7 @@ fun IncomingCallScreen(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(
                     modifier = Modifier
-                        .size(76.dp)
+                        .size(PhoneDimens.incomingActionButtonSize)
                         .clip(CircleShape)
                         .background(CallAnswerGreen)
                         .pressScale(answerSource)
@@ -229,7 +228,7 @@ fun IncomingCallScreen(
                         painter = painterResource(id = R.drawable.ic_phone),
                         contentDescription = stringResource(id = R.string.call_action_answer),
                         tint = Color.White,
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(PhoneDimens.incomingActionIconSize)
                     )
                 }
                 Spacer(modifier = Modifier.height(spacing.extraSmall))
