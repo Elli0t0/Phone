@@ -4,6 +4,7 @@ import android.graphics.BitmapFactory
 import android.text.format.DateFormat
 import java.util.Date
 import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
+import io.github.elli0t0.phone.data.calllog.model.CallType
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -44,6 +45,9 @@ import androidx.compose.ui.res.stringResource
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.design.AccentBlue
+import io.github.elli0t0.phone.core.design.CallAnswerGreen
+import io.github.elli0t0.phone.core.design.CallRejectedOrange
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.pressScale
@@ -319,10 +323,14 @@ fun CallHistoryRowItem(
         Icon(
             painter = painterResource(id = entry.type.iconRes),
             contentDescription = stringResource(id = entry.type.titleRes),
-            tint = if (entry.isMissedOrRejected) {
-                MaterialTheme.colorScheme.error
-            } else {
-                MaterialTheme.colorScheme.primary
+            // Icon color by call type, same as Recents: incoming green,
+            // outgoing accent blue, missed red, rejected/blocked orange.
+            tint = when (entry.type) {
+                CallType.Incoming -> CallAnswerGreen
+                CallType.Outgoing -> AccentBlue
+                CallType.Missed -> MaterialTheme.colorScheme.error
+                CallType.Rejected, CallType.Blocked -> CallRejectedOrange
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
             },
             modifier = Modifier.size(PhoneDimens.detailRowIconSize)
         )

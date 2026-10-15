@@ -74,6 +74,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
+import io.github.elli0t0.phone.core.design.GlassSurface
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
@@ -637,44 +638,33 @@ fun ContactDetailScreen(
                         }
                     }
 
-                    // History: this contact's calls.
+                    // History: just a row with the title; tapping it opens
+                    // the full contact history screen.
                     Spacer(modifier = Modifier.height(spacing.medium))
-                    DetailSectionCard(title = stringResource(id = R.string.contact_details_history)) {
-                        if (uiState.callHistory.isEmpty()) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.large,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    ) {
+                        val historySource = remember { MutableInteractionSource() }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(MaterialTheme.shapes.large)
+                                .pressScale(historySource)
+                                .clickable(
+                                    interactionSource = historySource,
+                                    indication = ripple()
+                                ) { lightHaptic(); onShowAllHistoryClick() }
+                                .padding(spacing.medium)
+                                .testTag("btn_show_all_history"),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Text(
-                                text = stringResource(id = R.string.contact_details_history_empty),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(vertical = spacing.small)
+                                text = stringResource(id = R.string.contact_details_history),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary
                             )
-                        } else {
-                            // Only the last 5 calls here; the rest live on the
-                            // separate paged history screen.
-                            val visibleHistory = uiState.callHistory.take(5)
-                            visibleHistory.forEachIndexed { index, entry ->
-                                CallHistoryRowItem(entry = entry)
-                                if (index < visibleHistory.lastIndex) {
-                                    HorizontalDivider(
-                                        color = MaterialTheme.colorScheme.outlineVariant.copy(
-                                            alpha = PhoneDimens.recentsDividerAlpha
-                                        ),
-                                        thickness = 1.dp,
-                                        // Divider starts at the text: card padding + icon + spacer.
-                                        modifier = Modifier.padding(
-                                            start = spacing.medium +
-                                                PhoneDimens.detailRowIconSize + spacing.medium
-                                        )
-                                    )
-                                }
-                            }
-                            if (uiState.callHistory.size > 5) {
-                                TextButton(
-                                    onClick = onShowAllHistoryClick,
-                                    modifier = Modifier.testTag("btn_show_all_history")
-                                ) {
-                                    Text(text = stringResource(id = R.string.contact_details_history_show_all))
-                                }
-                            }
                         }
                     }
 
@@ -927,16 +917,14 @@ private fun ContactDetailBottomBar(
             .padding(vertical = PhoneDimens.bottomBarBottomMargin),
         contentAlignment = Alignment.Center
     ) {
-        Surface(
+        GlassSurface(
             modifier = Modifier
                 .fillMaxWidth(PhoneDimens.detailBottomBarWidthFraction)
                 .height(PhoneDimens.bottomBarHeight),
-            shape = RoundedCornerShape(PhoneDimens.bottomBarCornerPercent),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            shadowElevation = PhoneDimens.bottomBarElevation
+            shape = RoundedCornerShape(PhoneDimens.bottomBarCornerPercent)
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxSize(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 DetailBottomBarAction(
