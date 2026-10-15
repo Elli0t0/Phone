@@ -141,7 +141,7 @@ fun SettingsScreen(
     var showSortDialog by remember { mutableStateOf(false) }
     var showFormatDialog by remember { mutableStateOf(false) }
     var showCallDisplayDialog by remember { mutableStateOf(false) }
-    var showCallBackgroundDialog by remember { mutableStateOf(false) }
+    var showCallBackgroundPage by remember { mutableStateOf(false) }
     var showDefaultSimDialog by remember { mutableStateOf(false) }
     var showQuickDeclineDialog by remember { mutableStateOf(false) }
     var showBlockedNumbers by remember { mutableStateOf(false) }
@@ -444,13 +444,12 @@ fun SettingsScreen(
         )
     }
 
-    if (showCallBackgroundDialog) {
-        SettingsChoiceDialog(
-            title = stringResource(id = R.string.settings_call_background),
-            options = CallBackground.entries.map { it.label to it },
+    if (showCallBackgroundPage) {
+        CallBackgroundScreen(
             selected = settings.callBackground,
-            onSelect = { viewModel.setCallBackground(it); showCallBackgroundDialog = false },
-            onDismiss = { showCallBackgroundDialog = false }
+            accentColor = settings.accentColor,
+            onSelect = { viewModel.setCallBackground(it) },
+            onNavigateBack = { showCallBackgroundPage = false }
         )
     }
 
@@ -996,7 +995,7 @@ fun SettingsScreen(
                         SettingsRow(
                             title = stringResource(id = R.string.settings_call_background),
                             subtitle = settings.callBackground.label,
-                            onClick = { showCallBackgroundDialog = true }
+                            onClick = { showCallBackgroundPage = true }
                         )
 
                         Spacer(modifier = Modifier.height(spacing.small))
