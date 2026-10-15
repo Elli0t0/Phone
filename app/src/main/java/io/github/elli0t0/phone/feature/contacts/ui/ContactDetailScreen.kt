@@ -14,6 +14,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -51,6 +52,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -75,6 +77,8 @@ import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.pressScale
+import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.core.telecom.CallManager
 import io.github.elli0t0.phone.core.telecom.SimCallHelper
 import io.github.elli0t0.phone.core.telecom.SimCallResolution
@@ -129,6 +133,9 @@ fun ContactDetailScreen(
     var simPickerNumber by remember { mutableStateOf<String?>(null) }
     var showCallingSimDialog by remember { mutableStateOf(false) }
     val simAccounts = remember(context) { TelecomHelper.getCallCapablePhoneAccounts(context) }
+    val avatarSource = remember { MutableInteractionSource() }
+    val simRowSource = remember { MutableInteractionSource() }
+    val lightHaptic = rememberLightHaptic()
 
     fun placeCallWithSim(number: String) {
         if (simAccounts.size <= 1) {
@@ -402,7 +409,12 @@ fun ContactDetailScreen(
                                     size = PhoneDimens.detailAvatarSize,
                                     textStyle = MaterialTheme.typography.displayMedium,
                                     modifier = Modifier
-                                        .clickable {
+                                        .pressScale(avatarSource)
+                                        .clickable(
+                                            interactionSource = avatarSource,
+                                            indication = ripple()
+                                        ) {
+                                            lightHaptic()
                                             if (!contact.photoUri.isNullOrBlank()) {
                                                 onPhotoOptionsRequest()
                                             } else {
@@ -589,7 +601,11 @@ fun ContactDetailScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(MaterialTheme.shapes.small)
-                                    .clickable { showCallingSimDialog = true }
+                                    .pressScale(simRowSource)
+                                    .clickable(
+                                        interactionSource = simRowSource,
+                                        indication = ripple()
+                                    ) { lightHaptic(); showCallingSimDialog = true }
                                     .padding(vertical = spacing.small)
                                     .testTag("row_contact_calling_sim"),
                                 verticalAlignment = Alignment.CenterVertically
@@ -831,6 +847,8 @@ private fun RingtoneRowItem(
 ) {
     val context = LocalContext.current
     val spacing = LocalSpacing.current
+    val ringtoneSource = remember { MutableInteractionSource() }
+    val lightHaptic = rememberLightHaptic()
 
     val label = remember(ringtoneUriString) {
         when {
@@ -851,7 +869,11 @@ private fun RingtoneRowItem(
         modifier = Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.small)
-            .clickable(onClick = onClick)
+            .pressScale(ringtoneSource)
+            .clickable(
+                interactionSource = ringtoneSource,
+                indication = ripple()
+            ) { lightHaptic(); onClick() }
             .padding(vertical = spacing.small)
             .testTag("row_contact_ringtone"),
         verticalAlignment = Alignment.CenterVertically
@@ -973,10 +995,16 @@ private fun DetailBottomBarAction(
     tint: Color = MaterialTheme.colorScheme.onSurface,
     testTag: String = ""
 ) {
+    val barSource = remember { MutableInteractionSource() }
+    val lightHaptic = rememberLightHaptic()
     Column(
         modifier = modifier
             .clip(MaterialTheme.shapes.medium)
-            .clickable(onClick = onClick)
+            .pressScale(barSource)
+            .clickable(
+                interactionSource = barSource,
+                indication = ripple()
+            ) { lightHaptic(); onClick() }
             .padding(vertical = PhoneDimens.detailActionRowVerticalPadding)
             .testTag(testTag),
         horizontalAlignment = Alignment.CenterHorizontally

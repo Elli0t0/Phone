@@ -7,6 +7,7 @@ import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -44,6 +46,8 @@ import coil.request.ImageRequest
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.pressScale
+import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.contacts.model.ContactPhone
 
 @Composable
@@ -58,11 +62,18 @@ fun ContactActionButton(
 ) {
     val spacing = LocalSpacing.current
     val contentAlpha = if (enabled) 1f else 0.38f
+    val actionSource = remember { MutableInteractionSource() }
+    val lightHaptic = rememberLightHaptic()
 
     Column(
         modifier = modifier
             .clip(MaterialTheme.shapes.medium)
-            .clickable(enabled = enabled, onClick = onClick)
+            .pressScale(actionSource)
+            .clickable(
+                interactionSource = actionSource,
+                indication = ripple(),
+                enabled = enabled
+            ) { lightHaptic(); onClick() }
             .padding(PhoneDimens.detailActionButtonPadding)
             .testTag(testTag),
         horizontalAlignment = Alignment.CenterHorizontally

@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.9] - 2026-10-15
+
+### Changed
+- Contact details: avatar, action buttons, ringtone row, calling-SIM row, and bottom-bar actions now press-scale to 0.92 with ripple and a light haptic on tap. Layout and behavior unchanged.
+
 ## [0.7.8] - 2026-10-15
 
 ### Changed
