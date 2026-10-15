@@ -66,6 +66,13 @@
     <string name="settings_call_waiting">Call waiting</string>
     <string name="settings_call_display">Incoming call display</string>
     <string name="settings_call_background">Call background</string>
+    <string name="settings_call_background_style">Background</string>
+    <string name="settings_call_background_dim">Background dim</string>
+    <string name="settings_call_background_dim_desc">Darken the call background with a black overlay</string>
+    <string name="settings_call_show_number">Show number</string>
+    <string name="settings_call_show_number_desc">Show the phone number under the caller name</string>
+    <string name="settings_call_preview_incoming">Incoming</string>
+    <string name="settings_call_preview_ongoing">Ongoing</string>
     <string name="settings_default_sim">Default calling SIM</string>
     <string name="settings_quick_decline">Quick decline messages</string>
     <string name="call_waiting_desc">Lets a second call come through while you are on a call. Managed by your carrier.</string>
