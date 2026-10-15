@@ -19,6 +19,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,6 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.firstLoadReveal
 import io.github.elli0t0.phone.feature.contacts.ContactHistoryViewModel
 
 // Full call history for one contact, paged 50 at a time in a LazyColumn:
@@ -43,6 +47,13 @@ fun ContactHistoryScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val spacing = LocalSpacing.current
     val listState = rememberLazyListState()
+    // First-load reveal, like Recents and Contacts: flips true when the
+    // first entries arrive, so the first 8 rows stagger in; later
+    // (paged) rows appear immediately.
+    var listRevealed by remember { mutableStateOf(false) }
+    LaunchedEffect(uiState.entries.isNotEmpty()) {
+        if (uiState.entries.isNotEmpty()) listRevealed = true
+    }
 
     LaunchedEffect(listState) {
         snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
@@ -109,17 +120,23 @@ fun ContactHistoryScreen(
                         modifier = Modifier.fillMaxSize().testTag("contact_history_list")
                     ) {
                         itemsIndexed(uiState.entries, key = { _, entry -> entry.id }) { index, entry ->
-                            CallHistoryRowItem(entry = entry)
-                            if (index < uiState.entries.lastIndex) {
-                                HorizontalDivider(
-                                    color = MaterialTheme.colorScheme.outlineVariant.copy(
-                                        alpha = PhoneDimens.recentsDividerAlpha
-                                    ),
-                                    modifier = Modifier.padding(
-                                        start = spacing.medium +
-                                            PhoneDimens.detailRowIconSize + spacing.medium
+                            Column(
+                                modifier = Modifier
+                                    .animateItem()
+                                    .firstLoadReveal(index, listRevealed)
+                            ) {
+                                CallHistoryRowItem(entry = entry)
+                                if (index < uiState.entries.lastIndex) {
+                                    HorizontalDivider(
+                                        color = MaterialTheme.colorScheme.outlineVariant.copy(
+                                            alpha = PhoneDimens.recentsDividerAlpha
+                                        ),
+                                        modifier = Modifier.padding(
+                                            start = spacing.medium +
+                                                PhoneDimens.detailRowIconSize + spacing.medium
+                                        )
                                     )
-                                )
+                                }
                             }
                         }
                         if (uiState.isLoadingMore) {
