@@ -62,6 +62,9 @@ fun OngoingCallScreen(
     hasBluetoothPermission: Boolean = true,
     callBackground: CallBackground = CallBackground.DEFAULT,
     accentColor: Long = AccentPreset.ONE_UI_BLUE.colorValue,
+    // Black scrim over the background (0 = none). Number under the name.
+    dim: Float = 0f,
+    showNumber: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
@@ -133,6 +136,13 @@ fun OngoingCallScreen(
                 .fillMaxSize()
                 .background(callBackgroundBrush(callBackground, accentColor))
         )
+        if (dim > 0f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = dim.coerceIn(0f, 1f)))
+            )
+        }
 
         Column(
             modifier = Modifier
@@ -156,7 +166,7 @@ fun OngoingCallScreen(
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(bottom = spacing.extraSmall)
                 )
-                if (hasName && callModel.number.isNotBlank()) {
+                if (hasName && showNumber && callModel.number.isNotBlank()) {
                     Text(
                         text = formattedNumber,
                         style = MaterialTheme.typography.bodyLarge.copy(fontSize = 17.sp),

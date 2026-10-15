@@ -21,6 +21,16 @@ fun callBackgroundBrush(background: CallBackground, accentColor: Long): Brush = 
             colors = listOf(accent.darken(0.8f), accent.darken(0.35f))
         )
     }
+    // Preset gradients: dark enough for white call-screen text.
+    CallBackground.SUNSET -> Brush.verticalGradient(
+        colors = listOf(Color(0xFF3A1C71), Color(0xFFB84A62))
+    )
+    CallBackground.OCEAN -> Brush.verticalGradient(
+        colors = listOf(Color(0xFF0F2027), Color(0xFF2C5364))
+    )
+    CallBackground.FOREST -> Brush.verticalGradient(
+        colors = listOf(Color(0xFF0B3D2E), Color(0xFF2E7D5B))
+    )
 }
 
 private fun Color.darken(factor: Float): Color =

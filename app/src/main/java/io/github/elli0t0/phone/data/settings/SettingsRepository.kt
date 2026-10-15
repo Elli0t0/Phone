@@ -47,6 +47,8 @@ interface SettingsRepository {
     suspend fun setContactNameFormat(format: ContactNameFormat)
     suspend fun setCallDisplay(display: CallDisplay)
     suspend fun setCallBackground(background: CallBackground)
+    suspend fun setCallBackgroundDim(dim: Float)
+    suspend fun setShowNumberOnCallScreen(show: Boolean)
     suspend fun setDefaultSim(defaultSim: DefaultSim)
     suspend fun setQuickDeclineMessages(messages: List<String>)
     suspend fun resetToDefaults()
@@ -75,6 +77,8 @@ class DataStoreSettingsRepository(
         val CONTACT_NAME_FORMAT = stringPreferencesKey("contact_name_format")
         val CALL_DISPLAY = stringPreferencesKey("call_display")
         val CALL_BACKGROUND = stringPreferencesKey("call_background")
+        val CALL_BACKGROUND_DIM = floatPreferencesKey("call_background_dim")
+        val SHOW_NUMBER_ON_CALL_SCREEN = booleanPreferencesKey("show_number_on_call_screen")
         val DEFAULT_SIM = stringPreferencesKey("default_sim")
         val QUICK_DECLINE_MESSAGES = stringPreferencesKey("quick_decline_messages")
     }
@@ -123,6 +127,10 @@ class DataStoreSettingsRepository(
         val callBackgroundStr = prefs[Keys.CALL_BACKGROUND]
         val callBackground = callBackgroundStr?.let { runCatching { CallBackground.valueOf(it) }.getOrNull() } ?: CallBackground.DEFAULT
 
+        val callBackgroundDim = prefs[Keys.CALL_BACKGROUND_DIM] ?: 0f
+
+        val showNumberOnCallScreen = prefs[Keys.SHOW_NUMBER_ON_CALL_SCREEN] ?: true
+
         val defaultSimStr = prefs[Keys.DEFAULT_SIM]
         val defaultSim = defaultSimStr?.let { runCatching { DefaultSim.valueOf(it) }.getOrNull() } ?: DefaultSim.ASK
 
@@ -149,6 +157,8 @@ class DataStoreSettingsRepository(
             contactNameFormat = nameFormat,
             callDisplay = callDisplay,
             callBackground = callBackground,
+            callBackgroundDim = callBackgroundDim,
+            showNumberOnCallScreen = showNumberOnCallScreen,
             defaultSim = defaultSim,
             quickDeclineOverrides = quickDeclineOverrides
         )
@@ -255,6 +265,18 @@ class DataStoreSettingsRepository(
     override suspend fun setCallBackground(background: CallBackground) {
         dataStore.edit { prefs ->
             prefs[Keys.CALL_BACKGROUND] = background.name
+        }
+    }
+
+    override suspend fun setCallBackgroundDim(dim: Float) {
+        dataStore.edit { prefs ->
+            prefs[Keys.CALL_BACKGROUND_DIM] = dim.coerceIn(0f, 0.6f)
+        }
+    }
+
+    override suspend fun setShowNumberOnCallScreen(show: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.SHOW_NUMBER_ON_CALL_SCREEN] = show
         }
     }
 

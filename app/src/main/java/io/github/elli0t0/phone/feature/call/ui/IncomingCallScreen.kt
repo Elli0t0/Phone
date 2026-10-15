@@ -57,6 +57,9 @@ fun IncomingCallScreen(
     quickDeclineMessages: List<String>,
     callBackground: CallBackground = CallBackground.DEFAULT,
     accentColor: Long = AccentPreset.ONE_UI_BLUE.colorValue,
+    // Black scrim over the background (0 = none). Number under the name.
+    dim: Float = 0f,
+    showNumber: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
@@ -64,15 +67,26 @@ fun IncomingCallScreen(
     val answerSource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
             .background(callBackgroundBrush(callBackground, accentColor))
-            .padding(horizontal = spacing.screenHorizontalPadding, vertical = spacing.large)
-            .testTag("incoming_call_screen"),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
+            .testTag("incoming_call_screen")
     ) {
+        if (dim > 0f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = dim.coerceIn(0f, 1f)))
+            )
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = spacing.screenHorizontalPadding, vertical = spacing.large),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(top = 48.dp)
@@ -116,7 +130,7 @@ fun IncomingCallScreen(
                 modifier = Modifier.padding(bottom = spacing.extraSmall)
             )
 
-            if (hasName && callModel.number.isNotBlank()) {
+            if (hasName && showNumber && callModel.number.isNotBlank()) {
                 Text(
                     text = formattedNumber,
                     style = MaterialTheme.typography.bodyLarge,
@@ -225,6 +239,7 @@ fun IncomingCallScreen(
                     color = Color.White.copy(alpha = 0.9f)
                 )
             }
+        }
         }
     }
 }

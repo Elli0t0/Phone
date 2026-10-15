@@ -143,7 +143,9 @@ class CallActivity : ComponentActivity() {
                                     onDeclineWithMessage = { CallRepository.rejectCallWithMessage(it) },
                                     quickDeclineMessages = quickDeclineMessages,
                                     callBackground = settings.callBackground,
-                                    accentColor = settings.accentColor
+                                    accentColor = settings.accentColor,
+                                    dim = settings.callBackgroundDim,
+                                    showNumber = settings.showNumberOnCallScreen
                                 )
                             } else {
                                 OngoingCallScreen(
@@ -160,7 +162,9 @@ class CallActivity : ComponentActivity() {
                                     },
                                     hasBluetoothPermission = hasBluetoothPermission,
                                     callBackground = settings.callBackground,
-                                    accentColor = settings.accentColor
+                                    accentColor = settings.accentColor,
+                                    dim = settings.callBackgroundDim,
+                                    showNumber = settings.showNumberOnCallScreen
                                 )
                             }
                         }

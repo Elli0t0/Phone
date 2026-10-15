@@ -152,6 +152,20 @@ class SettingsViewModel(
     }
     fun setCallBackground(background: CallBackground) = onCallBackgroundChanged(background)
 
+    fun onCallBackgroundDimChanged(dim: Float) {
+        viewModelScope.launch {
+            settingsRepository.setCallBackgroundDim(dim)
+        }
+    }
+    fun setCallBackgroundDim(dim: Float) = onCallBackgroundDimChanged(dim)
+
+    fun onShowNumberOnCallScreenChanged(show: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setShowNumberOnCallScreen(show)
+        }
+    }
+    fun setShowNumberOnCallScreen(show: Boolean) = onShowNumberOnCallScreenChanged(show)
+
     fun onDefaultSimChanged(defaultSim: DefaultSim) {
         viewModelScope.launch {
             settingsRepository.setDefaultSim(defaultSim)
