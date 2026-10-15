@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.3] - 2026-10-16
+
+### Changed
+- Ongoing call screen: all hardcoded sizes (caller info, control grid, end-call button, DTMF keypad) moved to design tokens. Dual-SIM picker row sizes moved to design tokens too.
+
+### Fixed
+- In-call DTMF keypad keys now play the light haptic like every other call button.
+
 ## [0.10.2] - 2026-10-16
 
 ### Changed

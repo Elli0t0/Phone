@@ -33,8 +33,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
@@ -43,6 +41,7 @@ import io.github.elli0t0.phone.core.design.InCallControlActiveContent
 import io.github.elli0t0.phone.core.design.InCallControlBackground
 import io.github.elli0t0.phone.core.design.LiquidGlassEndCall
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.callBackgroundBrush
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
@@ -154,13 +153,13 @@ fun OngoingCallScreen(
             // Caller info: name, number, state or duration.
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(top = 40.dp)
+                modifier = Modifier.padding(top = PhoneDimens.ongoingHeaderTopPadding)
             ) {
                 Text(
                     text = titleText,
                     style = MaterialTheme.typography.headlineLarge.copy(
                         fontWeight = FontWeight.Bold,
-                        fontSize = 36.sp
+                        fontSize = PhoneDimens.ongoingTitleSize
                     ),
                     color = Color.White,
                     textAlign = TextAlign.Center,
@@ -169,7 +168,7 @@ fun OngoingCallScreen(
                 if (hasName && showNumber && callModel.number.isNotBlank()) {
                     Text(
                         text = formattedNumber,
-                        style = MaterialTheme.typography.bodyLarge.copy(fontSize = 17.sp),
+                        style = MaterialTheme.typography.bodyLarge.copy(fontSize = PhoneDimens.ongoingNumberSize),
                         color = Color.White.copy(alpha = 0.7f),
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(bottom = spacing.extraSmall)
@@ -177,7 +176,7 @@ fun OngoingCallScreen(
                 }
                 Text(
                     text = stateText,
-                    style = MaterialTheme.typography.titleMedium.copy(fontSize = 15.sp),
+                    style = MaterialTheme.typography.titleMedium.copy(fontSize = PhoneDimens.ongoingStateSize),
                     color = Color.White.copy(alpha = 0.6f)
                 )
             }
@@ -199,12 +198,12 @@ fun OngoingCallScreen(
             // Bottom: control grid + red circular end-call button.
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(24.dp),
+                verticalArrangement = Arrangement.spacedBy(PhoneDimens.ongoingControlGridSpacing),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 if (!showKeypad) {
                     Column(
-                        verticalArrangement = Arrangement.spacedBy(24.dp),
+                        verticalArrangement = Arrangement.spacedBy(PhoneDimens.ongoingControlGridSpacing),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -268,8 +267,8 @@ fun OngoingCallScreen(
                 // End call: red circle button.
                 Box(
                     modifier = Modifier
-                        .padding(bottom = 16.dp)
-                        .size(72.dp)
+                        .padding(bottom = PhoneDimens.ongoingEndCallBottomPadding)
+                        .size(PhoneDimens.ongoingEndCallButtonSize)
                         .clip(CircleShape)
                         .background(LiquidGlassEndCall)
                         .pressScale(endCallSource)
@@ -284,7 +283,7 @@ fun OngoingCallScreen(
                         painter = painterResource(id = R.drawable.ic_call_end),
                         contentDescription = stringResource(id = R.string.call_action_end),
                         tint = Color.White,
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(PhoneDimens.ongoingEndCallIconSize)
                     )
                 }
             }
@@ -306,11 +305,11 @@ private fun InCallControlButton(
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(PhoneDimens.ongoingControlLabelGap)
     ) {
         Box(
             modifier = Modifier
-                .size(64.dp)
+                .size(PhoneDimens.ongoingControlButtonSize)
                 .clip(CircleShape)
                 .background(if (isActive) InCallControlActive else InCallControlBackground)
                 .pressScale(controlSource)
@@ -325,12 +324,12 @@ private fun InCallControlButton(
                 painter = painterResource(id = iconRes),
                 contentDescription = label,
                 tint = if (isActive) InCallControlActiveContent else Color.White,
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(PhoneDimens.ongoingControlIconSize)
             )
         }
         Text(
             text = label,
-            style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
+            style = MaterialTheme.typography.labelMedium.copy(fontSize = PhoneDimens.ongoingControlLabelSize),
             color = Color.White.copy(alpha = 0.8f)
         )
     }
@@ -352,28 +351,29 @@ private fun InCallKeypadGrid(
         listOf('7' to "PQRS", '8' to "TUV", '9' to "WXYZ"),
         listOf('*' to "", '0' to "+", '#' to "")
     )
+    val lightHaptic = rememberLightHaptic()
 
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(PhoneDimens.ongoingKeypadRowSpacing)
     ) {
         keys.forEach { row ->
             Row(
-                horizontalArrangement = Arrangement.spacedBy(32.dp)
+                horizontalArrangement = Arrangement.spacedBy(PhoneDimens.ongoingKeypadColumnSpacing)
             ) {
                 row.forEach { (digit, letters) ->
                     val keySource = remember { MutableInteractionSource() }
                     Box(
                         modifier = Modifier
-                            .size(64.dp)
+                            .size(PhoneDimens.ongoingDtmfKeySize)
                             .clip(CircleShape)
                             .background(InCallControlBackground)
                             .pressScale(keySource)
                             .clickable(
                                 interactionSource = keySource,
                                 indication = ripple()
-                            ) { onDigit(digit) }
+                            ) { lightHaptic(); onDigit(digit) }
                             .testTag("dtmf_key_$digit"),
                         contentAlignment = Alignment.Center
                     ) {
@@ -382,14 +382,14 @@ private fun InCallKeypadGrid(
                                 text = digit.toString(),
                                 style = MaterialTheme.typography.titleLarge.copy(
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 26.sp
+                                    fontSize = PhoneDimens.ongoingDtmfDigitSize
                                 ),
                                 color = Color.White
                             )
                             if (letters.isNotEmpty()) {
                                 Text(
                                     text = letters,
-                                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 10.sp),
+                                    style = MaterialTheme.typography.labelMedium.copy(fontSize = PhoneDimens.ongoingDtmfLettersSize),
                                     color = Color.White.copy(alpha = 0.6f)
                                 )
                             }
@@ -399,9 +399,9 @@ private fun InCallKeypadGrid(
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(PhoneDimens.ongoingKeypadBottomRowGap))
         Row(
-            horizontalArrangement = Arrangement.spacedBy(32.dp)
+            horizontalArrangement = Arrangement.spacedBy(PhoneDimens.ongoingKeypadColumnSpacing)
         ) {
             InCallControlButton(
                 iconRes = R.drawable.ic_volume_up,

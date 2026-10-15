@@ -53,6 +53,29 @@ object PhoneDimens {
     val incomingActionsBottomPadding = 48.dp
     val incomingActionButtonSize = 76.dp
     val incomingActionIconSize = 36.dp
+    // Ongoing call screen: caller info, controls, end-call, DTMF keypad.
+    val ongoingHeaderTopPadding = 40.dp
+    val ongoingTitleSize = 36.sp
+    val ongoingNumberSize = 17.sp
+    val ongoingStateSize = 15.sp
+    val ongoingControlGridSpacing = 24.dp
+    val ongoingEndCallBottomPadding = 16.dp
+    val ongoingEndCallButtonSize = 72.dp
+    val ongoingEndCallIconSize = 32.dp
+    val ongoingControlLabelGap = 8.dp
+    val ongoingControlButtonSize = 64.dp
+    val ongoingControlIconSize = 28.dp
+    val ongoingControlLabelSize = 12.sp
+    val ongoingKeypadRowSpacing = 16.dp
+    val ongoingKeypadColumnSpacing = 32.dp
+    val ongoingDtmfKeySize = 64.dp
+    val ongoingDtmfDigitSize = 26.sp
+    val ongoingDtmfLettersSize = 10.sp
+    val ongoingKeypadBottomRowGap = 8.dp
+    // Dual-SIM picker dialog rows.
+    val simPickerRowMinHeight = 64.dp
+    val simPickerRowCornerRadius = 12.dp
+    val simPickerIconSize = 24.dp
     // Space below the call-button row: 16dp + 88dp reserved − 72dp bar
     // (60dp bar + 12dp gap) = ~32dp clear space above the bottom bar.
     val keypadCallButtonBottomPadding = 16.dp

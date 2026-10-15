@@ -26,9 +26,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.core.telecom.SimAccountInfo
@@ -65,8 +65,8 @@ fun DualSimPickerDialog(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(min = 64.dp)
-                            .clip(RoundedCornerShape(12.dp))
+                            .heightIn(min = PhoneDimens.simPickerRowMinHeight)
+                            .clip(RoundedCornerShape(PhoneDimens.simPickerRowCornerRadius))
                             .pressScale(rowSource)
                             .clickable(
                                 interactionSource = rowSource,
@@ -80,7 +80,7 @@ fun DualSimPickerDialog(
                             painter = painterResource(id = R.drawable.ic_sim_card),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(PhoneDimens.simPickerIconSize)
                         )
                         Spacer(modifier = Modifier.width(spacing.medium))
                         Text(
