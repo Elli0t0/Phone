@@ -175,14 +175,16 @@ fun Modifier.pressScale(source: MutableInteractionSource, to: Float = 0.92f): Mo
         this
     } else {
         val pressed by source.collectIsPressedAsState()
-        val scale by animateFloatAsState(
+        // Read the animated value inside graphicsLayer only: reading it
+        // during composition would recompose the whole element each frame.
+        val scale = animateFloatAsState(
             targetValue = if (pressed) to else 1f,
             animationSpec = spring(dampingRatio = 0.8f, stiffness = 500f),
             label = "press"
         )
         graphicsLayer {
-            scaleX = scale
-            scaleY = scale
+            scaleX = scale.value
+            scaleY = scale.value
         }
     }
 }
@@ -202,7 +204,10 @@ fun Modifier.firstLoadReveal(index: Int, revealed: Boolean): Modifier = composed
         this
     } else {
         val target = if (revealed) 1f else 0f
-        val progress by animateFloatAsState(
+        // Read the animated value inside graphicsLayer only: reading it
+        // during composition would recompose the whole row each frame,
+        // which is what made the Recents reveal lag.
+        val progress = animateFloatAsState(
             targetValue = target,
             animationSpec = if (option == AnimationOption.OFF) {
                 snap()
@@ -218,9 +223,9 @@ fun Modifier.firstLoadReveal(index: Int, revealed: Boolean): Modifier = composed
         val density = LocalDensity.current
         val slidePx = with(density) { 16.dp.toPx() }
         graphicsLayer {
-            alpha = progress
+            alpha = progress.value
             if (option == AnimationOption.ON) {
-                translationY = (1f - progress) * slidePx
+                translationY = (1f - progress.value) * slidePx
             }
         }
     }
