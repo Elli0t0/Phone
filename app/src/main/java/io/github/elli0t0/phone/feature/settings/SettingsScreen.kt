@@ -11,6 +11,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,6 +47,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -76,7 +78,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
-import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.pressScale
+import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.permissions.SetupPermissions
 import io.github.elli0t0.phone.core.telecom.rememberDefaultDialerState
@@ -110,6 +113,7 @@ fun SettingsScreen(
     val settings by viewModel.settingsState.collectAsStateWithLifecycle()
     val spacing = LocalSpacing.current
     val dialerState = rememberDefaultDialerState()
+    val lightHaptic = rememberLightHaptic()
 
     // Permissions & setup card visibility: hidden once every required permission
     // and the default dialer role are granted. Re-checked on every resume so the
@@ -318,12 +322,18 @@ fun SettingsScreen(
                             val isSelected = !settings.dynamicColor &&
                                 !settings.isCustomAccent &&
                                 settings.accentColor == preset.colorValue
+                            val presetSource = remember { MutableInteractionSource() }
                             Box(
                                 modifier = Modifier
                                     .size(38.dp)
                                     .clip(CircleShape)
                                     .background(Color(preset.colorValue))
-                                    .clickable {
+                                    .pressScale(presetSource)
+                                    .clickable(
+                                        interactionSource = presetSource,
+                                        indication = ripple()
+                                    ) {
+                                        lightHaptic()
                                         viewModel.onAccentColorSelected(preset.colorValue, isCustom = false)
                                         showAccentDialog = false
                                     }
@@ -1116,10 +1126,16 @@ private fun SettingsRow(
     titleColor: Color = MaterialTheme.colorScheme.onSurface,
     onClick: () -> Unit
 ) {
+    val rowSource = remember { MutableInteractionSource() }
+    val lightHaptic = rememberLightHaptic()
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .pressScale(rowSource)
+            .clickable(
+                interactionSource = rowSource,
+                indication = ripple()
+            ) { lightHaptic(); onClick() }
             .padding(vertical = 12.dp)
     ) {
         Text(
@@ -1224,16 +1240,22 @@ private fun <T> SettingsChoiceDialog(
     onSelect: (T) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val lightHaptic = rememberLightHaptic()
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = title) },
         text = {
             Column {
                 options.forEach { (label, value) ->
+                    val optionSource = remember { MutableInteractionSource() }
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onSelect(value) }
+                            .pressScale(optionSource)
+                            .clickable(
+                                interactionSource = optionSource,
+                                indication = ripple()
+                            ) { lightHaptic(); onSelect(value) }
                             .padding(vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -1333,17 +1355,23 @@ private fun UssdSimPickerDialog(
     onDismiss: () -> Unit
 ) {
     val spacing = LocalSpacing.current
+    val lightHaptic = rememberLightHaptic()
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = stringResource(id = R.string.call_sim_picker_title)) },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 sims.forEach { sim ->
+                    val simSource = remember { MutableInteractionSource() }
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .clickable { onSimSelected(sim) }
+                            .pressScale(simSource)
+                            .clickable(
+                                interactionSource = simSource,
+                                indication = ripple()
+                            ) { lightHaptic(); onSimSelected(sim) }
                             .padding(
                                 horizontal = spacing.small,
                                 vertical = spacing.medium
