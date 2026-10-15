@@ -105,6 +105,21 @@ object PhoneDimens {
     val settingsSwitchThumbSize = 24.dp
     val settingsSwitchThumbPadding = 2.dp
     val settingsSwitchCornerPercent = 50
+    // Settings rows, dialogs, accent picker.
+    val settingsSectionHeaderVerticalPadding = 4.dp
+    val settingsRowVerticalPadding = 12.dp
+    val settingsSwitchRowVerticalPadding = 4.dp
+    val settingsSwitchRowTextEndPadding = 8.dp
+    val settingsChoiceOptionGap = 8.dp
+    val settingsErrorTextTopPadding = 4.dp
+    val settingsAccentSwatchSpacing = 10.dp
+    val settingsAccentSwatchSize = 38.dp
+    val settingsAccentSwatchBorderSelected = 3.dp
+    val settingsAccentSwatchBorderUnselected = 1.dp
+    val settingsAccentSwatchCheckSize = 20.dp
+    val settingsCustomColorButtonCornerRadius = 19.dp
+    val settingsSimRowCornerRadius = 12.dp
+    val settingsSimRowIconSize = 24.dp
     val settingsSliderTrackHeight = 4.dp
     val settingsSliderThumbWidth = 4.dp
     val settingsSliderThumbHeight = 24.dp

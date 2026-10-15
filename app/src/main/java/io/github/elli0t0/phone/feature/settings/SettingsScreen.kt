@@ -8,7 +8,12 @@ import android.provider.Settings
 import android.telecom.TelecomManager
 import android.telephony.TelephonyManager
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -71,6 +76,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -79,7 +85,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.core.design.PhoneDimens
@@ -270,7 +278,7 @@ fun SettingsScreen(
                             text = "Invalid hex color format",
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(top = 4.dp)
+                            modifier = Modifier.padding(top = PhoneDimens.settingsErrorTextTopPadding)
                         )
                     }
                 }
@@ -320,8 +328,8 @@ fun SettingsScreen(
             text = {
                 Column {
                     FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(PhoneDimens.settingsAccentSwatchSpacing),
+                        verticalArrangement = Arrangement.spacedBy(PhoneDimens.settingsAccentSwatchSpacing),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         AccentPreset.entries.forEach { preset ->
@@ -331,7 +339,7 @@ fun SettingsScreen(
                             val presetSource = remember { MutableInteractionSource() }
                             Box(
                                 modifier = Modifier
-                                    .size(38.dp)
+                                    .size(PhoneDimens.settingsAccentSwatchSize)
                                     .clip(CircleShape)
                                     .background(Color(preset.colorValue))
                                     .pressScale(presetSource)
@@ -344,7 +352,7 @@ fun SettingsScreen(
                                         showAccentDialog = false
                                     }
                                     .border(
-                                        width = if (isSelected) 3.dp else 1.dp,
+                                        width = if (isSelected) PhoneDimens.settingsAccentSwatchBorderSelected else PhoneDimens.settingsAccentSwatchBorderUnselected,
                                         color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
                                         shape = CircleShape
                                     ),
@@ -355,7 +363,7 @@ fun SettingsScreen(
                                         painter = painterResource(id = R.drawable.ic_check),
                                         contentDescription = preset.label,
                                         tint = Color.White,
-                                        modifier = Modifier.size(20.dp)
+                                        modifier = Modifier.size(PhoneDimens.settingsAccentSwatchCheckSize)
                                     )
                                 }
                             }
@@ -366,8 +374,8 @@ fun SettingsScreen(
                                 customColorHexInput = String.format("#%06X", 0xFFFFFF and settings.accentColor.toInt())
                                 showCustomColorDialog = true
                             },
-                            shape = RoundedCornerShape(19.dp),
-                            modifier = Modifier.height(38.dp)
+                            shape = RoundedCornerShape(PhoneDimens.settingsCustomColorButtonCornerRadius),
+                            modifier = Modifier.height(PhoneDimens.settingsAccentSwatchSize)
                         ) {
                             Text(
                                 text = if (settings.isCustomAccent && !settings.dynamicColor) {
@@ -1177,7 +1185,7 @@ private fun SettingsSectionHeader(title: String) {
         text = title,
         style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(vertical = 4.dp)
+        modifier = Modifier.padding(vertical = PhoneDimens.settingsSectionHeaderVerticalPadding)
     )
 }
 
@@ -1200,7 +1208,7 @@ private fun SettingsRow(
                 interactionSource = rowSource,
                 indication = ripple()
             ) { lightHaptic(); onClick() }
-            .padding(vertical = 12.dp)
+            .padding(vertical = PhoneDimens.settingsRowVerticalPadding)
     ) {
         Text(
             text = title,
@@ -1228,11 +1236,11 @@ private fun SettingsSwitchRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = PhoneDimens.settingsSwitchRowVerticalPadding),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+        Column(modifier = Modifier.weight(1f).padding(end = PhoneDimens.settingsSwitchRowTextEndPadding)) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
@@ -1259,13 +1267,26 @@ private fun SettingsSwitch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
+    // Thumb slide respects the Animations setting: ON keeps the
+    // default spring, REDUCED shortens to a fade-speed tween,
+    // OFF snaps instantly.
+    val animationOption = LocalAppSettings.current.animationOption
+    val thumbSpec: AnimationSpec<Dp> = when (animationOption) {
+        AnimationOption.ON -> spring(stiffness = Spring.StiffnessMediumLow)
+        AnimationOption.REDUCED -> tween(
+            durationMillis = Motion.scaledDurationMs(200, animationOption),
+            easing = Motion.Easings.Standard
+        )
+        AnimationOption.OFF -> snap()
+    }
     val thumbOffset by animateDpAsState(
         targetValue = if (checked) {
             PhoneDimens.settingsSwitchWidth - PhoneDimens.settingsSwitchThumbSize -
                 PhoneDimens.settingsSwitchThumbPadding * 2
         } else {
             PhoneDimens.settingsSwitchThumbPadding
-        }
+        },
+        animationSpec = thumbSpec
     )
     Box(
         modifier = Modifier
@@ -1320,14 +1341,14 @@ private fun <T> SettingsChoiceDialog(
                                 interactionSource = optionSource,
                                 indication = ripple()
                             ) { lightHaptic(); onSelect(value) }
-                            .padding(vertical = 12.dp),
+                            .padding(vertical = PhoneDimens.settingsRowVerticalPadding),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(
                             selected = value == selected,
                             onClick = { onSelect(value) }
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(PhoneDimens.settingsChoiceOptionGap))
                         Text(
                             text = label,
                             style = MaterialTheme.typography.bodyLarge
@@ -1430,7 +1451,7 @@ private fun UssdSimPickerDialog(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
+                            .clip(RoundedCornerShape(PhoneDimens.settingsSimRowCornerRadius))
                             .pressScale(simSource)
                             .clickable(
                                 interactionSource = simSource,
@@ -1446,7 +1467,7 @@ private fun UssdSimPickerDialog(
                             painter = painterResource(id = R.drawable.ic_sim_card),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(PhoneDimens.settingsSimRowIconSize)
                         )
                         Spacer(modifier = Modifier.width(spacing.medium))
                         Text(
@@ -1482,7 +1503,7 @@ private fun QuickDeclineMessagesDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = stringResource(id = R.string.settings_quick_decline)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(PhoneDimens.settingsChoiceOptionGap)) {
                 OutlinedTextField(
                     value = message1,
                     onValueChange = { message1 = it },
