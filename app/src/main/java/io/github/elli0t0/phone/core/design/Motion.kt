@@ -39,7 +39,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 
 /**
@@ -181,6 +183,45 @@ fun Modifier.pressScale(source: MutableInteractionSource, to: Float = 0.92f): Mo
         graphicsLayer {
             scaleX = scale
             scaleY = scale
+        }
+    }
+}
+
+/**
+ * First-load reveal for LazyColumn rows. The first 8 rows fade/slide in
+ * with a 25ms stagger ([Motion.staggerDelayMs]); later rows appear
+ * immediately. ON slides up 16dp + fades, REDUCED fades only at ~60%
+ * duration, OFF is instant.
+ * [revealed] flips true once (when the first real data arrives); rows
+ * composed later (scrolled into view) start at the end state, so they
+ * never animate.
+ */
+fun Modifier.firstLoadReveal(index: Int, revealed: Boolean): Modifier = composed {
+    val option = LocalAppSettings.current.animationOption
+    if (!revealed && option == AnimationOption.OFF) {
+        this
+    } else {
+        val target = if (revealed) 1f else 0f
+        val progress by animateFloatAsState(
+            targetValue = target,
+            animationSpec = if (option == AnimationOption.OFF) {
+                snap()
+            } else {
+                tween(
+                    durationMillis = Motion.scaledDurationMs(Motion.Durations.Medium, option),
+                    delayMillis = Motion.staggerDelayMs(index),
+                    easing = Motion.Easings.Emphasized
+                )
+            },
+            label = "reveal"
+        )
+        val density = LocalDensity.current
+        val slidePx = with(density) { 16.dp.toPx() }
+        graphicsLayer {
+            alpha = progress
+            if (option == AnimationOption.ON) {
+                translationY = (1f - progress) * slidePx
+            }
         }
     }
 }

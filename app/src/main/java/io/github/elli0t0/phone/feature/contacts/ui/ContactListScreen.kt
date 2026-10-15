@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.animateItem
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -25,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.firstLoadReveal
 import io.github.elli0t0.phone.core.permissions.ContactsPermissionState
 import io.github.elli0t0.phone.core.permissions.ContactsPermissionStatus
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
@@ -145,6 +148,11 @@ private fun ContactsContent(
     val spacing = LocalSpacing.current
     var searchVisible by remember { mutableStateOf(uiState.searchQuery.isNotEmpty()) }
     var menuExpanded by remember { mutableStateOf(false) }
+    // First-load reveal: flips true when the first contacts arrive.
+    var listRevealed by remember { mutableStateOf(false) }
+    LaunchedEffect(uiState.allContacts.isNotEmpty()) {
+        if (uiState.allContacts.isNotEmpty()) listRevealed = true
+    }
     val listState = rememberLazyListState()
     val contactCount = uiState.allContacts.size
     val countText = if (contactCount == 1) {
@@ -251,11 +259,17 @@ private fun ContactsContent(
                         .calculateBottomPadding()
             )
         ) {
+            // Reveal index: assigned in list order, so the
+            // first 8 rows stagger in on first load.
+            var revealIndex = 0
             // Large header as the first list item: scrolls away naturally.
             item(key = "contacts_header") {
                 PageHeaderItem(
                     title = stringResource(id = R.string.tab_contacts),
-                    subtitle = countText
+                    subtitle = countText,
+                    modifier = Modifier
+                        .animateItem()
+                        .firstLoadReveal(revealIndex++, listRevealed)
                 )
             }
             if (uiState.showDuplicatesCard && uiState.searchQuery.isEmpty()) {
@@ -263,7 +277,10 @@ private fun ContactsContent(
                     DuplicatesCard(
                         duplicateCount = uiState.duplicateGroups.sumOf { it.contacts.size },
                         onMergeClick = onShowDuplicates,
-                        onDismiss = onDismissDuplicatesCard
+                        onDismiss = onDismissDuplicatesCard,
+                        modifier = Modifier
+                            .animateItem()
+                            .firstLoadReveal(revealIndex++, listRevealed)
                     )
                 }
             }
@@ -272,7 +289,10 @@ private fun ContactsContent(
                 item(key = "header_favorites") {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(vertical = spacing.small)
+                        modifier = Modifier
+                            .animateItem()
+                            .firstLoadReveal(revealIndex++, listRevealed)
+                            .padding(vertical = spacing.small)
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_star),
@@ -294,6 +314,8 @@ private fun ContactsContent(
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(spacing.small),
                             modifier = Modifier
+                                .animateItem()
+                                .firstLoadReveal(revealIndex++, listRevealed)
                                 .fillMaxWidth()
                                 .padding(bottom = spacing.small)
                         ) {
@@ -314,7 +336,12 @@ private fun ContactsContent(
 
             if (uiState.favorites.isEmpty() && uiState.searchQuery.isEmpty()) {
                 item(key = "favorites_hint") {
-                    FavoritesHintRow(onClick = onShowFavoritesHint)
+                    FavoritesHintRow(
+                        onClick = onShowFavoritesHint,
+                        modifier = Modifier
+                            .animateItem()
+                            .firstLoadReveal(revealIndex++, listRevealed)
+                    )
                 }
             }
 
@@ -325,20 +352,31 @@ private fun ContactsContent(
                         text = stringResource(id = R.string.contacts_my_profile),
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(vertical = spacing.small)
+                        modifier = Modifier
+                            .animateItem()
+                            .firstLoadReveal(revealIndex++, listRevealed)
+                            .padding(vertical = spacing.small)
                     )
                 }
                 item(key = "profile_row") {
                     ProfileRow(
                         contact = profileContact,
-                        onClick = { onContactClick(profileContact) }
+                        onClick = { onContactClick(profileContact) },
+                        modifier = Modifier
+                            .animateItem()
+                            .firstLoadReveal(revealIndex++, listRevealed)
                     )
                 }
             }
 
             if (uiState.searchQuery.isEmpty()) {
                 item(key = "groups_row") {
-                    GroupsRow(onClick = onGroupsClick)
+                    GroupsRow(
+                        onClick = onGroupsClick,
+                        modifier = Modifier
+                            .animateItem()
+                            .firstLoadReveal(revealIndex++, listRevealed)
+                    )
                 }
             }
 
@@ -348,14 +386,20 @@ private fun ContactsContent(
                         text = letter,
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(vertical = spacing.small)
+                        modifier = Modifier
+                            .animateItem()
+                            .firstLoadReveal(revealIndex++, listRevealed)
+                            .padding(vertical = spacing.small)
                     )
                 }
 
                 item(key = "group_$letter") {
                     ContactGroupCard(
                         contacts = contactsInGroup,
-                        onContactClick = onContactClick
+                        onContactClick = onContactClick,
+                        modifier = Modifier
+                            .animateItem()
+                            .firstLoadReveal(revealIndex++, listRevealed)
                     )
                 }
             }

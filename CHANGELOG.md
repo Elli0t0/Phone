@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.6] - 2026-10-15
+
+### Changed
+- Motion: Recents and Contacts lists now animate item placement, and the first 8 rows reveal with a 25ms stagger on first load (fade + slide on full motion, fade only on reduced, instant on off).
+
 ## [0.8.5] - 2026-10-15
 
 ### Changed
