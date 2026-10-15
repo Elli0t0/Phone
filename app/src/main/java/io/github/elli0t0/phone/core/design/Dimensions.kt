@@ -15,6 +15,8 @@ object PhoneDimens {
     val bottomBarBottomMargin = 12.dp
     val bottomBarCornerPercent = 50
     val bottomBarItemInset = 4.dp
+    // Extra width the shared selection pill gains mid-flight.
+    val bottomBarPillStretch = 14.dp
     val bottomBarElevation = 2.dp
     val bottomBarShadowAlpha = 0.08f
     val bottomBarIconSize = 24.dp

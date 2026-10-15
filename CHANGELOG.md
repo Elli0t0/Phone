@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-10-15
+
+### Changed
+- Bottom bar: one shared selection pill now slides between tabs with a Bouncy spring and stretches ~14dp mid-flight. Icons cross-fade outline to filled with a 1 to 1.15 to 1 scale pop; labels cross-fade weight and color. The bar is real glass, and it slides + fades in and out when entering or leaving inner screens, and slides up on app start.
+
 ## [0.8.9] - 2026-10-15
 
 ### Changed

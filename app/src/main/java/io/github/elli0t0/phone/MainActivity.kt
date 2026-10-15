@@ -4,7 +4,17 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import io.github.elli0t0.phone.core.design.Motion
+import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -89,12 +99,56 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
             onContactsBarVisibilityChanged = { showContactsBar = it },
             modifier = Modifier.fillMaxSize()
         )
-        if (showBottomBar) {
+        // The bar hides and shows with a slide + fade when entering or
+        // leaving inner screens, and slides up on app start. Reduced
+        // fades only; Off is instant.
+        val animationOption = appSettings.animationOption
+        val barEnter: EnterTransition = when (animationOption) {
+            AnimationOption.ON -> slideInVertically { it } +
+                fadeIn(tween(
+                    durationMillis = Motion.scaledDurationMs(
+                        Motion.Durations.Medium,
+                        animationOption
+                    ),
+                    easing = Motion.Easings.Emphasized
+                ))
+            AnimationOption.REDUCED -> fadeIn(tween(
+                durationMillis = Motion.scaledDurationMs(
+                    Motion.Durations.Medium,
+                    animationOption
+                ),
+                easing = Motion.Easings.Emphasized
+            ))
+            AnimationOption.OFF -> EnterTransition.None
+        }
+        val barExit: ExitTransition = when (animationOption) {
+            AnimationOption.ON -> slideOutVertically { it } +
+                fadeOut(tween(
+                    durationMillis = Motion.scaledDurationMs(
+                        Motion.Durations.Short,
+                        animationOption
+                    ),
+                    easing = Motion.Easings.Exit
+                ))
+            AnimationOption.REDUCED -> fadeOut(tween(
+                durationMillis = Motion.scaledDurationMs(
+                    Motion.Durations.Short,
+                    animationOption
+                ),
+                easing = Motion.Easings.Exit
+            ))
+            AnimationOption.OFF -> ExitTransition.None
+        }
+        AnimatedVisibility(
+            visible = showBottomBar,
+            enter = barEnter,
+            exit = barExit,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
             PhoneBottomBar(
                 navController = navController,
                 currentRoute = currentRoute,
-                showLabels = appSettings.showBottomBarLabels,
-                modifier = Modifier.align(Alignment.BottomCenter)
+                showLabels = appSettings.showBottomBarLabels
             )
         }
     }
