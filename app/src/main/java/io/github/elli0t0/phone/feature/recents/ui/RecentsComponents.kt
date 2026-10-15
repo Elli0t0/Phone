@@ -51,6 +51,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -104,23 +105,23 @@ fun CallLogRow(
     val animationOption = LocalAppSettings.current.animationOption
     val detailsEnter: EnterTransition = when (animationOption) {
         AnimationOption.ON -> expandVertically(
-            animationSpec = Motion.tweenSpec(Motion.Durations.Medium, Motion.Easings.Standard, animationOption)
+            animationSpec = Motion.tweenSpec<IntSize>(Motion.Durations.Medium, Motion.Easings.Standard, animationOption)
         ) + fadeIn(
-            animationSpec = Motion.tweenSpec(Motion.Durations.Medium, Motion.Easings.Standard, animationOption)
+            animationSpec = Motion.tweenSpec<Float>(Motion.Durations.Medium, Motion.Easings.Standard, animationOption)
         )
         AnimationOption.REDUCED -> fadeIn(
-            animationSpec = Motion.tweenSpec(Motion.Durations.Medium, Motion.Easings.Standard, animationOption)
+            animationSpec = Motion.tweenSpec<Float>(Motion.Durations.Medium, Motion.Easings.Standard, animationOption)
         )
         AnimationOption.OFF -> EnterTransition.None
     }
     val detailsExit: ExitTransition = when (animationOption) {
         AnimationOption.ON -> shrinkVertically(
-            animationSpec = Motion.tweenSpec(Motion.Durations.Medium, Motion.Easings.Standard, animationOption)
+            animationSpec = Motion.tweenSpec<IntSize>(Motion.Durations.Medium, Motion.Easings.Standard, animationOption)
         ) + fadeOut(
-            animationSpec = Motion.tweenSpec(Motion.Durations.Medium, Motion.Easings.Standard, animationOption)
+            animationSpec = Motion.tweenSpec<Float>(Motion.Durations.Medium, Motion.Easings.Standard, animationOption)
         )
         AnimationOption.REDUCED -> fadeOut(
-            animationSpec = Motion.tweenSpec(Motion.Durations.Medium, Motion.Easings.Standard, animationOption)
+            animationSpec = Motion.tweenSpec<Float>(Motion.Durations.Medium, Motion.Easings.Standard, animationOption)
         )
         AnimationOption.OFF -> ExitTransition.None
     }
