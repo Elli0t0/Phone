@@ -9,6 +9,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -105,23 +106,41 @@ fun CallLogRow(
     val animationOption = LocalAppSettings.current.animationOption
     val detailsEnter: EnterTransition = when (animationOption) {
         AnimationOption.ON -> expandVertically(
-            animationSpec = Motion.tweenSpec<IntSize>(Motion.Durations.Medium, Motion.Easings.Standard, animationOption)
+            animationSpec = tween<IntSize>(
+                durationMillis = Motion.scaledDurationMs(Motion.Durations.Medium, animationOption),
+                easing = Motion.Easings.Standard
+            )
         ) + fadeIn(
-            animationSpec = Motion.tweenSpec<Float>(Motion.Durations.Medium, Motion.Easings.Standard, animationOption)
+            animationSpec = tween<Float>(
+                durationMillis = Motion.scaledDurationMs(Motion.Durations.Medium, animationOption),
+                easing = Motion.Easings.Standard
+            )
         )
         AnimationOption.REDUCED -> fadeIn(
-            animationSpec = Motion.tweenSpec<Float>(Motion.Durations.Medium, Motion.Easings.Standard, animationOption)
+            animationSpec = tween<Float>(
+                durationMillis = Motion.scaledDurationMs(Motion.Durations.Medium, animationOption),
+                easing = Motion.Easings.Standard
+            )
         )
         AnimationOption.OFF -> EnterTransition.None
     }
     val detailsExit: ExitTransition = when (animationOption) {
         AnimationOption.ON -> shrinkVertically(
-            animationSpec = Motion.tweenSpec<IntSize>(Motion.Durations.Medium, Motion.Easings.Standard, animationOption)
+            animationSpec = tween<IntSize>(
+                durationMillis = Motion.scaledDurationMs(Motion.Durations.Medium, animationOption),
+                easing = Motion.Easings.Standard
+            )
         ) + fadeOut(
-            animationSpec = Motion.tweenSpec<Float>(Motion.Durations.Medium, Motion.Easings.Standard, animationOption)
+            animationSpec = tween<Float>(
+                durationMillis = Motion.scaledDurationMs(Motion.Durations.Medium, animationOption),
+                easing = Motion.Easings.Standard
+            )
         )
         AnimationOption.REDUCED -> fadeOut(
-            animationSpec = Motion.tweenSpec<Float>(Motion.Durations.Medium, Motion.Easings.Standard, animationOption)
+            animationSpec = tween<Float>(
+                durationMillis = Motion.scaledDurationMs(Motion.Durations.Medium, animationOption),
+                easing = Motion.Easings.Standard
+            )
         )
         AnimationOption.OFF -> ExitTransition.None
     }
