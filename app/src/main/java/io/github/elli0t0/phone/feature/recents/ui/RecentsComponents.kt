@@ -8,6 +8,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +32,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.ripple
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
@@ -58,6 +60,8 @@ import io.github.elli0t0.phone.core.design.CallRejectedOrange
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.OnAccentBlue
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.pressScale
+import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.calllog.model.CallGroup
 import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import io.github.elli0t0.phone.data.calllog.model.CallType
@@ -88,6 +92,10 @@ fun CallLogRow(
     val spacing = LocalSpacing.current
     var showMenu by remember { mutableStateOf(false) }
     val formattedTime = remember(group.date) { sharedTimeFormat.format(Date(group.date)) }
+    // Shared press source: pressScale and combinedClickable observe the
+    // same press state, so the row scales to 0.92 while pressed and ripples.
+    val rowSource = remember { MutableInteractionSource() }
+    val lightHaptic = rememberLightHaptic()
 
     // Icon color by call type: incoming green, outgoing accent blue,
     // missed red, rejected/blocked orange.
@@ -111,10 +119,12 @@ fun CallLogRow(
         confirmValueChange = { value ->
             when (value) {
                 SwipeToDismissBoxValue.StartToEnd -> {
+                    lightHaptic()
                     onCallClick()
                     false
                 }
                 SwipeToDismissBoxValue.EndToStart -> {
+                    lightHaptic()
                     onMessageClick()
                     false
                 }
@@ -155,7 +165,10 @@ fun CallLogRow(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .pressScale(rowSource)
                     .combinedClickable(
+                        interactionSource = rowSource,
+                        indication = ripple(),
                         onClick = onRowClick,
                         onLongClick = { showMenu = true }
                     )
