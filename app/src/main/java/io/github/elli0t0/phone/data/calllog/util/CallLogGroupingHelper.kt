@@ -4,9 +4,9 @@ import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
 import io.github.elli0t0.phone.data.calllog.model.CallGroup
 import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import io.github.elli0t0.phone.data.calllog.model.CallType
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 data class DaySection(
@@ -16,12 +16,18 @@ data class DaySection(
 
 object CallLogGroupingHelper {
 
-    fun isSameDay(date1: Long, date2: Long): Boolean {
-        val cal1 = Calendar.getInstance().apply { timeInMillis = date1 }
-        val cal2 = Calendar.getInstance().apply { timeInMillis = date2 }
-        return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
-            cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
-    }
+    // Shared, thread-safe formatters: building a SimpleDateFormat per group
+    // was the hottest allocation in recents grouping.
+    private val sameYearFormatter =
+        DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.getDefault())
+    private val otherYearFormatter =
+        DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy", Locale.getDefault())
+
+    private fun toLocalDate(millis: Long) =
+        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
+
+    fun isSameDay(date1: Long, date2: Long): Boolean =
+        toLocalDate(date1) == toLocalDate(date2)
 
     /**
      * Groups consecutive same-number calls on the same day into one CallGroup.
@@ -31,37 +37,42 @@ object CallLogGroupingHelper {
 
         val result = mutableListOf<CallGroup>()
         var currentGroupCalls = mutableListOf<CallLogEntry>()
+        // The group number is normalized once: toE164 is a full
+        // libphonenumber parse, too expensive to redo per call.
+        var currentGroupNormalized = ""
 
-        for (call in calls) {
-            if (currentGroupCalls.isEmpty()) {
-                currentGroupCalls.add(call)
-            } else {
-                val previousCall = currentGroupCalls.last()
-                val isSameNumber = normalizeForComparison(previousCall.number) ==
-                    normalizeForComparison(call.number)
-                val isSameCalendarDay = isSameDay(previousCall.date, call.date)
-
-                if (isSameNumber && isSameCalendarDay) {
-                    currentGroupCalls.add(call)
-                } else {
-                    result.add(
-                        CallGroup(
-                            primaryCall = currentGroupCalls.first(),
-                            calls = currentGroupCalls.toList()
-                        )
-                    )
-                    currentGroupCalls = mutableListOf(call)
-                }
-            }
-        }
-
-        if (currentGroupCalls.isNotEmpty()) {
+        fun flush() {
             result.add(
                 CallGroup(
                     primaryCall = currentGroupCalls.first(),
                     calls = currentGroupCalls.toList()
                 )
             )
+            currentGroupCalls = mutableListOf()
+        }
+
+        for (call in calls) {
+            if (currentGroupCalls.isEmpty()) {
+                currentGroupCalls.add(call)
+                currentGroupNormalized = normalizeForComparison(call.number)
+            } else {
+                val previousCall = currentGroupCalls.last()
+                val isSameNumber =
+                    currentGroupNormalized == normalizeForComparison(call.number)
+                val isSameCalendarDay = isSameDay(previousCall.date, call.date)
+
+                if (isSameNumber && isSameCalendarDay) {
+                    currentGroupCalls.add(call)
+                } else {
+                    flush()
+                    currentGroupCalls.add(call)
+                    currentGroupNormalized = normalizeForComparison(call.number)
+                }
+            }
+        }
+
+        if (currentGroupCalls.isNotEmpty()) {
+            flush()
         }
 
         return result
@@ -72,15 +83,10 @@ object CallLogGroupingHelper {
      * always shows the full date, never "Today"/"Yesterday".
      */
     fun getDayHeader(dateMillis: Long, nowMillis: Long = System.currentTimeMillis()): String {
-        val nowCal = Calendar.getInstance().apply { timeInMillis = nowMillis }
-        val dateCal = Calendar.getInstance().apply { timeInMillis = dateMillis }
-
-        val format = if (nowCal.get(Calendar.YEAR) == dateCal.get(Calendar.YEAR)) {
-            SimpleDateFormat("EEEE, MMMM d", Locale.getDefault())
-        } else {
-            SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault())
-        }
-        return format.format(Date(dateMillis))
+        val date = toLocalDate(dateMillis)
+        val now = toLocalDate(nowMillis)
+        val formatter = if (now.year == date.year) sameYearFormatter else otherYearFormatter
+        return date.format(formatter)
     }
 
     fun organizeIntoDaySections(
