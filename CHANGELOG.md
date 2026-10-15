@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.8] - 2026-10-16
+
+- Recents: removed the first-load staggered reveal animation (rows appear instantly); list placement animation kept.
+
 ## [0.10.7] - 2026-10-16
 
 - Contact details: history section is now just one row with the title; tapping it opens the full contact history screen.

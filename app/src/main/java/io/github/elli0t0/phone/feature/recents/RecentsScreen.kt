@@ -66,7 +66,6 @@ import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
-import io.github.elli0t0.phone.core.design.firstLoadReveal
 import io.github.elli0t0.phone.core.permissions.CallLogPermissionStatus
 import io.github.elli0t0.phone.core.permissions.rememberCallLogPermissionState
 import io.github.elli0t0.phone.core.telecom.CallManager
@@ -107,12 +106,6 @@ fun RecentsScreen(
     )
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    // First-load reveal: flips true when the first real sections arrive,
-    // so the first 8 rows stagger in; later rows appear immediately.
-    var listRevealed by remember { mutableStateOf(false) }
-    LaunchedEffect(uiState.daySections.isNotEmpty()) {
-        if (uiState.daySections.isNotEmpty()) listRevealed = true
-    }
     val permissionState = rememberCallLogPermissionState(
         onPermissionChanged = { isGranted ->
             if (isGranted) {
@@ -374,17 +367,13 @@ fun RecentsScreen(
                                     .calculateBottomPadding()
                         )
                     ) {
-                        // Reveal index: assigned in list order, so the
-                        // first 8 rows stagger in on first load.
-                        var revealIndex = 0
                         // Large header as the first list item: scrolls away naturally.
                         item(key = "recents_header") {
                             PageHeaderItem(
                                 title = stringResource(id = R.string.app_name),
                                 subtitle = null,
                                 modifier = Modifier
-                                    .animateItem()
-                                    .firstLoadReveal(revealIndex++, listRevealed),
+                                    .animateItem(),
                                 actions = headerActions
                             )
                         }
@@ -436,7 +425,6 @@ fun RecentsScreen(
                                         color = MaterialTheme.colorScheme.outline,
                                         modifier = Modifier
                                             .animateItem()
-                                            .firstLoadReveal(revealIndex++, listRevealed)
                                             .fillMaxWidth()
                                             .padding(top = spacing.small, bottom = spacing.extraSmall)
                                             .testTag("day_header_${section.title}")
@@ -448,7 +436,6 @@ fun RecentsScreen(
                                         calls = section.calls,
                                         modifier = Modifier
                                             .animateItem()
-                                            .firstLoadReveal(revealIndex++, listRevealed)
                                     ) { group ->
                                         CallLogRow(
                                             group = group,
