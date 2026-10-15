@@ -21,7 +21,7 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.layout
+import androidx.compose.ui.layout.layout
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -109,7 +109,7 @@ fun PhoneBottomBar(
     val selectedContentColor = if (darkTheme) BottomBarDarkSelectedContent else BottomBarLightSelectedContent
     val unselectedContentColor = if (darkTheme) BottomBarDarkUnselected else BottomBarLightUnselected
     val barColor = if (darkTheme) BottomBarDark else BottomBarLight
-    val sizeSpec = PhoneDimens.bottomBarSizeSpec(LocalAppSettings.current.bottomBarSize)
+    val sizeSpec = bottomBarSizeSpec(LocalAppSettings.current.bottomBarSize)
     val pillShape = RoundedCornerShape(PhoneDimens.bottomBarCornerPercent)
     val lightHaptic = rememberLightHaptic()
     val animationOption = LocalAppSettings.current.animationOption

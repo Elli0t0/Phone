@@ -14,6 +14,7 @@ import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
 import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
+import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.CallDisplay
 import io.github.elli0t0.phone.data.settings.model.DefaultSim
 import io.github.elli0t0.phone.data.settings.model.CardStyle
