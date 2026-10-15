@@ -2,6 +2,7 @@ package io.github.elli0t0.phone.feature.contacts.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +26,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.ripple
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -45,6 +47,8 @@ import io.github.elli0t0.phone.core.design.FavoriteCardGradients
 import io.github.elli0t0.phone.core.design.FavoriteHintOrange
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.pressScale
+import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 
 @Composable
@@ -99,12 +103,18 @@ fun ContactRow(
     val displayName = contact.displayName.ifBlank {
         contact.primaryNumberPreview ?: stringResource(id = R.string.contact_unknown)
     }
+    val rowSource = remember { MutableInteractionSource() }
+    val lightHaptic = rememberLightHaptic()
 
     Card(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = spacing.extraSmall)
-            .clickable(onClick = onClick)
+            .pressScale(rowSource)
+            .clickable(
+                interactionSource = rowSource,
+                indication = ripple()
+            ) { lightHaptic(); onClick() }
             .testTag("contact_item_${contact.id}"),
         shape = MaterialTheme.shapes.extraLarge,
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
@@ -185,10 +195,16 @@ private fun ContactGroupRow(
     val displayName = contact.displayName.ifBlank {
         contact.primaryNumberPreview ?: stringResource(id = R.string.contact_unknown)
     }
+    val rowSource = remember { MutableInteractionSource() }
+    val lightHaptic = rememberLightHaptic()
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .pressScale(rowSource)
+            .clickable(
+                interactionSource = rowSource,
+                indication = ripple()
+            ) { lightHaptic(); onClick() }
             .testTag("contact_item_${contact.id}")
             .padding(
                 horizontal = spacing.medium,
@@ -219,11 +235,17 @@ fun FavoritesHintRow(
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
+    val hintSource = remember { MutableInteractionSource() }
+    val lightHaptic = rememberLightHaptic()
     Card(
         modifier = modifier
             .fillMaxWidth()
             .padding(bottom = spacing.small)
-            .clickable(onClick = onClick)
+            .pressScale(hintSource)
+            .clickable(
+                interactionSource = hintSource,
+                indication = ripple()
+            ) { lightHaptic(); onClick() }
             .testTag("favorites_hint_row"),
         shape = RoundedCornerShape(PhoneDimens.contactsPillCornerPercent),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
@@ -272,11 +294,17 @@ fun ProfileRow(
     val displayName = contact.displayName.ifBlank {
         contact.primaryNumberPreview ?: stringResource(id = R.string.contact_unknown)
     }
+    val rowSource = remember { MutableInteractionSource() }
+    val lightHaptic = rememberLightHaptic()
     Card(
         modifier = modifier
             .fillMaxWidth()
             .padding(bottom = spacing.small)
-            .clickable(onClick = onClick)
+            .pressScale(rowSource)
+            .clickable(
+                interactionSource = rowSource,
+                indication = ripple()
+            ) { lightHaptic(); onClick() }
             .testTag("profile_row"),
         shape = RoundedCornerShape(PhoneDimens.contactsPillCornerPercent),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
@@ -385,11 +413,17 @@ fun GroupsRow(
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
+    val groupsSource = remember { MutableInteractionSource() }
+    val lightHaptic = rememberLightHaptic()
     Card(
         modifier = modifier
             .fillMaxWidth()
             .padding(bottom = spacing.small)
-            .clickable(onClick = onClick)
+            .pressScale(groupsSource)
+            .clickable(
+                interactionSource = groupsSource,
+                indication = ripple()
+            ) { lightHaptic(); onClick() }
             .testTag("groups_row"),
         shape = RoundedCornerShape(PhoneDimens.contactsPillCornerPercent),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
@@ -555,13 +589,19 @@ fun FavoriteContactCard(
     val gradientBrush = remember(gradient) {
         Brush.linearGradient(colors = listOf(gradient.first, gradient.second))
     }
+    val cardSource = remember { MutableInteractionSource() }
+    val lightHaptic = rememberLightHaptic()
 
     Box(
         modifier = modifier
             .aspectRatio(1f)
             .clip(MaterialTheme.shapes.large)
             .background(gradientBrush)
-            .clickable(onClick = onClick)
+            .pressScale(cardSource)
+            .clickable(
+                interactionSource = cardSource,
+                indication = ripple()
+            ) { lightHaptic(); onClick() }
             .testTag("favorite_card_${contact.id}")
             .padding(12.dp),
         contentAlignment = Alignment.Center
