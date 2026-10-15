@@ -40,6 +40,7 @@ import io.github.elli0t0.phone.core.design.CallAnswerGreen
 import io.github.elli0t0.phone.core.design.CallDeclineRed
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.PulseRings
 import io.github.elli0t0.phone.core.design.callBackgroundBrush
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
@@ -179,27 +180,32 @@ fun IncomingCallScreen(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Decline (Red)
+            // Decline (Red) with a pulsing red glow ring.
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(
-                    modifier = Modifier
-                        .size(PhoneDimens.incomingActionButtonSize)
-                        .clip(CircleShape)
-                        .background(CallDeclineRed)
-                        .pressScale(declineSource)
-                        .clickable(
-                            interactionSource = declineSource,
-                            indication = ripple()
-                        ) { lightHaptic(); onDecline() }
-                        .testTag("decline_call_button"),
-                    contentAlignment = Alignment.Center
+                PulseRings(
+                    color = CallDeclineRed,
+                    modifier = Modifier.size(PhoneDimens.incomingActionButtonSize)
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_call_end),
-                        contentDescription = stringResource(id = R.string.call_action_decline),
-                        tint = Color.White,
-                        modifier = Modifier.size(PhoneDimens.incomingActionIconSize)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(PhoneDimens.incomingActionButtonSize)
+                            .clip(CircleShape)
+                            .background(CallDeclineRed)
+                            .pressScale(declineSource)
+                            .clickable(
+                                interactionSource = declineSource,
+                                indication = ripple()
+                            ) { lightHaptic(); onDecline() }
+                            .testTag("decline_call_button"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_call_end),
+                            contentDescription = stringResource(id = R.string.call_action_decline),
+                            tint = Color.White,
+                            modifier = Modifier.size(PhoneDimens.incomingActionIconSize)
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.height(spacing.extraSmall))
                 Text(
@@ -209,27 +215,32 @@ fun IncomingCallScreen(
                 )
             }
 
-            // Answer (Green)
+            // Answer (Green) with a pulsing green glow ring.
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(
-                    modifier = Modifier
-                        .size(PhoneDimens.incomingActionButtonSize)
-                        .clip(CircleShape)
-                        .background(CallAnswerGreen)
-                        .pressScale(answerSource)
-                        .clickable(
-                            interactionSource = answerSource,
-                            indication = ripple()
-                        ) { lightHaptic(); onAnswer() }
-                        .testTag("answer_call_button"),
-                    contentAlignment = Alignment.Center
+                PulseRings(
+                    color = CallAnswerGreen,
+                    modifier = Modifier.size(PhoneDimens.incomingActionButtonSize)
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_phone),
-                        contentDescription = stringResource(id = R.string.call_action_answer),
-                        tint = Color.White,
-                        modifier = Modifier.size(PhoneDimens.incomingActionIconSize)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(PhoneDimens.incomingActionButtonSize)
+                            .clip(CircleShape)
+                            .background(CallAnswerGreen)
+                            .pressScale(answerSource)
+                            .clickable(
+                                interactionSource = answerSource,
+                                indication = ripple()
+                            ) { lightHaptic(); onAnswer() }
+                            .testTag("answer_call_button"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_phone),
+                            contentDescription = stringResource(id = R.string.call_action_answer),
+                            tint = Color.White,
+                            modifier = Modifier.size(PhoneDimens.incomingActionIconSize)
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.height(spacing.extraSmall))
                 Text(

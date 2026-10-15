@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.9] - 2026-10-16
+
+- Incoming call: pulsing glow rings around the answer (green) and decline (red) buttons; off when Animations is Reduced/Off.
+
 ## [0.10.8] - 2026-10-16
 
 - Recents: removed the first-load staggered reveal animation (rows appear instantly); list placement animation kept.
