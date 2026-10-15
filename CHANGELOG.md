@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Performance: recents grouping no longer builds a SimpleDateFormat per group or parses the group number per call. Day headers use two shared thread-safe formatters, day comparison uses LocalDate, and the group number is normalized once per group.
 
+### Fixed
+- Restores the LocalSpacing import accidentally dropped in 0.8.5, which broke the build.
+
 ## [0.8.5] - 2026-10-15
 
 ### Changed

@@ -78,6 +78,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.core.design.PhoneDimens
