@@ -12,6 +12,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -46,6 +47,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -64,6 +66,8 @@ import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.pressScale
+import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.contacts.model.ContactEmail
 import io.github.elli0t0.phone.data.contacts.model.ContactPhone
 import io.github.elli0t0.phone.data.contacts.util.ContactPhotoUtil
@@ -99,6 +103,9 @@ fun ContactEditScreen(
     BackHandler(onBack = onCancelClick)
     val context = LocalContext.current
     val spacing = LocalSpacing.current
+    val avatarSource = remember { MutableInteractionSource() }
+    val ringtoneSource = remember { MutableInteractionSource() }
+    val lightHaptic = rememberLightHaptic()
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -254,13 +261,19 @@ fun ContactEditScreen(
                     displayName = uiState.displayName.ifBlank { "?" },
                     size = PhoneDimens.detailAvatarSize,
                     textStyle = MaterialTheme.typography.displayMedium,
-                    modifier = Modifier.clickable {
-                        if (hasEffectivePhoto) {
-                            onPhotoOptionsRequest()
-                        } else {
-                            photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    modifier = Modifier
+                        .pressScale(avatarSource)
+                        .clickable(
+                            interactionSource = avatarSource,
+                            indication = ripple()
+                        ) {
+                            lightHaptic()
+                            if (hasEffectivePhoto) {
+                                onPhotoOptionsRequest()
+                            } else {
+                                photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                            }
                         }
-                    }
                 )
 
                 // Camera/Edit photo badge
@@ -424,7 +437,11 @@ fun ContactEditScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(MaterialTheme.shapes.small)
-                            .clickable { launchRingtonePicker(uiState.customRingtone) }
+                            .pressScale(ringtoneSource)
+                            .clickable(
+                                interactionSource = ringtoneSource,
+                                indication = ripple()
+                            ) { lightHaptic(); launchRingtonePicker(uiState.customRingtone) }
                             .padding(vertical = spacing.small)
                             .testTag("row_edit_ringtone"),
                         verticalAlignment = Alignment.CenterVertically
