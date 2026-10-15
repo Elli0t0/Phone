@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-10-15
+
+### Changed
+- History: call-history dividers (detail preview and full history screen) now use the same subtle 8% outline alpha as Recents, instead of full-strength outline. Rows are display-only, so no press behavior was added.
+
 ## [0.7.9] - 2026-10-15
 
 ### Changed

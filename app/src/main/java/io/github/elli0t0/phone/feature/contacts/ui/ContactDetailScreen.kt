@@ -651,7 +651,9 @@ fun ContactDetailScreen(
                                 CallHistoryRowItem(entry = entry)
                                 if (index < visibleHistory.lastIndex) {
                                     HorizontalDivider(
-                                        color = MaterialTheme.colorScheme.outlineVariant,
+                                        color = MaterialTheme.colorScheme.outlineVariant.copy(
+                                            alpha = PhoneDimens.recentsDividerAlpha
+                                        ),
                                         thickness = 1.dp,
                                         // Divider starts at the text: card padding + icon + spacer.
                                         modifier = Modifier.padding(

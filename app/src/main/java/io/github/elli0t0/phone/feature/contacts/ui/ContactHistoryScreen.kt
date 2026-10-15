@@ -112,7 +112,9 @@ fun ContactHistoryScreen(
                             CallHistoryRowItem(entry = entry)
                             if (index < uiState.entries.lastIndex) {
                                 HorizontalDivider(
-                                    color = MaterialTheme.colorScheme.outlineVariant,
+                                    color = MaterialTheme.colorScheme.outlineVariant.copy(
+                                        alpha = PhoneDimens.recentsDividerAlpha
+                                    ),
                                     modifier = Modifier.padding(
                                         start = spacing.medium +
                                             PhoneDimens.detailRowIconSize + spacing.medium
