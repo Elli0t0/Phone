@@ -54,6 +54,9 @@ import io.github.elli0t0.phone.data.settings.model.IncomingAvatarShape
 import io.github.elli0t0.phone.data.settings.model.IncomingAvatarSize
 import io.github.elli0t0.phone.core.design.CallAnswerGreen
 import io.github.elli0t0.phone.core.design.CallDeclineRed
+import io.github.elli0t0.phone.core.design.InCallControlBackground
+import io.github.elli0t0.phone.core.design.InCallControlBackgroundFlat
+import io.github.elli0t0.phone.core.design.InCallSwipeTrackBackground
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
@@ -128,6 +131,7 @@ fun IncomingCallScreen(
             val initial = titleText.trim().take(1).uppercase().ifBlank { "?" }
 
             // Avatar size and shape from the settings.
+            val glassCallScreens = LocalAppSettings.current.glassCallScreens
             val avatarScale = LocalAppSettings.current.incomingAvatarSize.scale
             val avatarShape = if (LocalAppSettings.current.incomingAvatarShape == IncomingAvatarShape.ROUNDED) RoundedCornerShape(24) else CircleShape
 
@@ -135,7 +139,7 @@ fun IncomingCallScreen(
                 modifier = Modifier
                     .size(PhoneDimens.incomingAvatarSize * avatarScale)
                     .clip(avatarShape)
-                    .background(Color.White.copy(alpha = 0.12f)),
+                    .background(if (glassCallScreens) InCallControlBackground else InCallControlBackgroundFlat),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -195,6 +199,7 @@ private fun QuickRepliesSection(
     onDeclineWithMessage: (String) -> Unit
 ) {
     if (!LocalAppSettings.current.showQuickReplies) return
+    val glassCallScreens = LocalAppSettings.current.glassCallScreens
     val spacing = LocalSpacing.current
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -218,7 +223,7 @@ private fun QuickRepliesSection(
                     onClick = { onDeclineWithMessage(message) },
                     label = { Text(text = message) },
                     colors = AssistChipDefaults.assistChipColors(
-                        containerColor = Color.White.copy(alpha = 0.12f),
+                        containerColor = if (glassCallScreens) InCallControlBackground else InCallControlBackgroundFlat,
                         labelColor = Color.White
                     ),
                     modifier = Modifier.testTag("quick_reply_$index")
@@ -285,6 +290,7 @@ private fun SwipeAnswerBar(
     val thresholdPx = remember(density) { with(density) { 96.dp.toPx() } }
     // Answer button size scales the bar, thumb, and icons together
     // (the thumb always fills the bar height).
+    val glassCallScreens = LocalAppSettings.current.glassCallScreens
     val answerScale = LocalAppSettings.current.answerButtonSize.scale
     Column(
         modifier = modifier,
@@ -295,7 +301,7 @@ private fun SwipeAnswerBar(
                 .fillMaxWidth()
                 .height(PhoneDimens.incomingActionButtonSize * answerScale)
                 .clip(RoundedCornerShape(50))
-                .background(Color.White.copy(alpha = 0.15f))
+                .background(if (glassCallScreens) InCallSwipeTrackBackground else InCallControlBackgroundFlat)
                 .pointerInput(Unit) {
                     detectHorizontalDragGestures(
                         onHorizontalDrag = { _, dragAmount ->

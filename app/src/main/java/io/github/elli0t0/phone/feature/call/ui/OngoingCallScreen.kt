@@ -39,6 +39,7 @@ import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.core.design.InCallControlActive
 import io.github.elli0t0.phone.core.design.InCallControlActiveContent
 import io.github.elli0t0.phone.core.design.InCallControlBackground
+import io.github.elli0t0.phone.core.design.InCallControlBackgroundFlat
 import io.github.elli0t0.phone.core.design.LiquidGlassEndCall
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
@@ -344,6 +345,7 @@ private fun InCallControlButton(
 ) {
     val controlSource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
+    val glassCallScreens = LocalAppSettings.current.glassCallScreens
     val controlScale = LocalAppSettings.current.controlButtonSize.scale
     Column(
         modifier = modifier,
@@ -354,7 +356,7 @@ private fun InCallControlButton(
             modifier = Modifier
                 .size(PhoneDimens.ongoingControlButtonSize * controlScale)
                 .clip(CircleShape)
-                .background(if (isActive) InCallControlActive else InCallControlBackground)
+                .background(if (isActive) InCallControlActive else if (glassCallScreens) InCallControlBackground else InCallControlBackgroundFlat)
                 .pressScale(controlSource)
                 .clickable(
                     interactionSource = controlSource,
@@ -396,6 +398,7 @@ private fun InCallKeypadGrid(
     )
     val lightHaptic = rememberLightHaptic()
     // Keypad key size scales the key circles and the digit/letters text.
+    val glassCallScreens = LocalAppSettings.current.glassCallScreens
     val keyScale = LocalAppSettings.current.dtmfKeySize.scale
 
     Column(
@@ -413,7 +416,7 @@ private fun InCallKeypadGrid(
                         modifier = Modifier
                             .size(PhoneDimens.ongoingDtmfKeySize * keyScale)
                             .clip(CircleShape)
-                            .background(InCallControlBackground)
+                            .background(if (glassCallScreens) InCallControlBackground else InCallControlBackgroundFlat)
                             .pressScale(keySource)
                             .clickable(
                                 interactionSource = keySource,

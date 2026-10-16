@@ -49,6 +49,8 @@ val ContactAvatarGradients = listOf(
     Color(0xFFFFD1DC) to Color(0xFFFF8FAB)
 )
 val InCallControlBackground = Color(0x1FFFFFFF)
+val InCallControlBackgroundFlat = Color(0xFF2C2C2E)
+val InCallSwipeTrackBackground = Color(0x26FFFFFF)
 val InCallControlActive = Color(0xFFFFFFFF)
 val InCallControlActiveContent = Color(0xFF000000)
 
