@@ -55,9 +55,11 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.core.design.BottomBarDark
+import io.github.elli0t0.phone.core.design.BottomBarDarkSelected
 import io.github.elli0t0.phone.core.design.BottomBarDarkSelectedContent
 import io.github.elli0t0.phone.core.design.BottomBarDarkUnselected
 import io.github.elli0t0.phone.core.design.BottomBarLight
+import io.github.elli0t0.phone.core.design.BottomBarLightSelected
 import io.github.elli0t0.phone.core.design.BottomBarLightSelectedContent
 import io.github.elli0t0.phone.core.design.BottomBarLightUnselected
 import io.github.elli0t0.phone.core.design.GlassSurface
@@ -105,6 +107,7 @@ fun PhoneBottomBar(
         ThemeMode.DARK -> true
         ThemeMode.SYSTEM -> isSystemInDarkTheme()
     }
+    val selectedPillColor = if (darkTheme) BottomBarDarkSelected else BottomBarLightSelected
     val selectedContentColor = if (darkTheme) BottomBarDarkSelectedContent else BottomBarLightSelectedContent
     val unselectedContentColor = if (darkTheme) BottomBarDarkUnselected else BottomBarLightUnselected
     val barColor = if (darkTheme) BottomBarDark else BottomBarLight
@@ -112,6 +115,7 @@ fun PhoneBottomBar(
     val pillShape = RoundedCornerShape(PhoneDimens.bottomBarCornerPercent)
     val lightHaptic = rememberLightHaptic()
     val animationOption = LocalAppSettings.current.animationOption
+    val glassBottomBar = LocalAppSettings.current.glassBottomBar
     val selectedIndex = Screen.bottomNavItems
         .indexOfFirst { it.route == currentRoute }
         .coerceAtLeast(0)
@@ -217,10 +221,16 @@ fun PhoneBottomBar(
                     .width(pillWidth)
                     .fillMaxHeight()
                     .padding(vertical = PhoneDimens.bottomBarItemInset)
-                    .liquidGlass(
-                        shape = pillShape,
-                        tint = MaterialTheme.colorScheme.primary,
-                        isSelected = true
+                    .then(
+                        if (glassBottomBar) {
+                            Modifier.liquidGlass(
+                                shape = pillShape,
+                                tint = MaterialTheme.colorScheme.primary,
+                                isSelected = true
+                            )
+                        } else {
+                            Modifier.clip(pillShape).background(selectedPillColor)
+                        }
                     )
             )
             Row(
@@ -381,7 +391,7 @@ fun PhoneBottomBar(
                 }
             }
         }
-        if (LocalAppSettings.current.bottomBarStyle == BottomBarStyle.GLASS) {
+        if (LocalAppSettings.current.bottomBarStyle == BottomBarStyle.GLASS && glassBottomBar) {
             GlassSurface(
                 shape = pillShape,
                 modifier = Modifier.width(barWidth).then(barHeightModifier)
