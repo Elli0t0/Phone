@@ -8,6 +8,7 @@ import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.StartOffset
@@ -151,7 +152,7 @@ object Motion {
      * Tween with a base duration + easing, resolved by the Animations
      * setting. OFF returns snap() (instant).
      */
-    fun <T> tweenSpec(durationMs: Int, easing: Easing, option: AnimationOption): AnimationSpec<T> =
+    fun <T> tweenSpec(durationMs: Int, easing: Easing, option: AnimationOption): FiniteAnimationSpec<T> =
         if (option == AnimationOption.OFF) {
             snap()
         } else {

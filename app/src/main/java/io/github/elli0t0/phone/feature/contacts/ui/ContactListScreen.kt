@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
@@ -616,7 +617,7 @@ private fun ContactsFastScroller(
                         onDragEnd = { dragging = false; previewLetter = null },
                         onDragCancel = { dragging = false; previewLetter = null },
                         onVerticalDrag = { change, _ ->
-                            change.consumeAllChanges()
+                            change.consume()
                             handleY(change.position.y, heightPx)
                         }
                     )
