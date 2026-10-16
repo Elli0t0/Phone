@@ -121,17 +121,25 @@ fun PageHeaderItem(
  * The pill is only composed once scrolling starts: the same actions lambda
  * also renders in the header, and composing both at rest would show two
  * dropdown menus, since popups ignore the pill's alpha.
+ *
+ * [revealAfterIndex]: when > 0, the pill appears only once that item
+ * has scrolled off. Contacts passes 1 (its in-list top-bar pills).
  */
 @Composable
 fun FloatingActionsPill(
     listState: LazyListState,
     modifier: Modifier = Modifier,
-    actions: @Composable RowScope.() -> Unit
+    actions: @Composable RowScope.() -> Unit,
+    revealAfterIndex: Int = 0
 ) {
     val pillVisible by remember {
         derivedStateOf {
-            listState.firstVisibleItemIndex > 0 ||
-                listState.firstVisibleItemScrollOffset > 0
+            if (revealAfterIndex > 0) {
+                listState.firstVisibleItemIndex > revealAfterIndex
+            } else {
+                listState.firstVisibleItemIndex > 0 ||
+                    listState.firstVisibleItemScrollOffset > 0
+            }
         }
     }
     if (!pillVisible) return
@@ -139,7 +147,10 @@ fun FloatingActionsPill(
     val headerHeightPx = with(density) { pageHeaderHeight().toPx() }
     Box(
         modifier = modifier.graphicsLayer {
-            val progress = if (headerHeightPx <= 0f) {
+            val progress = if (revealAfterIndex > 0) {
+                // Instant full opacity.
+                1f
+            } else if (headerHeightPx <= 0f) {
                 1f
             } else if (listState.firstVisibleItemIndex > 0) {
                 1f

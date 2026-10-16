@@ -8,6 +8,7 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -25,7 +26,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -33,7 +33,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
@@ -63,6 +62,7 @@ import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.AccentBlue
 import io.github.elli0t0.phone.core.design.CallAnswerGreen
 import io.github.elli0t0.phone.core.design.CallRejectedOrange
+import io.github.elli0t0.phone.core.design.LiquidGlassIconButton
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.Motion
@@ -149,15 +149,8 @@ fun CallLogRow(
     val rowSource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
 
-    // Icon color by call type: incoming green, outgoing accent blue,
-    // missed red, rejected/blocked orange.
-    val typeColor = when (group.type) {
-        CallType.Incoming -> CallAnswerGreen
-        CallType.Outgoing -> AccentBlue
-        CallType.Missed -> MaterialTheme.colorScheme.error
-        CallType.Rejected, CallType.Blocked -> CallRejectedOrange
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
+    // Icon color by call type.
+    val typeColor = callTypeColor(group.type)
     // Only a missed name is red; rejected/blocked names stay default.
     val nameColor = if (group.type == CallType.Missed) {
         MaterialTheme.colorScheme.error
@@ -333,7 +326,8 @@ fun CallLogRow(
                 exit = detailsExit
             ) {
                 ExpandedCallDetails(
-                    call = group.primaryCall,
+                    group = group,
+                    showSim = showSim,
                     onCallClick = onCallClick,
                     onMessageClick = onMessageClick,
                     onOpenContactClick = onOpenContactClick,
@@ -393,16 +387,19 @@ fun DaySectionCard(
 
 @Composable
 private fun ExpandedCallDetails(
-    call: CallLogEntry,
+    group: CallGroup,
+    showSim: Boolean,
     onCallClick: () -> Unit,
     onMessageClick: () -> Unit,
     onOpenContactClick: () -> Unit,
     onAddContactClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val call = group.primaryCall
     val spacing = LocalSpacing.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val animationOption = LocalAppSettings.current.animationOption
     val canBlock = remember {
         runCatching { BlockedNumberContract.canCurrentUserBlockNumbers(context) }
             .getOrDefault(false)
@@ -420,98 +417,144 @@ private fun ExpandedCallDetails(
             .padding(top = spacing.small)
             .testTag("expanded_call_details_${call.id}")
     ) {
-        // Call type and duration, moved here from the collapsed row subtitle.
-        val showDuration = call.type == CallType.Incoming || call.type == CallType.Outgoing ||
-            call.type == CallType.Voicemail || call.type == CallType.Unknown
-        val typeLabel = stringResource(id = call.type.titleRes)
-        val typeAndDuration = if (showDuration && call.durationSeconds > 0) {
-            "$typeLabel · ${formatDuration(call.durationSeconds, call.type)}"
+        // Single call: one line. Grouped calls: breakdown rows below.
+        if (group.calls.size <= 1) {
+            val showDuration = call.type == CallType.Incoming || call.type == CallType.Outgoing ||
+                call.type == CallType.Voicemail || call.type == CallType.Unknown
+            val typeLabel = stringResource(id = call.type.titleRes)
+            val typeAndDuration = if (showDuration && call.durationSeconds > 0) {
+                "$typeLabel · ${formatDuration(call.durationSeconds, call.type)}"
+            } else {
+                typeLabel
+            }
+            Text(
+                text = "$typeAndDuration · ${sharedTimeFormat.format(Date(call.date))}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = spacing.small)
+            )
         } else {
-            typeLabel
+            // Breakdown list inside a recessed container.
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .padding(vertical = spacing.extraSmall)
+            ) {
+                group.calls.forEachIndexed { index, entry ->
+                    CallBreakdownRow(entry = entry, showSim = showSim)
+                    if (index < group.calls.lastIndex) {
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = PhoneDimens.recentsDividerAlpha),
+                            modifier = Modifier.padding(horizontal = spacing.medium)
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(spacing.small))
         }
-        Text(
-            text = typeAndDuration,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = spacing.small)
-        )
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            ExpandedActionButton(
-                iconRes = R.drawable.ic_phone,
-                contentDescription = stringResource(id = R.string.action_call),
-                tint = MaterialTheme.colorScheme.primary,
-                onClick = onCallClick
-            )
-            ExpandedActionButton(
-                iconRes = R.drawable.ic_message,
-                contentDescription = stringResource(id = R.string.action_message),
-                tint = MaterialTheme.colorScheme.primary,
-                onClick = onMessageClick
-            )
-            if (call.contactId != null) {
+            StaggeredAction(animationOption, 0) {
                 ExpandedActionButton(
-                    iconRes = R.drawable.ic_person,
-                    contentDescription = stringResource(id = R.string.action_open_contact),
+                    iconRes = R.drawable.ic_phone,
+                    contentDescription = stringResource(id = R.string.action_call),
                     tint = MaterialTheme.colorScheme.primary,
-                    onClick = onOpenContactClick
-                )
-            } else {
-                ExpandedActionButton(
-                    iconRes = R.drawable.ic_add,
-                    contentDescription = stringResource(id = R.string.action_add_contact),
-                    tint = MaterialTheme.colorScheme.primary,
-                    onClick = onAddContactClick
+                    onClick = onCallClick
                 )
             }
-            if (canBlock) {
+            StaggeredAction(animationOption, 1) {
                 ExpandedActionButton(
-                    iconRes = R.drawable.ic_block,
-                    contentDescription = stringResource(
-                        id = if (isBlocked) {
-                            R.string.recents_unblock_number
+                    iconRes = R.drawable.ic_message,
+                    contentDescription = stringResource(id = R.string.action_message),
+                    tint = MaterialTheme.colorScheme.primary,
+                    onClick = onMessageClick
+                )
+            }
+            StaggeredAction(animationOption, 2) {
+                if (call.contactId != null) {
+                    ExpandedActionButton(
+                        iconRes = R.drawable.ic_person,
+                        contentDescription = stringResource(id = R.string.action_open_contact),
+                        tint = MaterialTheme.colorScheme.primary,
+                        onClick = onOpenContactClick
+                    )
+                } else {
+                    ExpandedActionButton(
+                        iconRes = R.drawable.ic_add,
+                        contentDescription = stringResource(id = R.string.action_add_contact),
+                        tint = MaterialTheme.colorScheme.primary,
+                        onClick = onAddContactClick
+                    )
+                }
+            }
+            if (canBlock) {
+                StaggeredAction(animationOption, 3) {
+                    ExpandedActionButton(
+                        iconRes = R.drawable.ic_block,
+                        contentDescription = stringResource(
+                            id = if (isBlocked) {
+                                R.string.recents_unblock_number
+                            } else {
+                                R.string.recents_block_number
+                            }
+                        ),
+                        tint = if (isBlocked) {
+                            MaterialTheme.colorScheme.error
                         } else {
-                            R.string.recents_block_number
-                        }
-                    ),
-                    tint = if (isBlocked) {
-                        MaterialTheme.colorScheme.error
-                    } else {
-                        MaterialTheme.colorScheme.primary
-                    },
-                    onClick = {
-                        scope.launch(Dispatchers.IO) {
-                            val succeeded = runCatching {
-                                if (isBlocked) {
-                                    BlockedNumberContract.unblock(context, call.number)
-                                } else {
-                                    val values = ContentValues().apply {
-                                        put(
-                                            BlockedNumberContract.BlockedNumbers.COLUMN_ORIGINAL_NUMBER,
-                                            call.number
+                            MaterialTheme.colorScheme.primary
+                        },
+                        onClick = {
+                            scope.launch(Dispatchers.IO) {
+                                val succeeded = runCatching {
+                                    if (isBlocked) {
+                                        BlockedNumberContract.unblock(context, call.number)
+                                    } else {
+                                        val values = ContentValues().apply {
+                                            put(
+                                                BlockedNumberContract.BlockedNumbers.COLUMN_ORIGINAL_NUMBER,
+                                                call.number
+                                            )
+                                        }
+                                        context.contentResolver.insert(
+                                            BlockedNumberContract.BlockedNumbers.CONTENT_URI,
+                                            values
                                         )
                                     }
-                                    context.contentResolver.insert(
-                                        BlockedNumberContract.BlockedNumbers.CONTENT_URI,
-                                        values
-                                    )
+                                }.isSuccess
+                                if (succeeded) {
+                                    withContext(Dispatchers.Main) { isBlocked = !isBlocked }
                                 }
-                            }.isSuccess
-                            if (succeeded) {
-                                withContext(Dispatchers.Main) { isBlocked = !isBlocked }
                             }
-                        }
-                    },
-                    modifier = Modifier.testTag("block_button_${call.id}")
-                )
+                        },
+                        modifier = Modifier.testTag("block_button_${call.id}")
+                    )
+                }
             }
         }
     }
 }
 
-// One circular action button in the expanded call details.
+// One expanded action button, entering with the staggered scale-in.
+@Composable
+private fun StaggeredAction(
+    animationOption: AnimationOption,
+    index: Int,
+    content: @Composable () -> Unit
+) {
+    AnimatedVisibility(
+        visible = true,
+        enter = expandedActionEnter(animationOption, index),
+        exit = fadeOut()
+    ) {
+        content()
+    }
+}
+
+// One glass action button.
 @Composable
 private fun ExpandedActionButton(
     iconRes: Int,
@@ -520,18 +563,15 @@ private fun ExpandedActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    IconButton(
+    LiquidGlassIconButton(
         onClick = onClick,
-        modifier = modifier
-            .size(56.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
+        modifier = modifier.size(PhoneDimens.detailActionButtonSize)
     ) {
         Icon(
             painter = painterResource(id = iconRes),
             contentDescription = contentDescription,
             tint = tint,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(PhoneDimens.detailActionIconSize)
         )
     }
 }
@@ -591,6 +631,85 @@ fun RecentsEmptyState(
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
             }
+        }
+    }
+}
+
+// Semantic color for a call type.
+@Composable
+private fun callTypeColor(type: CallType): Color = when (type) {
+    CallType.Incoming -> CallAnswerGreen
+    CallType.Outgoing -> AccentBlue
+    CallType.Missed -> MaterialTheme.colorScheme.error
+    CallType.Rejected, CallType.Blocked -> CallRejectedOrange
+    else -> MaterialTheme.colorScheme.onSurfaceVariant
+}
+
+// Staggered scale-in: ON fades+scales per button, REDUCED fades only, OFF instant.
+private fun expandedActionEnter(option: AnimationOption, index: Int): EnterTransition {
+    if (option == AnimationOption.OFF) return EnterTransition.None
+    val duration = Motion.scaledDurationMs(Motion.Durations.Short, option)
+    val fade = fadeIn(
+        animationSpec = tween<Float>(
+            durationMillis = duration,
+            delayMillis = if (option == AnimationOption.ON) Motion.staggerDelayMs(index) else 0
+        )
+    )
+    if (option == AnimationOption.REDUCED) return fade
+    return fade + scaleIn(
+        animationSpec = tween<Float>(
+            durationMillis = duration,
+            delayMillis = Motion.staggerDelayMs(index),
+            easing = Motion.Easings.Emphasized
+        ),
+        initialScale = 0.8f
+    )
+}
+
+// One breakdown row: type icon+label, exact time, duration, SIM badge.
+@Composable
+private fun CallBreakdownRow(
+    entry: CallLogEntry,
+    showSim: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val spacing = LocalSpacing.current
+    val typeColor = callTypeColor(entry.type)
+    val showDuration = entry.type == CallType.Incoming || entry.type == CallType.Outgoing ||
+        entry.type == CallType.Voicemail || entry.type == CallType.Unknown
+    val detailParts = buildList {
+        add(sharedTimeFormat.format(Date(entry.date)))
+        if (showDuration) {
+            add(formatDuration(entry.durationSeconds, entry.type))
+        }
+        if (showSim) {
+            entry.simInfo?.let { add(it) }
+        }
+    }
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = spacing.medium, vertical = spacing.small),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(id = entry.type.iconRes),
+            contentDescription = null,
+            tint = typeColor,
+            modifier = Modifier.size(PhoneDimens.recentsRowIconSize)
+        )
+        Spacer(modifier = Modifier.width(spacing.small))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(id = entry.type.titleRes),
+                style = MaterialTheme.typography.bodyMedium,
+                color = typeColor
+            )
+            Text(
+                text = detailParts.joinToString(" · "),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

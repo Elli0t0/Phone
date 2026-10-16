@@ -458,7 +458,9 @@ private fun ContactsContent(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(top = 8.dp),
-            actions = topBarPills
+            actions = topBarPills,
+            // In-list top bar is item 1: reveal only once it scrolls off.
+            revealAfterIndex = 1
         )
         // A–Z fast scroller along the right edge.
         if (uiState.groupedContacts.isNotEmpty()) {

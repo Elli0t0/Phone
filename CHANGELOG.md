@@ -43,7 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.10.41] - 2026-10-16
 
-- Liquid glass across the app (7): expanding a grouped call in Recents now shows a breakdown list of the individual calls (type, exact time, duration, SIM badge) inside a recessed glass container, with the four actions as staggered glass icon buttons.
+- Liquid glass across the app (7): expanding a grouped call in Recents shows a breakdown list of the individual calls (type, exact time, duration, SIM badge) in a recessed container, with the four actions as staggered glass icon buttons. Fixed: the Contacts floating pill no longer fades in over the visible top-bar pills — it appears only after the top bar scrolls off.
 
 ## [0.10.42] - 2026-10-16
 
