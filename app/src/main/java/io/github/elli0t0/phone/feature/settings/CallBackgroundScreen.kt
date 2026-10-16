@@ -1,5 +1,6 @@
 package io.github.elli0t0.phone.feature.settings
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -7,9 +8,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -34,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -46,6 +50,7 @@ import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.data.call.CallState
 import io.github.elli0t0.phone.data.call.OngoingCallModel
+import io.github.elli0t0.phone.data.settings.model.AnswerGesture
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.ControlButtonSize
 import io.github.elli0t0.phone.data.settings.model.DtmfKeySize
@@ -80,6 +85,7 @@ fun CallBackgroundScreen(
         factory = SettingsViewModel.provideFactory(app.container.settingsRepository)
     )
     var previewOngoing by remember { mutableStateOf(false) }
+    var previewFullscreen by remember { mutableStateOf(false) }
     var showCustomColorDialog by remember { mutableStateOf(false) }
     var customColorHexInput by remember { mutableStateOf("") }
     var customColorError by remember { mutableStateOf(false) }
@@ -170,6 +176,40 @@ fun CallBackgroundScreen(
         )
     }
 
+    // Full-screen preview: the real call screen edge to edge, exactly
+    // as it looks on a call. Back or the close button returns to the studio.
+    if (previewFullscreen) {
+        BackHandler { previewFullscreen = false }
+        Box(modifier = Modifier.fillMaxSize()) {
+            CallPreviewContent(
+                previewOngoing = previewOngoing,
+                mockCall = mockCall,
+                selected = selected,
+                backgroundColor = backgroundColor,
+                dimDraft = dimDraft,
+                showNumber = settings.showNumberOnCallScreen,
+                answerGesture = settings.answerGesture,
+                quickReplies = quickReplies
+            )
+            IconButton(
+                onClick = { previewFullscreen = false },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .statusBarsPadding()
+                    .padding(spacing.medium)
+                    .background(Color.Black.copy(alpha = 0.35f), CircleShape)
+                    .testTag("call_preview_close")
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_close),
+                    contentDescription = stringResource(id = R.string.settings_call_preview_close),
+                    tint = Color.White
+                )
+            }
+        }
+        return
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize().testTag("call_background_screen"),
         topBar = {
@@ -192,7 +232,7 @@ fun CallBackgroundScreen(
                 .padding(innerPadding)
         ) {
             // Live preview: the real call screen with a sample caller.
-            // Preview buttons are inert.
+            // Preview buttons are inert. Full screen shows it edge to edge.
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -203,32 +243,24 @@ fun CallBackgroundScreen(
                     )
                     .clip(RoundedCornerShape(24.dp))
             ) {
-                if (previewOngoing) {
-                    OngoingCallScreen(
-                        callModel = mockCall,
-                        onMuteToggle = {},
-                        onAudioRouteSelect = {},
-                        onHoldToggle = {},
-                        onDtmfDigit = {},
-                        onEndCall = {},
-                        callBackground = selected,
-                        accentColor = backgroundColor,
-                        dim = dimDraft,
-                        showNumber = settings.showNumberOnCallScreen
-                    )
-                } else {
-                    IncomingCallScreen(
-                        callModel = mockCall,
-                        onAnswer = {},
-                        onDecline = {},
-                        onDeclineWithMessage = {},
-                        quickDeclineMessages = quickReplies,
-                        callBackground = selected,
-                        accentColor = backgroundColor,
-                        dim = dimDraft,
-                        showNumber = settings.showNumberOnCallScreen,
-                        answerGesture = settings.answerGesture
-                    )
+                CallPreviewContent(
+                    previewOngoing = previewOngoing,
+                    mockCall = mockCall,
+                    selected = selected,
+                    backgroundColor = backgroundColor,
+                    dimDraft = dimDraft,
+                    showNumber = settings.showNumberOnCallScreen,
+                    answerGesture = settings.answerGesture,
+                    quickReplies = quickReplies
+                )
+                Button(
+                    onClick = { previewFullscreen = true },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(spacing.small)
+                        .testTag("call_preview_fullscreen")
+                ) {
+                    Text(text = stringResource(id = R.string.settings_call_preview_fullscreen))
                 }
             }
 
@@ -390,5 +422,49 @@ fun CallBackgroundScreen(
                 )
             }
         }
+    }
+}
+
+/**
+ * The live call preview: the real incoming or ongoing call screen
+ * with a sample caller. Preview buttons are inert.
+ */
+@Composable
+private fun CallPreviewContent(
+    previewOngoing: Boolean,
+    mockCall: OngoingCallModel,
+    selected: CallBackground,
+    backgroundColor: Long,
+    dimDraft: Float,
+    showNumber: Boolean,
+    answerGesture: AnswerGesture,
+    quickReplies: List<String>
+) {
+    if (previewOngoing) {
+        OngoingCallScreen(
+            callModel = mockCall,
+            onMuteToggle = {},
+            onAudioRouteSelect = {},
+            onHoldToggle = {},
+            onDtmfDigit = {},
+            onEndCall = {},
+            callBackground = selected,
+            accentColor = backgroundColor,
+            dim = dimDraft,
+            showNumber = showNumber
+        )
+    } else {
+        IncomingCallScreen(
+            callModel = mockCall,
+            onAnswer = {},
+            onDecline = {},
+            onDeclineWithMessage = {},
+            quickDeclineMessages = quickReplies,
+            callBackground = selected,
+            accentColor = backgroundColor,
+            dim = dimDraft,
+            showNumber = showNumber,
+            answerGesture = answerGesture
+        )
     }
 }
