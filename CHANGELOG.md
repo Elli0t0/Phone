@@ -67,7 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.11.0] - 2026-10-16
 
-- Final polish: full visual/logic audit, all unit tests pass, and every color, size, glass token, and motion value lives in core/design.
+- Final polish: design-token audit (no hardcoded hex colors or stray font sizes outside core/design; the dialed-number animation now uses Motion duration/scale tokens), test imports verified against current APIs, and the dialed number is one accessible element again after the per-character split (the hidden measuring Text is excluded from accessibility, the digit row merges into a single readout).
 
 ## [0.10.31] - 2026-10-16
 

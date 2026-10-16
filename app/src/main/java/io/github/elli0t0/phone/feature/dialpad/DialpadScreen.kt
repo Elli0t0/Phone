@@ -75,6 +75,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -464,7 +467,7 @@ fun DialpadScreen(
                             }
                         }
                     },
-                    modifier = Modifier.graphicsLayer { alpha = 0f }
+                    modifier = Modifier.graphicsLayer { alpha = 0f }.clearAndSetSemantics { }
                 )
                 // Visible per-character number: each digit pops in
                 // (scale + fade on ON, fade only on REDUCED, instant
@@ -475,11 +478,11 @@ fun DialpadScreen(
                         animationSpec = if (animationOption == AnimationOption.OFF) {
                             snap()
                         } else if (animationOption == AnimationOption.REDUCED) {
-                            tween(durationMillis = Motion.scaledDurationMs(100, animationOption))
+                            tween(durationMillis = Motion.scaledDurationMs(Motion.Durations.Micro, animationOption))
                         } else {
                             spring(dampingRatio = 0.8f, stiffness = 500f)
                         }
-                    ),
+                    ).semantics(mergeDescendants = true) { contentDescription = displayText },
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -495,7 +498,7 @@ fun DialpadScreen(
                                     snap()
                                 } else {
                                     tween(
-                                        durationMillis = Motion.scaledDurationMs(180, animationOption),
+                                        durationMillis = Motion.scaledDurationMs(Motion.Durations.Short, animationOption),
                                         easing = Motion.Easings.Emphasized
                                     )
                                 },
@@ -513,7 +516,8 @@ fun DialpadScreen(
                                 modifier = Modifier.graphicsLayer {
                                     alpha = progress
                                     if (animationOption == AnimationOption.ON) {
-                                        val s = 0.6f + 0.4f * progress
+                                        val s = Motion.DialedDigitPopStartScale +
+                                            (1f - Motion.DialedDigitPopStartScale) * progress
                                         scaleX = s
                                         scaleY = s
                                     }
