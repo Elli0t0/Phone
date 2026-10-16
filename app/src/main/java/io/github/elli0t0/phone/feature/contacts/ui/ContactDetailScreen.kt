@@ -17,7 +17,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -76,7 +76,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
-import io.github.elli0t0.phone.core.design.GlassSurface
+import io.github.elli0t0.phone.core.design.LiquidGlassCard
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
@@ -88,6 +88,7 @@ import io.github.elli0t0.phone.core.telecom.SimCallResolution
 import io.github.elli0t0.phone.core.telecom.TelecomHelper
 import android.text.format.DateFormat
 import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
+import io.github.elli0t0.phone.data.calllog.model.CallType
 import io.github.elli0t0.phone.data.favorites.ContactSimRepository
 import io.github.elli0t0.phone.feature.call.ui.DualSimPickerDialog
 import java.util.Date
@@ -387,11 +388,9 @@ fun ContactDetailScreen(
                     Spacer(modifier = Modifier.height(spacing.medium))
 
                     // Top card: avatar, name, organization, primary number
-                    Card(
+                    DetailGlassCard(
                         modifier = Modifier.fillMaxWidth()
-                            .onGloballyPositioned { headerHeightPx = it.size.height },
-                        shape = MaterialTheme.shapes.large,
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                            .onGloballyPositioned { headerHeightPx = it.size.height }
                     ) {
                         Column(
                             modifier = Modifier
@@ -640,15 +639,12 @@ fun ContactDetailScreen(
                         }
                     }
 
-                    // History: just a row with the title; tapping it opens
-                    // the full contact history screen.
+                    // History: title + last-call summary + chevron;
+                    // tapping it opens the full contact history screen.
                     Spacer(modifier = Modifier.height(spacing.medium))
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.large,
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                    ) {
-                        val historySource = remember { MutableInteractionSource() }
+                    val historySource = remember { MutableInteractionSource() }
+                    val lastCall = uiState.callHistory.firstOrNull()
+                    DetailGlassCard(modifier = Modifier.fillMaxWidth()) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -662,10 +658,27 @@ fun ContactDetailScreen(
                                 .testTag("btn_show_all_history"),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = stringResource(id = R.string.contact_details_history),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.primary
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(id = R.string.contact_details_history),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = if (lastCall == null) {
+                                        stringResource(id = R.string.contact_details_history_empty)
+                                    } else {
+                                        lastCallSummary(lastCall)
+                                    },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_chevron_right),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(PhoneDimens.detailRowIconSize)
                             )
                         }
                     }
@@ -719,10 +732,8 @@ private fun DetailSectionCard(
     content: @Composable () -> Unit
 ) {
     val spacing = LocalSpacing.current
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    DetailGlassCard(
+        modifier = modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(spacing.medium)) {
             Text(
@@ -920,7 +931,7 @@ private fun ContactDetailBottomBar(
         contentAlignment = Alignment.Center
     ) {
         // The bar content is shared by the glass and flat branches.
-        val barContent: @Composable BoxScope.() -> Unit = {
+        val barContent: @Composable () -> Unit = {
             Row(
                 modifier = Modifier.fillMaxSize(),
                 verticalAlignment = Alignment.CenterVertically
@@ -976,7 +987,7 @@ private fun ContactDetailBottomBar(
             }
         }
         if (LocalAppSettings.current.glassContactDetail) {
-            GlassSurface(
+            LiquidGlassCard(
                 modifier = Modifier
                     .fillMaxWidth(PhoneDimens.detailBottomBarWidthFraction)
                     .height(PhoneDimens.bottomBarHeight),
@@ -1074,4 +1085,72 @@ private fun shareContact(context: Context, contact: ContactDetail) {
     context.startActivity(
         Intent.createChooser(intent, context.getString(R.string.action_share))
     )
+}
+
+/**
+ * A detail-screen card that renders glass when the contact-detail
+ * glass switch is on, a flat surface Card when off.
+ */
+@Composable
+private fun DetailGlassCard(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    if (LocalAppSettings.current.glassContactDetail) {
+        LiquidGlassCard(
+            modifier = modifier,
+            shape = MaterialTheme.shapes.large
+        ) {
+            content()
+        }
+    } else {
+        Card(
+            modifier = modifier,
+            shape = MaterialTheme.shapes.large,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        ) {
+            content()
+        }
+    }
+}
+
+/**
+ * One-line summary of the last call with a contact:
+ * "Incoming · 36s · 2:05 PM" (time for today, date otherwise).
+ * Missed/rejected/blocked calls show no duration.
+ */
+@Composable
+private fun lastCallSummary(entry: CallLogEntry): String {
+    val context = LocalContext.current
+    val typeLabel = stringResource(id = entry.type.titleRes)
+    val showDuration = entry.type == CallType.Incoming || entry.type == CallType.Outgoing ||
+        entry.type == CallType.Voicemail || entry.type == CallType.Unknown
+    val durationText = when {
+        !showDuration -> null
+        entry.durationSeconds <= 0L -> stringResource(id = R.string.call_duration_seconds, 0)
+        entry.durationSeconds < 3600 -> {
+            val mins = (entry.durationSeconds / 60).toInt()
+            val secs = (entry.durationSeconds % 60).toInt()
+            if (mins > 0) {
+                stringResource(id = R.string.call_duration_minutes, mins, secs)
+            } else {
+                stringResource(id = R.string.call_duration_seconds, secs)
+            }
+        }
+        else -> {
+            val hours = (entry.durationSeconds / 3600).toInt()
+            val mins = ((entry.durationSeconds % 3600) / 60).toInt()
+            stringResource(id = R.string.call_duration_hours, hours, mins)
+        }
+    }
+    val timeOrDate = if (android.text.format.DateUtils.isToday(entry.date)) {
+        android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date(entry.date))
+    } else {
+        android.text.format.DateFormat.getDateFormat(context).format(java.util.Date(entry.date))
+    }
+    return if (durationText != null) {
+        "$typeLabel · $durationText · $timeOrDate"
+    } else {
+        "$typeLabel · $timeOrDate"
+    }
 }

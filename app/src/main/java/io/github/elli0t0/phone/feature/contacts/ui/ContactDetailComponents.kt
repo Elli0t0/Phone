@@ -48,8 +48,10 @@ import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.AccentBlue
 import io.github.elli0t0.phone.core.design.CallAnswerGreen
 import io.github.elli0t0.phone.core.design.CallRejectedOrange
+import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.contacts.model.ContactPhone
@@ -82,18 +84,32 @@ fun ContactActionButton(
             .testTag(testTag),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Surface(
-            modifier = Modifier.size(PhoneDimens.detailActionButtonSize),
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = contentAlpha)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    painter = painterResource(id = icon),
-                    contentDescription = label,
-                    tint = tint.copy(alpha = contentAlpha),
-                    modifier = Modifier.size(PhoneDimens.detailActionIconSize)
-                )
+        val actionIcon: @Composable () -> Unit = {
+            Icon(
+                painter = painterResource(id = icon),
+                contentDescription = label,
+                tint = tint.copy(alpha = contentAlpha),
+                modifier = Modifier.size(PhoneDimens.detailActionIconSize)
+            )
+        }
+        if (LocalAppSettings.current.glassContactDetail) {
+            Box(
+                modifier = Modifier
+                    .size(PhoneDimens.detailActionButtonSize)
+                    .liquidGlass(shape = CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                actionIcon()
+            }
+        } else {
+            Surface(
+                modifier = Modifier.size(PhoneDimens.detailActionButtonSize),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = contentAlpha)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    actionIcon()
+                }
             }
         }
         Spacer(modifier = Modifier.height(spacing.extraSmall))
