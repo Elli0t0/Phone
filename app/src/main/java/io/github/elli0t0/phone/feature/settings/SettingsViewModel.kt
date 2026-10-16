@@ -12,6 +12,7 @@ import io.github.elli0t0.phone.data.settings.model.AnswerButtonSize
 import io.github.elli0t0.phone.data.settings.model.ControlButtonSize
 import io.github.elli0t0.phone.data.settings.model.ControlGridAlignment
 import io.github.elli0t0.phone.data.settings.model.DtmfKeySize
+import io.github.elli0t0.phone.data.settings.model.IncomingAvatarSize
 import io.github.elli0t0.phone.data.settings.model.EndCallButtonSize
 import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
@@ -245,6 +246,13 @@ class SettingsViewModel(
         }
     }
     fun setDtmfKeySize(size: DtmfKeySize) = onDtmfKeySizeChanged(size)
+
+    fun onIncomingAvatarSizeChanged(size: IncomingAvatarSize) {
+        viewModelScope.launch {
+            settingsRepository.setIncomingAvatarSize(size)
+        }
+    }
+    fun setIncomingAvatarSize(size: IncomingAvatarSize) = onIncomingAvatarSizeChanged(size)
 
     fun onOngoingCallButtonsChanged(buttons: List<OngoingCallButton>) {
         viewModelScope.launch {

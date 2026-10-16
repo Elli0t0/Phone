@@ -18,6 +18,7 @@ import io.github.elli0t0.phone.data.settings.model.AnswerButtonSize
 import io.github.elli0t0.phone.data.settings.model.ControlButtonSize
 import io.github.elli0t0.phone.data.settings.model.ControlGridAlignment
 import io.github.elli0t0.phone.data.settings.model.DtmfKeySize
+import io.github.elli0t0.phone.data.settings.model.IncomingAvatarSize
 import io.github.elli0t0.phone.data.settings.model.EndCallButtonSize
 import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
@@ -69,6 +70,7 @@ interface SettingsRepository {
     suspend fun setShowQuickReplies(show: Boolean)
     suspend fun setControlButtonSize(size: ControlButtonSize)
     suspend fun setDtmfKeySize(size: DtmfKeySize)
+    suspend fun setIncomingAvatarSize(size: IncomingAvatarSize)
     suspend fun setOngoingCallButtons(buttons: List<OngoingCallButton>)
     suspend fun setShowNumberOnCallScreen(show: Boolean)
     suspend fun setDefaultSim(defaultSim: DefaultSim)
@@ -111,6 +113,7 @@ class DataStoreSettingsRepository(
         val SHOW_QUICK_REPLIES = booleanPreferencesKey("show_quick_replies")
         val CONTROL_BUTTON_SIZE = stringPreferencesKey("control_button_size")
         val DTMF_KEY_SIZE = stringPreferencesKey("dtmf_key_size")
+        val INCOMING_AVATAR_SIZE = stringPreferencesKey("incoming_avatar_size")
         val ONGOING_CALL_BUTTONS = stringPreferencesKey("ongoing_call_buttons")
         val SHOW_NUMBER_ON_CALL_SCREEN = booleanPreferencesKey("show_number_on_call_screen")
         val DEFAULT_SIM = stringPreferencesKey("default_sim")
@@ -204,6 +207,10 @@ class DataStoreSettingsRepository(
         val dtmfKeySize = dtmfKeySizeStr?.let { runCatching { DtmfKeySize.valueOf(it) }.getOrNull() }
             ?: DtmfKeySize.MEDIUM
 
+        val incomingAvatarSizeStr = prefs[Keys.INCOMING_AVATAR_SIZE]
+        val incomingAvatarSize = incomingAvatarSizeStr?.let { runCatching { IncomingAvatarSize.valueOf(it) }.getOrNull() }
+            ?: IncomingAvatarSize.MEDIUM
+
         // Shown ongoing-call buttons, in display order, as comma-separated
         // names. Missing key = all buttons; empty = none (user hid them all).
         val ongoingCallButtons = prefs[Keys.ONGOING_CALL_BUTTONS]
@@ -251,6 +258,7 @@ class DataStoreSettingsRepository(
             showQuickReplies = showQuickReplies,
             controlButtonSize = controlButtonSize,
             dtmfKeySize = dtmfKeySize,
+            incomingAvatarSize = incomingAvatarSize,
             ongoingCallButtons = ongoingCallButtons,
             showNumberOnCallScreen = showNumberOnCallScreen,
             defaultSim = defaultSim,
@@ -431,6 +439,12 @@ class DataStoreSettingsRepository(
     override suspend fun setDtmfKeySize(size: DtmfKeySize) {
         dataStore.edit { prefs ->
             prefs[Keys.DTMF_KEY_SIZE] = size.name
+        }
+    }
+
+    override suspend fun setIncomingAvatarSize(size: IncomingAvatarSize) {
+        dataStore.edit { prefs ->
+            prefs[Keys.INCOMING_AVATAR_SIZE] = size.name
         }
     }
 

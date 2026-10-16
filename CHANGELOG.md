@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.22] - 2026-10-16
+
+- Call screen customisation (11): avatar size — Small, Medium (default), or Large for the caller avatar and its initial on the incoming call screen, in the call background studio.
+
 ## [0.10.21] - 2026-10-16
 
 - Call screen customisation (10): control button size — Small, Medium (default), or Large for the ongoing-call buttons; and keypad key size — Small, Medium (default), or Large for the in-call keypad keys and their digits/letters. Both in the call background studio.
