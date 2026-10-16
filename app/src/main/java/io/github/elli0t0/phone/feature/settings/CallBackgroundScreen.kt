@@ -266,6 +266,7 @@ fun CallBackgroundScreen(
 
             Column(
                 modifier = Modifier
+                    .weight(1f)
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
                     .padding(

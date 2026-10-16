@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.26] - 2026-10-16
+
+- Fixed the call background studio preview showing nothing: the scrollable options list measured unbounded and took all the height, squeezing the preview to zero. The preview and the options now split the screen evenly, so the live preview (and its Full screen button) is visible.
+
 ## [0.10.25] - 2026-10-16
 
 - Full-screen preview in the call background studio: a Full screen button on the live preview shows the real incoming or ongoing call screen edge to edge with a sample caller, exactly as it looks on a call; Back or the close button returns to the studio.
