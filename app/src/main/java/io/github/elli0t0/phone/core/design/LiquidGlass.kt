@@ -2,19 +2,31 @@ package io.github.elli0t0.phone.core.design
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlin.math.PI
 import kotlin.math.abs
@@ -169,6 +181,202 @@ fun GlassSurface(
                 ),
                 shape = shape
             ),
+        content = content
+    )
+}
+
+/**
+ * True liquid glass: a refractive, tactile surface.
+ *
+ * Fill: a translucent multi-stop gradient (bright specular highlight at the
+ * top-left fading to a softly tinted translucent base). Rim: a 1.dp diagonal
+ * refractive border (bright white at the top-left, subtle accent tint in the
+ * center, soft reflection at the bottom-right). Shadow: a colored
+ * elevation/glow via graphicsLayer, tinted by the surface/accent color.
+ *
+ * Dark detection follows the app theme (ThemeMode), not the system theme,
+ * so glass matches the app setting in both Light and Dark themes.
+ * [forceDarkGlass] forces the dark treatment, e.g. surfaces over the
+ * always-dark call background.
+ */
+@Composable
+fun Modifier.liquidGlass(
+    shape: Shape = RoundedCornerShape(24.dp),
+    tint: Color = Color.Unspecified,
+    elevation: Dp = 8.dp,
+    isSelected: Boolean = false,
+    forceDarkGlass: Boolean = false,
+): Modifier {
+    val isDark = isDarkGlassTheme() || forceDarkGlass
+    val baseTint = if (tint != Color.Unspecified) tint else MaterialTheme.colorScheme.primary
+    val topAlpha = if (isDark) (if (isSelected) 0.38f else 0.20f) else 0.82f
+    val bottomAlpha = if (isDark) (if (isSelected) 0.22f else 0.08f) else 0.56f
+    val borderTopAlpha = if (isDark) 0.58f else 0.95f
+    val borderBottomAlpha = if (isDark) 0.16f else 0.32f
+
+    val fillBrush = Brush.linearGradient(
+        colors = listOf(
+            Color.White.copy(alpha = topAlpha).compositeOver(baseTint.copy(alpha = if (isSelected) 0.28f else 0.10f)),
+            Color.White.copy(alpha = bottomAlpha).compositeOver(baseTint.copy(alpha = if (isSelected) 0.16f else 0.04f))
+        ),
+        start = Offset.Zero,
+        end = Offset.Infinite
+    )
+    val rimBrush = Brush.linearGradient(
+        colors = listOf(
+            Color.White.copy(alpha = borderTopAlpha),
+            baseTint.copy(alpha = if (isSelected) 0.50f else 0.18f),
+            Color.White.copy(alpha = borderBottomAlpha)
+        ),
+        start = Offset.Zero,
+        end = Offset.Infinite
+    )
+    return this
+        .graphicsLayer {
+            shadowElevation = elevation.toPx()
+            this.shape = shape
+            clip = true
+            ambientShadowColor = baseTint.copy(alpha = 0.28f)
+            spotShadowColor = baseTint.copy(alpha = 0.38f)
+        }
+        .background(brush = fillBrush, shape = shape)
+        .border(width = 1.dp, brush = rimBrush, shape = shape)
+}
+
+/**
+ * Liquid-glass card. Content lays out in a Column (like Card), so
+ * multi-child content stacks vertically instead of overlapping —
+ * GlassSurface's Box content stacks children on top of each other.
+ */
+@Composable
+fun LiquidGlassCard(
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(24.dp),
+    tint: Color = Color.Unspecified,
+    elevation: Dp = 8.dp,
+    isSelected: Boolean = false,
+    forceDarkGlass: Boolean = false,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Column(
+        modifier = modifier.liquidGlass(shape, tint, elevation, isSelected, forceDarkGlass),
+        content = content
+    )
+}
+
+/**
+ * Liquid-glass pill: a fully rounded horizontal container, e.g. the
+ * bottom bar. Content is a Row (chips, buttons, labels).
+ */
+@Composable
+fun LiquidGlassPill(
+    modifier: Modifier = Modifier,
+    shape: Shape = LiquidGlassPillShape,
+    tint: Color = Color.Unspecified,
+    elevation: Dp = 8.dp,
+    isSelected: Boolean = false,
+    forceDarkGlass: Boolean = false,
+    content: @Composable RowScope.() -> Unit
+) {
+    Row(
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier.liquidGlass(shape, tint, elevation, isSelected, forceDarkGlass),
+        content = content
+    )
+}
+
+/**
+ * Liquid-glass icon button: a circular glass button around a single icon.
+ * The ripple is clipped to the button shape.
+ */
+@Composable
+fun LiquidGlassIconButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    shape: Shape = CircleShape,
+    tint: Color = Color.Unspecified,
+    elevation: Dp = 8.dp,
+    isSelected: Boolean = false,
+    forceDarkGlass: Boolean = false,
+    content: @Composable BoxScope.() -> Unit
+) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .clip(shape)
+            .clickable(onClick = onClick)
+            .liquidGlass(shape, tint, elevation, isSelected, forceDarkGlass),
+        content = content
+    )
+}
+
+/**
+ * Liquid-glass chip: a small selectable pill. [selected] boosts the
+ * tint and specular highlight.
+ */
+@Composable
+fun LiquidGlassChip(
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(percent = 50),
+    tint: Color = Color.Unspecified,
+    elevation: Dp = 6.dp,
+    forceDarkGlass: Boolean = false,
+    content: @Composable RowScope.() -> Unit
+) {
+    Row(
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .clip(shape)
+            .clickable(onClick = onClick)
+            .liquidGlass(shape, tint, elevation, selected, forceDarkGlass),
+        content = content
+    )
+}
+
+/**
+ * Liquid-glass gem button: a saturated, jewel-like circular button for
+ * the green Answer and red Decline / End Call buttons. Pass the gem
+ * color as [tint]; the selected treatment makes it read as solid glass.
+ */
+@Composable
+fun LiquidGlassGemButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    tint: Color,
+    shape: Shape = CircleShape,
+    elevation: Dp = 10.dp,
+    forceDarkGlass: Boolean = false,
+    content: @Composable BoxScope.() -> Unit
+) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .clip(shape)
+            .clickable(onClick = onClick)
+            .liquidGlass(shape, tint, elevation, true, forceDarkGlass),
+        content = content
+    )
+}
+
+/**
+ * Liquid-glass popup surface: a larger, higher-elevation glass container
+ * for dialogs, menus, and bottom sheets. Content lays out in a Column.
+ */
+@Composable
+fun LiquidGlassPopupSurface(
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(28.dp),
+    tint: Color = Color.Unspecified,
+    elevation: Dp = 16.dp,
+    forceDarkGlass: Boolean = false,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Column(
+        modifier = modifier.liquidGlass(shape, tint, elevation, false, forceDarkGlass),
         content = content
     )
 }
