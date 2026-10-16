@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.32] - 2026-10-16
+
+- Liquid glass per-section settings (storage): each area with glass surfaces — bottom bar, dialpad, headers, contact detail, call screens — now has its own on/off setting (all default to on). The dialpad honours its switch in 0.10.33, the Settings switches arrive in 0.10.34, and the other sections follow as they are wired.
+
+## [0.10.33] - 2026-10-16
+
+- The dialpad honours its liquid-glass switch: with dialpad glass off, keys are bare with press-scale and a circle-clipped ripple, the Call button is the flat green FAB, the no-match actions are tonal buttons, and the T9 chips are plain assist chips.
+
+## [0.10.34] - 2026-10-16
+
+- Settings: a Liquid glass section with a switch for the dialpad (keys, Call button, no-match pills, T9 chips). The remaining sections gain their switches as they are wired.
+
 ## [0.10.31] - 2026-10-16
 
 - Liquid glass across the app (3): dialpad keys are now circular liquid-glass discs (no more square gray ripple; the key scales to 0.90 and springs back), the Call button is a glossy liquid-glass emerald button, the no-match Create new contact / Message actions are glass pills that animate in/out, and the T9 suggestion chips are glass chips showing the contact name and the matched number with the dialed digits highlighted in accent. Key press feedback is now the glass surface scale (the digit-dip pulse is gone).

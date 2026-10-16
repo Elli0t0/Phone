@@ -54,6 +54,11 @@ interface SettingsRepository {
     suspend fun setBottomBarStyle(style: BottomBarStyle)
     suspend fun setBottomBarSize(size: BottomBarSize)
     suspend fun setShrinkBottomBarOnScroll(shrink: Boolean)
+    suspend fun setGlassBottomBar(enabled: Boolean)
+    suspend fun setGlassDialpad(enabled: Boolean)
+    suspend fun setGlassHeaders(enabled: Boolean)
+    suspend fun setGlassContactDetail(enabled: Boolean)
+    suspend fun setGlassCallScreens(enabled: Boolean)
     suspend fun setDefaultStartTab(tab: StartTab)
     suspend fun setContactSortOrder(order: ContactSortOrder)
     suspend fun setContactNameFormat(format: ContactNameFormat)
@@ -99,6 +104,11 @@ class DataStoreSettingsRepository(
         val BOTTOM_BAR_STYLE = stringPreferencesKey("bottom_bar_style")
         val BOTTOM_BAR_SIZE = stringPreferencesKey("bottom_bar_size")
         val BOTTOM_BAR_SHRINK = booleanPreferencesKey("bottom_bar_shrink")
+        val GLASS_BOTTOM_BAR = booleanPreferencesKey("glass_bottom_bar")
+        val GLASS_DIALPAD = booleanPreferencesKey("glass_dialpad")
+        val GLASS_HEADERS = booleanPreferencesKey("glass_headers")
+        val GLASS_CONTACT_DETAIL = booleanPreferencesKey("glass_contact_detail")
+        val GLASS_CALL_SCREENS = booleanPreferencesKey("glass_call_screens")
         val DEFAULT_START_TAB = stringPreferencesKey("default_start_tab")
         val CONTACT_SORT_ORDER = stringPreferencesKey("contact_sort_order")
         val CONTACT_NAME_FORMAT = stringPreferencesKey("contact_name_format")
@@ -153,6 +163,12 @@ class DataStoreSettingsRepository(
         val barSize = barSizeStr?.let { runCatching { BottomBarSize.valueOf(it) }.getOrNull() } ?: BottomBarSize.MEDIUM
 
         val barShrink = prefs[Keys.BOTTOM_BAR_SHRINK] ?: false
+
+        val glassBottomBar = prefs[Keys.GLASS_BOTTOM_BAR] ?: true
+        val glassDialpad = prefs[Keys.GLASS_DIALPAD] ?: true
+        val glassHeaders = prefs[Keys.GLASS_HEADERS] ?: true
+        val glassContactDetail = prefs[Keys.GLASS_CONTACT_DETAIL] ?: true
+        val glassCallScreens = prefs[Keys.GLASS_CALL_SCREENS] ?: true
 
         val tabStr = prefs[Keys.DEFAULT_START_TAB]
         val startTab = tabStr?.let { runCatching { StartTab.valueOf(it) }.getOrNull() } ?: StartTab.KEYPAD
@@ -251,6 +267,11 @@ class DataStoreSettingsRepository(
             bottomBarStyle = barStyle,
             bottomBarSize = barSize,
             shrinkBottomBarOnScroll = barShrink,
+            glassBottomBar = glassBottomBar,
+            glassDialpad = glassDialpad,
+            glassHeaders = glassHeaders,
+            glassContactDetail = glassContactDetail,
+            glassCallScreens = glassCallScreens,
             defaultStartTab = startTab,
             contactSortOrder = sortOrder,
             contactNameFormat = nameFormat,
@@ -349,6 +370,36 @@ class DataStoreSettingsRepository(
     override suspend fun setShrinkBottomBarOnScroll(shrink: Boolean) {
         dataStore.edit { prefs ->
             prefs[Keys.BOTTOM_BAR_SHRINK] = shrink
+        }
+    }
+
+    override suspend fun setGlassBottomBar(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLASS_BOTTOM_BAR] = enabled
+        }
+    }
+
+    override suspend fun setGlassDialpad(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLASS_DIALPAD] = enabled
+        }
+    }
+
+    override suspend fun setGlassHeaders(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLASS_HEADERS] = enabled
+        }
+    }
+
+    override suspend fun setGlassContactDetail(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLASS_CONTACT_DETAIL] = enabled
+        }
+    }
+
+    override suspend fun setGlassCallScreens(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLASS_CALL_SCREENS] = enabled
         }
     }
 

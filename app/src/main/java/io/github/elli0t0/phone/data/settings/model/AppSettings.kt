@@ -171,6 +171,13 @@ data class AppSettings(
     val bottomBarStyle: BottomBarStyle = BottomBarStyle.GLASS,
     val bottomBarSize: BottomBarSize = BottomBarSize.MEDIUM,
     val shrinkBottomBarOnScroll: Boolean = false,
+    // Liquid glass per section: each area with glass surfaces can fall
+    // back to its flat rendering. All default to glass on.
+    val glassBottomBar: Boolean = true,
+    val glassDialpad: Boolean = true,
+    val glassHeaders: Boolean = true,
+    val glassContactDetail: Boolean = true,
+    val glassCallScreens: Boolean = true,
     val defaultStartTab: StartTab = StartTab.KEYPAD,
     val contactSortOrder: ContactSortOrder = ContactSortOrder.FIRST_NAME,
     val contactNameFormat: ContactNameFormat = ContactNameFormat.FIRST_NAME_FIRST,
