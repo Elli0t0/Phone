@@ -209,15 +209,15 @@ fun Modifier.liquidGlass(
 ): Modifier {
     val isDark = isDarkGlassTheme() || forceDarkGlass
     val baseTint = if (tint != Color.Unspecified) tint else MaterialTheme.colorScheme.primary
-    val topAlpha = if (isDark) (if (isSelected) 0.38f else 0.20f) else 0.82f
-    val bottomAlpha = if (isDark) (if (isSelected) 0.22f else 0.08f) else 0.56f
-    val borderTopAlpha = if (isDark) 0.58f else 0.95f
-    val borderBottomAlpha = if (isDark) 0.16f else 0.32f
+    val topAlpha = if (isDark) 0.24f else 0.78f
+    val bottomAlpha = if (isDark) 0.12f else 0.52f
+    val borderTopAlpha = if (isDark) 0.48f else 0.92f
+    val borderBottomAlpha = if (isDark) 0.14f else 0.30f
 
     val fillBrush = Brush.linearGradient(
         colors = listOf(
-            Color.White.copy(alpha = topAlpha).compositeOver(baseTint.copy(alpha = if (isSelected) 0.28f else 0.10f)),
-            Color.White.copy(alpha = bottomAlpha).compositeOver(baseTint.copy(alpha = if (isSelected) 0.16f else 0.04f))
+            Color.White.copy(alpha = topAlpha).compositeOver(baseTint.copy(alpha = if (isSelected) 0.22f else 0.08f)),
+            Color.White.copy(alpha = bottomAlpha).compositeOver(baseTint.copy(alpha = if (isSelected) 0.14f else 0.04f))
         ),
         start = Offset.Zero,
         end = Offset.Infinite
@@ -225,7 +225,7 @@ fun Modifier.liquidGlass(
     val rimBrush = Brush.linearGradient(
         colors = listOf(
             Color.White.copy(alpha = borderTopAlpha),
-            baseTint.copy(alpha = if (isSelected) 0.50f else 0.18f),
+            baseTint.copy(alpha = if (isSelected) 0.45f else 0.15f),
             Color.White.copy(alpha = borderBottomAlpha)
         ),
         start = Offset.Zero,
@@ -236,8 +236,8 @@ fun Modifier.liquidGlass(
             shadowElevation = elevation.toPx()
             this.shape = shape
             clip = true
-            ambientShadowColor = baseTint.copy(alpha = 0.28f)
-            spotShadowColor = baseTint.copy(alpha = 0.38f)
+            ambientShadowColor = baseTint.copy(alpha = 0.25f)
+            spotShadowColor = baseTint.copy(alpha = 0.35f)
         }
         .background(brush = fillBrush, shape = shape)
         .border(width = 1.dp, brush = rimBrush, shape = shape)

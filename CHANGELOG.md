@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.30] - 2026-10-16
+
+- Liquid glass across the app (2): the bottom bar's selected-tab indicator is now a sliding liquid-glass droplet (accent-tinted glass, specular rim) instead of a flat oval, and a smooth vertical fade scrim behind the floating bottom bar fades list content out before it can bleed through the bar's tab labels/icons. Glass fill/rim/shadow alphas now match the design-system reference values in both themes.
+
 ## [0.10.29] - 2026-10-16
 
 - True liquid glass design system in core/design: a `liquidGlass` modifier (translucent multi-stop specular gradient fill, 1.dp diagonal refractive rim border, tinted elevation/glow shadow) plus `LiquidGlassCard` (Column content, so multi-child content stacks instead of overlapping), `LiquidGlassPill`, `LiquidGlassIconButton`, `LiquidGlassChip`, `LiquidGlassGemButton` (saturated Answer/Decline/End Call buttons), and `LiquidGlassPopupSurface`. Works in Light and Dark themes and over the call background.

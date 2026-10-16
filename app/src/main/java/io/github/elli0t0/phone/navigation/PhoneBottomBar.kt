@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,11 +55,9 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.core.design.BottomBarDark
-import io.github.elli0t0.phone.core.design.BottomBarDarkSelected
 import io.github.elli0t0.phone.core.design.BottomBarDarkSelectedContent
 import io.github.elli0t0.phone.core.design.BottomBarDarkUnselected
 import io.github.elli0t0.phone.core.design.BottomBarLight
-import io.github.elli0t0.phone.core.design.BottomBarLightSelected
 import io.github.elli0t0.phone.core.design.BottomBarLightSelectedContent
 import io.github.elli0t0.phone.core.design.BottomBarLightUnselected
 import io.github.elli0t0.phone.core.design.GlassSurface
@@ -66,6 +65,7 @@ import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.bottomBarSizeSpec
+import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
@@ -76,10 +76,10 @@ import kotlin.math.sin
 
 /**
  * Floating glass bottom bar, overlaid on content. 60% of the screen
- * width, 60dp tall, three equal-width items. One shared selection
- * pill is drawn behind the items: it slides to the selected item with
- * a Bouncy spring and stretches ~14dp mid-flight (a sine bulge on its
- * width), so the pill feels liquid. The pill progress is read only
+ * width, 60dp tall, three equal-width items. One shared liquid-glass
+ * droplet indicator is drawn behind the items: it slides to the selected
+ * item with a Bouncy spring and stretches ~14dp mid-flight (a sine bulge
+ * on its width), so the droplet feels liquid. The pill progress is read only
  * inside layout/draw lambdas, so the flight never recomposes.
  * The icon cross-fades outline to filled (Short) with a scale pop
  * 1 to 1.15 to 1 (Bouncy) on selection; the label cross-fades between
@@ -105,7 +105,6 @@ fun PhoneBottomBar(
         ThemeMode.DARK -> true
         ThemeMode.SYSTEM -> isSystemInDarkTheme()
     }
-    val selectedPillColor = if (darkTheme) BottomBarDarkSelected else BottomBarLightSelected
     val selectedContentColor = if (darkTheme) BottomBarDarkSelectedContent else BottomBarLightSelectedContent
     val unselectedContentColor = if (darkTheme) BottomBarDarkUnselected else BottomBarLightUnselected
     val barColor = if (darkTheme) BottomBarDark else BottomBarLight
@@ -188,7 +187,7 @@ fun PhoneBottomBar(
             layout(placeable.width, h) { placeable.place(0, 0) }
         }
         val barContent: @Composable BoxScope.() -> Unit = {
-            // The one shared pill, behind the items.
+            // The one shared liquid-glass droplet, behind the items.
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
@@ -218,8 +217,11 @@ fun PhoneBottomBar(
                     .width(pillWidth)
                     .fillMaxHeight()
                     .padding(vertical = PhoneDimens.bottomBarItemInset)
-                    .clip(pillShape)
-                    .background(selectedPillColor)
+                    .liquidGlass(
+                        shape = pillShape,
+                        tint = MaterialTheme.colorScheme.primary,
+                        isSelected = true
+                    )
             )
             Row(
                 modifier = Modifier.fillMaxSize(),

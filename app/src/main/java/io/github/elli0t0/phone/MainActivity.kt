@@ -18,6 +18,9 @@ import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,13 +31,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.PhoneTheme
 import io.github.elli0t0.phone.core.permissions.SetupPermissions
 import io.github.elli0t0.phone.data.settings.model.AppSettings
@@ -188,6 +195,43 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
                 easing = Motion.Easings.Exit
             ))
             AnimationOption.OFF -> ExitTransition.None
+        }
+        // Fade scrim behind the floating bar: list content fades out
+        // before it can bleed through the bar's tab labels/icons.
+        // Height: bar reserved height + nav-bar inset + 40dp fade zone.
+        // Plain Box, no clickable, so touches pass through to the list.
+        AnimatedVisibility(
+            visible = showBottomBar,
+            enter = fadeIn(tween(
+                durationMillis = Motion.scaledDurationMs(
+                    Motion.Durations.Medium,
+                    animationOption
+                ),
+                easing = Motion.Easings.Emphasized
+            )),
+            exit = fadeOut(tween(
+                durationMillis = Motion.scaledDurationMs(
+                    Motion.Durations.Short,
+                    animationOption
+                ),
+                easing = Motion.Easings.Exit
+            )),
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .height(PhoneDimens.bottomBarReservedHeight + 40.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                MaterialTheme.colorScheme.background.copy(alpha = 0.92f)
+                            )
+                        )
+                    )
+            )
         }
         AnimatedVisibility(
             visible = showBottomBar,
