@@ -117,6 +117,36 @@ class SettingsViewModel(
         }
     }
 
+    fun onGlassBottomBarChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setGlassBottomBar(enabled)
+        }
+    }
+
+    fun onGlassDialpadChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setGlassDialpad(enabled)
+        }
+    }
+
+    fun onGlassHeadersChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setGlassHeaders(enabled)
+        }
+    }
+
+    fun onGlassContactDetailChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setGlassContactDetail(enabled)
+        }
+    }
+
+    fun onGlassCallScreensChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setGlassCallScreens(enabled)
+        }
+    }
+
     fun onDefaultStartTabChanged(tab: StartTab) {
         viewModelScope.launch {
             settingsRepository.setDefaultStartTab(tab)

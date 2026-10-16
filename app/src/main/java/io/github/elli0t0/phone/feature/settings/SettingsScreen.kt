@@ -940,6 +940,72 @@ fun SettingsScreen(
                 }
             }
 
+            // Liquid glass: per-section on/off switches.
+            item {
+                SettingsSectionHeader(title = stringResource(id = R.string.settings_cat_liquid_glass))
+            }
+
+            item {
+                Card(
+                    shape = MaterialTheme.shapes.extraLarge,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(spacing.medium)) {
+                        SettingsSwitchRow(
+                            title = stringResource(id = R.string.settings_glass_bottom_bar),
+                            subtitle = stringResource(id = R.string.settings_glass_bottom_bar_desc),
+                            checked = settings.glassBottomBar,
+                            onCheckedChange = { viewModel.onGlassBottomBarChanged(it) }
+                        )
+
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        Spacer(modifier = Modifier.height(spacing.small))
+
+                        SettingsSwitchRow(
+                            title = stringResource(id = R.string.settings_glass_dialpad),
+                            subtitle = stringResource(id = R.string.settings_glass_dialpad_desc),
+                            checked = settings.glassDialpad,
+                            onCheckedChange = { viewModel.onGlassDialpadChanged(it) }
+                        )
+
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        Spacer(modifier = Modifier.height(spacing.small))
+
+                        SettingsSwitchRow(
+                            title = stringResource(id = R.string.settings_glass_headers),
+                            subtitle = stringResource(id = R.string.settings_glass_headers_desc),
+                            checked = settings.glassHeaders,
+                            onCheckedChange = { viewModel.onGlassHeadersChanged(it) }
+                        )
+
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        Spacer(modifier = Modifier.height(spacing.small))
+
+                        SettingsSwitchRow(
+                            title = stringResource(id = R.string.settings_glass_contact_detail),
+                            subtitle = stringResource(id = R.string.settings_glass_contact_detail_desc),
+                            checked = settings.glassContactDetail,
+                            onCheckedChange = { viewModel.onGlassContactDetailChanged(it) }
+                        )
+
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        Spacer(modifier = Modifier.height(spacing.small))
+
+                        SettingsSwitchRow(
+                            title = stringResource(id = R.string.settings_glass_call_screens),
+                            subtitle = stringResource(id = R.string.settings_glass_call_screens_desc),
+                            checked = settings.glassCallScreens,
+                            onCheckedChange = { viewModel.onGlassCallScreensChanged(it) }
+                        )
+                    }
+                }
+            }
+
             // Category 2: Layout & Density
             item {
                 SettingsSectionHeader(title = stringResource(id = R.string.settings_cat_layout))

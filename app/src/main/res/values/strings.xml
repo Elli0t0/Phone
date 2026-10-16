@@ -265,6 +265,18 @@
     <string name="settings_font_scale">Font size scale</string>
     <string name="settings_font_scale_desc">Adjust text sizing throughout the app</string>
 
+    <string name="settings_cat_liquid_glass">Liquid glass</string>
+    <string name="settings_glass_bottom_bar">Bottom bar</string>
+    <string name="settings_glass_bottom_bar_desc">Glass bar and sliding glass tab indicator</string>
+    <string name="settings_glass_dialpad">Dialpad</string>
+    <string name="settings_glass_dialpad_desc">Glass keys, Call button, no-match pills, and T9 chips</string>
+    <string name="settings_glass_headers">Headers</string>
+    <string name="settings_glass_headers_desc">Floating glass pill in the Recents and Contacts headers</string>
+    <string name="settings_glass_contact_detail">Contact detail</string>
+    <string name="settings_glass_contact_detail_desc">Glass floating action bar on the contact detail screen</string>
+    <string name="settings_glass_call_screens">Call screens</string>
+    <string name="settings_glass_call_screens_desc">Glass controls and dock on the incoming and ongoing call screens</string>
+
     <string name="settings_cat_layout">Layout &amp; Density</string>
     <string name="settings_list_density">List density</string>
     <string name="settings_list_density_compact">Compact</string>
