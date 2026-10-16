@@ -45,6 +45,8 @@ import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.data.call.CallState
 import io.github.elli0t0.phone.data.call.OngoingCallModel
 import io.github.elli0t0.phone.data.settings.model.CallBackground
+import io.github.elli0t0.phone.data.settings.model.ControlButtonSize
+import io.github.elli0t0.phone.data.settings.model.DtmfKeySize
 import io.github.elli0t0.phone.feature.call.ui.IncomingCallScreen
 import io.github.elli0t0.phone.feature.call.ui.OngoingCallScreen
 
@@ -260,6 +262,54 @@ fun CallBackgroundScreen(
                         ),
                         modifier = Modifier.testTag("call_preview_ongoing")
                     )
+                }
+
+                // Size sections live here (not in CallStudioSections)
+                // to keep each file small enough to ship.
+                // Control button size: how big the ongoing-call buttons are.
+                Text(
+                    text = "Control button size",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(spacing.small)
+                ) {
+                    ControlButtonSize.entries.forEach { size ->
+                        FilterChip(
+                            selected = settings.controlButtonSize == size,
+                            onClick = { settingsViewModel.onControlButtonSizeChanged(size) },
+                            label = { Text(text = size.label) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            modifier = Modifier.testTag("control_button_size_${size.name.lowercase()}")
+                        )
+                    }
+                }
+
+                // Keypad key size: how big the in-call keypad keys are.
+                Text(
+                    text = "Keypad key size",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(spacing.small)
+                ) {
+                    DtmfKeySize.entries.forEach { size ->
+                        FilterChip(
+                            selected = settings.dtmfKeySize == size,
+                            onClick = { settingsViewModel.onDtmfKeySizeChanged(size) },
+                            label = { Text(text = size.label) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            modifier = Modifier.testTag("dtmf_key_size_${size.name.lowercase()}")
+                        )
+                    }
                 }
 
                 CallStudioSections(

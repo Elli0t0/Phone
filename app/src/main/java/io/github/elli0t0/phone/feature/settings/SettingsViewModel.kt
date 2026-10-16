@@ -9,7 +9,9 @@ import io.github.elli0t0.phone.data.settings.model.AnswerGesture
 import io.github.elli0t0.phone.data.settings.model.AnswerSide
 import io.github.elli0t0.phone.data.settings.model.CallerInfoPosition
 import io.github.elli0t0.phone.data.settings.model.AnswerButtonSize
+import io.github.elli0t0.phone.data.settings.model.ControlButtonSize
 import io.github.elli0t0.phone.data.settings.model.ControlGridAlignment
+import io.github.elli0t0.phone.data.settings.model.DtmfKeySize
 import io.github.elli0t0.phone.data.settings.model.EndCallButtonSize
 import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
@@ -229,6 +231,20 @@ class SettingsViewModel(
         }
     }
     fun setShowQuickReplies(show: Boolean) = onShowQuickRepliesChanged(show)
+
+    fun onControlButtonSizeChanged(size: ControlButtonSize) {
+        viewModelScope.launch {
+            settingsRepository.setControlButtonSize(size)
+        }
+    }
+    fun setControlButtonSize(size: ControlButtonSize) = onControlButtonSizeChanged(size)
+
+    fun onDtmfKeySizeChanged(size: DtmfKeySize) {
+        viewModelScope.launch {
+            settingsRepository.setDtmfKeySize(size)
+        }
+    }
+    fun setDtmfKeySize(size: DtmfKeySize) = onDtmfKeySizeChanged(size)
 
     fun onOngoingCallButtonsChanged(buttons: List<OngoingCallButton>) {
         viewModelScope.launch {

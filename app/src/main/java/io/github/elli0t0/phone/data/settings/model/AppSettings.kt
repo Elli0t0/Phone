@@ -109,6 +109,18 @@ enum class AnswerButtonSize(val label: String, val scale: Float) {
     LARGE("Large", 1.25f)
 }
 
+enum class ControlButtonSize(val label: String, val scale: Float) {
+    SMALL("Small", 0.8f),
+    MEDIUM("Medium", 1f),
+    LARGE("Large", 1.25f)
+}
+
+enum class DtmfKeySize(val label: String, val scale: Float) {
+    SMALL("Small", 0.8f),
+    MEDIUM("Medium", 1f),
+    LARGE("Large", 1.25f)
+}
+
 enum class OngoingCallButton(val label: String) {
     MUTE("Mute"),
     SPEAKER("Speaker"),
@@ -163,6 +175,8 @@ data class AppSettings(
     val endCallButtonSize: EndCallButtonSize = EndCallButtonSize.MEDIUM,
     val answerButtonSize: AnswerButtonSize = AnswerButtonSize.MEDIUM,
     val showQuickReplies: Boolean = true,
+    val controlButtonSize: ControlButtonSize = ControlButtonSize.MEDIUM,
+    val dtmfKeySize: DtmfKeySize = DtmfKeySize.MEDIUM,
     val ongoingCallButtons: List<OngoingCallButton> = OngoingCallButton.entries,
     val showNumberOnCallScreen: Boolean = true,
     val defaultSim: DefaultSim = DefaultSim.ASK,

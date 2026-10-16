@@ -51,7 +51,9 @@ import io.github.elli0t0.phone.data.call.OngoingCallModel
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
 import io.github.elli0t0.phone.data.settings.model.CallerInfoPosition
+import io.github.elli0t0.phone.data.settings.model.ControlButtonSize
 import io.github.elli0t0.phone.data.settings.model.ControlGridAlignment
+import io.github.elli0t0.phone.data.settings.model.DtmfKeySize
 import io.github.elli0t0.phone.data.settings.model.EndCallButtonSize
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 
@@ -342,6 +344,7 @@ private fun InCallControlButton(
 ) {
     val controlSource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
+    val controlScale = LocalAppSettings.current.controlButtonSize.scale
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -349,7 +352,7 @@ private fun InCallControlButton(
     ) {
         Box(
             modifier = Modifier
-                .size(PhoneDimens.ongoingControlButtonSize)
+                .size(PhoneDimens.ongoingControlButtonSize * controlScale)
                 .clip(CircleShape)
                 .background(if (isActive) InCallControlActive else InCallControlBackground)
                 .pressScale(controlSource)
@@ -364,7 +367,7 @@ private fun InCallControlButton(
                 painter = painterResource(id = iconRes),
                 contentDescription = label,
                 tint = if (isActive) InCallControlActiveContent else Color.White,
-                modifier = Modifier.size(PhoneDimens.ongoingControlIconSize)
+                modifier = Modifier.size(PhoneDimens.ongoingControlIconSize * controlScale)
             )
         }
         Text(
@@ -392,6 +395,8 @@ private fun InCallKeypadGrid(
         listOf('*' to "", '0' to "+", '#' to "")
     )
     val lightHaptic = rememberLightHaptic()
+    // Keypad key size scales the key circles and the digit/letters text.
+    val keyScale = LocalAppSettings.current.dtmfKeySize.scale
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -406,7 +411,7 @@ private fun InCallKeypadGrid(
                     val keySource = remember { MutableInteractionSource() }
                     Box(
                         modifier = Modifier
-                            .size(PhoneDimens.ongoingDtmfKeySize)
+                            .size(PhoneDimens.ongoingDtmfKeySize * keyScale)
                             .clip(CircleShape)
                             .background(InCallControlBackground)
                             .pressScale(keySource)
@@ -422,14 +427,14 @@ private fun InCallKeypadGrid(
                                 text = digit.toString(),
                                 style = MaterialTheme.typography.titleLarge.copy(
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = PhoneDimens.ongoingDtmfDigitSize
+                                    fontSize = PhoneDimens.ongoingDtmfDigitSize * keyScale
                                 ),
                                 color = Color.White
                             )
                             if (letters.isNotEmpty()) {
                                 Text(
                                     text = letters,
-                                    style = MaterialTheme.typography.labelMedium.copy(fontSize = PhoneDimens.ongoingDtmfLettersSize),
+                                    style = MaterialTheme.typography.labelMedium.copy(fontSize = PhoneDimens.ongoingDtmfLettersSize * keyScale),
                                     color = Color.White.copy(alpha = 0.6f)
                                 )
                             }
