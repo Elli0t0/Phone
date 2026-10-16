@@ -1,19 +1,9 @@
 package io.github.elli0t0.phone.feature.contacts.ui
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -21,18 +11,14 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -45,16 +31,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -65,20 +47,15 @@ import io.github.elli0t0.phone.core.design.LiquidGlassPill
 import io.github.elli0t0.phone.core.design.LiquidGlassPillShape
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
-import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.firstLoadReveal
-import io.github.elli0t0.phone.core.design.liquidGlass
-import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.core.permissions.ContactsPermissionState
 import io.github.elli0t0.phone.core.permissions.ContactsPermissionStatus
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 import io.github.elli0t0.phone.data.contacts.model.DuplicateGroup
-import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.feature.contacts.ContactsUiState
 import io.github.elli0t0.phone.navigation.FloatingActionsPill
 import io.github.elli0t0.phone.navigation.PageHeaderItem
-import kotlinx.coroutines.launch
 
 @Composable
 fun ContactListScreen(
@@ -185,7 +162,6 @@ private fun ContactsContent(
         if (uiState.allContacts.isNotEmpty()) listRevealed = true
     }
     val listState = rememberLazyListState()
-    val scope = rememberCoroutineScope()
     val contactCount = uiState.allContacts.size
     val countText = if (contactCount == 1) {
         stringResource(id = R.string.contacts_count_single, contactCount)
@@ -462,23 +438,6 @@ private fun ContactsContent(
             // In-list top bar is item 1: reveal only once it scrolls off.
             revealAfterIndex = 1
         )
-        // A–Z fast scroller along the right edge.
-        if (uiState.groupedContacts.isNotEmpty()) {
-            ContactsFastScroller(
-                availableLetters = uiState.groupedContacts.keys,
-                onLetterSelected = { letter ->
-                    scope.launch {
-                        listState.scrollToItem(headerItemIndex(letter, uiState))
-                    }
-                },
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(
-                        top = PhoneDimens.contactsScrubberTopPadding,
-                        end = PhoneDimens.contactsScrubberEndPadding
-                    )
-            )
-        }
         }
     }
 }
@@ -561,172 +520,4 @@ private fun ContactsPillContainer(
             content()
         }
     }
-}
-
-/**
- * Interactive vertical A–Z fast scroller along the right edge of the
- * contacts list. Dragging or tapping jumps to the nearest available
- * section; a glass preview bubble shows the current letter while
- * dragging.
- */
-@Composable
-private fun ContactsFastScroller(
-    availableLetters: Set<String>,
-    onLetterSelected: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val alphabet = remember { ('A'..'Z').map { it.toString() } }
-    val available = remember(availableLetters) { availableLetters.toSet() }
-    val latestOnLetterSelected by rememberUpdatedState(onLetterSelected)
-    val lightHaptic = rememberLightHaptic()
-    val animationOption = LocalAppSettings.current.animationOption
-    var dragging by remember { mutableStateOf(false) }
-    var previewLetter by remember { mutableStateOf<String?>(null) }
-    var selectedLetter by remember { mutableStateOf<String?>(null) }
-
-    fun resolve(letter: String): String? {
-        if (available.contains(letter)) return letter
-        val index = alphabet.indexOf(letter)
-        if (index < 0) return null
-        return alphabet.subList(index, alphabet.size).firstOrNull { available.contains(it) }
-            ?: alphabet.subList(0, index).lastOrNull { available.contains(it) }
-    }
-
-    fun handleY(yPx: Float, heightPx: Float) {
-        if (heightPx <= 0f) return
-        val index = ((yPx / heightPx) * alphabet.size).toInt().coerceIn(0, alphabet.lastIndex)
-        val resolved = resolve(alphabet[index]) ?: return
-        if (resolved != selectedLetter) {
-            selectedLetter = resolved
-            previewLetter = resolved
-            lightHaptic()
-            latestOnLetterSelected(resolved)
-        }
-    }
-
-    BoxWithConstraints(
-        modifier = modifier
-            .fillMaxHeight()
-            .width(PhoneDimens.contactsScrubberWidth)
-    ) {
-        val heightPx = with(LocalDensity.current) { maxHeight.toPx() }
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .pointerInput(heightPx, alphabet, available) {
-                    detectVerticalDragGestures(
-                        onDragStart = { dragging = true },
-                        onDragEnd = { dragging = false; previewLetter = null },
-                        onDragCancel = { dragging = false; previewLetter = null },
-                        onVerticalDrag = { change, _ ->
-                            change.consume()
-                            handleY(change.position.y, heightPx)
-                        }
-                    )
-                }
-                .pointerInput(heightPx, alphabet, available) {
-                    detectTapGestures(onTap = { handleY(it.y, heightPx) })
-                }
-                .testTag("contacts_fast_scroller")
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .liquidGlass(shape = RoundedCornerShape(percent = 50), elevation = 4.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                alphabet.forEach { letter ->
-                    Box(
-                        modifier = Modifier.weight(1f),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = letter,
-                            fontSize = PhoneDimens.contactsScrubberLetterSize,
-                            color = if (available.contains(letter)) {
-                                MaterialTheme.colorScheme.onSurface
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
-                            }
-                        )
-                    }
-                }
-            }
-        }
-        // Floating glass letter preview while dragging.
-        val previewEnter: EnterTransition = when (animationOption) {
-            AnimationOption.OFF -> EnterTransition.None
-            AnimationOption.REDUCED -> fadeIn(
-                animationSpec = Motion.tweenSpec(150, Motion.Easings.Standard, animationOption)
-            )
-            AnimationOption.ON -> fadeIn(
-                animationSpec = Motion.tweenSpec(150, Motion.Easings.Standard, animationOption)
-            ) + scaleIn(
-                animationSpec = Motion.tweenSpec(150, Motion.Easings.Emphasized, animationOption),
-                initialScale = 0.8f
-            )
-        }
-        val previewExit: ExitTransition = when (animationOption) {
-            AnimationOption.OFF -> ExitTransition.None
-            AnimationOption.REDUCED -> fadeOut(
-                animationSpec = Motion.tweenSpec(150, Motion.Easings.Standard, animationOption)
-            )
-            AnimationOption.ON -> fadeOut(
-                animationSpec = Motion.tweenSpec(150, Motion.Easings.Standard, animationOption)
-            ) + scaleOut(
-                animationSpec = Motion.tweenSpec(150, Motion.Easings.Standard, animationOption),
-                targetScale = 0.8f
-            )
-        }
-        Box(modifier = Modifier.fillMaxSize()) {
-            AnimatedVisibility(
-                visible = dragging && previewLetter != null,
-                enter = previewEnter,
-                exit = previewExit,
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .offset(
-                        x = -(PhoneDimens.contactsScrubberWidth / 2 +
-                            PhoneDimens.contactsScrubberGap +
-                            PhoneDimens.contactsScrubberPreviewSize / 2)
-                    )
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(PhoneDimens.contactsScrubberPreviewSize)
-                        .liquidGlass(shape = CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = previewLetter ?: "",
-                        fontSize = PhoneDimens.contactsScrubberPreviewLetterSize,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
- * LazyColumn item index of the `header_$letter` section header,
- * mirroring the item order in ContactsContent so the fast scroller
- * can jump to it.
- */
-private fun headerItemIndex(letter: String, uiState: ContactsUiState): Int {
-    var index = 2 // contacts_header + contacts_top_bar
-    if (uiState.searchQuery.isEmpty()) {
-        if (uiState.showDuplicatesCard) index += 1
-        if (uiState.favorites.isNotEmpty()) {
-            index += 1 + (uiState.favorites.size + 2) / 3
-        } else {
-            index += 1 // favorites_hint
-        }
-        if (uiState.profileContact != null) index += 2
-    }
-    val sorted = uiState.groupedContacts.keys.sorted()
-    val letterIndex = sorted.indexOf(letter)
-    if (letterIndex < 0) return 0
-    return index + letterIndex * 2
 }

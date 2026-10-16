@@ -100,17 +100,10 @@ object PhoneDimens {
     val contactsFavoriteCardPadding = 12.dp
     val contactsFavoriteAvatarNameGap = 8.dp
     val contactsPillCornerPercent = 50
-    // Contacts top-bar pills and fast scroller.
+    // Contacts top-bar pills.
     val contactsTopBarPillHorizontalPadding = 12.dp
     val contactsTopBarPillVerticalPadding = 8.dp
     val contactsTopBarPillGap = 8.dp
-    val contactsScrubberWidth = 28.dp
-    val contactsScrubberTopPadding = 72.dp
-    val contactsScrubberEndPadding = 4.dp
-    val contactsScrubberGap = 8.dp
-    val contactsScrubberLetterSize = 11.sp
-    val contactsScrubberPreviewSize = 72.dp
-    val contactsScrubberPreviewLetterSize = 32.sp
     // Settings: cards, slider, switches.
     val settingsSwitchWidth = 52.dp
     val settingsSwitchHeight = 28.dp

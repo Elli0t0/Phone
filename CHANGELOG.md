@@ -47,13 +47,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.10.42] - 2026-10-16
 
-- Liquid glass across the app (8): the call background is an animated liquid aurora, the caller avatar gets pulsing glass rings, call controls are glass icon buttons with a bright active state, the swipe track shimmers and tints green/red with the drag, quick replies are glass chips, and a live equalizer wave sits next to the call timer.
+- Removed the Contacts A–Z fast scroller: no more letter rail along the right edge, preview bubble, or jump-to-section gestures. The grouped list and its section headers are unchanged.
 
 ## [0.10.43] - 2026-10-16
 
-- Liquid glass across the app (9): the Call Studio preview scales its layout proportionally and always shows the caller header and call buttons, the reorder list uses 40dp glass icon buttons with chevrons, and the option selector chips are glass with animated selection.
+- Liquid glass across the app (8): the call background is an animated liquid aurora, the caller avatar gets pulsing glass rings, call controls are glass icon buttons with a bright active state, the swipe track shimmers and tints green/red with the drag, quick replies are glass chips, and a live equalizer wave sits next to the call timer.
 
 ## [0.10.44] - 2026-10-16
+
+- Liquid glass across the app (9): the Call Studio preview scales its layout proportionally and always shows the caller header and call buttons, the reorder list uses 40dp glass icon buttons with chevrons, and the option selector chips are glass with animated selection.
+
+## [0.10.45] - 2026-10-16
 
 - App-wide motion: a shared bouncyClick modifier on dialpad keys, Recents cards, action buttons, contact rows, and bottom-bar tabs; the dialed number animates per character with haptic feedback on key presses and backspace; screen transitions use spring scale + fade and tab switches cross-fade with a subtle slide, all respecting the Animations setting.
 
