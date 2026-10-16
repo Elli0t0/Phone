@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -49,6 +50,7 @@ import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.firstLoadReveal
+import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.permissions.ContactsPermissionState
 import io.github.elli0t0.phone.core.permissions.ContactsPermissionStatus
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
@@ -229,7 +231,18 @@ private fun ContactsContent(
                     }
                     DropdownMenu(
                         expanded = menuExpanded,
-                        onDismissRequest = { menuExpanded = false }
+                        onDismissRequest = { menuExpanded = false },
+                        // Glass menu: the liquid-glass modifier draws the
+                        // background, rim, and shadow; the Surface itself
+                        // stays transparent so it does not double-draw.
+                        modifier = Modifier.liquidGlass(
+                            shape = RoundedCornerShape(PhoneDimens.menuCornerRadius),
+                            elevation = PhoneDimens.menuElevation
+                        ),
+                        shape = RoundedCornerShape(PhoneDimens.menuCornerRadius),
+                        containerColor = Color.Transparent,
+                        tonalElevation = 0.dp,
+                        shadowElevation = 0.dp
                     ) {
                         DropdownMenuItem(
                             text = { Text(text = stringResource(id = R.string.settings_title)) },

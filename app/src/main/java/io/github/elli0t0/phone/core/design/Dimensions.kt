@@ -27,9 +27,13 @@ object PhoneDimens {
     val bottomBarIconSize = 24.dp
     val bottomBarLabelSize = 12.sp
     val bottomBarLabelIconGap = 2.dp
-    // Space kept clear above the bar: bar height (60dp) + gap (12dp)
-    // + 16dp, plus the navigation-bar inset added at the call site.
-    val bottomBarReservedHeight = 88.dp
+    // Space kept clear above the bar: largest bar height (68dp, the
+    // Large size) + gap (12dp) + 16dp, plus the navigation-bar inset
+    // added at the call site.
+    val bottomBarReservedHeight = 96.dp
+    // Overflow-menu (glass) popup surface.
+    val menuCornerRadius = 28.dp
+    val menuElevation = 16.dp
     // Collapsing page header (Recents, Contacts): expanded header is
     // ~38% of the screen (min 260dp), title centered at ~42% of its
     // height, action row at the bottom 12dp above the first list item.

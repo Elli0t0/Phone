@@ -3,7 +3,9 @@ package io.github.elli0t0.phone.feature.contacts
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -23,7 +25,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.Motion
+import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.bottomBarSizeSpec
 import io.github.elli0t0.phone.core.permissions.rememberContactsPermissionState
 import io.github.elli0t0.phone.data.contacts.model.ContactDetail
 import io.github.elli0t0.phone.feature.contacts.ui.ContactDetailScreen
@@ -122,9 +127,24 @@ fun ContactsScreen(
         }
     }
 
+    // Snackbar above the floating bottom bar (an overlay the Scaffold
+    // does not account for): nav inset + bar bottom margin + the
+    // current bar height + a small gap, so the snackbar is never
+    // covered by the bar.
+    val snackbarBottomPadding = WindowInsets.navigationBars.asPaddingValues()
+        .calculateBottomPadding() +
+        PhoneDimens.bottomBarBottomMargin +
+        bottomBarSizeSpec(LocalAppSettings.current.bottomBarSize).height +
+        LocalSpacing.current.small
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.padding(bottom = snackbarBottomPadding)
+            )
+        }
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
             AnimatedContent(
