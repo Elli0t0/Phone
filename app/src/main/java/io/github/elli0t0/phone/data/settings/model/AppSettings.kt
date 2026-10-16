@@ -66,6 +66,7 @@ enum class CallBackground(val label: String) {
     ROSE("Rose"),
     MIDNIGHT("Midnight"),
     AMBER("Amber"),
+    AURORA("Aurora"),
     CUSTOM("Custom")
 }
 

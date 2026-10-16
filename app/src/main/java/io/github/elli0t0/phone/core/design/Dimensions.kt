@@ -72,6 +72,13 @@ object PhoneDimens {
     val ongoingDtmfDigitSize = 26.sp
     val ongoingDtmfLettersSize = 10.sp
     val ongoingKeypadBottomRowGap = 8.dp
+    val inCallEqualizerBarWidth = 3.dp
+    val inCallEqualizerBarMaxHeight = 14.dp
+    val inCallEqualizerBarSpacing = 2.dp
+    val inCallSwipeTintMaxAlpha = 0.35f
+    val inCallSwipeShimmerAlpha = 0.18f
+    val incomingChipHorizontalPadding = 12.dp
+    val incomingChipVerticalPadding = 6.dp
     // Dual-SIM picker dialog rows.
     val simPickerRowMinHeight = 64.dp
     val simPickerRowCornerRadius = 12.dp

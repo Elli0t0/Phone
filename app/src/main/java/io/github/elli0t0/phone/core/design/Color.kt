@@ -53,6 +53,15 @@ val InCallControlBackgroundFlat = Color(0xFF2C2C2E)
 val InCallSwipeTrackBackground = Color(0x26FFFFFF)
 val InCallControlActive = Color(0xFFFFFFFF)
 val InCallControlActiveContent = Color(0xFF000000)
+// Aurora background: dark base gradient + drifting accent/teal/violet blobs.
+val AuroraBaseTop = Color(0xFF0B1026)
+val AuroraBaseBottom = Color(0xFF1E1B4B)
+val AuroraTeal = Color(0xFF2DD4BF)
+val AuroraViolet = Color(0xFF8B5CF6)
+// Incoming avatar pulse rings: soft white.
+val InCallAvatarRing = Color(0x66FFFFFF)
+// Ongoing-call equalizer bars: mostly-opaque white.
+val InCallEqualizerBar = Color(0xCCFFFFFF)
 
 // Light theme colors
 val LightBackground = Color(0xFFF6F6F8)

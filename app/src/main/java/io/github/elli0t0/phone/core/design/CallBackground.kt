@@ -1,8 +1,26 @@
 package io.github.elli0t0.phone.core.design
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.Dp
+import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 
 /**
@@ -11,6 +29,8 @@ import io.github.elli0t0.phone.data.settings.model.CallBackground
  * the Accent variant darkens the accent instead of using it raw.
  * For CUSTOM, callers pass the custom background color as
  * [accentColor] (CallActivity and the studio preview do this).
+ * AURORA is a static fallback here (the animated version is
+ * [CallBackgroundLayer]); studio swatches use this brush.
  */
 fun callBackgroundBrush(background: CallBackground, accentColor: Long): Brush = when (background) {
     CallBackground.DEFAULT -> Brush.verticalGradient(
@@ -45,8 +65,201 @@ fun callBackgroundBrush(background: CallBackground, accentColor: Long): Brush = 
     CallBackground.AMBER -> Brush.verticalGradient(
         colors = listOf(Color(0xFF7C2D12), Color(0xFFF59E0B))
     )
+    CallBackground.AURORA -> Brush.verticalGradient(
+        colors = listOf(AuroraBaseTop, AuroraBaseBottom)
+    )
     CallBackground.CUSTOM -> SolidColor(Color(accentColor))
 }
 
 private fun Color.darken(factor: Float): Color =
     Color(red * factor, green * factor, blue * factor, alpha)
+
+/**
+ * The full call-screen background: the animated aurora for AURORA,
+ * the static brush for every other mode.
+ */
+@Composable
+fun CallBackgroundLayer(
+    background: CallBackground,
+    accentColor: Long,
+    modifier: Modifier = Modifier
+) {
+    if (background == CallBackground.AURORA) {
+        AuroraBackground(accentColor = accentColor, modifier = modifier)
+    } else {
+        Box(modifier = modifier.background(callBackgroundBrush(background, accentColor)))
+    }
+}
+
+// Aurora blob softness: radial falloff + graphicsLayer alpha.
+private const val AuroraBlobAlpha = 0.75f
+
+/**
+ * Animated liquid aurora: a dark base gradient with three large
+ * radial-gradient blobs (accent, teal, violet) drifting slowly.
+ * Animations ON: blobs drift on independent loops. REDUCED: the same
+ * blobs, static (no loops). OFF: base gradient only.
+ */
+@Composable
+fun AuroraBackground(
+    accentColor: Long,
+    modifier: Modifier = Modifier
+) {
+    val option = LocalAppSettings.current.animationOption
+    BoxWithConstraints(modifier = modifier) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(colors = listOf(AuroraBaseTop, AuroraBaseBottom))
+                )
+        )
+        if (option != AnimationOption.OFF) {
+            if (option == AnimationOption.ON) {
+                AuroraBlobsAnimated(accentColor, maxWidth, maxHeight)
+            } else {
+                AuroraBlobsStatic(accentColor, maxWidth, maxHeight)
+            }
+        }
+    }
+}
+
+@Composable
+private fun AuroraBlobsAnimated(
+    accentColor: Long,
+    maxWidth: Dp,
+    maxHeight: Dp
+) {
+    val transition = rememberInfiniteTransition(label = "aurora")
+    val ax by transition.animateFloat(
+        initialValue = -0.06f,
+        targetValue = 0.06f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 11000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "auroraAx"
+    )
+    val ay by transition.animateFloat(
+        initialValue = -0.04f,
+        targetValue = 0.04f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 9000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "auroraAy"
+    )
+    val bx by transition.animateFloat(
+        initialValue = 0.06f,
+        targetValue = -0.06f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 14000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "auroraBx"
+    )
+    val by by transition.animateFloat(
+        initialValue = 0.04f,
+        targetValue = -0.04f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 13000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "auroraBy"
+    )
+    val cx by transition.animateFloat(
+        initialValue = -0.05f,
+        targetValue = 0.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 17000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "auroraCx"
+    )
+    val cy by transition.animateFloat(
+        initialValue = 0.05f,
+        targetValue = -0.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 16000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "auroraCy"
+    )
+    AuroraBlobs(
+        accentColor = accentColor,
+        maxWidth = maxWidth,
+        maxHeight = maxHeight,
+        drifts = listOf(ax to ay, bx to by, cx to cy)
+    )
+}
+
+@Composable
+private fun AuroraBlobsStatic(
+    accentColor: Long,
+    maxWidth: Dp,
+    maxHeight: Dp
+) {
+    AuroraBlobs(
+        accentColor = accentColor,
+        maxWidth = maxWidth,
+        maxHeight = maxHeight,
+        drifts = listOf(0f to 0f, 0f to 0f, 0f to 0f)
+    )
+}
+
+@Composable
+private fun AuroraBlobs(
+    accentColor: Long,
+    maxWidth: Dp,
+    maxHeight: Dp,
+    drifts: List<Pair<Float, Float>>
+) {
+    val blobSize = maxWidth * 1.1f
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Accent blob, top-left.
+        AuroraBlob(
+            color = Color(accentColor),
+            size = blobSize,
+            offsetX = maxWidth * -0.2f + maxWidth * drifts[0].first,
+            offsetY = maxHeight * -0.15f + maxHeight * drifts[0].second
+        )
+        // Teal blob, center-right.
+        AuroraBlob(
+            color = AuroraTeal,
+            size = blobSize,
+            offsetX = maxWidth * 0.35f + maxWidth * drifts[1].first,
+            offsetY = maxHeight * 0.05f + maxHeight * drifts[1].second
+        )
+        // Violet blob, bottom-left.
+        AuroraBlob(
+            color = AuroraViolet,
+            size = blobSize,
+            offsetX = maxWidth * -0.15f + maxWidth * drifts[2].first,
+            offsetY = maxHeight * 0.45f + maxHeight * drifts[2].second
+        )
+    }
+}
+
+/**
+ * One aurora blob: a radial gradient fading to transparent, softened
+ * further by graphicsLayer alpha — the blur without a blur pass.
+ */
+@Composable
+private fun AuroraBlob(
+    color: Color,
+    size: Dp,
+    offsetX: Dp,
+    offsetY: Dp
+) {
+    Box(
+        modifier = Modifier
+            .size(size)
+            .offset(x = offsetX, y = offsetY)
+            .graphicsLayer { alpha = AuroraBlobAlpha }
+            .background(
+                brush = Brush.radialGradient(
+                    colors = listOf(color, Color.Transparent)
+                )
+            )
+    )
+}

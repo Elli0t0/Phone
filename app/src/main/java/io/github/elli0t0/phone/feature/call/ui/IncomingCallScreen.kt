@@ -1,11 +1,18 @@
 package io.github.elli0t0.phone.feature.call.ui
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -33,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -41,6 +49,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
@@ -53,18 +62,21 @@ import io.github.elli0t0.phone.data.settings.model.CallerInfoPosition
 import io.github.elli0t0.phone.data.settings.model.IncomingAvatarShape
 import io.github.elli0t0.phone.data.settings.model.IncomingAvatarSize
 import io.github.elli0t0.phone.core.design.CallAnswerGreen
+import io.github.elli0t0.phone.core.design.CallBackgroundLayer
 import io.github.elli0t0.phone.core.design.CallDeclineRed
+import io.github.elli0t0.phone.core.design.InCallAvatarRing
 import io.github.elli0t0.phone.core.design.InCallControlBackground
 import io.github.elli0t0.phone.core.design.InCallControlBackgroundFlat
 import io.github.elli0t0.phone.core.design.InCallSwipeTrackBackground
+import io.github.elli0t0.phone.core.design.LiquidGlassChip
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.PulseRings
-import io.github.elli0t0.phone.core.design.callBackgroundBrush
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.call.OngoingCallModel
+import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import kotlin.math.roundToInt
 
@@ -90,9 +102,13 @@ fun IncomingCallScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(callBackgroundBrush(callBackground, accentColor))
             .testTag("incoming_call_screen")
     ) {
+        CallBackgroundLayer(
+            background = callBackground,
+            accentColor = accentColor,
+            modifier = Modifier.fillMaxSize()
+        )
         if (dim > 0f) {
             Box(
                 modifier = Modifier
@@ -135,21 +151,27 @@ fun IncomingCallScreen(
             val avatarScale = LocalAppSettings.current.incomingAvatarSize.scale
             val avatarShape = if (LocalAppSettings.current.incomingAvatarShape == IncomingAvatarShape.ROUNDED) RoundedCornerShape(24) else CircleShape
 
-            Box(
-                modifier = Modifier
-                    .size(PhoneDimens.incomingAvatarSize * avatarScale)
-                    .clip(avatarShape)
-                    .background(if (glassCallScreens) InCallControlBackground else InCallControlBackgroundFlat),
-                contentAlignment = Alignment.Center
+            // Pulsing glass rings around the caller avatar.
+            PulseRings(
+                color = InCallAvatarRing,
+                modifier = Modifier.size(PhoneDimens.incomingAvatarSize * avatarScale)
             ) {
-                Text(
-                    text = initial,
-                    style = MaterialTheme.typography.displayLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = MaterialTheme.typography.displayLarge.fontSize * avatarScale
-                    ),
-                    color = Color.White
-                )
+                Box(
+                    modifier = Modifier
+                        .size(PhoneDimens.incomingAvatarSize * avatarScale)
+                        .clip(avatarShape)
+                        .background(if (glassCallScreens) InCallControlBackground else InCallControlBackgroundFlat),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = initial,
+                        style = MaterialTheme.typography.displayLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = MaterialTheme.typography.displayLarge.fontSize * avatarScale
+                        ),
+                        color = Color.White
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(spacing.medium))
@@ -219,15 +241,33 @@ private fun QuickRepliesSection(
             modifier = Modifier.fillMaxWidth()
         ) {
             quickDeclineMessages.forEachIndexed { index, message ->
-                AssistChip(
-                    onClick = { onDeclineWithMessage(message) },
-                    label = { Text(text = message) },
-                    colors = AssistChipDefaults.assistChipColors(
-                        containerColor = if (glassCallScreens) InCallControlBackground else InCallControlBackgroundFlat,
-                        labelColor = Color.White
-                    ),
-                    modifier = Modifier.testTag("quick_reply_$index")
-                )
+                if (glassCallScreens) {
+                    LiquidGlassChip(
+                        selected = false,
+                        onClick = { onDeclineWithMessage(message) },
+                        modifier = Modifier.testTag("quick_reply_$index"),
+                        forceDarkGlass = true
+                    ) {
+                        Text(
+                            text = message,
+                            color = Color.White,
+                            modifier = Modifier.padding(
+                                horizontal = PhoneDimens.incomingChipHorizontalPadding,
+                                vertical = PhoneDimens.incomingChipVerticalPadding
+                            )
+                        )
+                    }
+                } else {
+                    AssistChip(
+                        onClick = { onDeclineWithMessage(message) },
+                        label = { Text(text = message) },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = InCallControlBackgroundFlat,
+                            labelColor = Color.White
+                        ),
+                        modifier = Modifier.testTag("quick_reply_$index")
+                    )
+                }
             }
         }
     }
@@ -292,76 +332,104 @@ private fun SwipeAnswerBar(
     // (the thumb always fills the bar height).
     val glassCallScreens = LocalAppSettings.current.glassCallScreens
     val answerScale = LocalAppSettings.current.answerButtonSize.scale
+    // Drag tint: green toward answer, red toward decline (mirrored
+    // sides swap). Strength grows with the drag distance.
+    val dragProgress = (kotlin.math.abs(dragOffset) / thresholdPx).coerceIn(0f, 1f)
+    val answerDirection = if (mirror) -1f else 1f
+    val dragTint = when {
+        dragOffset == 0f -> Color.Transparent
+        kotlin.math.sign(dragOffset) == answerDirection -> CallAnswerGreen
+        else -> CallDeclineRed
+    }
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(PhoneDimens.incomingActionButtonSize * answerScale)
-                .clip(RoundedCornerShape(50))
-                .background(if (glassCallScreens) InCallSwipeTrackBackground else InCallControlBackgroundFlat)
-                .pointerInput(Unit) {
-                    detectHorizontalDragGestures(
-                        onHorizontalDrag = { _, dragAmount ->
-                            dragOffset = (dragOffset + dragAmount)
-                                .coerceIn(-thresholdPx * 1.5f, thresholdPx * 1.5f)
-                        },
-                        onDragEnd = {
-                            when {
-                                dragOffset > thresholdPx -> {
-                                    lightHaptic()
-                                    if (mirror) onDecline() else onAnswer()
-                                }
-                                dragOffset < -thresholdPx -> {
-                                    lightHaptic()
-                                    if (mirror) onAnswer() else onDecline()
-                                }
-                            }
-                            dragOffset = 0f
-                        },
-                        onDragCancel = { dragOffset = 0f }
-                    )
-                },
-            contentAlignment = Alignment.Center
         ) {
-            Icon(
-                painter = painterResource(
-                    id = if (mirror) R.drawable.ic_phone else R.drawable.ic_call_end
-                ),
-                contentDescription = null,
-                tint = if (mirror) CallAnswerGreen else CallDeclineRed,
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .padding(start = spacing.medium)
-                    .size(PhoneDimens.incomingActionIconSize * answerScale)
-            )
-            Icon(
-                painter = painterResource(
-                    id = if (mirror) R.drawable.ic_call_end else R.drawable.ic_phone
-                ),
-                contentDescription = null,
-                tint = if (mirror) CallDeclineRed else CallAnswerGreen,
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(end = spacing.medium)
-                    .size(PhoneDimens.incomingActionIconSize * answerScale)
-            )
             Box(
                 modifier = Modifier
-                    .offset { IntOffset(dragOffset.roundToInt(), 0) }
-                    .size(PhoneDimens.incomingActionButtonSize * answerScale)
-                    .clip(CircleShape)
-                    .background(Color.White),
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(50))
+                    .background(if (glassCallScreens) InCallSwipeTrackBackground else InCallControlBackgroundFlat)
+                    .pointerInput(Unit) {
+                        detectHorizontalDragGestures(
+                            onHorizontalDrag = { _, dragAmount ->
+                                dragOffset = (dragOffset + dragAmount)
+                                    .coerceIn(-thresholdPx * 1.5f, thresholdPx * 1.5f)
+                            },
+                            onDragEnd = {
+                                when {
+                                    dragOffset > thresholdPx -> {
+                                        lightHaptic()
+                                        if (mirror) onDecline() else onAnswer()
+                                    }
+                                    dragOffset < -thresholdPx -> {
+                                        lightHaptic()
+                                        if (mirror) onAnswer() else onDecline()
+                                    }
+                                }
+                                dragOffset = 0f
+                            },
+                            onDragCancel = { dragOffset = 0f }
+                        )
+                    },
                 contentAlignment = Alignment.Center
             ) {
+                // Drag tint over the track, behind the icons and thumb.
+                if (dragProgress > 0f) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                dragTint.copy(alpha = dragProgress * PhoneDimens.inCallSwipeTintMaxAlpha)
+                            )
+                    )
+                }
+                // Idle shimmer sweep across the track (ON only).
+                if (LocalAppSettings.current.animationOption == AnimationOption.ON) {
+                    SwipeShimmer(trackWidth = maxWidth)
+                }
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_phone),
+                    painter = painterResource(
+                        id = if (mirror) R.drawable.ic_phone else R.drawable.ic_call_end
+                    ),
                     contentDescription = null,
-                    tint = CallAnswerGreen,
-                    modifier = Modifier.size(PhoneDimens.incomingActionIconSize * answerScale)
+                    tint = if (mirror) CallAnswerGreen else CallDeclineRed,
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .padding(start = spacing.medium)
+                        .size(PhoneDimens.incomingActionIconSize * answerScale)
                 )
+                Icon(
+                    painter = painterResource(
+                        id = if (mirror) R.drawable.ic_call_end else R.drawable.ic_phone
+                    ),
+                    contentDescription = null,
+                    tint = if (mirror) CallDeclineRed else CallAnswerGreen,
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(end = spacing.medium)
+                        .size(PhoneDimens.incomingActionIconSize * answerScale)
+                )
+                Box(
+                    modifier = Modifier
+                        .offset { IntOffset(dragOffset.roundToInt(), 0) }
+                        .size(PhoneDimens.incomingActionButtonSize * answerScale)
+                        .clip(CircleShape)
+                        .background(Color.White),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_phone),
+                        contentDescription = null,
+                        tint = CallAnswerGreen,
+                        modifier = Modifier.size(PhoneDimens.incomingActionIconSize * answerScale)
+                    )
+                }
             }
         }
         Spacer(modifier = Modifier.height(spacing.extraSmall))
@@ -375,6 +443,38 @@ private fun SwipeAnswerBar(
             color = Color.White.copy(alpha = 0.9f)
         )
     }
+}
+
+/**
+ * Idle shimmer sweep across the swipe track: a soft highlight band
+ * travelling left to right on a loop.
+ */
+@Composable
+private fun SwipeShimmer(trackWidth: Dp) {
+    val transition = rememberInfiniteTransition(label = "swipeShimmer")
+    val sweep by transition.animateFloat(
+        initialValue = -0.4f,
+        targetValue = 1.4f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "shimmerSweep"
+    )
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .offset(x = trackWidth * sweep)
+            .background(
+                brush = Brush.horizontalGradient(
+                    colors = listOf(
+                        Color.Transparent,
+                        Color.White.copy(alpha = PhoneDimens.inCallSwipeShimmerAlpha),
+                        Color.Transparent
+                    )
+                )
+            )
+    )
 }
 
 /** Decline button: red circle with glow ring + label. */

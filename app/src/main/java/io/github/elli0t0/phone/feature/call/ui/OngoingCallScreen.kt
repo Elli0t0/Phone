@@ -1,6 +1,14 @@
 package io.github.elli0t0.phone.feature.call.ui
 
 import android.telecom.CallAudioState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.InfiniteTransition
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.StartOffset
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -14,7 +22,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -36,19 +46,22 @@ import androidx.compose.ui.text.style.TextAlign
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
+import io.github.elli0t0.phone.core.design.CallBackgroundLayer
 import io.github.elli0t0.phone.core.design.InCallControlActive
 import io.github.elli0t0.phone.core.design.InCallControlActiveContent
 import io.github.elli0t0.phone.core.design.InCallControlBackground
 import io.github.elli0t0.phone.core.design.InCallControlBackgroundFlat
+import io.github.elli0t0.phone.core.design.InCallEqualizerBar
 import io.github.elli0t0.phone.core.design.LiquidGlassEndCall
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
-import io.github.elli0t0.phone.core.design.callBackgroundBrush
+import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.call.CallState
 import io.github.elli0t0.phone.data.call.OngoingCallModel
+import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
 import io.github.elli0t0.phone.data.settings.model.CallerInfoPosition
@@ -139,10 +152,10 @@ fun OngoingCallScreen(
             .fillMaxSize()
             .testTag("ongoing_call_screen")
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(callBackgroundBrush(callBackground, accentColor))
+        CallBackgroundLayer(
+            background = callBackground,
+            accentColor = accentColor,
+            modifier = Modifier.fillMaxSize()
         )
         if (dim > 0f) {
             Box(
@@ -188,11 +201,20 @@ fun OngoingCallScreen(
                         modifier = Modifier.padding(bottom = spacing.extraSmall)
                     )
                 }
-                Text(
-                    text = stateText,
-                    style = MaterialTheme.typography.titleMedium.copy(fontSize = PhoneDimens.ongoingStateSize),
-                    color = Color.White.copy(alpha = 0.6f)
-                )
+                // Live equalizer wave next to the call timer while active.
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(spacing.small)
+                ) {
+                    if (callModel.state == CallState.ACTIVE) {
+                        EqualizerBars()
+                    }
+                    Text(
+                        text = stateText,
+                        style = MaterialTheme.typography.titleMedium.copy(fontSize = PhoneDimens.ongoingStateSize),
+                        color = Color.White.copy(alpha = 0.6f)
+                    )
+                }
             }
 
             // Center: in-call DTMF keypad, or empty space when controls are shown.
@@ -347,6 +369,18 @@ private fun InCallControlButton(
     val lightHaptic = rememberLightHaptic()
     val glassCallScreens = LocalAppSettings.current.glassCallScreens
     val controlScale = LocalAppSettings.current.controlButtonSize.scale
+    // Glass icon button: liquid glass over the call background,
+    // bright (selected) when active. Flat branch keeps the solid color.
+    val controlBackground = if (glassCallScreens) {
+        Modifier.liquidGlass(
+            shape = CircleShape,
+            tint = Color.White,
+            isSelected = isActive,
+            forceDarkGlass = true
+        )
+    } else {
+        Modifier.background(if (isActive) InCallControlActive else InCallControlBackgroundFlat)
+    }
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -356,7 +390,7 @@ private fun InCallControlButton(
             modifier = Modifier
                 .size(PhoneDimens.ongoingControlButtonSize * controlScale)
                 .clip(CircleShape)
-                .background(if (isActive) InCallControlActive else if (glassCallScreens) InCallControlBackground else InCallControlBackgroundFlat)
+                .then(controlBackground)
                 .pressScale(controlSource)
                 .clickable(
                     interactionSource = controlSource,
@@ -475,6 +509,74 @@ private fun InCallKeypadGrid(
                 isActive = isMuted,
                 onClick = onMuteToggle,
                 testTag = "keypad_mute_button"
+            )
+        }
+    }
+}
+
+/**
+ * Live equalizer wave next to the call timer.
+ * ON: four bars bounce on independent loops. REDUCED / OFF: static bars.
+ */
+@Composable
+private fun EqualizerBars(modifier: Modifier = Modifier) {
+    if (LocalAppSettings.current.animationOption == AnimationOption.ON) {
+        EqualizerBarsAnimated(modifier)
+    } else {
+        EqualizerBarsRow(listOf(0.5f, 0.5f, 0.5f, 0.5f), modifier)
+    }
+}
+
+@Composable
+private fun EqualizerBarsAnimated(modifier: Modifier = Modifier) {
+    val transition = rememberInfiniteTransition(label = "equalizer")
+    val heights = listOf(
+        equalizerHeight(transition, 0),
+        equalizerHeight(transition, 1),
+        equalizerHeight(transition, 2),
+        equalizerHeight(transition, 3)
+    )
+    EqualizerBarsRow(heights, modifier)
+}
+
+@Composable
+private fun equalizerHeight(
+    transition: InfiniteTransition,
+    index: Int
+): Float {
+    val value by transition.animateFloat(
+        initialValue = 0.25f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = 420 + index * 130,
+                easing = FastOutSlowInEasing
+            ),
+            repeatMode = RepeatMode.Reverse,
+            initialStartOffset = StartOffset(index * 90)
+        ),
+        label = "eqBar$index"
+    )
+    return value
+}
+
+@Composable
+private fun EqualizerBarsRow(
+    heights: List<Float>,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(PhoneDimens.inCallEqualizerBarSpacing),
+        verticalAlignment = Alignment.Bottom
+    ) {
+        heights.forEach { fraction ->
+            Box(
+                modifier = Modifier
+                    .width(PhoneDimens.inCallEqualizerBarWidth)
+                    .height(PhoneDimens.inCallEqualizerBarMaxHeight * fraction)
+                    .clip(RoundedCornerShape(percent = 50))
+                    .background(InCallEqualizerBar)
             )
         }
     }
