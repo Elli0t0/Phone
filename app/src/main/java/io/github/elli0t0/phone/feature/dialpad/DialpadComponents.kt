@@ -1,13 +1,10 @@
 package io.github.elli0t0.phone.feature.dialpad
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,12 +27,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -54,9 +49,8 @@ import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.liquidGlass
-import io.github.elli0t0.phone.core.design.pressScale
+import io.github.elli0t0.phone.core.design.bouncyClick
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
-import io.github.elli0t0.phone.data.settings.model.AnimationOption
 
 data class DialKey(
     val digit: Char,
@@ -84,18 +78,11 @@ fun DialKeyView(
         else -> dialKey.digit.toString()
     }
 
-    // Press scale: the whole glass key scales to 0.90 while pressed
-    // and springs back (damping 0.55, stiffness 500). On Reduced/Off
-    // there is no scale. No ripple: the glass surface is the feedback.
+    // Shared press source: bouncyClick and combinedClickable observe
+    // the same press state, so the key bounces (0.90) while pressed.
+    // No ripple: the glass surface is the feedback.
     val keySource = remember { MutableInteractionSource() }
-    val isPressed by keySource.collectIsPressedAsState()
-    val animationOption = LocalAppSettings.current.animationOption
     val glassDialpad = LocalAppSettings.current.glassDialpad
-    val keyScale by animateFloatAsState(
-        targetValue = if (isPressed && animationOption == AnimationOption.ON) 0.90f else 1f,
-        animationSpec = spring(dampingRatio = 0.55f, stiffness = 500f),
-        label = "keyPressScale"
-    )
     // Key content shared by the glass and flat branches.
     val keyContent: @Composable () -> Unit = {
         Column(
@@ -136,10 +123,7 @@ fun DialKeyView(
         Box(
             modifier = modifier
                 .size(PhoneDimens.keypadTouchSize)
-                .graphicsLayer {
-                    scaleX = keyScale
-                    scaleY = keyScale
-                }
+                .bouncyClick(keySource)
                 .liquidGlass(shape = CircleShape, elevation = 0.dp)
                 .combinedClickable(
                     interactionSource = keySource,
@@ -160,7 +144,7 @@ fun DialKeyView(
             modifier = modifier
                 .size(PhoneDimens.keypadTouchSize)
                 .clip(CircleShape)
-                .pressScale(keySource)
+                .bouncyClick(keySource)
                 .combinedClickable(
                     interactionSource = keySource,
                     indication = ripple(),
@@ -331,7 +315,7 @@ fun DialpadNoMatchActions(
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .clip(LiquidGlassPillShape)
-                    .pressScale(createSource)
+                    .bouncyClick(createSource)
                     .clickable(
                         interactionSource = createSource,
                         indication = ripple()
@@ -358,7 +342,7 @@ fun DialpadNoMatchActions(
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .clip(LiquidGlassPillShape)
-                    .pressScale(messageSource)
+                    .bouncyClick(messageSource)
                     .clickable(
                         interactionSource = messageSource,
                         indication = ripple()

@@ -9,6 +9,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -24,6 +27,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,6 +60,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -87,7 +92,7 @@ import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.OnAccentBlue
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.liquidGlass
-import io.github.elli0t0.phone.core.design.pressScale
+import io.github.elli0t0.phone.core.design.bouncyClick
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.core.telecom.CallManager
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
@@ -437,6 +442,8 @@ fun DialpadScreen(
                     .testTag("dialpad_number_display"),
                 contentAlignment = Alignment.Center
             ) {
+                // Hidden full-string Text: measures overflow and drives
+                // the auto-shrink, exactly as the single Text did.
                 Text(
                     text = displayText,
                     style = MaterialTheme.typography.displayLarge.copy(
@@ -456,8 +463,65 @@ fun DialpadScreen(
                                 shrunk
                             }
                         }
-                    }
+                    },
+                    modifier = Modifier.graphicsLayer { alpha = 0f }
                 )
+                // Visible per-character number: each digit pops in
+                // (scale + fade on ON, fade only on REDUCED, instant
+                // on OFF) as it is typed; the row grows/shrinks
+                // smoothly as digits are added or deleted.
+                Row(
+                    modifier = Modifier.animateContentSize(
+                        animationSpec = if (animationOption == AnimationOption.OFF) {
+                            snap()
+                        } else if (animationOption == AnimationOption.REDUCED) {
+                            tween(durationMillis = Motion.scaledDurationMs(100, animationOption))
+                        } else {
+                            spring(dampingRatio = 0.8f, stiffness = 500f)
+                        }
+                    ),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    displayText.forEachIndexed { index, char ->
+                        key(index) {
+                            var entered by remember {
+                                mutableStateOf(animationOption == AnimationOption.OFF)
+                            }
+                            LaunchedEffect(Unit) { entered = true }
+                            val progress by animateFloatAsState(
+                                targetValue = if (entered) 1f else 0f,
+                                animationSpec = if (animationOption == AnimationOption.OFF) {
+                                    snap()
+                                } else {
+                                    tween(
+                                        durationMillis = Motion.scaledDurationMs(180, animationOption),
+                                        easing = Motion.Easings.Emphasized
+                                    )
+                                },
+                                label = "digit$index"
+                            )
+                            Text(
+                                text = char.toString(),
+                                style = MaterialTheme.typography.displayLarge.copy(
+                                    fontSize = displayFontSize,
+                                    fontWeight = FontWeight.Normal
+                                ),
+                                color = MaterialTheme.colorScheme.onBackground,
+                                maxLines = 1,
+                                softWrap = false,
+                                modifier = Modifier.graphicsLayer {
+                                    alpha = progress
+                                    if (animationOption == AnimationOption.ON) {
+                                        val s = 0.6f + 0.4f * progress
+                                        scaleX = s
+                                        scaleY = s
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
                 // Backspace at the right of the number, with accelerated repeat deletion.
                 // Fixed slot: always visible; dimmed and inert with no digits.
                 Box(
@@ -562,7 +626,7 @@ fun DialpadScreen(
                 modifier = Modifier
                     .size(PhoneDimens.callButtonSize)
                     .clip(CircleShape)
-                    .pressScale(callButtonSource)
+                    .bouncyClick(callButtonSource)
                     .clickable(
                         interactionSource = callButtonSource,
                         indication = null

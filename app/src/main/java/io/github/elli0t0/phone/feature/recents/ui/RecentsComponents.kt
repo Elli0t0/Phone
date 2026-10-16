@@ -68,7 +68,7 @@ import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.OnAccentBlue
 import io.github.elli0t0.phone.core.design.PhoneDimens
-import io.github.elli0t0.phone.core.design.pressScale
+import io.github.elli0t0.phone.core.design.bouncyClick
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.calllog.model.CallGroup
 import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
@@ -144,8 +144,8 @@ fun CallLogRow(
         )
         AnimationOption.OFF -> ExitTransition.None
     }
-    // Shared press source: pressScale and combinedClickable observe the
-    // same press state, so the row scales to 0.92 while pressed and ripples.
+    // Shared press source: bouncyClick and combinedClickable observe the
+    // same press state, so the row bounces (0.90) while pressed and ripples.
     val rowSource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
 
@@ -210,7 +210,7 @@ fun CallLogRow(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .pressScale(rowSource)
+                    .bouncyClick(rowSource)
                     .combinedClickable(
                         interactionSource = rowSource,
                         indication = ripple(),

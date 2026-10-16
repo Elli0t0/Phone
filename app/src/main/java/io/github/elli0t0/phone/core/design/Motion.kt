@@ -21,6 +21,8 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
@@ -60,6 +62,34 @@ object Motion {
         AnimationOption.OFF -> 0
     }
 
+    /**
+     * Tab-switch enter: cross-fade + a subtle slide-in (5% width).
+     * REDUCED fades only; OFF is instant.
+     */
+    fun tabEnterTransition(option: AnimationOption): EnterTransition {
+        if (option == AnimationOption.OFF) return EnterTransition.None
+        val duration = tabFadeDurationMs(option)
+        val fade = fadeIn(animationSpec = tween(durationMillis = duration))
+        if (option == AnimationOption.REDUCED) return fade
+        return fade + slideInHorizontally(
+            animationSpec = tween(durationMillis = duration)
+        ) { it / 20 }
+    }
+
+    /**
+     * Tab-switch exit: cross-fade + a subtle slide-out (5% width).
+     * REDUCED fades only; OFF is instant.
+     */
+    fun tabExitTransition(option: AnimationOption): ExitTransition {
+        if (option == AnimationOption.OFF) return ExitTransition.None
+        val duration = tabFadeDurationMs(option)
+        val fade = fadeOut(animationSpec = tween(durationMillis = duration))
+        if (option == AnimationOption.REDUCED) return fade
+        return fade + slideOutHorizontally(
+            animationSpec = tween(durationMillis = duration)
+        ) { -it / 20 }
+    }
+
     /** Bottom-bar pill + content color transition. */
     fun pillColorSpec(option: AnimationOption): AnimationSpec<Color> = when (option) {
         AnimationOption.ON -> tween(durationMillis = 300)
@@ -78,9 +108,11 @@ object Motion {
 
     /**
      * Inner-screen transition (pushed screens: Settings, contact
-     * detail/edit, groups, history). direction > 0 slides the new
-     * screen in from the right, < 0 from the left, 0 fades only.
-     * REDUCED never slides, only fades shorter; OFF is no transition.
+     * detail/edit, groups, history, call screens). Spring scale +
+     * fade: the new screen scales up from 0.96, the old one scales
+     * down to 0.98 while fading. [direction] is kept for call-site
+     * compatibility; the animation is the same both ways. REDUCED
+     * fades only; OFF is no transition.
      */
     fun innerContentTransform(option: AnimationOption, direction: Int): ContentTransform {
         if (option == AnimationOption.OFF) {
@@ -89,16 +121,18 @@ object Motion {
         val duration = innerDurationMs(option)
         val fadeIn = fadeIn(animationSpec = tween(durationMillis = duration))
         val fadeOut = fadeOut(animationSpec = tween(durationMillis = duration))
-        if (option == AnimationOption.REDUCED || direction == 0) {
+        if (option == AnimationOption.REDUCED) {
             return ContentTransform(fadeIn, fadeOut)
         }
-        val slideIn = slideInHorizontally(
-            animationSpec = tween(durationMillis = duration)
-        ) { if (direction > 0) it / 3 else -it / 3 }
-        val slideOut = slideOutHorizontally(
-            animationSpec = tween(durationMillis = duration)
-        ) { if (direction > 0) -it / 3 else it / 3 }
-        return ContentTransform(fadeIn + slideIn, fadeOut + slideOut)
+        val scaleIn = scaleIn(
+            animationSpec = spring(dampingRatio = 0.8f, stiffness = 500f),
+            initialScale = 0.96f
+        )
+        val scaleOut = scaleOut(
+            animationSpec = spring(dampingRatio = 0.8f, stiffness = 500f),
+            targetScale = 0.98f
+        )
+        return ContentTransform(fadeIn + scaleIn, fadeOut + scaleOut)
     }
 
     /** NavHost enter transition for a pushed inner screen. */
@@ -211,6 +245,31 @@ fun Modifier.pressScale(source: MutableInteractionSource, to: Float = 0.92f): Mo
             targetValue = if (pressed) to else 1f,
             animationSpec = spring(dampingRatio = 0.8f, stiffness = 500f),
             label = "press"
+        )
+        graphicsLayer {
+            scaleX = scale.value
+            scaleY = scale.value
+        }
+    }
+}
+
+/**
+ * Bouncy press for clickables (dialpad keys, Recents cards, action
+ * buttons, contact rows, bottom-bar tabs). Scales down to [to] while
+ * pressed and springs back with visible overshoot (same spring as
+ * Motion.bouncy). Only active when the Animations setting is ON;
+ * REDUCED and OFF leave the size untouched.
+ */
+fun Modifier.bouncyClick(source: MutableInteractionSource, to: Float = 0.90f): Modifier = composed {
+    val option = LocalAppSettings.current.animationOption
+    if (option != AnimationOption.ON) {
+        this
+    } else {
+        val pressed by source.collectIsPressedAsState()
+        val scale = animateFloatAsState(
+            targetValue = if (pressed) to else 1f,
+            animationSpec = spring(dampingRatio = 0.55f, stiffness = 380f),
+            label = "bouncy"
         )
         graphicsLayer {
             scaleX = scale.value
