@@ -42,6 +42,7 @@ import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.settings.model.AnswerGesture
 import io.github.elli0t0.phone.data.settings.model.AnswerSide
 import io.github.elli0t0.phone.data.settings.model.CallBackground
+import io.github.elli0t0.phone.data.settings.model.CallerInfoPosition
 import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import kotlin.math.roundToInt
@@ -256,6 +257,30 @@ fun CallStudioSections(
                         selectedLabelColor = MaterialTheme.colorScheme.onPrimary
                     ),
                     modifier = Modifier.testTag("end_call_alignment_${alignment.name.lowercase()}")
+                )
+            }
+        }
+
+        // Caller info position: name/number at the top, or
+        // vertically centered above the controls.
+        Text(
+            text = "Caller info position",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(spacing.small)
+        ) {
+            CallerInfoPosition.entries.forEach { position ->
+                FilterChip(
+                    selected = settings.callerInfoPosition == position,
+                    onClick = { settingsViewModel.onCallerInfoPositionChanged(position) },
+                    label = { Text(text = position.label) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    modifier = Modifier.testTag("caller_info_position_${position.name.lowercase()}")
                 )
             }
         }

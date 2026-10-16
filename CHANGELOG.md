@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.17] - 2026-10-16
+
+- Call screen customisation (6): caller info position — Top (default) or Center for the name/number on the ongoing call screen, in the call background studio. The incoming call screen follows in the next update.
+
 ## [0.10.16] - 2026-10-16
 
 - Call background studio code split into two files (screen shell + option sections), no behavior change. This keeps each file small enough to ship, so more call-screen options can follow.

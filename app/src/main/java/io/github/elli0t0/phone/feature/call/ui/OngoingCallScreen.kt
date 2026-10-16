@@ -50,6 +50,7 @@ import io.github.elli0t0.phone.data.call.CallState
 import io.github.elli0t0.phone.data.call.OngoingCallModel
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
+import io.github.elli0t0.phone.data.settings.model.CallerInfoPosition
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 
 @Composable
@@ -153,6 +154,11 @@ fun OngoingCallScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
+            // Caller info position: top (default), or centered in the
+            // space above the controls via a spacer above the info.
+            if (LocalAppSettings.current.callerInfoPosition == CallerInfoPosition.CENTER) {
+                Spacer(modifier = Modifier.weight(1f))
+            }
             // Caller info: name, number, state or duration.
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,

@@ -13,6 +13,7 @@ import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AnswerGesture
 import io.github.elli0t0.phone.data.settings.model.AnswerSide
+import io.github.elli0t0.phone.data.settings.model.CallerInfoPosition
 import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.data.settings.model.AppSettings
@@ -56,6 +57,7 @@ interface SettingsRepository {
     suspend fun setAnswerGesture(gesture: AnswerGesture)
     suspend fun setAnswerSide(side: AnswerSide)
     suspend fun setEndCallAlignment(alignment: EndCallAlignment)
+    suspend fun setCallerInfoPosition(position: CallerInfoPosition)
     suspend fun setOngoingCallButtons(buttons: List<OngoingCallButton>)
     suspend fun setShowNumberOnCallScreen(show: Boolean)
     suspend fun setDefaultSim(defaultSim: DefaultSim)
@@ -91,6 +93,7 @@ class DataStoreSettingsRepository(
         val ANSWER_GESTURE = stringPreferencesKey("answer_gesture")
         val ANSWER_SIDE = stringPreferencesKey("answer_side")
         val END_CALL_ALIGNMENT = stringPreferencesKey("end_call_alignment")
+        val CALLER_INFO_POSITION = stringPreferencesKey("caller_info_position")
         val ONGOING_CALL_BUTTONS = stringPreferencesKey("ongoing_call_buttons")
         val SHOW_NUMBER_ON_CALL_SCREEN = booleanPreferencesKey("show_number_on_call_screen")
         val DEFAULT_SIM = stringPreferencesKey("default_sim")
@@ -158,6 +161,10 @@ class DataStoreSettingsRepository(
         val endCallAlignment = endCallAlignmentStr?.let { runCatching { EndCallAlignment.valueOf(it) }.getOrNull() }
             ?: EndCallAlignment.CENTER
 
+        val callerInfoPositionStr = prefs[Keys.CALLER_INFO_POSITION]
+        val callerInfoPosition = callerInfoPositionStr?.let { runCatching { CallerInfoPosition.valueOf(it) }.getOrNull() }
+            ?: CallerInfoPosition.TOP
+
         // Shown ongoing-call buttons, in display order, as comma-separated
         // names. Missing key = all buttons; empty = none (user hid them all).
         val ongoingCallButtons = prefs[Keys.ONGOING_CALL_BUTTONS]
@@ -198,6 +205,7 @@ class DataStoreSettingsRepository(
             answerGesture = answerGesture,
             answerSide = answerSide,
             endCallAlignment = endCallAlignment,
+            callerInfoPosition = callerInfoPosition,
             ongoingCallButtons = ongoingCallButtons,
             showNumberOnCallScreen = showNumberOnCallScreen,
             defaultSim = defaultSim,
@@ -336,6 +344,12 @@ class DataStoreSettingsRepository(
     override suspend fun setEndCallAlignment(alignment: EndCallAlignment) {
         dataStore.edit { prefs ->
             prefs[Keys.END_CALL_ALIGNMENT] = alignment.name
+        }
+    }
+
+    override suspend fun setCallerInfoPosition(position: CallerInfoPosition) {
+        dataStore.edit { prefs ->
+            prefs[Keys.CALLER_INFO_POSITION] = position.name
         }
     }
 
