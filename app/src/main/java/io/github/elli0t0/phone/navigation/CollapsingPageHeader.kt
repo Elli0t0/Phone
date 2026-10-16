@@ -18,6 +18,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -28,6 +31,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.core.design.GlassSurface
 import io.github.elli0t0.phone.core.design.LiquidGlassPillShape
+import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 
@@ -148,12 +152,33 @@ fun FloatingActionsPill(
             scaleY = scale
         }
     ) {
-        GlassSurface(shape = LiquidGlassPillShape) {
+        // The pill content is shared by the glass and flat branches.
+        val pillContent: @Composable () -> Unit = {
             Row(
                 modifier = Modifier.padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 content = actions
             )
+        }
+        if (LocalAppSettings.current.glassHeaders) {
+            GlassSurface(shape = LiquidGlassPillShape) {
+                pillContent()
+            }
+        } else {
+            // Flat pill: solid surface with a soft shadow.
+            Box(
+                modifier = Modifier
+                    .shadow(
+                        PhoneDimens.bottomBarElevation,
+                        LiquidGlassPillShape,
+                        spotColor = Color.Black.copy(alpha = PhoneDimens.bottomBarShadowAlpha),
+                        ambientColor = Color.Black.copy(alpha = PhoneDimens.bottomBarShadowAlpha)
+                    )
+                    .clip(LiquidGlassPillShape)
+                    .background(MaterialTheme.colorScheme.surface)
+            ) {
+                pillContent()
+            }
         }
     }
 }

@@ -17,6 +17,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -63,6 +64,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
@@ -917,12 +919,8 @@ private fun ContactDetailBottomBar(
             .padding(vertical = PhoneDimens.bottomBarBottomMargin),
         contentAlignment = Alignment.Center
     ) {
-        GlassSurface(
-            modifier = Modifier
-                .fillMaxWidth(PhoneDimens.detailBottomBarWidthFraction)
-                .height(PhoneDimens.bottomBarHeight),
-            shape = RoundedCornerShape(PhoneDimens.bottomBarCornerPercent)
-        ) {
+        // The bar content is shared by the glass and flat branches.
+        val barContent: @Composable BoxScope.() -> Unit = {
             Row(
                 modifier = Modifier.fillMaxSize(),
                 verticalAlignment = Alignment.CenterVertically
@@ -975,6 +973,33 @@ private fun ContactDetailBottomBar(
                         )
                     }
                 }
+            }
+        }
+        if (LocalAppSettings.current.glassContactDetail) {
+            GlassSurface(
+                modifier = Modifier
+                    .fillMaxWidth(PhoneDimens.detailBottomBarWidthFraction)
+                    .height(PhoneDimens.bottomBarHeight),
+                shape = RoundedCornerShape(PhoneDimens.bottomBarCornerPercent)
+            ) {
+                barContent()
+            }
+        } else {
+            // Flat bar: solid surface with a soft shadow.
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(PhoneDimens.detailBottomBarWidthFraction)
+                    .height(PhoneDimens.bottomBarHeight)
+                    .shadow(
+                        PhoneDimens.bottomBarElevation,
+                        RoundedCornerShape(PhoneDimens.bottomBarCornerPercent),
+                        spotColor = Color.Black.copy(alpha = PhoneDimens.bottomBarShadowAlpha),
+                        ambientColor = Color.Black.copy(alpha = PhoneDimens.bottomBarShadowAlpha)
+                    )
+                    .clip(RoundedCornerShape(PhoneDimens.bottomBarCornerPercent))
+                    .background(MaterialTheme.colorScheme.surface)
+            ) {
+                barContent()
             }
         }
     }
