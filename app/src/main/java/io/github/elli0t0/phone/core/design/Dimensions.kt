@@ -79,6 +79,13 @@ object PhoneDimens {
     val inCallSwipeShimmerAlpha = 0.18f
     val incomingChipHorizontalPadding = 12.dp
     val incomingChipVerticalPadding = 6.dp
+    // Call Studio preview: the call screen is laid out at this reference
+    // phone size, then scaled proportionally to fit the preview box.
+    val studioPreviewReferenceWidth = 360.dp
+    val studioPreviewReferenceHeight = 640.dp
+    val studioReorderButtonSize = 40.dp
+    val studioReorderIconSize = 24.dp
+    val studioReorderDisabledAlpha = 0.38f
     // Dual-SIM picker dialog rows.
     val simPickerRowMinHeight = 64.dp
     val simPickerRowCornerRadius = 12.dp

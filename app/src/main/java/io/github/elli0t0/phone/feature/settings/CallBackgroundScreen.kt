@@ -5,12 +5,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,8 +20,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -48,6 +49,7 @@ import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.data.call.CallState
 import io.github.elli0t0.phone.data.call.OngoingCallModel
 import io.github.elli0t0.phone.data.settings.model.AnswerGesture
@@ -58,6 +60,7 @@ import io.github.elli0t0.phone.data.settings.model.IncomingAvatarShape
 import io.github.elli0t0.phone.data.settings.model.IncomingAvatarSize
 import io.github.elli0t0.phone.feature.call.ui.IncomingCallScreen
 import io.github.elli0t0.phone.feature.call.ui.OngoingCallScreen
+import kotlin.math.minOf
 
 /**
  * Call background studio as a full page: the top half is a live
@@ -243,16 +246,18 @@ fun CallBackgroundScreen(
                     )
                     .clip(RoundedCornerShape(24.dp))
             ) {
-                CallPreviewContent(
-                    previewOngoing = previewOngoing,
-                    mockCall = mockCall,
-                    selected = selected,
-                    backgroundColor = backgroundColor,
-                    dimDraft = dimDraft,
-                    showNumber = settings.showNumberOnCallScreen,
-                    answerGesture = settings.answerGesture,
-                    quickReplies = quickReplies
-                )
+                ScaledCallPreview(modifier = Modifier.fillMaxSize()) {
+                    CallPreviewContent(
+                        previewOngoing = previewOngoing,
+                        mockCall = mockCall,
+                        selected = selected,
+                        backgroundColor = backgroundColor,
+                        dimDraft = dimDraft,
+                        showNumber = settings.showNumberOnCallScreen,
+                        answerGesture = settings.answerGesture,
+                        quickReplies = quickReplies
+                    )
+                }
                 Button(
                     onClick = { previewFullscreen = true },
                     modifier = Modifier
@@ -279,25 +284,21 @@ fun CallBackgroundScreen(
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(spacing.small)
                 ) {
-                    FilterChip(
+                    StudioOptionChip(
                         selected = !previewOngoing,
-                        onClick = { previewOngoing = false },
-                        label = { Text(text = stringResource(id = R.string.settings_call_preview_incoming)) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                        ),
-                        modifier = Modifier.testTag("call_preview_incoming")
+                        onClick = {
+                            previewOngoing = false
+                        },
+                        label = stringResource(id = R.string.settings_call_preview_incoming),
+                        testTag = "call_preview_incoming"
                     )
-                    FilterChip(
+                    StudioOptionChip(
                         selected = previewOngoing,
-                        onClick = { previewOngoing = true },
-                        label = { Text(text = stringResource(id = R.string.settings_call_preview_ongoing)) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                        ),
-                        modifier = Modifier.testTag("call_preview_ongoing")
+                        onClick = {
+                            previewOngoing = true
+                        },
+                        label = stringResource(id = R.string.settings_call_preview_ongoing),
+                        testTag = "call_preview_ongoing"
                     )
                 }
 
@@ -313,15 +314,13 @@ fun CallBackgroundScreen(
                     horizontalArrangement = Arrangement.spacedBy(spacing.small)
                 ) {
                     ControlButtonSize.entries.forEach { size ->
-                        FilterChip(
+                        StudioOptionChip(
                             selected = settings.controlButtonSize == size,
-                            onClick = { settingsViewModel.onControlButtonSizeChanged(size) },
-                            label = { Text(text = size.label) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                            ),
-                            modifier = Modifier.testTag("control_button_size_${size.name.lowercase()}")
+                            onClick = {
+                                settingsViewModel.onControlButtonSizeChanged(size)
+                            },
+                            label = size.label,
+                            testTag = "control_button_size_${size.name.lowercase()}"
                         )
                     }
                 }
@@ -336,15 +335,13 @@ fun CallBackgroundScreen(
                     horizontalArrangement = Arrangement.spacedBy(spacing.small)
                 ) {
                     DtmfKeySize.entries.forEach { size ->
-                        FilterChip(
+                        StudioOptionChip(
                             selected = settings.dtmfKeySize == size,
-                            onClick = { settingsViewModel.onDtmfKeySizeChanged(size) },
-                            label = { Text(text = size.label) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                            ),
-                            modifier = Modifier.testTag("dtmf_key_size_${size.name.lowercase()}")
+                            onClick = {
+                                settingsViewModel.onDtmfKeySizeChanged(size)
+                            },
+                            label = size.label,
+                            testTag = "dtmf_key_size_${size.name.lowercase()}"
                         )
                     }
                 }
@@ -360,15 +357,13 @@ fun CallBackgroundScreen(
                     horizontalArrangement = Arrangement.spacedBy(spacing.small)
                 ) {
                     IncomingAvatarSize.entries.forEach { size ->
-                        FilterChip(
+                        StudioOptionChip(
                             selected = settings.incomingAvatarSize == size,
-                            onClick = { settingsViewModel.onIncomingAvatarSizeChanged(size) },
-                            label = { Text(text = size.label) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                            ),
-                            modifier = Modifier.testTag("incoming_avatar_size_${size.name.lowercase()}")
+                            onClick = {
+                                settingsViewModel.onIncomingAvatarSizeChanged(size)
+                            },
+                            label = size.label,
+                            testTag = "incoming_avatar_size_${size.name.lowercase()}"
                         )
                     }
                 }
@@ -384,15 +379,13 @@ fun CallBackgroundScreen(
                     horizontalArrangement = Arrangement.spacedBy(spacing.small)
                 ) {
                     IncomingAvatarShape.entries.forEach { shape ->
-                        FilterChip(
+                        StudioOptionChip(
                             selected = settings.incomingAvatarShape == shape,
-                            onClick = { settingsViewModel.onIncomingAvatarShapeChanged(shape) },
-                            label = { Text(text = shape.label) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                            ),
-                            modifier = Modifier.testTag("incoming_avatar_shape_${shape.name.lowercase()}")
+                            onClick = {
+                                settingsViewModel.onIncomingAvatarShapeChanged(shape)
+                            },
+                            label = shape.label,
+                            testTag = "incoming_avatar_shape_${shape.name.lowercase()}"
                         )
                     }
                 }
@@ -422,6 +415,40 @@ fun CallBackgroundScreen(
                     }
                 )
             }
+        }
+    }
+}
+
+/**
+ * The studio preview: the call screen is laid out at a reference
+ * phone size, then scaled proportionally to fit the preview box,
+ * so the caller header and call buttons are always visible.
+ */
+@Composable
+private fun ScaledCallPreview(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    BoxWithConstraints(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        val scale = minOf(
+            maxWidth / PhoneDimens.studioPreviewReferenceWidth,
+            maxHeight / PhoneDimens.studioPreviewReferenceHeight
+        )
+        Box(
+            modifier = Modifier
+                .size(
+                    PhoneDimens.studioPreviewReferenceWidth,
+                    PhoneDimens.studioPreviewReferenceHeight
+                )
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                }
+        ) {
+            content()
         }
     }
 }

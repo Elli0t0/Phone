@@ -1,5 +1,8 @@
 package io.github.elli0t0.phone.feature.settings
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -14,31 +17,37 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.design.LiquidGlassChip
+import io.github.elli0t0.phone.core.design.LiquidGlassIconButton
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.Motion
+import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.callBackgroundBrush
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
+import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AnswerGesture
 import io.github.elli0t0.phone.data.settings.model.AnswerSide
 import io.github.elli0t0.phone.data.settings.model.CallBackground
@@ -95,19 +104,15 @@ fun CallStudioSections(
                 val presetSelected = settings.answerGesture == preset.gesture &&
                     settings.answerSide == preset.side &&
                     settings.endCallAlignment == preset.endAlignment
-                FilterChip(
+                StudioOptionChip(
                     selected = presetSelected,
                     onClick = {
                         settingsViewModel.onAnswerGestureChanged(preset.gesture)
                         settingsViewModel.onAnswerSideChanged(preset.side)
                         settingsViewModel.onEndCallAlignmentChanged(preset.endAlignment)
                     },
-                    label = { Text(text = preset.label) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                    ),
-                    modifier = Modifier.testTag("layout_preset_${preset.name.lowercase()}")
+                    label = preset.label,
+                    testTag = "layout_preset_${preset.name.lowercase()}"
                 )
             }
         }
@@ -122,15 +127,13 @@ fun CallStudioSections(
             horizontalArrangement = Arrangement.spacedBy(spacing.small)
         ) {
             AnswerGesture.entries.forEach { gesture ->
-                FilterChip(
+                StudioOptionChip(
                     selected = settings.answerGesture == gesture,
-                    onClick = { settingsViewModel.onAnswerGestureChanged(gesture) },
-                    label = { Text(text = gesture.label) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                    ),
-                    modifier = Modifier.testTag("answer_gesture_${gesture.name.lowercase()}")
+                    onClick = {
+                        settingsViewModel.onAnswerGestureChanged(gesture)
+                    },
+                    label = gesture.label,
+                    testTag = "answer_gesture_${gesture.name.lowercase()}"
                 )
             }
         }
@@ -146,15 +149,13 @@ fun CallStudioSections(
             horizontalArrangement = Arrangement.spacedBy(spacing.small)
         ) {
             AnswerSide.entries.forEach { side ->
-                FilterChip(
+                StudioOptionChip(
                     selected = settings.answerSide == side,
-                    onClick = { settingsViewModel.onAnswerSideChanged(side) },
-                    label = { Text(text = side.label) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                    ),
-                    modifier = Modifier.testTag("answer_side_${side.name.lowercase()}")
+                    onClick = {
+                        settingsViewModel.onAnswerSideChanged(side)
+                    },
+                    label = side.label,
+                    testTag = "answer_side_${side.name.lowercase()}"
                 )
             }
         }
@@ -170,15 +171,13 @@ fun CallStudioSections(
             horizontalArrangement = Arrangement.spacedBy(spacing.small)
         ) {
             AnswerButtonSize.entries.forEach { size ->
-                FilterChip(
+                StudioOptionChip(
                     selected = settings.answerButtonSize == size,
-                    onClick = { settingsViewModel.onAnswerButtonSizeChanged(size) },
-                    label = { Text(text = size.label) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                    ),
-                    modifier = Modifier.testTag("answer_button_size_${size.name.lowercase()}")
+                    onClick = {
+                        settingsViewModel.onAnswerButtonSizeChanged(size)
+                    },
+                    label = size.label,
+                    testTag = "answer_button_size_${size.name.lowercase()}"
                 )
             }
         }
@@ -224,30 +223,30 @@ fun CallStudioSections(
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f)
                     )
-                    TextButton(
+                    ReorderButton(
+                        iconRes = R.drawable.ic_chevron_up,
+                        contentDescription = stringResource(id = R.string.call_control_move_up),
+                        enabled = index > 0,
                         onClick = {
                             val list = shownButtons.toMutableList()
                             val item = list.removeAt(index)
                             list.add(index - 1, item)
                             settingsViewModel.onOngoingCallButtonsChanged(list)
                         },
-                        enabled = index > 0,
-                        modifier = Modifier.testTag("control_move_up_${button.name}")
-                    ) {
-                        Text(text = "↑")
-                    }
-                    TextButton(
+                        testTag = "control_move_up_${button.name}"
+                    )
+                    ReorderButton(
+                        iconRes = R.drawable.ic_chevron_down,
+                        contentDescription = stringResource(id = R.string.call_control_move_down),
+                        enabled = index < shownButtons.lastIndex,
                         onClick = {
                             val list = shownButtons.toMutableList()
                             val item = list.removeAt(index)
                             list.add(index + 1, item)
                             settingsViewModel.onOngoingCallButtonsChanged(list)
                         },
-                        enabled = index < shownButtons.lastIndex,
-                        modifier = Modifier.testTag("control_move_down_${button.name}")
-                    ) {
-                        Text(text = "↓")
-                    }
+                        testTag = "control_move_down_${button.name}"
+                    )
                     Switch(
                         checked = true,
                         onCheckedChange = {
@@ -294,15 +293,13 @@ fun CallStudioSections(
             horizontalArrangement = Arrangement.spacedBy(spacing.small)
         ) {
             ControlGridAlignment.entries.forEach { alignment ->
-                FilterChip(
+                StudioOptionChip(
                     selected = settings.controlGridAlignment == alignment,
-                    onClick = { settingsViewModel.onControlGridAlignmentChanged(alignment) },
-                    label = { Text(text = alignment.label) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                    ),
-                    modifier = Modifier.testTag("control_grid_alignment_${alignment.name.lowercase()}")
+                    onClick = {
+                        settingsViewModel.onControlGridAlignmentChanged(alignment)
+                    },
+                    label = alignment.label,
+                    testTag = "control_grid_alignment_${alignment.name.lowercase()}"
                 )
             }
         }
@@ -318,15 +315,13 @@ fun CallStudioSections(
             horizontalArrangement = Arrangement.spacedBy(spacing.small)
         ) {
             EndCallAlignment.entries.forEach { alignment ->
-                FilterChip(
+                StudioOptionChip(
                     selected = settings.endCallAlignment == alignment,
-                    onClick = { settingsViewModel.onEndCallAlignmentChanged(alignment) },
-                    label = { Text(text = alignment.label) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                    ),
-                    modifier = Modifier.testTag("end_call_alignment_${alignment.name.lowercase()}")
+                    onClick = {
+                        settingsViewModel.onEndCallAlignmentChanged(alignment)
+                    },
+                    label = alignment.label,
+                    testTag = "end_call_alignment_${alignment.name.lowercase()}"
                 )
             }
         }
@@ -341,15 +336,13 @@ fun CallStudioSections(
             horizontalArrangement = Arrangement.spacedBy(spacing.small)
         ) {
             EndCallButtonSize.entries.forEach { size ->
-                FilterChip(
+                StudioOptionChip(
                     selected = settings.endCallButtonSize == size,
-                    onClick = { settingsViewModel.onEndCallButtonSizeChanged(size) },
-                    label = { Text(text = size.label) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                    ),
-                    modifier = Modifier.testTag("end_call_size_${size.name.lowercase()}")
+                    onClick = {
+                        settingsViewModel.onEndCallButtonSizeChanged(size)
+                    },
+                    label = size.label,
+                    testTag = "end_call_size_${size.name.lowercase()}"
                 )
             }
         }
@@ -365,15 +358,13 @@ fun CallStudioSections(
             horizontalArrangement = Arrangement.spacedBy(spacing.small)
         ) {
             CallerInfoPosition.entries.forEach { position ->
-                FilterChip(
+                StudioOptionChip(
                     selected = settings.callerInfoPosition == position,
-                    onClick = { settingsViewModel.onCallerInfoPositionChanged(position) },
-                    label = { Text(text = position.label) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                    ),
-                    modifier = Modifier.testTag("caller_info_position_${position.name.lowercase()}")
+                    onClick = {
+                        settingsViewModel.onCallerInfoPositionChanged(position)
+                    },
+                    label = position.label,
+                    testTag = "caller_info_position_${position.name.lowercase()}"
                 )
             }
         }
@@ -516,4 +507,91 @@ private enum class CallLayoutPreset(
     CLASSIC("Classic", AnswerGesture.TAP, AnswerSide.RIGHT, EndCallAlignment.CENTER),
     LEFT_HANDED("Left-handed", AnswerGesture.TAP, AnswerSide.LEFT, EndCallAlignment.LEFT),
     SWIPE("Swipe", AnswerGesture.SWIPE, AnswerSide.RIGHT, EndCallAlignment.CENTER)
+}
+
+/**
+ * Glass option-selector chip for the Call Studio: liquid glass with
+ * an animated selection — a scale pop on Animations ON, and an
+ * animated label color (a fade on REDUCED, instant on OFF).
+ */
+@Composable
+fun StudioOptionChip(
+    selected: Boolean,
+    onClick: () -> Unit,
+    label: String,
+    testTag: String,
+    modifier: Modifier = Modifier
+) {
+    val option = LocalAppSettings.current.animationOption
+    val spacing = LocalSpacing.current
+    val scale by animateFloatAsState(
+        targetValue = if (option == AnimationOption.ON && selected) {
+            Motion.StudioChipSelectedScale
+        } else {
+            1f
+        },
+        animationSpec = tween(
+            durationMillis = Motion.scaledDurationMs(Motion.Durations.Short, option)
+        ),
+        label = "studioChipScale"
+    )
+    val labelColor by animateColorAsState(
+        targetValue = if (selected) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        },
+        animationSpec = tween(
+            durationMillis = Motion.scaledDurationMs(Motion.Durations.Short, option)
+        ),
+        label = "studioChipLabel"
+    )
+    LiquidGlassChip(
+        selected = selected,
+        onClick = onClick,
+        modifier = modifier
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .testTag(testTag)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = labelColor,
+            modifier = Modifier.padding(
+                horizontal = spacing.medium,
+                vertical = spacing.small
+            )
+        )
+    }
+}
+
+/**
+ * One 40dp glass reorder button (chevron up/down) in the Call
+ * controls list. Disabled buttons are dimmed and swallow the tap.
+ */
+@Composable
+private fun ReorderButton(
+    iconRes: Int,
+    contentDescription: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    testTag: String,
+    modifier: Modifier = Modifier
+) {
+    LiquidGlassIconButton(
+        onClick = { if (enabled) onClick() },
+        modifier = modifier
+            .size(PhoneDimens.studioReorderButtonSize)
+            .graphicsLayer {
+                alpha = if (enabled) 1f else PhoneDimens.studioReorderDisabledAlpha
+            }
+            .testTag(testTag)
+    ) {
+        Icon(
+            painter = painterResource(id = iconRes),
+            contentDescription = contentDescription,
+            tint = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.size(PhoneDimens.studioReorderIconSize)
+        )
+    }
 }

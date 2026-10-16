@@ -125,6 +125,9 @@ object Motion {
         const val Long = 420
     }
 
+    /** Selected option-chip pop scale (Animations ON only). */
+    const val StudioChipSelectedScale = 1.06f
+
     /** Shared easing tokens. */
     object Easings {
         val Standard: Easing = FastOutSlowInEasing

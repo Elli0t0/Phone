@@ -204,6 +204,8 @@
     <string name="call_action_answer">Answer</string>
     <string name="call_action_decline">Decline</string>
     <string name="call_action_end">End call</string>
+    <string name="call_control_move_up">Move up</string>
+    <string name="call_control_move_down">Move down</string>
     <string name="call_action_mute">Mute</string>
     <string name="call_action_unmute">Unmute</string>
     <string name="call_action_speaker">Speaker</string>
