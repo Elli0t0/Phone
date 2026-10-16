@@ -52,7 +52,7 @@ import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.liquidGlass
-import io.github.elli0t0.phone.core.design.pressScale
+import io.github.elli0t0.phone.core.design.bouncyClick
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.contacts.model.ContactPhone
 
@@ -74,7 +74,7 @@ fun ContactActionButton(
     Column(
         modifier = modifier
             .clip(MaterialTheme.shapes.medium)
-            .pressScale(actionSource)
+            .bouncyClick(actionSource)
             .clickable(
                 interactionSource = actionSource,
                 indication = ripple(),

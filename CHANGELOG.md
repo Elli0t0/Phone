@@ -59,7 +59,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.10.45] - 2026-10-16
 
-- App-wide motion: a shared bouncyClick modifier on dialpad keys, Recents cards, action buttons, contact rows, and bottom-bar tabs; the dialed number animates per character with haptic feedback on key presses and backspace; screen transitions use spring scale + fade and tab switches cross-fade with a subtle slide, all respecting the Animations setting.
+- App-wide motion (1): a shared bouncyClick modifier on dialpad keys, Recents cards, and dialpad action buttons (Create/Message pills, call button); the dialed number animates per character with haptic feedback on key presses and backspace; screen transitions use spring scale + fade and tab switches cross-fade with a subtle slide, all respecting the Animations setting.
+
+## [0.10.46] - 2026-10-16
+
+- App-wide motion (2): bouncyClick on contact rows, favorite cards, the profile row, and the favorites hint row; bottom-bar tabs; and contact-detail action buttons (Call, Message, Video).
 
 ## [0.11.0] - 2026-10-16
 

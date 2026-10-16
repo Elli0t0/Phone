@@ -68,7 +68,7 @@ import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.bottomBarSizeSpec
 import io.github.elli0t0.phone.core.design.liquidGlass
-import io.github.elli0t0.phone.core.design.pressScale
+import io.github.elli0t0.phone.core.design.bouncyClick
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
 import io.github.elli0t0.phone.data.settings.model.ThemeMode
@@ -259,9 +259,9 @@ fun PhoneBottomBar(
                             )
                         }
                     }
-                    // Shared press interaction source: pressScale and
+                    // Shared press interaction source: bouncyClick and
                     // the clickable observe the same press state, so
-                    // the item scales to 0.92 while pressed, ripples,
+                    // the item bounces (0.90) while pressed, ripples,
                     // and haptics.
                     val itemSource = remember { MutableInteractionSource() }
                     Box(
@@ -270,7 +270,7 @@ fun PhoneBottomBar(
                             .fillMaxHeight()
                             .padding(PhoneDimens.bottomBarItemInset)
                             .clip(pillShape)
-                            .pressScale(itemSource)
+                            .bouncyClick(itemSource)
                             .clickable(
                                 interactionSource = itemSource,
                                 indication = LocalIndication.current

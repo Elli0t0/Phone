@@ -47,7 +47,7 @@ import io.github.elli0t0.phone.core.design.FavoriteCardGradients
 import io.github.elli0t0.phone.core.design.FavoriteHintOrange
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
-import io.github.elli0t0.phone.core.design.pressScale
+import io.github.elli0t0.phone.core.design.bouncyClick
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 
@@ -110,7 +110,7 @@ fun ContactRow(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = spacing.extraSmall)
-            .pressScale(rowSource)
+            .bouncyClick(rowSource)
             .clickable(
                 interactionSource = rowSource,
                 indication = ripple()
@@ -202,7 +202,7 @@ private fun ContactGroupRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .pressScale(rowSource)
+            .bouncyClick(rowSource)
             .clickable(
                 interactionSource = rowSource,
                 indication = ripple()
@@ -243,7 +243,7 @@ fun FavoritesHintRow(
         modifier = modifier
             .fillMaxWidth()
             .padding(bottom = spacing.small)
-            .pressScale(hintSource)
+            .bouncyClick(hintSource)
             .clickable(
                 interactionSource = hintSource,
                 indication = ripple()
@@ -302,7 +302,7 @@ fun ProfileRow(
         modifier = modifier
             .fillMaxWidth()
             .padding(bottom = spacing.small)
-            .pressScale(rowSource)
+            .bouncyClick(rowSource)
             .clickable(
                 interactionSource = rowSource,
                 indication = ripple()
@@ -544,7 +544,7 @@ fun FavoriteContactCard(
             .aspectRatio(1f)
             .clip(MaterialTheme.shapes.large)
             .background(gradientBrush)
-            .pressScale(cardSource)
+            .bouncyClick(cardSource)
             .clickable(
                 interactionSource = cardSource,
                 indication = ripple()
