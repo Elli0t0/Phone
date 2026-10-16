@@ -51,6 +51,8 @@ import io.github.elli0t0.phone.data.call.OngoingCallModel
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
 import io.github.elli0t0.phone.data.settings.model.CallerInfoPosition
+import io.github.elli0t0.phone.data.settings.model.ControlGridAlignment
+import io.github.elli0t0.phone.data.settings.model.EndCallButtonSize
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 
 @Composable
@@ -227,10 +229,27 @@ fun OngoingCallScreen(
                         val visibleButtons = LocalAppSettings.current.ongoingCallButtons.filter { button ->
                             button != OngoingCallButton.BLUETOOTH || isBluetoothAvailable
                         }
+                        // Grid alignment: spread across the row (default),
+                        // or clustered at the center / start / end.
+                        val gridArrangement = when (LocalAppSettings.current.controlGridAlignment) {
+                            ControlGridAlignment.SPREAD -> Arrangement.SpaceEvenly
+                            ControlGridAlignment.CENTER -> Arrangement.spacedBy(
+                                PhoneDimens.ongoingControlGridSpacing,
+                                Alignment.CenterHorizontally
+                            )
+                            ControlGridAlignment.START -> Arrangement.spacedBy(
+                                PhoneDimens.ongoingControlGridSpacing,
+                                Alignment.Start
+                            )
+                            ControlGridAlignment.END -> Arrangement.spacedBy(
+                                PhoneDimens.ongoingControlGridSpacing,
+                                Alignment.End
+                            )
+                        }
                         visibleButtons.chunked(3).forEach { rowButtons ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceEvenly
+                                horizontalArrangement = gridArrangement
                             ) {
                                 rowButtons.forEach { button ->
                                     when (button) {
@@ -284,11 +303,12 @@ fun OngoingCallScreen(
                     }
                 }
 
-                // End call: red circle button.
+                // End call: red circle button, scaled by the size setting.
+                val endCallScale = LocalAppSettings.current.endCallButtonSize.scale
                 Box(
                     modifier = Modifier
                         .padding(bottom = PhoneDimens.ongoingEndCallBottomPadding)
-                        .size(PhoneDimens.ongoingEndCallButtonSize)
+                        .size(PhoneDimens.ongoingEndCallButtonSize * endCallScale)
                         .clip(CircleShape)
                         .background(LiquidGlassEndCall)
                         .pressScale(endCallSource)
@@ -303,7 +323,7 @@ fun OngoingCallScreen(
                         painter = painterResource(id = R.drawable.ic_call_end),
                         contentDescription = stringResource(id = R.string.call_action_end),
                         tint = Color.White,
-                        modifier = Modifier.size(PhoneDimens.ongoingEndCallIconSize)
+                        modifier = Modifier.size(PhoneDimens.ongoingEndCallIconSize * endCallScale)
                     )
                 }
             }

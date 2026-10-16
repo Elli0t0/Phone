@@ -43,6 +43,8 @@ import io.github.elli0t0.phone.data.settings.model.AnswerGesture
 import io.github.elli0t0.phone.data.settings.model.AnswerSide
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.CallerInfoPosition
+import io.github.elli0t0.phone.data.settings.model.ControlGridAlignment
+import io.github.elli0t0.phone.data.settings.model.EndCallButtonSize
 import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import kotlin.math.roundToInt
@@ -237,6 +239,30 @@ fun CallStudioSections(
             }
         }
 
+        // Control grid alignment: how the ongoing-call buttons
+        // spread across each row.
+        Text(
+            text = "Control grid alignment",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(spacing.small)
+        ) {
+            ControlGridAlignment.entries.forEach { alignment ->
+                FilterChip(
+                    selected = settings.controlGridAlignment == alignment,
+                    onClick = { settingsViewModel.onControlGridAlignmentChanged(alignment) },
+                    label = { Text(text = alignment.label) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    modifier = Modifier.testTag("control_grid_alignment_${alignment.name.lowercase()}")
+                )
+            }
+        }
+
         // End call position: where the red end-call button sits
         // on the ongoing call screen.
         Text(
@@ -257,6 +283,29 @@ fun CallStudioSections(
                         selectedLabelColor = MaterialTheme.colorScheme.onPrimary
                     ),
                     modifier = Modifier.testTag("end_call_alignment_${alignment.name.lowercase()}")
+                )
+            }
+        }
+
+        // End call size: how big the red end-call button is.
+        Text(
+            text = "End call size",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(spacing.small)
+        ) {
+            EndCallButtonSize.entries.forEach { size ->
+                FilterChip(
+                    selected = settings.endCallButtonSize == size,
+                    onClick = { settingsViewModel.onEndCallButtonSizeChanged(size) },
+                    label = { Text(text = size.label) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    modifier = Modifier.testTag("end_call_size_${size.name.lowercase()}")
                 )
             }
         }

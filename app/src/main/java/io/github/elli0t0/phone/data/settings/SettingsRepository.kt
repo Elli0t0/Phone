@@ -14,6 +14,8 @@ import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AnswerGesture
 import io.github.elli0t0.phone.data.settings.model.AnswerSide
 import io.github.elli0t0.phone.data.settings.model.CallerInfoPosition
+import io.github.elli0t0.phone.data.settings.model.ControlGridAlignment
+import io.github.elli0t0.phone.data.settings.model.EndCallButtonSize
 import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.data.settings.model.AppSettings
@@ -58,6 +60,8 @@ interface SettingsRepository {
     suspend fun setAnswerSide(side: AnswerSide)
     suspend fun setEndCallAlignment(alignment: EndCallAlignment)
     suspend fun setCallerInfoPosition(position: CallerInfoPosition)
+    suspend fun setControlGridAlignment(alignment: ControlGridAlignment)
+    suspend fun setEndCallButtonSize(size: EndCallButtonSize)
     suspend fun setOngoingCallButtons(buttons: List<OngoingCallButton>)
     suspend fun setShowNumberOnCallScreen(show: Boolean)
     suspend fun setDefaultSim(defaultSim: DefaultSim)
@@ -94,6 +98,8 @@ class DataStoreSettingsRepository(
         val ANSWER_SIDE = stringPreferencesKey("answer_side")
         val END_CALL_ALIGNMENT = stringPreferencesKey("end_call_alignment")
         val CALLER_INFO_POSITION = stringPreferencesKey("caller_info_position")
+        val CONTROL_GRID_ALIGNMENT = stringPreferencesKey("control_grid_alignment")
+        val END_CALL_BUTTON_SIZE = stringPreferencesKey("end_call_button_size")
         val ONGOING_CALL_BUTTONS = stringPreferencesKey("ongoing_call_buttons")
         val SHOW_NUMBER_ON_CALL_SCREEN = booleanPreferencesKey("show_number_on_call_screen")
         val DEFAULT_SIM = stringPreferencesKey("default_sim")
@@ -165,6 +171,14 @@ class DataStoreSettingsRepository(
         val callerInfoPosition = callerInfoPositionStr?.let { runCatching { CallerInfoPosition.valueOf(it) }.getOrNull() }
             ?: CallerInfoPosition.TOP
 
+        val controlGridAlignmentStr = prefs[Keys.CONTROL_GRID_ALIGNMENT]
+        val controlGridAlignment = controlGridAlignmentStr?.let { runCatching { ControlGridAlignment.valueOf(it) }.getOrNull() }
+            ?: ControlGridAlignment.SPREAD
+
+        val endCallButtonSizeStr = prefs[Keys.END_CALL_BUTTON_SIZE]
+        val endCallButtonSize = endCallButtonSizeStr?.let { runCatching { EndCallButtonSize.valueOf(it) }.getOrNull() }
+            ?: EndCallButtonSize.MEDIUM
+
         // Shown ongoing-call buttons, in display order, as comma-separated
         // names. Missing key = all buttons; empty = none (user hid them all).
         val ongoingCallButtons = prefs[Keys.ONGOING_CALL_BUTTONS]
@@ -206,6 +220,8 @@ class DataStoreSettingsRepository(
             answerSide = answerSide,
             endCallAlignment = endCallAlignment,
             callerInfoPosition = callerInfoPosition,
+            controlGridAlignment = controlGridAlignment,
+            endCallButtonSize = endCallButtonSize,
             ongoingCallButtons = ongoingCallButtons,
             showNumberOnCallScreen = showNumberOnCallScreen,
             defaultSim = defaultSim,
@@ -350,6 +366,18 @@ class DataStoreSettingsRepository(
     override suspend fun setCallerInfoPosition(position: CallerInfoPosition) {
         dataStore.edit { prefs ->
             prefs[Keys.CALLER_INFO_POSITION] = position.name
+        }
+    }
+
+    override suspend fun setControlGridAlignment(alignment: ControlGridAlignment) {
+        dataStore.edit { prefs ->
+            prefs[Keys.CONTROL_GRID_ALIGNMENT] = alignment.name
+        }
+    }
+
+    override suspend fun setEndCallButtonSize(size: EndCallButtonSize) {
+        dataStore.edit { prefs ->
+            prefs[Keys.END_CALL_BUTTON_SIZE] = size.name
         }
     }
 

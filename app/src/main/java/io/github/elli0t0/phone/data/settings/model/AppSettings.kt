@@ -90,6 +90,19 @@ enum class CallerInfoPosition(val label: String) {
     CENTER("Center")
 }
 
+enum class ControlGridAlignment(val label: String) {
+    SPREAD("Spread"),
+    CENTER("Center"),
+    START("Start"),
+    END("End")
+}
+
+enum class EndCallButtonSize(val label: String, val scale: Float) {
+    SMALL("Small", 0.8f),
+    MEDIUM("Medium", 1f),
+    LARGE("Large", 1.25f)
+}
+
 enum class OngoingCallButton(val label: String) {
     MUTE("Mute"),
     SPEAKER("Speaker"),
@@ -140,6 +153,8 @@ data class AppSettings(
     val answerSide: AnswerSide = AnswerSide.RIGHT,
     val endCallAlignment: EndCallAlignment = EndCallAlignment.CENTER,
     val callerInfoPosition: CallerInfoPosition = CallerInfoPosition.TOP,
+    val controlGridAlignment: ControlGridAlignment = ControlGridAlignment.SPREAD,
+    val endCallButtonSize: EndCallButtonSize = EndCallButtonSize.MEDIUM,
     val ongoingCallButtons: List<OngoingCallButton> = OngoingCallButton.entries,
     val showNumberOnCallScreen: Boolean = true,
     val defaultSim: DefaultSim = DefaultSim.ASK,

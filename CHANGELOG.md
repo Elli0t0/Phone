@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.19] - 2026-10-16
+
+- Call screen customisation (8): control grid alignment — Spread (default), Center, Start, or End for the ongoing-call buttons in each row; and end call size — Small, Medium (default), or Large for the red end-call button. Both in the call background studio.
+
 ## [0.10.18] - 2026-10-16
 
 - Call screen customisation (7): caller info position now also applies to the incoming call screen — Top (default) or Center for the caller name/avatar, above the quick responses.
