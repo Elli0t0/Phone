@@ -1,15 +1,17 @@
 package io.github.elli0t0.phone.feature.dialpad
 
-import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,21 +21,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,18 +37,23 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.design.LiquidGlassChip
+import io.github.elli0t0.phone.core.design.LiquidGlassPill
+import io.github.elli0t0.phone.core.design.LiquidGlassPillShape
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
-import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
-import kotlinx.coroutines.launch
 
 data class DialKey(
     val digit: Char,
@@ -80,72 +81,40 @@ fun DialKeyView(
         else -> dialKey.digit.toString()
     }
 
-    // Shared press source: pressScale and combinedClickable observe the
-    // same press state, so the key scales to 0.92 while pressed and ripples.
+    // Press scale: the whole glass key scales to 0.90 while pressed
+    // and springs back (damping 0.55, stiffness 500). On Reduced/Off
+    // there is no scale. No ripple: the glass surface is the feedback.
     val keySource = remember { MutableInteractionSource() }
-    // One keypress = one animation, restarted via key(pressCount): the
-    // digit dips 0.1 scale / 0.3 alpha and springs back (stiffness 1000,
-    // damping 0.7). Reduced fades only; Off does nothing.
-    var pressCount by remember { mutableStateOf(0) }
+    val isPressed by keySource.collectIsPressedAsState()
     val animationOption = LocalAppSettings.current.animationOption
+    val keyScale by animateFloatAsState(
+        targetValue = if (isPressed && animationOption == AnimationOption.ON) 0.90f else 1f,
+        animationSpec = spring(dampingRatio = 0.55f, stiffness = 500f),
+        label = "keyPressScale"
+    )
     Box(
         modifier = modifier
             .size(PhoneDimens.keypadTouchSize)
-            .pressScale(keySource)
+            .graphicsLayer {
+                scaleX = keyScale
+                scaleY = keyScale
+            }
+            .liquidGlass(shape = CircleShape, elevation = 0.dp)
             .combinedClickable(
                 interactionSource = keySource,
-                indication = ripple(),
-                onClick = {
-                    pressCount++
-                    onClick()
-                },
+                indication = null,
+                onClick = onClick,
                 onLongClick = {
-                    pressCount++
                     if (onLongClick != null) onLongClick() else onClick()
                 }
             )
             .testTag("dial_key_$keyTag"),
         contentAlignment = Alignment.Center
     ) {
-        key(pressCount) {
-            val digitScale = remember { Animatable(1f) }
-            val digitAlpha = remember { Animatable(1f) }
-            LaunchedEffect(pressCount) {
-                if (pressCount == 0) return@LaunchedEffect
-                when (animationOption) {
-                    AnimationOption.ON -> {
-                        digitScale.snapTo(0.9f)
-                        digitAlpha.snapTo(0.7f)
-                        val pressSpring = spring<Float>(
-                            stiffness = 1000f,
-                            dampingRatio = 0.7f
-                        )
-                        launch { digitScale.animateTo(1f, pressSpring) }
-                        launch { digitAlpha.animateTo(1f, pressSpring) }
-                    }
-                    AnimationOption.REDUCED -> {
-                        digitAlpha.snapTo(0.7f)
-                        digitAlpha.animateTo(
-                            1f,
-                            Motion.tweenSpec(
-                                Motion.Durations.Short,
-                                Motion.Easings.Standard,
-                                animationOption
-                            )
-                        )
-                    }
-                    AnimationOption.OFF -> Unit
-                }
-            }
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.graphicsLayer {
-                    scaleX = digitScale.value
-                    scaleY = digitScale.value
-                    alpha = digitAlpha.value
-                }
-            ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
             if (dialKey.digit == '*') {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_asterisk),
@@ -175,18 +144,20 @@ fun DialKeyView(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        }
     }
 }
 
 /**
  * T9 suggestion chips above the keypad: matching contacts as a
- * horizontal chip row (initial avatar + name). Tapping a chip selects
- * the contact, filling its number into the dialpad.
+ * horizontal glass chip row (initial avatar + name + matched number).
+ * The dialed digits inside the number are highlighted in the accent
+ * color. Tapping a chip selects the contact, filling its number into
+ * the dialpad.
  */
 @Composable
 fun DialpadSuggestionChips(
     contacts: List<ContactSummary>,
+    dialedDigits: String,
     onSelect: (ContactSummary) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -194,35 +165,87 @@ fun DialpadSuggestionChips(
     LazyRow(
         modifier = modifier.testTag("dialpad_suggestion_chips"),
         horizontalArrangement = Arrangement.spacedBy(spacing.small),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
+        // End padding so the last chip is never clipped abruptly.
+        contentPadding = PaddingValues(horizontal = spacing.small)
     ) {
         items(contacts.take(8), key = { it.id }) { contact ->
-            AssistChip(
+            LiquidGlassChip(
+                selected = false,
                 onClick = { onSelect(contact) },
-                label = {
+                modifier = Modifier.testTag("dialpad_chip_${contact.id}")
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = contact.displayName.trim().take(1).uppercase(),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                Spacer(modifier = Modifier.size(6.dp))
+                Column {
                     Text(
                         text = contact.displayName,
+                        style = MaterialTheme.typography.bodyMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                },
-                leadingIcon = {
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer),
-                        contentAlignment = Alignment.Center
-                    ) {
+                    val number = contact.primaryNumberPreview
+                    if (!number.isNullOrBlank()) {
                         Text(
-                            text = contact.displayName.trim().take(1).uppercase(),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            text = matchedNumberText(number, dialedDigits),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
-                },
-                modifier = Modifier.testTag("dialpad_chip_${contact.id}")
-            )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The contact's number with the dialed digits highlighted in the accent
+ * color. Matching is digits-only, mapped back onto the displayed text;
+ * when the dialed digits do not appear in the number (e.g. a T9 name
+ * match), the number is returned unstyled.
+ */
+@Composable
+private fun matchedNumberText(number: String, dialed: String): AnnotatedString {
+    val accent = MaterialTheme.colorScheme.primary
+    val queryDigits = dialed.filter { it.isDigit() }
+    if (queryDigits.isEmpty()) return AnnotatedString(number)
+    val digitIndexOfChar = IntArray(number.length)
+    val numberDigits = StringBuilder()
+    number.forEachIndexed { i, ch ->
+        if (ch.isDigit()) {
+            digitIndexOfChar[i] = numberDigits.length
+            numberDigits.append(ch)
+        } else {
+            digitIndexOfChar[i] = -1
+        }
+    }
+    val matchStart = numberDigits.toString().indexOf(queryDigits)
+    if (matchStart < 0) return AnnotatedString(number)
+    val matchEnd = matchStart + queryDigits.length
+    return buildAnnotatedString {
+        number.forEachIndexed { i, ch ->
+            val d = digitIndexOfChar[i]
+            if (d in matchStart until matchEnd) {
+                withStyle(SpanStyle(color = accent, fontWeight = FontWeight.SemiBold)) {
+                    append(ch)
+                }
+            } else {
+                append(ch)
+            }
         }
     }
 }
@@ -250,27 +273,59 @@ fun DialpadNoMatchActions(
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            FilledTonalButton(
-                onClick = onCreateContact,
-                modifier = Modifier.testTag("dialpad_no_match_create")
+            val createSource = remember { MutableInteractionSource() }
+            LiquidGlassPill(
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .clip(LiquidGlassPillShape)
+                    .pressScale(createSource)
+                    .clickable(
+                        interactionSource = createSource,
+                        indication = ripple()
+                    ) { onCreateContact() }
+                    .testTag("dialpad_no_match_create")
             ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_add),
-                    contentDescription = null
-                )
-                Spacer(modifier = Modifier.size(4.dp))
-                Text(text = stringResource(id = R.string.dialpad_create_contact))
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_add),
+                        contentDescription = null
+                    )
+                    Spacer(modifier = Modifier.size(4.dp))
+                    Text(
+                        text = stringResource(id = R.string.dialpad_create_contact),
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
             }
-            FilledTonalButton(
-                onClick = onMessage,
-                modifier = Modifier.testTag("dialpad_no_match_message")
+            val messageSource = remember { MutableInteractionSource() }
+            LiquidGlassPill(
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .clip(LiquidGlassPillShape)
+                    .pressScale(messageSource)
+                    .clickable(
+                        interactionSource = messageSource,
+                        indication = ripple()
+                    ) { onMessage() }
+                    .testTag("dialpad_no_match_message")
             ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_message),
-                    contentDescription = null
-                )
-                Spacer(modifier = Modifier.size(4.dp))
-                Text(text = stringResource(id = R.string.dialpad_message))
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_message),
+                        contentDescription = null
+                    )
+                    Spacer(modifier = Modifier.size(4.dp))
+                    Text(
+                        text = stringResource(id = R.string.dialpad_message),
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
             }
         }
     }

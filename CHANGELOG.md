@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.31] - 2026-10-16
+
+- Liquid glass across the app (3): dialpad keys are now circular liquid-glass discs (no more square gray ripple; the key scales to 0.90 and springs back), the Call button is a glossy liquid-glass emerald button, the no-match Create new contact / Message actions are glass pills that animate in/out, and the T9 suggestion chips are glass chips showing the contact name and the matched number with the dialed digits highlighted in accent. Key press feedback is now the glass surface scale (the digit-dip pulse is gone).
+
 ## [0.10.30] - 2026-10-16
 
 - Liquid glass across the app (2): the bottom bar's selected-tab indicator is now a sliding liquid-glass droplet (accent-tinted glass, specular rim) instead of a flat oval, and a smooth vertical fade scrim behind the floating bottom bar fades list content out before it can bleed through the bar's tab labels/icons. Glass fill/rim/shadow alphas now match the design-system reference values in both themes.

@@ -6,12 +6,24 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,8 +47,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -71,9 +81,14 @@ import io.github.elli0t0.phone.core.design.KeypadPageDark
 import io.github.elli0t0.phone.core.design.isDarkGlassTheme
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.Motion
+import io.github.elli0t0.phone.core.design.OnAccentBlue
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.liquidGlass
+import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.core.telecom.CallManager
+import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.ThemeMode
 import io.github.elli0t0.phone.feature.contacts.ui.ContactSearchBar
 import io.github.elli0t0.phone.feature.setup.SetupWarningCard
@@ -107,6 +122,7 @@ fun DialpadScreen(
     // Read here, not inside dialNumber: the handler is not a
     // @Composable context, so it cannot read a CompositionLocal.
     val defaultSim = LocalAppSettings.current.defaultSim
+    val animationOption = LocalAppSettings.current.animationOption
     val clipboardManager = LocalClipboardManager.current
     val coroutineScope = rememberCoroutineScope()
 
@@ -283,47 +299,109 @@ fun DialpadScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-            if (searchVisible && uiState.nameSearchQuery.isNotBlank()) {
+            val showSearchRows = searchVisible && uiState.nameSearchQuery.isNotBlank() &&
+                uiState.nameSearchResults.isNotEmpty()
+            val showChips = (!searchVisible || uiState.nameSearchQuery.isBlank()) &&
+                uiState.matchingContacts.isNotEmpty()
+            val showNoMatchActions = uiState.rawNumber.isNotEmpty() &&
+                !showSearchRows && !showChips
+            if (showSearchRows) {
                 // Name search: full rows.
-                if (uiState.nameSearchResults.isNotEmpty()) {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("dialpad_search_results")
-                    ) {
-                        items(uiState.nameSearchResults, key = { it.id }) { contact ->
-                            DialpadSearchRow(
-                                contact = contact,
-                                onClick = {
-                                    lightHaptic()
-                                    viewModel.onContactSelected(contact)
-                                    viewModel.onNameSearchQueryChanged("")
-                                    searchVisible = false
-                                },
-                                onCallClick = {
-                                    lightHaptic()
-                                    val num = contact.primaryNumberPreview ?: ""
-                                    if (num.isNotBlank()) {
-                                        dialNumber(num, contact.lookupKey)
-                                    }
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("dialpad_search_results")
+                ) {
+                    items(uiState.nameSearchResults, key = { it.id }) { contact ->
+                        DialpadSearchRow(
+                            contact = contact,
+                            onClick = {
+                                lightHaptic()
+                                viewModel.onContactSelected(contact)
+                                viewModel.onNameSearchQueryChanged("")
+                                searchVisible = false
+                            },
+                            onCallClick = {
+                                lightHaptic()
+                                val num = contact.primaryNumberPreview ?: ""
+                                if (num.isNotBlank()) {
+                                    dialNumber(num, contact.lookupKey)
                                 }
-                            )
-                        }
+                            }
+                        )
                     }
-                } else if (uiState.rawNumber.isNotEmpty()) {
-                    noMatchActions()
                 }
-            } else if (uiState.matchingContacts.isNotEmpty()) {
+            } else if (showChips) {
                 // T9: suggestion chips above the keypad; tap selects.
                 DialpadSuggestionChips(
                     contacts = uiState.matchingContacts,
+                    dialedDigits = uiState.rawNumber,
                     onSelect = {
                         lightHaptic()
                         viewModel.onContactSelected(it)
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
-            } else if (uiState.rawNumber.isNotEmpty()) {
+            }
+            // No-match actions animate in/out: fade + expand + scale on
+            // full motion, fade only on Reduced, instant on Off.
+            val noMatchEnter: EnterTransition = when (animationOption) {
+                AnimationOption.ON -> fadeIn(
+                    tween(
+                        durationMillis = Motion.scaledDurationMs(Motion.Durations.Medium, animationOption),
+                        easing = Motion.Easings.Emphasized
+                    )
+                ) + expandVertically(
+                    tween(
+                        durationMillis = Motion.scaledDurationMs(Motion.Durations.Medium, animationOption),
+                        easing = Motion.Easings.Emphasized
+                    )
+                ) + scaleIn(
+                    tween(
+                        durationMillis = Motion.scaledDurationMs(Motion.Durations.Medium, animationOption),
+                        easing = Motion.Easings.Emphasized
+                    ),
+                    initialScale = 0.92f
+                )
+                AnimationOption.REDUCED -> fadeIn(
+                    tween(
+                        durationMillis = Motion.scaledDurationMs(Motion.Durations.Medium, animationOption),
+                        easing = Motion.Easings.Emphasized
+                    )
+                )
+                AnimationOption.OFF -> EnterTransition.None
+            }
+            val noMatchExit: ExitTransition = when (animationOption) {
+                AnimationOption.ON -> fadeOut(
+                    tween(
+                        durationMillis = Motion.scaledDurationMs(Motion.Durations.Short, animationOption),
+                        easing = Motion.Easings.Exit
+                    )
+                ) + shrinkVertically(
+                    tween(
+                        durationMillis = Motion.scaledDurationMs(Motion.Durations.Short, animationOption),
+                        easing = Motion.Easings.Exit
+                    )
+                ) + scaleOut(
+                    tween(
+                        durationMillis = Motion.scaledDurationMs(Motion.Durations.Short, animationOption),
+                        easing = Motion.Easings.Exit
+                    ),
+                    targetScale = 0.92f
+                )
+                AnimationOption.REDUCED -> fadeOut(
+                    tween(
+                        durationMillis = Motion.scaledDurationMs(Motion.Durations.Short, animationOption),
+                        easing = Motion.Easings.Exit
+                    )
+                )
+                AnimationOption.OFF -> ExitTransition.None
+            }
+            AnimatedVisibility(
+                visible = showNoMatchActions,
+                enter = noMatchEnter,
+                exit = noMatchExit
+            ) {
                 noMatchActions()
             }
         }
@@ -471,25 +549,35 @@ fun DialpadScreen(
             // Placeholder empty box for balance (same size as backspace)
             Box(modifier = Modifier.size(56.dp))
 
-            // Call button: always solid green. With no digits it does nothing.
-            FloatingActionButton(
-                onClick = {
-                    if (uiState.canCall) {
-                        lightHaptic()
-                        callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
-                    }
-                },
+            // Call button: glossy liquid-glass emerald. With no digits it does nothing.
+            val callButtonSource = remember { MutableInteractionSource() }
+            Box(
                 modifier = Modifier
-                    .size(io.github.elli0t0.phone.core.design.PhoneDimens.callButtonSize)
+                    .size(PhoneDimens.callButtonSize)
+                    .clip(CircleShape)
+                    .pressScale(callButtonSource)
+                    .clickable(
+                        interactionSource = callButtonSource,
+                        indication = null
+                    ) {
+                        if (uiState.canCall) {
+                            lightHaptic()
+                            callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
+                        }
+                    }
+                    .liquidGlass(
+                        shape = CircleShape,
+                        tint = if (darkTheme) KeypadCallButtonGreenDark else KeypadCallButtonGreenLight,
+                        elevation = 10.dp,
+                        isSelected = true
+                    )
                     .testTag("btn_call"),
-                shape = CircleShape,
-                containerColor = if (darkTheme) KeypadCallButtonGreenDark else KeypadCallButtonGreenLight,
-                contentColor = io.github.elli0t0.phone.core.design.OnAccentBlue,
-                elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp)
+                contentAlignment = Alignment.Center
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_phone),
                     contentDescription = stringResource(id = R.string.cd_call_button),
+                    tint = OnAccentBlue,
                     modifier = Modifier.size(32.dp)
                 )
             }
