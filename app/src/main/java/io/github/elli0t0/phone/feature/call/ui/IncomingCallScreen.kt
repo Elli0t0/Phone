@@ -48,6 +48,7 @@ import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.data.settings.model.AnswerGesture
 import io.github.elli0t0.phone.data.settings.model.AnswerSide
+import io.github.elli0t0.phone.data.settings.model.CallerInfoPosition
 import io.github.elli0t0.phone.core.design.CallAnswerGreen
 import io.github.elli0t0.phone.core.design.CallDeclineRed
 import io.github.elli0t0.phone.core.design.LocalAppSettings
@@ -100,10 +101,17 @@ fun IncomingCallScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(top = PhoneDimens.incomingHeaderTopPadding)
-        ) {
+            // Caller info position: top (default), or centered in the
+            // space above the quick responses via spacers around it.
+            val callerInfoCentered =
+                LocalAppSettings.current.callerInfoPosition == CallerInfoPosition.CENTER
+            if (callerInfoCentered) {
+                Spacer(modifier = Modifier.weight(1f))
+            }
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(top = PhoneDimens.incomingHeaderTopPadding)
+            ) {
             Text(
                 text = stringResource(id = R.string.call_incoming),
                 style = MaterialTheme.typography.titleMedium,
@@ -151,6 +159,10 @@ fun IncomingCallScreen(
                     textAlign = TextAlign.Center
                 )
             }
+        }
+
+        if (callerInfoCentered) {
+            Spacer(modifier = Modifier.weight(1f))
         }
 
         // Quick responses: decline the call and send the message as a reply SMS
