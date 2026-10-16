@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.14] - 2026-10-16
+
+- Call screen customisation (4): end call position — Left, Center (default) or Right for the red end-call button on the ongoing call screen, in the call background studio.
+
 ## [0.10.13] - 2026-10-16
 
 - Call screen customisation (3): answer side — Answer on right (default) or Answer on left, in the call background studio. Swaps the answer/decline buttons, and mirrors the swipe bar (swipe left to answer) in swipe mode.

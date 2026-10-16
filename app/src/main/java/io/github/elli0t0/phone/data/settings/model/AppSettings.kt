@@ -79,6 +79,12 @@ enum class AnswerSide(val label: String) {
     LEFT("Answer on left")
 }
 
+enum class EndCallAlignment(val label: String) {
+    LEFT("Left"),
+    CENTER("Center"),
+    RIGHT("Right")
+}
+
 enum class OngoingCallButton(val label: String) {
     MUTE("Mute"),
     SPEAKER("Speaker"),
@@ -127,6 +133,7 @@ data class AppSettings(
     val callBackgroundCustomColor: Long = AccentPreset.ONE_UI_BLUE.colorValue,
     val answerGesture: AnswerGesture = AnswerGesture.TAP,
     val answerSide: AnswerSide = AnswerSide.RIGHT,
+    val endCallAlignment: EndCallAlignment = EndCallAlignment.CENTER,
     val ongoingCallButtons: List<OngoingCallButton> = OngoingCallButton.entries,
     val showNumberOnCallScreen: Boolean = true,
     val defaultSim: DefaultSim = DefaultSim.ASK,

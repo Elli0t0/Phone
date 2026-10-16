@@ -7,6 +7,7 @@ import io.github.elli0t0.phone.data.settings.SettingsRepository
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AnswerGesture
 import io.github.elli0t0.phone.data.settings.model.AnswerSide
+import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
@@ -182,6 +183,13 @@ class SettingsViewModel(
         }
     }
     fun setAnswerSide(side: AnswerSide) = onAnswerSideChanged(side)
+
+    fun onEndCallAlignmentChanged(alignment: EndCallAlignment) {
+        viewModelScope.launch {
+            settingsRepository.setEndCallAlignment(alignment)
+        }
+    }
+    fun setEndCallAlignment(alignment: EndCallAlignment) = onEndCallAlignmentChanged(alignment)
 
     fun onOngoingCallButtonsChanged(buttons: List<OngoingCallButton>) {
         viewModelScope.launch {

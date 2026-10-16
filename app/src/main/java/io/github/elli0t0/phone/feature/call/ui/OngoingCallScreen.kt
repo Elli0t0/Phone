@@ -49,6 +49,7 @@ import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.call.CallState
 import io.github.elli0t0.phone.data.call.OngoingCallModel
 import io.github.elli0t0.phone.data.settings.model.CallBackground
+import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 
 @Composable
@@ -198,8 +199,15 @@ fun OngoingCallScreen(
             }
 
             // Bottom: control grid + red circular end-call button.
+            // The end-call button aligns per the setting; the grid is
+            // full-width so it is unaffected.
+            val endCallAlignment = when (LocalAppSettings.current.endCallAlignment) {
+                EndCallAlignment.LEFT -> Alignment.Start
+                EndCallAlignment.CENTER -> Alignment.CenterHorizontally
+                EndCallAlignment.RIGHT -> Alignment.End
+            }
             Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
+                horizontalAlignment = endCallAlignment,
                 verticalArrangement = Arrangement.spacedBy(PhoneDimens.ongoingControlGridSpacing),
                 modifier = Modifier.fillMaxWidth()
             ) {

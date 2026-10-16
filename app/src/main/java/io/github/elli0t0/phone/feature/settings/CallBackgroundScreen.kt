@@ -60,6 +60,7 @@ import io.github.elli0t0.phone.data.call.OngoingCallModel
 import io.github.elli0t0.phone.data.settings.model.AnswerGesture
 import io.github.elli0t0.phone.data.settings.model.AnswerSide
 import io.github.elli0t0.phone.data.settings.model.CallBackground
+import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.feature.call.ui.IncomingCallScreen
 import io.github.elli0t0.phone.feature.call.ui.OngoingCallScreen
@@ -405,6 +406,30 @@ fun CallBackgroundScreen(
                                 modifier = Modifier.testTag("control_toggle_${button.name}")
                             )
                         }
+                    }
+                }
+
+                // End call position: where the red end-call button sits
+                // on the ongoing call screen.
+                Text(
+                    text = "End call position",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(spacing.small)
+                ) {
+                    EndCallAlignment.entries.forEach { alignment ->
+                        FilterChip(
+                            selected = settings.endCallAlignment == alignment,
+                            onClick = { settingsViewModel.onEndCallAlignmentChanged(alignment) },
+                            label = { Text(text = alignment.label) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            modifier = Modifier.testTag("end_call_alignment_${alignment.name.lowercase()}")
+                        )
                     }
                 }
 
