@@ -272,14 +272,6 @@ fun DialpadScreen(
                 .fillMaxWidth()
                 .padding(top = spacing.small)
         )
-        // T9 Matching contacts list above the keypad
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .padding(top = spacing.small),
-            contentAlignment = Alignment.BottomCenter
-        ) {
             // No matching contact: offer real actions for the number.
             val noMatchActions: @Composable () -> Unit = {
                 DialpadNoMatchActions(
@@ -305,6 +297,14 @@ fun DialpadScreen(
                 uiState.matchingContacts.isNotEmpty()
             val showNoMatchActions = uiState.rawNumber.isNotEmpty() &&
                 !showSearchRows && !showChips
+            // T9 Matching contacts list above the keypad
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(top = spacing.small),
+                contentAlignment = Alignment.BottomCenter
+            ) {
             if (showSearchRows) {
                 // Name search: full rows.
                 LazyColumn(
@@ -343,7 +343,9 @@ fun DialpadScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-            // No-match actions animate in/out: fade + expand + scale on
+            }
+            // No-match actions animate in/out below the list area
+            // (ColumnScope AnimatedVisibility): fade + expand + scale on
             // full motion, fade only on Reduced, instant on Off.
             val noMatchEnter: EnterTransition = when (animationOption) {
                 AnimationOption.ON -> fadeIn(
@@ -404,7 +406,6 @@ fun DialpadScreen(
             ) {
                 noMatchActions()
             }
-        }
 
         // Formatted Number Display (supports long click to paste).
         // Always rendered: a fixed slot, so typing the first digit
