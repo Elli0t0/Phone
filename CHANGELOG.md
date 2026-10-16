@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.27] - 2026-10-16
+
+- Liquid glass (1): the Recents day cards and the Contacts list cards — contact rows, group cards, favorites hint, profile row, duplicates card, groups row, permission card, empty state — now use the shared liquid-glass surface (translucent fill, gradient border, soft shadow) instead of flat cards. Dense rows inside a glass card stay flat.
+
 ## [0.10.26] - 2026-10-16
 
 - Fixed the call background studio preview showing nothing: the scrollable options list measured unbounded and took all the height, squeezing the preview to zero. The preview and the options now split the screen evenly, so the live preview (and its Full screen button) is visible.

@@ -29,8 +29,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -64,6 +62,7 @@ import io.github.elli0t0.phone.core.design.AccentBlue
 import io.github.elli0t0.phone.core.design.CallAnswerGreen
 import io.github.elli0t0.phone.core.design.CallRejectedOrange
 import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.GlassSurface
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.OnAccentBlue
@@ -366,13 +365,11 @@ fun DaySectionCard(
     rowContent: @Composable (CallGroup) -> Unit
 ) {
     val spacing = LocalSpacing.current
-    Card(
+    GlassSurface(
         modifier = modifier
             .fillMaxWidth()
             .padding(bottom = spacing.small),
         shape = RoundedCornerShape(PhoneDimens.recentsDayCardCornerRadius),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         calls.forEachIndexed { index, group ->
             rowContent(group)
