@@ -63,6 +63,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -109,7 +110,13 @@ import io.github.elli0t0.phone.data.settings.model.ContactSortOrder
 import io.github.elli0t0.phone.data.settings.model.ListDensity
 import io.github.elli0t0.phone.data.settings.model.StartTab
 import io.github.elli0t0.phone.data.settings.model.ThemeMode
+import java.net.HttpURLConnection
+import java.net.URL
 import kotlin.math.roundToInt
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -164,6 +171,26 @@ fun SettingsScreen(
     var showQuickDeclineDialog by remember { mutableStateOf(false) }
     var showBlockedNumbers by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
+    // Update check state; null = idle. The state drives the result dialog.
+    var updateCheckState by remember { mutableStateOf<UpdateCheckState?>(null) }
+    val updateScope = rememberCoroutineScope()
+    val currentVersionName = remember {
+        runCatching { context.packageManager.getPackageInfo(context.packageName, 0) }
+            .getOrNull()?.versionName ?: ""
+    }
+    val runUpdateCheck: () -> Unit = {
+        updateCheckState = UpdateCheckState.Checking
+        updateScope.launch {
+            val latest = fetchLatestRelease()
+            updateCheckState = if (latest == null) {
+                UpdateCheckState.Error
+            } else if (compareVersions(latest.tag, currentVersionName) > 0) {
+                UpdateCheckState.Available(latest.tag, latest.url)
+            } else {
+                UpdateCheckState.UpToDate
+            }
+        }
+    }
     var showCallWaitingDialog by remember { mutableStateOf(false) }
     // USSD flow: picked code -> SIM picker (dual SIM) -> sending -> result.
     // ussdRequestId invalidates late carrier callbacks after dismissal.
@@ -564,6 +591,59 @@ fun SettingsScreen(
                     Text(text = stringResource(id = R.string.action_cancel))
                 }
             }
+        )
+    }
+
+    if (updateCheckState != null) {
+        val state = updateCheckState
+        AlertDialog(
+            onDismissRequest = { updateCheckState = null },
+            title = { Text(text = "Check for update") },
+            text = {
+                when (state) {
+                    UpdateCheckState.Checking -> {
+                        Text(text = "Checking for updates…")
+                    }
+                    is UpdateCheckState.Available -> {
+                        Text(text = "A new version is available: ${state.tag}.")
+                    }
+                    UpdateCheckState.UpToDate -> {
+                        Text(text = "You're up to date ($currentVersionName).")
+                    }
+                    UpdateCheckState.Error -> {
+                        Text(text = "Couldn't check for updates.")
+                    }
+                    null -> Unit
+                }
+            },
+            confirmButton = {
+                when (state) {
+                    is UpdateCheckState.Available -> {
+                        Button(
+                            onClick = {
+                                updateCheckState = null
+                                runCatching {
+                                    context.startActivity(
+                                        Intent(Intent.ACTION_VIEW, Uri.parse(state.url))
+                                    )
+                                }
+                            }
+                        ) {
+                            Text(text = "View release")
+                        }
+                    }
+                    UpdateCheckState.Error -> {
+                        Button(onClick = runUpdateCheck) {
+                            Text(text = "Retry")
+                        }
+                    }
+                    else -> {
+                        TextButton(onClick = { updateCheckState = null }) {
+                            Text(text = stringResource(id = R.string.action_ok))
+                        }
+                    }
+                }
+            },
         )
     }
 
@@ -1127,6 +1207,10 @@ fun SettingsScreen(
                             title = stringResource(id = R.string.settings_about_phone),
                             onClick = { showAboutDialog = true }
                         )
+                        SettingsRow(
+                            title = "Check for update",
+                            onClick = runUpdateCheck
+                        )
                     }
                 }
             }
@@ -1538,4 +1622,45 @@ private fun QuickDeclineMessagesDialog(
             }
         }
     )
+}
+
+/** Result of an update check, driving the About update dialog. */
+private sealed interface UpdateCheckState {
+    data object Checking : UpdateCheckState
+    data class Available(val tag: String, val url: String) : UpdateCheckState
+    data object UpToDate : UpdateCheckState
+    data object Error : UpdateCheckState
+}
+
+private data class LatestRelease(val tag: String, val url: String)
+
+// Newest release from the GitHub API. Pre-releases are included (the app
+// ships pre-releases), so the releases list — newest first — is used
+// instead of /releases/latest. Null on any failure.
+private suspend fun fetchLatestRelease(): LatestRelease? = withContext(Dispatchers.IO) {
+    runCatching {
+        val connection = URL("https://api.github.com/repos/Elli0t0/Phone/releases?per_page=1")
+            .openConnection() as HttpURLConnection
+        connection.setRequestProperty("User-Agent", "Phone-App")
+        connection.connectTimeout = 5000
+        connection.readTimeout = 5000
+        if (connection.responseCode != HttpURLConnection.HTTP_OK) return@runCatching null
+        val body = connection.inputStream.bufferedReader().use { it.readText() }
+        val release = JSONArray(body).optJSONObject(0) ?: return@runCatching null
+        LatestRelease(
+            tag = release.getString("tag_name").removePrefix("v"),
+            url = release.getString("html_url")
+        )
+    }.getOrNull()
+}
+
+// Dotted version comparison: > 0 when [a] is newer than [b].
+private fun compareVersions(a: String, b: String): Int {
+    val ap = a.removePrefix("v").split(".")
+    val bp = b.removePrefix("v").split(".")
+    for (i in 0 until maxOf(ap.size, bp.size)) {
+        val d = (ap.getOrNull(i)?.toIntOrNull() ?: 0) - (bp.getOrNull(i)?.toIntOrNull() ?: 0)
+        if (d != 0) return d
+    }
+    return 0
 }
