@@ -60,7 +60,6 @@ import io.github.elli0t0.phone.data.settings.model.IncomingAvatarShape
 import io.github.elli0t0.phone.data.settings.model.IncomingAvatarSize
 import io.github.elli0t0.phone.feature.call.ui.IncomingCallScreen
 import io.github.elli0t0.phone.feature.call.ui.OngoingCallScreen
-import kotlin.math.minOf
 
 /**
  * Call background studio as a full page: the top half is a live
