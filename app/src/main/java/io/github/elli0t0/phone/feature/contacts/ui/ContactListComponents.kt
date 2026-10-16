@@ -410,61 +410,6 @@ fun DuplicatesCard(
 }
 
 @Composable
-fun GroupsRow(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val spacing = LocalSpacing.current
-    val groupsSource = remember { MutableInteractionSource() }
-    val lightHaptic = rememberLightHaptic()
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(bottom = spacing.small)
-            .pressScale(groupsSource)
-            .clickable(
-                interactionSource = groupsSource,
-                indication = ripple()
-            ) { lightHaptic(); onClick() }
-            .testTag("groups_row"),
-        shape = RoundedCornerShape(PhoneDimens.contactsPillCornerPercent),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    horizontal = spacing.medium,
-                    vertical = PhoneDimens.contactsRowVerticalPadding
-                ),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(PhoneDimens.contactsRowAvatarSize)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_group),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(PhoneDimens.contactsGroupIconSize)
-                )
-            }
-            Spacer(modifier = Modifier.width(spacing.medium))
-            Text(
-                text = stringResource(id = R.string.groups_title),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-    }
-}
-
-@Composable
 fun PermissionCard(
     title: String,
     message: String,
