@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.16] - 2026-10-16
+
+- Call background studio code split into two files (screen shell + option sections), no behavior change. This keeps each file small enough to ship, so more call-screen options can follow.
+
 ## [0.10.15] - 2026-10-16
 
 - Call screen customisation (5): layout presets in the call background studio — Classic, Left-handed, and Swipe set the answer gesture, answer side, and end-call position together in one tap. Any manual change after a preset shows no preset selected (custom).
