@@ -127,6 +127,11 @@ enum class IncomingAvatarSize(val label: String, val scale: Float) {
     LARGE("Large", 1.25f)
 }
 
+enum class IncomingAvatarShape(val label: String) {
+    CIRCLE("Circle"),
+    ROUNDED("Rounded")
+}
+
 enum class OngoingCallButton(val label: String) {
     MUTE("Mute"),
     SPEAKER("Speaker"),
@@ -184,6 +189,7 @@ data class AppSettings(
     val controlButtonSize: ControlButtonSize = ControlButtonSize.MEDIUM,
     val dtmfKeySize: DtmfKeySize = DtmfKeySize.MEDIUM,
     val incomingAvatarSize: IncomingAvatarSize = IncomingAvatarSize.MEDIUM,
+    val incomingAvatarShape: IncomingAvatarShape = IncomingAvatarShape.CIRCLE,
     val ongoingCallButtons: List<OngoingCallButton> = OngoingCallButton.entries,
     val showNumberOnCallScreen: Boolean = true,
     val defaultSim: DefaultSim = DefaultSim.ASK,

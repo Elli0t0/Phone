@@ -18,6 +18,7 @@ import io.github.elli0t0.phone.data.settings.model.AnswerButtonSize
 import io.github.elli0t0.phone.data.settings.model.ControlButtonSize
 import io.github.elli0t0.phone.data.settings.model.ControlGridAlignment
 import io.github.elli0t0.phone.data.settings.model.DtmfKeySize
+import io.github.elli0t0.phone.data.settings.model.IncomingAvatarShape
 import io.github.elli0t0.phone.data.settings.model.IncomingAvatarSize
 import io.github.elli0t0.phone.data.settings.model.EndCallButtonSize
 import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
@@ -71,6 +72,7 @@ interface SettingsRepository {
     suspend fun setControlButtonSize(size: ControlButtonSize)
     suspend fun setDtmfKeySize(size: DtmfKeySize)
     suspend fun setIncomingAvatarSize(size: IncomingAvatarSize)
+    suspend fun setIncomingAvatarShape(shape: IncomingAvatarShape)
     suspend fun setOngoingCallButtons(buttons: List<OngoingCallButton>)
     suspend fun setShowNumberOnCallScreen(show: Boolean)
     suspend fun setDefaultSim(defaultSim: DefaultSim)
@@ -114,6 +116,7 @@ class DataStoreSettingsRepository(
         val CONTROL_BUTTON_SIZE = stringPreferencesKey("control_button_size")
         val DTMF_KEY_SIZE = stringPreferencesKey("dtmf_key_size")
         val INCOMING_AVATAR_SIZE = stringPreferencesKey("incoming_avatar_size")
+        val INCOMING_AVATAR_SHAPE = stringPreferencesKey("incoming_avatar_shape")
         val ONGOING_CALL_BUTTONS = stringPreferencesKey("ongoing_call_buttons")
         val SHOW_NUMBER_ON_CALL_SCREEN = booleanPreferencesKey("show_number_on_call_screen")
         val DEFAULT_SIM = stringPreferencesKey("default_sim")
@@ -211,6 +214,10 @@ class DataStoreSettingsRepository(
         val incomingAvatarSize = incomingAvatarSizeStr?.let { runCatching { IncomingAvatarSize.valueOf(it) }.getOrNull() }
             ?: IncomingAvatarSize.MEDIUM
 
+        val incomingAvatarShapeStr = prefs[Keys.INCOMING_AVATAR_SHAPE]
+        val incomingAvatarShape = incomingAvatarShapeStr?.let { runCatching { IncomingAvatarShape.valueOf(it) }.getOrNull() }
+            ?: IncomingAvatarShape.CIRCLE
+
         // Shown ongoing-call buttons, in display order, as comma-separated
         // names. Missing key = all buttons; empty = none (user hid them all).
         val ongoingCallButtons = prefs[Keys.ONGOING_CALL_BUTTONS]
@@ -259,6 +266,7 @@ class DataStoreSettingsRepository(
             controlButtonSize = controlButtonSize,
             dtmfKeySize = dtmfKeySize,
             incomingAvatarSize = incomingAvatarSize,
+            incomingAvatarShape = incomingAvatarShape,
             ongoingCallButtons = ongoingCallButtons,
             showNumberOnCallScreen = showNumberOnCallScreen,
             defaultSim = defaultSim,
@@ -445,6 +453,12 @@ class DataStoreSettingsRepository(
     override suspend fun setIncomingAvatarSize(size: IncomingAvatarSize) {
         dataStore.edit { prefs ->
             prefs[Keys.INCOMING_AVATAR_SIZE] = size.name
+        }
+    }
+
+    override suspend fun setIncomingAvatarShape(shape: IncomingAvatarShape) {
+        dataStore.edit { prefs ->
+            prefs[Keys.INCOMING_AVATAR_SHAPE] = shape.name
         }
     }
 

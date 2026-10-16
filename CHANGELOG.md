@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.23] - 2026-10-16
+
+- Call screen customisation (12): avatar shape — Circle (default) or Rounded for the incoming-call avatar, in the call background studio.
+
 ## [0.10.22] - 2026-10-16
 
 - Call screen customisation (11): avatar size — Small, Medium (default), or Large for the caller avatar and its initial on the incoming call screen, in the call background studio.

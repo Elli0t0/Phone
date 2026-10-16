@@ -50,6 +50,7 @@ import io.github.elli0t0.phone.data.settings.model.AnswerButtonSize
 import io.github.elli0t0.phone.data.settings.model.AnswerGesture
 import io.github.elli0t0.phone.data.settings.model.AnswerSide
 import io.github.elli0t0.phone.data.settings.model.CallerInfoPosition
+import io.github.elli0t0.phone.data.settings.model.IncomingAvatarShape
 import io.github.elli0t0.phone.data.settings.model.IncomingAvatarSize
 import io.github.elli0t0.phone.core.design.CallAnswerGreen
 import io.github.elli0t0.phone.core.design.CallDeclineRed
@@ -126,13 +127,14 @@ fun IncomingCallScreen(
             val titleText = if (hasName) callModel.displayName!! else formattedNumber
             val initial = titleText.trim().take(1).uppercase().ifBlank { "?" }
 
-            // Avatar size from the settings.
+            // Avatar size and shape from the settings.
             val avatarScale = LocalAppSettings.current.incomingAvatarSize.scale
+            val avatarShape = if (LocalAppSettings.current.incomingAvatarShape == IncomingAvatarShape.ROUNDED) RoundedCornerShape(24) else CircleShape
 
             Box(
                 modifier = Modifier
                     .size(PhoneDimens.incomingAvatarSize * avatarScale)
-                    .clip(CircleShape)
+                    .clip(avatarShape)
                     .background(Color.White.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {

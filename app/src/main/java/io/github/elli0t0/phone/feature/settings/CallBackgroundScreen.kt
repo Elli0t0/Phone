@@ -47,6 +47,7 @@ import io.github.elli0t0.phone.data.call.OngoingCallModel
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.ControlButtonSize
 import io.github.elli0t0.phone.data.settings.model.DtmfKeySize
+import io.github.elli0t0.phone.data.settings.model.IncomingAvatarShape
 import io.github.elli0t0.phone.data.settings.model.IncomingAvatarSize
 import io.github.elli0t0.phone.feature.call.ui.IncomingCallScreen
 import io.github.elli0t0.phone.feature.call.ui.OngoingCallScreen
@@ -333,6 +334,30 @@ fun CallBackgroundScreen(
                                 selectedLabelColor = MaterialTheme.colorScheme.onPrimary
                             ),
                             modifier = Modifier.testTag("incoming_avatar_size_${size.name.lowercase()}")
+                        )
+                    }
+                }
+
+                // Avatar shape for the caller avatar on the
+                // incoming call screen.
+                Text(
+                    text = "Avatar shape",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(spacing.small)
+                ) {
+                    IncomingAvatarShape.entries.forEach { shape ->
+                        FilterChip(
+                            selected = settings.incomingAvatarShape == shape,
+                            onClick = { settingsViewModel.onIncomingAvatarShapeChanged(shape) },
+                            label = { Text(text = shape.label) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            modifier = Modifier.testTag("incoming_avatar_shape_${shape.name.lowercase()}")
                         )
                     }
                 }
