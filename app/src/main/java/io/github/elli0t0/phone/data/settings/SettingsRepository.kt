@@ -11,6 +11,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
+import io.github.elli0t0.phone.data.settings.model.AnswerGesture
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
 import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
@@ -49,6 +50,7 @@ interface SettingsRepository {
     suspend fun setCallBackground(background: CallBackground)
     suspend fun setCallBackgroundDim(dim: Float)
     suspend fun setCallBackgroundCustomColor(color: Long)
+    suspend fun setAnswerGesture(gesture: AnswerGesture)
     suspend fun setShowNumberOnCallScreen(show: Boolean)
     suspend fun setDefaultSim(defaultSim: DefaultSim)
     suspend fun setQuickDeclineMessages(messages: List<String>)
@@ -80,6 +82,7 @@ class DataStoreSettingsRepository(
         val CALL_BACKGROUND = stringPreferencesKey("call_background")
         val CALL_BACKGROUND_DIM = floatPreferencesKey("call_background_dim")
         val CALL_BACKGROUND_CUSTOM_COLOR = longPreferencesKey("call_background_custom_color")
+        val ANSWER_GESTURE = stringPreferencesKey("answer_gesture")
         val SHOW_NUMBER_ON_CALL_SCREEN = booleanPreferencesKey("show_number_on_call_screen")
         val DEFAULT_SIM = stringPreferencesKey("default_sim")
         val QUICK_DECLINE_MESSAGES = stringPreferencesKey("quick_decline_messages")
@@ -134,6 +137,10 @@ class DataStoreSettingsRepository(
         val callBackgroundCustomColor = prefs[Keys.CALL_BACKGROUND_CUSTOM_COLOR]
             ?: AccentPreset.ONE_UI_BLUE.colorValue
 
+        val answerGestureStr = prefs[Keys.ANSWER_GESTURE]
+        val answerGesture = answerGestureStr?.let { runCatching { AnswerGesture.valueOf(it) }.getOrNull() }
+            ?: AnswerGesture.TAP
+
         val showNumberOnCallScreen = prefs[Keys.SHOW_NUMBER_ON_CALL_SCREEN] ?: true
 
         val defaultSimStr = prefs[Keys.DEFAULT_SIM]
@@ -164,6 +171,7 @@ class DataStoreSettingsRepository(
             callBackground = callBackground,
             callBackgroundDim = callBackgroundDim,
             callBackgroundCustomColor = callBackgroundCustomColor,
+            answerGesture = answerGesture,
             showNumberOnCallScreen = showNumberOnCallScreen,
             defaultSim = defaultSim,
             quickDeclineOverrides = quickDeclineOverrides
@@ -283,6 +291,12 @@ class DataStoreSettingsRepository(
     override suspend fun setCallBackgroundCustomColor(color: Long) {
         dataStore.edit { prefs ->
             prefs[Keys.CALL_BACKGROUND_CUSTOM_COLOR] = color
+        }
+    }
+
+    override suspend fun setAnswerGesture(gesture: AnswerGesture) {
+        dataStore.edit { prefs ->
+            prefs[Keys.ANSWER_GESTURE] = gesture.name
         }
     }
 

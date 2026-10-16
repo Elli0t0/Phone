@@ -150,7 +150,8 @@ class CallActivity : ComponentActivity() {
                                         settings.accentColor
                                     },
                                     dim = settings.callBackgroundDim,
-                                    showNumber = settings.showNumberOnCallScreen
+                                    showNumber = settings.showNumberOnCallScreen,
+                                    answerGesture = settings.answerGesture
                                 )
                             } else {
                                 OngoingCallScreen(

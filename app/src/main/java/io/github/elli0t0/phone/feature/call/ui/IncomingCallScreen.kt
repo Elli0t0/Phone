@@ -2,6 +2,7 @@ package io.github.elli0t0.phone.feature.call.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,9 +14,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Icon
@@ -23,19 +26,27 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
+import io.github.elli0t0.phone.data.settings.model.AnswerGesture
 import io.github.elli0t0.phone.core.design.CallAnswerGreen
 import io.github.elli0t0.phone.core.design.CallDeclineRed
 import io.github.elli0t0.phone.core.design.LocalSpacing
@@ -46,6 +57,7 @@ import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.call.OngoingCallModel
 import io.github.elli0t0.phone.data.settings.model.CallBackground
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -60,6 +72,7 @@ fun IncomingCallScreen(
     // Black scrim over the background (0 = none). Number under the name.
     dim: Float = 0f,
     showNumber: Boolean = true,
+    answerGesture: AnswerGesture = AnswerGesture.TAP,
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
@@ -172,14 +185,24 @@ fun IncomingCallScreen(
             }
         }
 
-        // Answer & Decline Buttons
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = PhoneDimens.incomingActionsBottomPadding),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        if (answerGesture == AnswerGesture.SWIPE) {
+            // Swipe to answer / decline instead of buttons.
+            SwipeAnswerBar(
+                onAnswer = onAnswer,
+                onDecline = onDecline,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = PhoneDimens.incomingActionsBottomPadding)
+            )
+        } else {
+            // Answer & Decline Buttons
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = PhoneDimens.incomingActionsBottomPadding),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
             // Decline (Red) with a pulsing red glow ring.
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 PulseRings(
@@ -251,5 +274,93 @@ fun IncomingCallScreen(
             }
         }
         }
+        }
+    }
+}
+
+/**
+ * Swipe to answer / decline: drag the thumb right to answer, left to
+ * decline. The thumb follows the finger; releasing past the threshold
+ * answers or declines, otherwise the thumb snaps back to the center.
+ */
+@Composable
+private fun SwipeAnswerBar(
+    onAnswer: () -> Unit,
+    onDecline: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val spacing = LocalSpacing.current
+    val lightHaptic = rememberLightHaptic()
+    var dragOffset by remember { mutableStateOf(0f) }
+    val density = LocalDensity.current
+    val thresholdPx = remember(density) { with(density) { 96.dp.toPx() } }
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(PhoneDimens.incomingActionButtonSize)
+                .clip(RoundedCornerShape(50))
+                .background(Color.White.copy(alpha = 0.15f))
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onHorizontalDrag = { _, dragAmount ->
+                            dragOffset = (dragOffset + dragAmount)
+                                .coerceIn(-thresholdPx * 1.5f, thresholdPx * 1.5f)
+                        },
+                        onDragEnd = {
+                            when {
+                                dragOffset > thresholdPx -> { lightHaptic(); onAnswer() }
+                                dragOffset < -thresholdPx -> { lightHaptic(); onDecline() }
+                            }
+                            dragOffset = 0f
+                        },
+                        onDragCancel = { dragOffset = 0f }
+                    )
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_call_end),
+                contentDescription = null,
+                tint = CallDeclineRed,
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(start = spacing.medium)
+                    .size(PhoneDimens.incomingActionIconSize)
+            )
+            Icon(
+                painter = painterResource(id = R.drawable.ic_phone),
+                contentDescription = null,
+                tint = CallAnswerGreen,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = spacing.medium)
+                    .size(PhoneDimens.incomingActionIconSize)
+            )
+            Box(
+                modifier = Modifier
+                    .offset { IntOffset(dragOffset.roundToInt(), 0) }
+                    .size(PhoneDimens.incomingActionButtonSize)
+                    .clip(CircleShape)
+                    .background(Color.White),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_phone),
+                    contentDescription = null,
+                    tint = CallAnswerGreen,
+                    modifier = Modifier.size(PhoneDimens.incomingActionIconSize)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(spacing.extraSmall))
+        Text(
+            text = "Swipe right to answer · Swipe left to decline",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.White.copy(alpha = 0.9f)
+        )
     }
 }

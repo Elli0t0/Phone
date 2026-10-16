@@ -56,6 +56,7 @@ import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.call.CallState
 import io.github.elli0t0.phone.data.call.OngoingCallModel
+import io.github.elli0t0.phone.data.settings.model.AnswerGesture
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.feature.call.ui.IncomingCallScreen
 import io.github.elli0t0.phone.feature.call.ui.OngoingCallScreen
@@ -65,8 +66,9 @@ import kotlin.math.roundToInt
  * Call background studio as a full page: the top half is a live
  * full-screen preview of the real call screen (incoming or ongoing)
  * with a sample caller, and the bottom half holds every option:
- * background style, dim, and number visibility. Every change saves
- * immediately and shows in the preview. Back returns to Settings.
+ * background style, answer gesture, dim, and number visibility. Every
+ * change saves immediately and shows in the preview. Back returns to
+ * Settings.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -233,7 +235,8 @@ fun CallBackgroundScreen(
                         callBackground = selected,
                         accentColor = backgroundColor,
                         dim = dimDraft,
-                        showNumber = settings.showNumberOnCallScreen
+                        showNumber = settings.showNumberOnCallScreen,
+                        answerGesture = settings.answerGesture
                     )
                 }
             }
@@ -272,6 +275,29 @@ fun CallBackgroundScreen(
                         ),
                         modifier = Modifier.testTag("call_preview_ongoing")
                     )
+                }
+
+                // Answer gesture: tap the buttons, or swipe the bar.
+                Text(
+                    text = "Answer gesture",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(spacing.small)
+                ) {
+                    AnswerGesture.entries.forEach { gesture ->
+                        FilterChip(
+                            selected = settings.answerGesture == gesture,
+                            onClick = { settingsViewModel.onAnswerGestureChanged(gesture) },
+                            label = { Text(text = gesture.label) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            modifier = Modifier.testTag("answer_gesture_${gesture.name.lowercase()}")
+                        )
+                    }
                 }
 
                 // Background style: swatch + label per option.

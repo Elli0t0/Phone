@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import io.github.elli0t0.phone.data.settings.SettingsRepository
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
+import io.github.elli0t0.phone.data.settings.model.AnswerGesture
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
 import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
@@ -165,6 +166,13 @@ class SettingsViewModel(
         }
     }
     fun setCallBackgroundCustomColor(color: Long) = onCallBackgroundCustomColorChanged(color)
+
+    fun onAnswerGestureChanged(gesture: AnswerGesture) {
+        viewModelScope.launch {
+            settingsRepository.setAnswerGesture(gesture)
+        }
+    }
+    fun setAnswerGesture(gesture: AnswerGesture) = onAnswerGestureChanged(gesture)
 
     fun onShowNumberOnCallScreenChanged(show: Boolean) {
         viewModelScope.launch {

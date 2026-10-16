@@ -69,6 +69,11 @@ enum class CallBackground(val label: String) {
     CUSTOM("Custom")
 }
 
+enum class AnswerGesture(val label: String) {
+    TAP("Tap buttons"),
+    SWIPE("Swipe")
+}
+
 enum class DefaultSim(val label: String) {
     ASK("Ask every time"),
     SIM_1("SIM 1"),
@@ -107,6 +112,7 @@ data class AppSettings(
     val callBackground: CallBackground = CallBackground.DEFAULT,
     val callBackgroundDim: Float = 0f,
     val callBackgroundCustomColor: Long = AccentPreset.ONE_UI_BLUE.colorValue,
+    val answerGesture: AnswerGesture = AnswerGesture.TAP,
     val showNumberOnCallScreen: Boolean = true,
     val defaultSim: DefaultSim = DefaultSim.ASK,
     // Quick-decline message overrides, one per reply chip. A blank entry

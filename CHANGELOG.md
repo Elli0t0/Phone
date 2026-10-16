@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.11] - 2026-10-16
+
+- Call screen customisation (1): answer gesture choice in the call background studio — Tap buttons (default) or Swipe (drag the thumb right to answer, left to decline). Applies to real incoming calls and the studio preview.
+
 ## [0.10.10] - 2026-10-16
 
 - Settings > About: "Check for update" row checks the newest GitHub release (pre-releases included) against the installed version and offers to open the release page when a newer one exists.
