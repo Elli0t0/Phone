@@ -74,6 +74,11 @@ enum class AnswerGesture(val label: String) {
     SWIPE("Swipe")
 }
 
+enum class AnswerSide(val label: String) {
+    RIGHT("Answer on right"),
+    LEFT("Answer on left")
+}
+
 enum class OngoingCallButton(val label: String) {
     MUTE("Mute"),
     SPEAKER("Speaker"),
@@ -121,6 +126,7 @@ data class AppSettings(
     val callBackgroundDim: Float = 0f,
     val callBackgroundCustomColor: Long = AccentPreset.ONE_UI_BLUE.colorValue,
     val answerGesture: AnswerGesture = AnswerGesture.TAP,
+    val answerSide: AnswerSide = AnswerSide.RIGHT,
     val ongoingCallButtons: List<OngoingCallButton> = OngoingCallButton.entries,
     val showNumberOnCallScreen: Boolean = true,
     val defaultSim: DefaultSim = DefaultSim.ASK,

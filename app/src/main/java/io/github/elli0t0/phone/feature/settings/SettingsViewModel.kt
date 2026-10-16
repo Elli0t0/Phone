@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.elli0t0.phone.data.settings.SettingsRepository
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AnswerGesture
+import io.github.elli0t0.phone.data.settings.model.AnswerSide
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
@@ -174,6 +175,13 @@ class SettingsViewModel(
         }
     }
     fun setAnswerGesture(gesture: AnswerGesture) = onAnswerGestureChanged(gesture)
+
+    fun onAnswerSideChanged(side: AnswerSide) {
+        viewModelScope.launch {
+            settingsRepository.setAnswerSide(side)
+        }
+    }
+    fun setAnswerSide(side: AnswerSide) = onAnswerSideChanged(side)
 
     fun onOngoingCallButtonsChanged(buttons: List<OngoingCallButton>) {
         viewModelScope.launch {

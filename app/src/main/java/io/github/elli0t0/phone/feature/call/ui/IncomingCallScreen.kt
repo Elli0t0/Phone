@@ -47,8 +47,10 @@ import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.data.settings.model.AnswerGesture
+import io.github.elli0t0.phone.data.settings.model.AnswerSide
 import io.github.elli0t0.phone.core.design.CallAnswerGreen
 import io.github.elli0t0.phone.core.design.CallDeclineRed
+import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.PulseRings
@@ -76,8 +78,6 @@ fun IncomingCallScreen(
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
-    val declineSource = remember { MutableInteractionSource() }
-    val answerSource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
 
     Box(
@@ -190,12 +190,14 @@ fun IncomingCallScreen(
             SwipeAnswerBar(
                 onAnswer = onAnswer,
                 onDecline = onDecline,
+                mirror = LocalAppSettings.current.answerSide == AnswerSide.LEFT,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = PhoneDimens.incomingActionsBottomPadding)
             )
         } else {
-            // Answer & Decline Buttons
+            // Answer & Decline Buttons, in the configured side order.
+            val answerOnLeft = LocalAppSettings.current.answerSide == AnswerSide.LEFT
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -203,76 +205,14 @@ fun IncomingCallScreen(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-            // Decline (Red) with a pulsing red glow ring.
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                PulseRings(
-                    color = CallDeclineRed,
-                    modifier = Modifier.size(PhoneDimens.incomingActionButtonSize)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(PhoneDimens.incomingActionButtonSize)
-                            .clip(CircleShape)
-                            .background(CallDeclineRed)
-                            .pressScale(declineSource)
-                            .clickable(
-                                interactionSource = declineSource,
-                                indication = ripple()
-                            ) { lightHaptic(); onDecline() }
-                            .testTag("decline_call_button"),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_call_end),
-                            contentDescription = stringResource(id = R.string.call_action_decline),
-                            tint = Color.White,
-                            modifier = Modifier.size(PhoneDimens.incomingActionIconSize)
-                        )
-                    }
+                if (answerOnLeft) {
+                    AnswerButton(onAnswer = onAnswer)
+                    DeclineButton(onDecline = onDecline)
+                } else {
+                    DeclineButton(onDecline = onDecline)
+                    AnswerButton(onAnswer = onAnswer)
                 }
-                Spacer(modifier = Modifier.height(spacing.extraSmall))
-                Text(
-                    text = stringResource(id = R.string.call_action_decline),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.9f)
-                )
             }
-
-            // Answer (Green) with a pulsing green glow ring.
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                PulseRings(
-                    color = CallAnswerGreen,
-                    modifier = Modifier.size(PhoneDimens.incomingActionButtonSize)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(PhoneDimens.incomingActionButtonSize)
-                            .clip(CircleShape)
-                            .background(CallAnswerGreen)
-                            .pressScale(answerSource)
-                            .clickable(
-                                interactionSource = answerSource,
-                                indication = ripple()
-                            ) { lightHaptic(); onAnswer() }
-                            .testTag("answer_call_button"),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_phone),
-                            contentDescription = stringResource(id = R.string.call_action_answer),
-                            tint = Color.White,
-                            modifier = Modifier.size(PhoneDimens.incomingActionIconSize)
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(spacing.extraSmall))
-                Text(
-                    text = stringResource(id = R.string.call_action_answer),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.9f)
-                )
-            }
-        }
         }
         }
     }
@@ -287,6 +227,7 @@ fun IncomingCallScreen(
 private fun SwipeAnswerBar(
     onAnswer: () -> Unit,
     onDecline: () -> Unit,
+    mirror: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
@@ -312,8 +253,14 @@ private fun SwipeAnswerBar(
                         },
                         onDragEnd = {
                             when {
-                                dragOffset > thresholdPx -> { lightHaptic(); onAnswer() }
-                                dragOffset < -thresholdPx -> { lightHaptic(); onDecline() }
+                                dragOffset > thresholdPx -> {
+                                    lightHaptic()
+                                    if (mirror) onDecline() else onAnswer()
+                                }
+                                dragOffset < -thresholdPx -> {
+                                    lightHaptic()
+                                    if (mirror) onAnswer() else onDecline()
+                                }
                             }
                             dragOffset = 0f
                         },
@@ -323,18 +270,22 @@ private fun SwipeAnswerBar(
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.ic_call_end),
+                painter = painterResource(
+                    id = if (mirror) R.drawable.ic_phone else R.drawable.ic_call_end
+                ),
                 contentDescription = null,
-                tint = CallDeclineRed,
+                tint = if (mirror) CallAnswerGreen else CallDeclineRed,
                 modifier = Modifier
                     .align(Alignment.CenterStart)
                     .padding(start = spacing.medium)
                     .size(PhoneDimens.incomingActionIconSize)
             )
             Icon(
-                painter = painterResource(id = R.drawable.ic_phone),
+                painter = painterResource(
+                    id = if (mirror) R.drawable.ic_call_end else R.drawable.ic_phone
+                ),
                 contentDescription = null,
-                tint = CallAnswerGreen,
+                tint = if (mirror) CallDeclineRed else CallAnswerGreen,
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
                     .padding(end = spacing.medium)
@@ -358,7 +309,93 @@ private fun SwipeAnswerBar(
         }
         Spacer(modifier = Modifier.height(spacing.extraSmall))
         Text(
-            text = "Swipe right to answer · Swipe left to decline",
+            text = if (mirror) {
+                "Swipe left to answer · Swipe right to decline"
+            } else {
+                "Swipe right to answer · Swipe left to decline"
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.White.copy(alpha = 0.9f)
+        )
+    }
+}
+
+/** Decline button: red circle with glow ring + label. */
+@Composable
+private fun DeclineButton(onDecline: () -> Unit) {
+    val spacing = LocalSpacing.current
+    val source = remember { MutableInteractionSource() }
+    val lightHaptic = rememberLightHaptic()
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        PulseRings(
+            color = CallDeclineRed,
+            modifier = Modifier.size(PhoneDimens.incomingActionButtonSize)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(PhoneDimens.incomingActionButtonSize)
+                    .clip(CircleShape)
+                    .background(CallDeclineRed)
+                    .pressScale(source)
+                    .clickable(
+                        interactionSource = source,
+                        indication = ripple()
+                    ) { lightHaptic(); onDecline() }
+                    .testTag("decline_call_button"),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_call_end),
+                    contentDescription = stringResource(id = R.string.call_action_decline),
+                    tint = Color.White,
+                    modifier = Modifier.size(PhoneDimens.incomingActionIconSize)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(spacing.extraSmall))
+        Text(
+            text = stringResource(id = R.string.call_action_decline),
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.White.copy(alpha = 0.9f)
+        )
+    }
+}
+
+/** Answer button: green circle with glow ring + label. */
+@Composable
+private fun AnswerButton(onAnswer: () -> Unit) {
+    val spacing = LocalSpacing.current
+    val source = remember { MutableInteractionSource() }
+    val lightHaptic = rememberLightHaptic()
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        PulseRings(
+            color = CallAnswerGreen,
+            modifier = Modifier.size(PhoneDimens.incomingActionButtonSize)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(PhoneDimens.incomingActionButtonSize)
+                    .clip(CircleShape)
+                    .background(CallAnswerGreen)
+                    .pressScale(source)
+                    .clickable(
+                        interactionSource = source,
+                        indication = ripple()
+                    ) { lightHaptic(); onAnswer() }
+                    .testTag("answer_call_button"),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_phone),
+                    contentDescription = stringResource(id = R.string.call_action_answer),
+                    tint = Color.White,
+                    modifier = Modifier.size(PhoneDimens.incomingActionIconSize)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(spacing.extraSmall))
+        Text(
+            text = stringResource(id = R.string.call_action_answer),
             style = MaterialTheme.typography.bodyMedium,
             color = Color.White.copy(alpha = 0.9f)
         )

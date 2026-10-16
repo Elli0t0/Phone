@@ -58,6 +58,7 @@ import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.call.CallState
 import io.github.elli0t0.phone.data.call.OngoingCallModel
 import io.github.elli0t0.phone.data.settings.model.AnswerGesture
+import io.github.elli0t0.phone.data.settings.model.AnswerSide
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.feature.call.ui.IncomingCallScreen
@@ -298,6 +299,30 @@ fun CallBackgroundScreen(
                                 selectedLabelColor = MaterialTheme.colorScheme.onPrimary
                             ),
                             modifier = Modifier.testTag("answer_gesture_${gesture.name.lowercase()}")
+                        )
+                    }
+                }
+
+                // Answer side: which side the answer button (or swipe
+                // direction) sits on.
+                Text(
+                    text = "Answer side",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(spacing.small)
+                ) {
+                    AnswerSide.entries.forEach { side ->
+                        FilterChip(
+                            selected = settings.answerSide == side,
+                            onClick = { settingsViewModel.onAnswerSideChanged(side) },
+                            label = { Text(text = side.label) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            modifier = Modifier.testTag("answer_side_${side.name.lowercase()}")
                         )
                     }
                 }

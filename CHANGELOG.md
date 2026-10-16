@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.13] - 2026-10-16
+
+- Call screen customisation (3): answer side — Answer on right (default) or Answer on left, in the call background studio. Swaps the answer/decline buttons, and mirrors the swipe bar (swipe left to answer) in swipe mode.
+
 ## [0.10.12] - 2026-10-16
 
 - Call screen customisation (2): ongoing-call buttons (Mute, Speaker, Bluetooth, Keypad, Hold) can be shown/hidden and reordered in the call background studio; the ongoing call screen renders them in that order, 3 per row. End call stays always visible.
