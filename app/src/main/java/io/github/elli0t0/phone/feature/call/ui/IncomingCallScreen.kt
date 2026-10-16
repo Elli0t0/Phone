@@ -350,6 +350,9 @@ private fun SwipeAnswerBar(
                 .fillMaxWidth()
                 .height(PhoneDimens.incomingActionButtonSize * answerScale)
         ) {
+            // Captured here: maxWidth is a BoxWithConstraintsScope
+            // property, not visible inside the inner Box content.
+            val trackWidth = maxWidth
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -391,7 +394,7 @@ private fun SwipeAnswerBar(
                 }
                 // Idle shimmer sweep across the track (ON only).
                 if (LocalAppSettings.current.animationOption == AnimationOption.ON) {
-                    SwipeShimmer(trackWidth = maxWidth)
+                    SwipeShimmer(trackWidth = trackWidth)
                 }
                 Icon(
                     painter = painterResource(
