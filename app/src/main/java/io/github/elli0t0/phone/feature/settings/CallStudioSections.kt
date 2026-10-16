@@ -42,6 +42,7 @@ import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.settings.model.AnswerGesture
 import io.github.elli0t0.phone.data.settings.model.AnswerSide
 import io.github.elli0t0.phone.data.settings.model.CallBackground
+import io.github.elli0t0.phone.data.settings.model.AnswerButtonSize
 import io.github.elli0t0.phone.data.settings.model.CallerInfoPosition
 import io.github.elli0t0.phone.data.settings.model.ControlGridAlignment
 import io.github.elli0t0.phone.data.settings.model.EndCallButtonSize
@@ -156,6 +157,49 @@ fun CallStudioSections(
                     modifier = Modifier.testTag("answer_side_${side.name.lowercase()}")
                 )
             }
+        }
+
+        // Answer button size: how big the answer/decline buttons
+        // (or the swipe thumb) are on the incoming call screen.
+        Text(
+            text = "Answer button size",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(spacing.small)
+        ) {
+            AnswerButtonSize.entries.forEach { size ->
+                FilterChip(
+                    selected = settings.answerButtonSize == size,
+                    onClick = { settingsViewModel.onAnswerButtonSizeChanged(size) },
+                    label = { Text(text = size.label) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    modifier = Modifier.testTag("answer_button_size_${size.name.lowercase()}")
+                )
+            }
+        }
+
+        // Quick replies: show the quick-reply chips on incoming calls.
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "Quick replies",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
+            )
+            Switch(
+                checked = settings.showQuickReplies,
+                onCheckedChange = { settingsViewModel.onShowQuickRepliesChanged(it) },
+                modifier = Modifier.testTag("quick_replies_switch")
+            )
         }
 
         // Call controls: which ongoing-call buttons show, in order.

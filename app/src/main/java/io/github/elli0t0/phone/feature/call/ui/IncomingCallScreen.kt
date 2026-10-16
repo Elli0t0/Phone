@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
+import io.github.elli0t0.phone.data.settings.model.AnswerButtonSize
 import io.github.elli0t0.phone.data.settings.model.AnswerGesture
 import io.github.elli0t0.phone.data.settings.model.AnswerSide
 import io.github.elli0t0.phone.data.settings.model.CallerInfoPosition
@@ -165,7 +166,9 @@ fun IncomingCallScreen(
             Spacer(modifier = Modifier.weight(1f))
         }
 
-        // Quick responses: decline the call and send the message as a reply SMS
+        // Quick responses: decline the call and send the message as a reply SMS.
+        // Hidden when the quick-replies setting is off.
+        if (LocalAppSettings.current.showQuickReplies) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
@@ -195,6 +198,7 @@ fun IncomingCallScreen(
                     )
                 }
             }
+        }
         }
 
         if (answerGesture == AnswerGesture.SWIPE) {
@@ -247,6 +251,9 @@ private fun SwipeAnswerBar(
     var dragOffset by remember { mutableStateOf(0f) }
     val density = LocalDensity.current
     val thresholdPx = remember(density) { with(density) { 96.dp.toPx() } }
+    // Answer button size scales the bar, thumb, and icons together
+    // (the thumb always fills the bar height).
+    val answerScale = LocalAppSettings.current.answerButtonSize.scale
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -254,7 +261,7 @@ private fun SwipeAnswerBar(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(PhoneDimens.incomingActionButtonSize)
+                .height(PhoneDimens.incomingActionButtonSize * answerScale)
                 .clip(RoundedCornerShape(50))
                 .background(Color.White.copy(alpha = 0.15f))
                 .pointerInput(Unit) {
@@ -290,7 +297,7 @@ private fun SwipeAnswerBar(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
                     .padding(start = spacing.medium)
-                    .size(PhoneDimens.incomingActionIconSize)
+                    .size(PhoneDimens.incomingActionIconSize * answerScale)
             )
             Icon(
                 painter = painterResource(
@@ -301,12 +308,12 @@ private fun SwipeAnswerBar(
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
                     .padding(end = spacing.medium)
-                    .size(PhoneDimens.incomingActionIconSize)
+                    .size(PhoneDimens.incomingActionIconSize * answerScale)
             )
             Box(
                 modifier = Modifier
                     .offset { IntOffset(dragOffset.roundToInt(), 0) }
-                    .size(PhoneDimens.incomingActionButtonSize)
+                    .size(PhoneDimens.incomingActionButtonSize * answerScale)
                     .clip(CircleShape)
                     .background(Color.White),
                 contentAlignment = Alignment.Center
@@ -315,7 +322,7 @@ private fun SwipeAnswerBar(
                     painter = painterResource(id = R.drawable.ic_phone),
                     contentDescription = null,
                     tint = CallAnswerGreen,
-                    modifier = Modifier.size(PhoneDimens.incomingActionIconSize)
+                    modifier = Modifier.size(PhoneDimens.incomingActionIconSize * answerScale)
                 )
             }
         }
@@ -338,14 +345,15 @@ private fun DeclineButton(onDecline: () -> Unit) {
     val spacing = LocalSpacing.current
     val source = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
+    val answerScale = LocalAppSettings.current.answerButtonSize.scale
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         PulseRings(
             color = CallDeclineRed,
-            modifier = Modifier.size(PhoneDimens.incomingActionButtonSize)
+            modifier = Modifier.size(PhoneDimens.incomingActionButtonSize * answerScale)
         ) {
             Box(
                 modifier = Modifier
-                    .size(PhoneDimens.incomingActionButtonSize)
+                    .size(PhoneDimens.incomingActionButtonSize * answerScale)
                     .clip(CircleShape)
                     .background(CallDeclineRed)
                     .pressScale(source)
@@ -360,7 +368,7 @@ private fun DeclineButton(onDecline: () -> Unit) {
                     painter = painterResource(id = R.drawable.ic_call_end),
                     contentDescription = stringResource(id = R.string.call_action_decline),
                     tint = Color.White,
-                    modifier = Modifier.size(PhoneDimens.incomingActionIconSize)
+                    modifier = Modifier.size(PhoneDimens.incomingActionIconSize * answerScale)
                 )
             }
         }
@@ -379,14 +387,15 @@ private fun AnswerButton(onAnswer: () -> Unit) {
     val spacing = LocalSpacing.current
     val source = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
+    val answerScale = LocalAppSettings.current.answerButtonSize.scale
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         PulseRings(
             color = CallAnswerGreen,
-            modifier = Modifier.size(PhoneDimens.incomingActionButtonSize)
+            modifier = Modifier.size(PhoneDimens.incomingActionButtonSize * answerScale)
         ) {
             Box(
                 modifier = Modifier
-                    .size(PhoneDimens.incomingActionButtonSize)
+                    .size(PhoneDimens.incomingActionButtonSize * answerScale)
                     .clip(CircleShape)
                     .background(CallAnswerGreen)
                     .pressScale(source)
@@ -401,7 +410,7 @@ private fun AnswerButton(onAnswer: () -> Unit) {
                     painter = painterResource(id = R.drawable.ic_phone),
                     contentDescription = stringResource(id = R.string.call_action_answer),
                     tint = Color.White,
-                    modifier = Modifier.size(PhoneDimens.incomingActionIconSize)
+                    modifier = Modifier.size(PhoneDimens.incomingActionIconSize * answerScale)
                 )
             }
         }

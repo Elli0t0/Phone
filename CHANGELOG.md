@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.20] - 2026-10-16
+
+- Call screen customisation (9): answer button size — Small, Medium (default), or Large for the answer/decline buttons and the swipe bar thumb/icons on the incoming call screen; and a Quick replies switch to show or hide the quick-reply chips. Both in the call background studio.
+
 ## [0.10.19] - 2026-10-16
 
 - Call screen customisation (8): control grid alignment — Spread (default), Center, Start, or End for the ongoing-call buttons in each row; and end call size — Small, Medium (default), or Large for the red end-call button. Both in the call background studio.

@@ -8,6 +8,7 @@ import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AnswerGesture
 import io.github.elli0t0.phone.data.settings.model.AnswerSide
 import io.github.elli0t0.phone.data.settings.model.CallerInfoPosition
+import io.github.elli0t0.phone.data.settings.model.AnswerButtonSize
 import io.github.elli0t0.phone.data.settings.model.ControlGridAlignment
 import io.github.elli0t0.phone.data.settings.model.EndCallButtonSize
 import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
@@ -214,6 +215,20 @@ class SettingsViewModel(
         }
     }
     fun setEndCallButtonSize(size: EndCallButtonSize) = onEndCallButtonSizeChanged(size)
+
+    fun onAnswerButtonSizeChanged(size: AnswerButtonSize) {
+        viewModelScope.launch {
+            settingsRepository.setAnswerButtonSize(size)
+        }
+    }
+    fun setAnswerButtonSize(size: AnswerButtonSize) = onAnswerButtonSizeChanged(size)
+
+    fun onShowQuickRepliesChanged(show: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setShowQuickReplies(show)
+        }
+    }
+    fun setShowQuickReplies(show: Boolean) = onShowQuickRepliesChanged(show)
 
     fun onOngoingCallButtonsChanged(buttons: List<OngoingCallButton>) {
         viewModelScope.launch {

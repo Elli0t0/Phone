@@ -14,6 +14,7 @@ import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AnswerGesture
 import io.github.elli0t0.phone.data.settings.model.AnswerSide
 import io.github.elli0t0.phone.data.settings.model.CallerInfoPosition
+import io.github.elli0t0.phone.data.settings.model.AnswerButtonSize
 import io.github.elli0t0.phone.data.settings.model.ControlGridAlignment
 import io.github.elli0t0.phone.data.settings.model.EndCallButtonSize
 import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
@@ -62,6 +63,8 @@ interface SettingsRepository {
     suspend fun setCallerInfoPosition(position: CallerInfoPosition)
     suspend fun setControlGridAlignment(alignment: ControlGridAlignment)
     suspend fun setEndCallButtonSize(size: EndCallButtonSize)
+    suspend fun setAnswerButtonSize(size: AnswerButtonSize)
+    suspend fun setShowQuickReplies(show: Boolean)
     suspend fun setOngoingCallButtons(buttons: List<OngoingCallButton>)
     suspend fun setShowNumberOnCallScreen(show: Boolean)
     suspend fun setDefaultSim(defaultSim: DefaultSim)
@@ -100,6 +103,8 @@ class DataStoreSettingsRepository(
         val CALLER_INFO_POSITION = stringPreferencesKey("caller_info_position")
         val CONTROL_GRID_ALIGNMENT = stringPreferencesKey("control_grid_alignment")
         val END_CALL_BUTTON_SIZE = stringPreferencesKey("end_call_button_size")
+        val ANSWER_BUTTON_SIZE = stringPreferencesKey("answer_button_size")
+        val SHOW_QUICK_REPLIES = booleanPreferencesKey("show_quick_replies")
         val ONGOING_CALL_BUTTONS = stringPreferencesKey("ongoing_call_buttons")
         val SHOW_NUMBER_ON_CALL_SCREEN = booleanPreferencesKey("show_number_on_call_screen")
         val DEFAULT_SIM = stringPreferencesKey("default_sim")
@@ -179,6 +184,12 @@ class DataStoreSettingsRepository(
         val endCallButtonSize = endCallButtonSizeStr?.let { runCatching { EndCallButtonSize.valueOf(it) }.getOrNull() }
             ?: EndCallButtonSize.MEDIUM
 
+        val answerButtonSizeStr = prefs[Keys.ANSWER_BUTTON_SIZE]
+        val answerButtonSize = answerButtonSizeStr?.let { runCatching { AnswerButtonSize.valueOf(it) }.getOrNull() }
+            ?: AnswerButtonSize.MEDIUM
+
+        val showQuickReplies = prefs[Keys.SHOW_QUICK_REPLIES] ?: true
+
         // Shown ongoing-call buttons, in display order, as comma-separated
         // names. Missing key = all buttons; empty = none (user hid them all).
         val ongoingCallButtons = prefs[Keys.ONGOING_CALL_BUTTONS]
@@ -222,6 +233,8 @@ class DataStoreSettingsRepository(
             callerInfoPosition = callerInfoPosition,
             controlGridAlignment = controlGridAlignment,
             endCallButtonSize = endCallButtonSize,
+            answerButtonSize = answerButtonSize,
+            showQuickReplies = showQuickReplies,
             ongoingCallButtons = ongoingCallButtons,
             showNumberOnCallScreen = showNumberOnCallScreen,
             defaultSim = defaultSim,
@@ -378,6 +391,18 @@ class DataStoreSettingsRepository(
     override suspend fun setEndCallButtonSize(size: EndCallButtonSize) {
         dataStore.edit { prefs ->
             prefs[Keys.END_CALL_BUTTON_SIZE] = size.name
+        }
+    }
+
+    override suspend fun setAnswerButtonSize(size: AnswerButtonSize) {
+        dataStore.edit { prefs ->
+            prefs[Keys.ANSWER_BUTTON_SIZE] = size.name
+        }
+    }
+
+    override suspend fun setShowQuickReplies(show: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.SHOW_QUICK_REPLIES] = show
         }
     }
 
