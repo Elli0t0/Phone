@@ -40,6 +40,7 @@ import io.github.elli0t0.phone.core.design.InCallControlActive
 import io.github.elli0t0.phone.core.design.InCallControlActiveContent
 import io.github.elli0t0.phone.core.design.InCallControlBackground
 import io.github.elli0t0.phone.core.design.LiquidGlassEndCall
+import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.callBackgroundBrush
@@ -48,6 +49,7 @@ import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.call.CallState
 import io.github.elli0t0.phone.data.call.OngoingCallModel
 import io.github.elli0t0.phone.data.settings.model.CallBackground
+import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 
 @Composable
 fun OngoingCallScreen(
@@ -206,60 +208,64 @@ fun OngoingCallScreen(
                         verticalArrangement = Arrangement.spacedBy(PhoneDimens.ongoingControlGridSpacing),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            InCallControlButton(
-                                iconRes = if (callModel.isMuted) R.drawable.ic_mic_off else R.drawable.ic_mic,
-                                label = if (callModel.isMuted) {
-                                    stringResource(id = R.string.call_action_unmute)
-                                } else {
-                                    stringResource(id = R.string.call_action_mute)
-                                },
-                                isActive = callModel.isMuted,
-                                onClick = { onMuteToggle(!callModel.isMuted) },
-                                testTag = "mute_button"
-                            )
-                            InCallControlButton(
-                                iconRes = R.drawable.ic_volume_up,
-                                label = stringResource(id = R.string.call_action_speaker),
-                                isActive = isSpeaker,
-                                onClick = onSpeakerToggle,
-                                testTag = "speaker_button"
-                            )
-                            if (isBluetoothAvailable) {
-                                InCallControlButton(
-                                    iconRes = R.drawable.ic_bluetooth,
-                                    label = stringResource(id = R.string.call_action_bluetooth),
-                                    isActive = isBluetooth,
-                                    onClick = onBluetoothToggle,
-                                    testTag = "bluetooth_button"
-                                )
-                            }
+                        // Buttons from the setting, in order, 3 per row.
+                        // Bluetooth still hides when no device is available.
+                        val visibleButtons = LocalAppSettings.current.ongoingCallButtons.filter { button ->
+                            button != OngoingCallButton.BLUETOOTH || isBluetoothAvailable
                         }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            InCallControlButton(
-                                iconRes = R.drawable.ic_dialpad,
-                                label = stringResource(id = R.string.call_action_keypad),
-                                isActive = false,
-                                onClick = { showKeypad = true },
-                                testTag = "keypad_button"
-                            )
-                            InCallControlButton(
-                                iconRes = if (isHolding) R.drawable.ic_play else R.drawable.ic_pause,
-                                label = if (isHolding) {
-                                    stringResource(id = R.string.call_action_resume)
-                                } else {
-                                    stringResource(id = R.string.call_action_hold)
-                                },
-                                isActive = isHolding,
-                                onClick = { onHoldToggle(!isHolding) },
-                                testTag = "hold_button"
-                            )
+                        visibleButtons.chunked(3).forEach { rowButtons ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                rowButtons.forEach { button ->
+                                    when (button) {
+                                        OngoingCallButton.MUTE -> InCallControlButton(
+                                            iconRes = if (callModel.isMuted) R.drawable.ic_mic_off else R.drawable.ic_mic,
+                                            label = if (callModel.isMuted) {
+                                                stringResource(id = R.string.call_action_unmute)
+                                            } else {
+                                                stringResource(id = R.string.call_action_mute)
+                                            },
+                                            isActive = callModel.isMuted,
+                                            onClick = { onMuteToggle(!callModel.isMuted) },
+                                            testTag = "mute_button"
+                                        )
+                                        OngoingCallButton.SPEAKER -> InCallControlButton(
+                                            iconRes = R.drawable.ic_volume_up,
+                                            label = stringResource(id = R.string.call_action_speaker),
+                                            isActive = isSpeaker,
+                                            onClick = onSpeakerToggle,
+                                            testTag = "speaker_button"
+                                        )
+                                        OngoingCallButton.BLUETOOTH -> InCallControlButton(
+                                            iconRes = R.drawable.ic_bluetooth,
+                                            label = stringResource(id = R.string.call_action_bluetooth),
+                                            isActive = isBluetooth,
+                                            onClick = onBluetoothToggle,
+                                            testTag = "bluetooth_button"
+                                        )
+                                        OngoingCallButton.KEYPAD -> InCallControlButton(
+                                            iconRes = R.drawable.ic_dialpad,
+                                            label = stringResource(id = R.string.call_action_keypad),
+                                            isActive = false,
+                                            onClick = { showKeypad = true },
+                                            testTag = "keypad_button"
+                                        )
+                                        OngoingCallButton.HOLD -> InCallControlButton(
+                                            iconRes = if (isHolding) R.drawable.ic_play else R.drawable.ic_pause,
+                                            label = if (isHolding) {
+                                                stringResource(id = R.string.call_action_resume)
+                                            } else {
+                                                stringResource(id = R.string.call_action_hold)
+                                            },
+                                            isActive = isHolding,
+                                            onClick = { onHoldToggle(!isHolding) },
+                                            testTag = "hold_button"
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }

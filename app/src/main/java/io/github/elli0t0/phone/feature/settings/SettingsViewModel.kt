@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.elli0t0.phone.data.settings.SettingsRepository
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AnswerGesture
+import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
 import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
@@ -173,6 +174,13 @@ class SettingsViewModel(
         }
     }
     fun setAnswerGesture(gesture: AnswerGesture) = onAnswerGestureChanged(gesture)
+
+    fun onOngoingCallButtonsChanged(buttons: List<OngoingCallButton>) {
+        viewModelScope.launch {
+            settingsRepository.setOngoingCallButtons(buttons)
+        }
+    }
+    fun setOngoingCallButtons(buttons: List<OngoingCallButton>) = onOngoingCallButtonsChanged(buttons)
 
     fun onShowNumberOnCallScreenChanged(show: Boolean) {
         viewModelScope.launch {

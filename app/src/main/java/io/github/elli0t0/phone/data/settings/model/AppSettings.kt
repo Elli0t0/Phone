@@ -74,6 +74,14 @@ enum class AnswerGesture(val label: String) {
     SWIPE("Swipe")
 }
 
+enum class OngoingCallButton(val label: String) {
+    MUTE("Mute"),
+    SPEAKER("Speaker"),
+    BLUETOOTH("Bluetooth"),
+    KEYPAD("Keypad"),
+    HOLD("Hold")
+}
+
 enum class DefaultSim(val label: String) {
     ASK("Ask every time"),
     SIM_1("SIM 1"),
@@ -113,6 +121,7 @@ data class AppSettings(
     val callBackgroundDim: Float = 0f,
     val callBackgroundCustomColor: Long = AccentPreset.ONE_UI_BLUE.colorValue,
     val answerGesture: AnswerGesture = AnswerGesture.TAP,
+    val ongoingCallButtons: List<OngoingCallButton> = OngoingCallButton.entries,
     val showNumberOnCallScreen: Boolean = true,
     val defaultSim: DefaultSim = DefaultSim.ASK,
     // Quick-decline message overrides, one per reply chip. A blank entry

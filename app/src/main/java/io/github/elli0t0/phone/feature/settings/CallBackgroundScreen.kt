@@ -31,6 +31,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
@@ -58,6 +59,7 @@ import io.github.elli0t0.phone.data.call.CallState
 import io.github.elli0t0.phone.data.call.OngoingCallModel
 import io.github.elli0t0.phone.data.settings.model.AnswerGesture
 import io.github.elli0t0.phone.data.settings.model.CallBackground
+import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.feature.call.ui.IncomingCallScreen
 import io.github.elli0t0.phone.feature.call.ui.OngoingCallScreen
 import kotlin.math.roundToInt
@@ -297,6 +299,87 @@ fun CallBackgroundScreen(
                             ),
                             modifier = Modifier.testTag("answer_gesture_${gesture.name.lowercase()}")
                         )
+                    }
+                }
+
+                // Call controls: which ongoing-call buttons show, in order.
+                // Shown buttons can be reordered (up/down) or hidden;
+                // hidden buttons can be added back.
+                Text(
+                    text = "Call controls",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                val shownButtons = settings.ongoingCallButtons
+                val hiddenButtons = OngoingCallButton.entries - shownButtons.toSet()
+                Column(verticalArrangement = Arrangement.spacedBy(spacing.small)) {
+                    shownButtons.forEachIndexed { index, button ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(spacing.small)
+                        ) {
+                            Text(
+                                text = button.label,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f)
+                            )
+                            TextButton(
+                                onClick = {
+                                    val list = shownButtons.toMutableList()
+                                    val item = list.removeAt(index)
+                                    list.add(index - 1, item)
+                                    settingsViewModel.onOngoingCallButtonsChanged(list)
+                                },
+                                enabled = index > 0,
+                                modifier = Modifier.testTag("control_move_up_${button.name}")
+                            ) {
+                                Text(text = "↑")
+                            }
+                            TextButton(
+                                onClick = {
+                                    val list = shownButtons.toMutableList()
+                                    val item = list.removeAt(index)
+                                    list.add(index + 1, item)
+                                    settingsViewModel.onOngoingCallButtonsChanged(list)
+                                },
+                                enabled = index < shownButtons.lastIndex,
+                                modifier = Modifier.testTag("control_move_down_${button.name}")
+                            ) {
+                                Text(text = "↓")
+                            }
+                            Switch(
+                                checked = true,
+                                onCheckedChange = {
+                                    settingsViewModel.onOngoingCallButtonsChanged(
+                                        shownButtons - button
+                                    )
+                                },
+                                modifier = Modifier.testTag("control_toggle_${button.name}")
+                            )
+                        }
+                    }
+                    hiddenButtons.forEach { button ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(spacing.small)
+                        ) {
+                            Text(
+                                text = button.label,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Switch(
+                                checked = false,
+                                onCheckedChange = {
+                                    settingsViewModel.onOngoingCallButtonsChanged(
+                                        shownButtons + button
+                                    )
+                                },
+                                modifier = Modifier.testTag("control_toggle_${button.name}")
+                            )
+                        }
                     }
                 }
 

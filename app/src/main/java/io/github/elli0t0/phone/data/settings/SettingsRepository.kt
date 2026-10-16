@@ -12,6 +12,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AnswerGesture
+import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
 import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
@@ -51,6 +52,7 @@ interface SettingsRepository {
     suspend fun setCallBackgroundDim(dim: Float)
     suspend fun setCallBackgroundCustomColor(color: Long)
     suspend fun setAnswerGesture(gesture: AnswerGesture)
+    suspend fun setOngoingCallButtons(buttons: List<OngoingCallButton>)
     suspend fun setShowNumberOnCallScreen(show: Boolean)
     suspend fun setDefaultSim(defaultSim: DefaultSim)
     suspend fun setQuickDeclineMessages(messages: List<String>)
@@ -83,6 +85,7 @@ class DataStoreSettingsRepository(
         val CALL_BACKGROUND_DIM = floatPreferencesKey("call_background_dim")
         val CALL_BACKGROUND_CUSTOM_COLOR = longPreferencesKey("call_background_custom_color")
         val ANSWER_GESTURE = stringPreferencesKey("answer_gesture")
+        val ONGOING_CALL_BUTTONS = stringPreferencesKey("ongoing_call_buttons")
         val SHOW_NUMBER_ON_CALL_SCREEN = booleanPreferencesKey("show_number_on_call_screen")
         val DEFAULT_SIM = stringPreferencesKey("default_sim")
         val QUICK_DECLINE_MESSAGES = stringPreferencesKey("quick_decline_messages")
@@ -141,6 +144,13 @@ class DataStoreSettingsRepository(
         val answerGesture = answerGestureStr?.let { runCatching { AnswerGesture.valueOf(it) }.getOrNull() }
             ?: AnswerGesture.TAP
 
+        // Shown ongoing-call buttons, in display order, as comma-separated
+        // names. Missing key = all buttons; empty = none (user hid them all).
+        val ongoingCallButtons = prefs[Keys.ONGOING_CALL_BUTTONS]
+            ?.split(",")
+            ?.mapNotNull { runCatching { OngoingCallButton.valueOf(it) }.getOrNull() }
+            ?: OngoingCallButton.entries
+
         val showNumberOnCallScreen = prefs[Keys.SHOW_NUMBER_ON_CALL_SCREEN] ?: true
 
         val defaultSimStr = prefs[Keys.DEFAULT_SIM]
@@ -172,6 +182,7 @@ class DataStoreSettingsRepository(
             callBackgroundDim = callBackgroundDim,
             callBackgroundCustomColor = callBackgroundCustomColor,
             answerGesture = answerGesture,
+            ongoingCallButtons = ongoingCallButtons,
             showNumberOnCallScreen = showNumberOnCallScreen,
             defaultSim = defaultSim,
             quickDeclineOverrides = quickDeclineOverrides
@@ -297,6 +308,12 @@ class DataStoreSettingsRepository(
     override suspend fun setAnswerGesture(gesture: AnswerGesture) {
         dataStore.edit { prefs ->
             prefs[Keys.ANSWER_GESTURE] = gesture.name
+        }
+    }
+
+    override suspend fun setOngoingCallButtons(buttons: List<OngoingCallButton>) {
+        dataStore.edit { prefs ->
+            prefs[Keys.ONGOING_CALL_BUTTONS] = buttons.joinToString(",") { it.name }
         }
     }
 
