@@ -186,6 +186,7 @@ data class AppSettings(
     val endCallButtonSize: EndCallButtonSize = EndCallButtonSize.MEDIUM,
     val answerButtonSize: AnswerButtonSize = AnswerButtonSize.MEDIUM,
     val showQuickReplies: Boolean = true,
+    val quickRepliesBelowButtons: Boolean = false,
     val controlButtonSize: ControlButtonSize = ControlButtonSize.MEDIUM,
     val dtmfKeySize: DtmfKeySize = DtmfKeySize.MEDIUM,
     val incomingAvatarSize: IncomingAvatarSize = IncomingAvatarSize.MEDIUM,

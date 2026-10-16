@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.24] - 2026-10-16
+
+- Call screen customisation (13): quick replies position — a switch in the call background studio puts the quick-reply chips below the answer buttons on the incoming call screen (above by default).
+
 ## [0.10.23] - 2026-10-16
 
 - Call screen customisation (12): avatar shape — Circle (default) or Rounded for the incoming-call avatar, in the call background studio.

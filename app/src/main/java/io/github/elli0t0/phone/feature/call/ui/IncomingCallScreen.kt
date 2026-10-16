@@ -175,70 +175,93 @@ fun IncomingCallScreen(
             Spacer(modifier = Modifier.weight(1f))
         }
 
-        // Quick responses: decline the call and send the message as a reply SMS.
-        // Hidden when the quick-replies setting is off.
-        if (LocalAppSettings.current.showQuickReplies) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
+        // Quick replies position: above (default) or below the answer buttons.
+        val quickRepliesBelow = LocalAppSettings.current.quickRepliesBelowButtons
+        if (!quickRepliesBelow) QuickRepliesSection(quickDeclineMessages = quickDeclineMessages, onDeclineWithMessage = onDeclineWithMessage)
+        AnswerControlsSection(answerGesture = answerGesture, onAnswer = onAnswer, onDecline = onDecline)
+        if (quickRepliesBelow) QuickRepliesSection(quickDeclineMessages = quickDeclineMessages, onDeclineWithMessage = onDeclineWithMessage)
+        }
+    }
+}
+
+/**
+ * Quick replies: decline the call and send the message as a reply SMS.
+ * Hidden when the quick-replies setting is off.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun QuickRepliesSection(
+    quickDeclineMessages: List<String>,
+    onDeclineWithMessage: (String) -> Unit
+) {
+    if (!LocalAppSettings.current.showQuickReplies) return
+    val spacing = LocalSpacing.current
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = spacing.medium)
+    ) {
+        Text(
+            text = stringResource(id = R.string.quick_reply_title),
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.White.copy(alpha = 0.8f),
+            modifier = Modifier.padding(bottom = spacing.small)
+        )
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(PhoneDimens.incomingChipSpacing, Alignment.CenterHorizontally),
+            verticalArrangement = Arrangement.spacedBy(PhoneDimens.incomingChipSpacing),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            quickDeclineMessages.forEachIndexed { index, message ->
+                AssistChip(
+                    onClick = { onDeclineWithMessage(message) },
+                    label = { Text(text = message) },
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = Color.White.copy(alpha = 0.12f),
+                        labelColor = Color.White
+                    ),
+                    modifier = Modifier.testTag("quick_reply_$index")
+                )
+            }
+        }
+    }
+}
+
+/** Answer controls: swipe bar or answer/decline buttons, in the configured side order. */
+@Composable
+private fun AnswerControlsSection(
+    answerGesture: AnswerGesture,
+    onAnswer: () -> Unit,
+    onDecline: () -> Unit
+) {
+    if (answerGesture == AnswerGesture.SWIPE) {
+        // Swipe to answer / decline instead of buttons.
+        SwipeAnswerBar(
+            onAnswer = onAnswer,
+            onDecline = onDecline,
+            mirror = LocalAppSettings.current.answerSide == AnswerSide.LEFT,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = spacing.medium)
+                .padding(bottom = PhoneDimens.incomingActionsBottomPadding)
+        )
+    } else {
+        // Answer & Decline Buttons, in the configured side order.
+        val answerOnLeft = LocalAppSettings.current.answerSide == AnswerSide.LEFT
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = PhoneDimens.incomingActionsBottomPadding),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = stringResource(id = R.string.quick_reply_title),
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = 0.8f),
-                modifier = Modifier.padding(bottom = spacing.small)
-            )
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(PhoneDimens.incomingChipSpacing, Alignment.CenterHorizontally),
-                verticalArrangement = Arrangement.spacedBy(PhoneDimens.incomingChipSpacing),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                quickDeclineMessages.forEachIndexed { index, message ->
-                    AssistChip(
-                        onClick = { onDeclineWithMessage(message) },
-                        label = { Text(text = message) },
-                        colors = AssistChipDefaults.assistChipColors(
-                            containerColor = Color.White.copy(alpha = 0.12f),
-                            labelColor = Color.White
-                        ),
-                        modifier = Modifier.testTag("quick_reply_$index")
-                    )
-                }
+            if (answerOnLeft) {
+                AnswerButton(onAnswer = onAnswer)
+                DeclineButton(onDecline = onDecline)
+            } else {
+                DeclineButton(onDecline = onDecline)
+                AnswerButton(onAnswer = onAnswer)
             }
-        }
-        }
-
-        if (answerGesture == AnswerGesture.SWIPE) {
-            // Swipe to answer / decline instead of buttons.
-            SwipeAnswerBar(
-                onAnswer = onAnswer,
-                onDecline = onDecline,
-                mirror = LocalAppSettings.current.answerSide == AnswerSide.LEFT,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = PhoneDimens.incomingActionsBottomPadding)
-            )
-        } else {
-            // Answer & Decline Buttons, in the configured side order.
-            val answerOnLeft = LocalAppSettings.current.answerSide == AnswerSide.LEFT
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = PhoneDimens.incomingActionsBottomPadding),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (answerOnLeft) {
-                    AnswerButton(onAnswer = onAnswer)
-                    DeclineButton(onDecline = onDecline)
-                } else {
-                    DeclineButton(onDecline = onDecline)
-                    AnswerButton(onAnswer = onAnswer)
-                }
-            }
-        }
         }
     }
 }

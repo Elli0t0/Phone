@@ -50,84 +50,72 @@ class SettingsViewModel(
             settingsRepository.setThemeMode(mode)
         }
     }
-    fun setThemeMode(mode: ThemeMode) = onThemeModeChanged(mode)
 
     fun onAccentColorSelected(colorValue: Long, isCustom: Boolean = false) {
         viewModelScope.launch {
             settingsRepository.setAccentColor(colorValue, isCustom)
         }
     }
-    fun setAccentColor(colorValue: Long, isCustom: Boolean = false) = onAccentColorSelected(colorValue, isCustom)
 
     fun onDynamicColorChanged(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setDynamicColor(enabled)
         }
     }
-    fun setDynamicColor(enabled: Boolean) = onDynamicColorChanged(enabled)
 
     fun onPureBlackDarkModeChanged(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setPureBlackDarkMode(enabled)
         }
     }
-    fun setPureBlackDarkMode(enabled: Boolean) = onPureBlackDarkModeChanged(enabled)
 
     fun onListDensityChanged(density: ListDensity) {
         viewModelScope.launch {
             settingsRepository.setListDensity(density)
         }
     }
-    fun setListDensity(density: ListDensity) = onListDensityChanged(density)
 
     fun onCardStyleChanged(style: CardStyle) {
         viewModelScope.launch {
             settingsRepository.setCardStyle(style)
         }
     }
-    fun setCardStyle(style: CardStyle) = onCardStyleChanged(style)
 
     fun onFontSizeScaleChanged(scale: Float) {
         viewModelScope.launch {
             settingsRepository.setFontSizeScale(scale)
         }
     }
-    fun setFontSizeScale(scale: Float) = onFontSizeScaleChanged(scale)
 
     fun onAnimationOptionChanged(option: AnimationOption) {
         viewModelScope.launch {
             settingsRepository.setAnimationOption(option)
         }
     }
-    fun setAnimationOption(option: AnimationOption) = onAnimationOptionChanged(option)
 
     fun onShowBottomBarLabelsChanged(show: Boolean) {
         viewModelScope.launch {
             settingsRepository.setShowBottomBarLabels(show)
         }
     }
-    fun setShowBottomBarLabels(show: Boolean) = onShowBottomBarLabelsChanged(show)
 
     fun onBottomBarStyleChanged(style: BottomBarStyle) {
         viewModelScope.launch {
             settingsRepository.setBottomBarStyle(style)
         }
     }
-    fun setBottomBarStyle(style: BottomBarStyle) = onBottomBarStyleChanged(style)
 
     fun onBottomBarSizeChanged(size: BottomBarSize) {
         viewModelScope.launch {
             settingsRepository.setBottomBarSize(size)
         }
     }
-    fun setBottomBarSize(size: BottomBarSize) = onBottomBarSizeChanged(size)
 
     fun onShrinkBottomBarOnScrollChanged(shrink: Boolean) {
         viewModelScope.launch {
             settingsRepository.setShrinkBottomBarOnScroll(shrink)
         }
     }
-    fun setShrinkBottomBarOnScroll(shrink: Boolean) = onShrinkBottomBarOnScrollChanged(shrink)
 
     fun onDefaultStartTabChanged(tab: StartTab) {
         viewModelScope.launch {
@@ -141,14 +129,12 @@ class SettingsViewModel(
             settingsRepository.setContactSortOrder(order)
         }
     }
-    fun setContactSortOrder(order: ContactSortOrder) = onContactSortOrderChanged(order)
 
     fun onContactNameFormatChanged(format: ContactNameFormat) {
         viewModelScope.launch {
             settingsRepository.setContactNameFormat(format)
         }
     }
-    fun setContactNameFormat(format: ContactNameFormat) = onContactNameFormatChanged(format)
 
     fun onCallDisplayChanged(display: CallDisplay) {
         viewModelScope.launch {
@@ -169,91 +155,80 @@ class SettingsViewModel(
             settingsRepository.setCallBackgroundDim(dim)
         }
     }
-    fun setCallBackgroundDim(dim: Float) = onCallBackgroundDimChanged(dim)
 
     fun onCallBackgroundCustomColorChanged(color: Long) {
         viewModelScope.launch {
             settingsRepository.setCallBackgroundCustomColor(color)
         }
     }
-    fun setCallBackgroundCustomColor(color: Long) = onCallBackgroundCustomColorChanged(color)
 
     fun onAnswerGestureChanged(gesture: AnswerGesture) {
         viewModelScope.launch {
             settingsRepository.setAnswerGesture(gesture)
         }
     }
-    fun setAnswerGesture(gesture: AnswerGesture) = onAnswerGestureChanged(gesture)
 
     fun onAnswerSideChanged(side: AnswerSide) {
         viewModelScope.launch {
             settingsRepository.setAnswerSide(side)
         }
     }
-    fun setAnswerSide(side: AnswerSide) = onAnswerSideChanged(side)
 
     fun onEndCallAlignmentChanged(alignment: EndCallAlignment) {
         viewModelScope.launch {
             settingsRepository.setEndCallAlignment(alignment)
         }
     }
-    fun setEndCallAlignment(alignment: EndCallAlignment) = onEndCallAlignmentChanged(alignment)
 
     fun onCallerInfoPositionChanged(position: CallerInfoPosition) {
         viewModelScope.launch {
             settingsRepository.setCallerInfoPosition(position)
         }
     }
-    fun setCallerInfoPosition(position: CallerInfoPosition) = onCallerInfoPositionChanged(position)
 
     fun onControlGridAlignmentChanged(alignment: ControlGridAlignment) {
         viewModelScope.launch {
             settingsRepository.setControlGridAlignment(alignment)
         }
     }
-    fun setControlGridAlignment(alignment: ControlGridAlignment) = onControlGridAlignmentChanged(alignment)
 
     fun onEndCallButtonSizeChanged(size: EndCallButtonSize) {
         viewModelScope.launch {
             settingsRepository.setEndCallButtonSize(size)
         }
     }
-    fun setEndCallButtonSize(size: EndCallButtonSize) = onEndCallButtonSizeChanged(size)
 
     fun onAnswerButtonSizeChanged(size: AnswerButtonSize) {
         viewModelScope.launch {
             settingsRepository.setAnswerButtonSize(size)
         }
     }
-    fun setAnswerButtonSize(size: AnswerButtonSize) = onAnswerButtonSizeChanged(size)
 
     fun onShowQuickRepliesChanged(show: Boolean) {
         viewModelScope.launch {
             settingsRepository.setShowQuickReplies(show)
         }
     }
-    fun setShowQuickReplies(show: Boolean) = onShowQuickRepliesChanged(show)
+
+    fun onQuickRepliesBelowButtonsChanged(below: Boolean) { viewModelScope.launch { settingsRepository.setQuickRepliesBelowButtons(below) } }
 
     fun onControlButtonSizeChanged(size: ControlButtonSize) {
         viewModelScope.launch {
             settingsRepository.setControlButtonSize(size)
         }
     }
-    fun setControlButtonSize(size: ControlButtonSize) = onControlButtonSizeChanged(size)
 
     fun onDtmfKeySizeChanged(size: DtmfKeySize) {
         viewModelScope.launch {
             settingsRepository.setDtmfKeySize(size)
         }
     }
-    fun setDtmfKeySize(size: DtmfKeySize) = onDtmfKeySizeChanged(size)
 
     fun onIncomingAvatarSizeChanged(size: IncomingAvatarSize) {
         viewModelScope.launch {
             settingsRepository.setIncomingAvatarSize(size)
         }
     }
-    fun setIncomingAvatarSize(size: IncomingAvatarSize) = onIncomingAvatarSizeChanged(size)
 
     fun onIncomingAvatarShapeChanged(shape: IncomingAvatarShape) {
         viewModelScope.launch { settingsRepository.setIncomingAvatarShape(shape) }
@@ -264,14 +239,12 @@ class SettingsViewModel(
             settingsRepository.setOngoingCallButtons(buttons)
         }
     }
-    fun setOngoingCallButtons(buttons: List<OngoingCallButton>) = onOngoingCallButtonsChanged(buttons)
 
     fun onShowNumberOnCallScreenChanged(show: Boolean) {
         viewModelScope.launch {
             settingsRepository.setShowNumberOnCallScreen(show)
         }
     }
-    fun setShowNumberOnCallScreen(show: Boolean) = onShowNumberOnCallScreenChanged(show)
 
     fun onDefaultSimChanged(defaultSim: DefaultSim) {
         viewModelScope.launch {

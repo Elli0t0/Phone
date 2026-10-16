@@ -69,6 +69,7 @@ interface SettingsRepository {
     suspend fun setEndCallButtonSize(size: EndCallButtonSize)
     suspend fun setAnswerButtonSize(size: AnswerButtonSize)
     suspend fun setShowQuickReplies(show: Boolean)
+    suspend fun setQuickRepliesBelowButtons(below: Boolean)
     suspend fun setControlButtonSize(size: ControlButtonSize)
     suspend fun setDtmfKeySize(size: DtmfKeySize)
     suspend fun setIncomingAvatarSize(size: IncomingAvatarSize)
@@ -113,6 +114,7 @@ class DataStoreSettingsRepository(
         val END_CALL_BUTTON_SIZE = stringPreferencesKey("end_call_button_size")
         val ANSWER_BUTTON_SIZE = stringPreferencesKey("answer_button_size")
         val SHOW_QUICK_REPLIES = booleanPreferencesKey("show_quick_replies")
+        val QUICK_REPLIES_BELOW_BUTTONS = booleanPreferencesKey("quick_replies_below_buttons")
         val CONTROL_BUTTON_SIZE = stringPreferencesKey("control_button_size")
         val DTMF_KEY_SIZE = stringPreferencesKey("dtmf_key_size")
         val INCOMING_AVATAR_SIZE = stringPreferencesKey("incoming_avatar_size")
@@ -201,6 +203,7 @@ class DataStoreSettingsRepository(
             ?: AnswerButtonSize.MEDIUM
 
         val showQuickReplies = prefs[Keys.SHOW_QUICK_REPLIES] ?: true
+        val quickRepliesBelowButtons = prefs[Keys.QUICK_REPLIES_BELOW_BUTTONS] ?: false
 
         val controlButtonSizeStr = prefs[Keys.CONTROL_BUTTON_SIZE]
         val controlButtonSize = controlButtonSizeStr?.let { runCatching { ControlButtonSize.valueOf(it) }.getOrNull() }
@@ -263,6 +266,7 @@ class DataStoreSettingsRepository(
             endCallButtonSize = endCallButtonSize,
             answerButtonSize = answerButtonSize,
             showQuickReplies = showQuickReplies,
+            quickRepliesBelowButtons = quickRepliesBelowButtons,
             controlButtonSize = controlButtonSize,
             dtmfKeySize = dtmfKeySize,
             incomingAvatarSize = incomingAvatarSize,
@@ -435,6 +439,12 @@ class DataStoreSettingsRepository(
     override suspend fun setShowQuickReplies(show: Boolean) {
         dataStore.edit { prefs ->
             prefs[Keys.SHOW_QUICK_REPLIES] = show
+        }
+    }
+
+    override suspend fun setQuickRepliesBelowButtons(below: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.QUICK_REPLIES_BELOW_BUTTONS] = below
         }
     }
 
