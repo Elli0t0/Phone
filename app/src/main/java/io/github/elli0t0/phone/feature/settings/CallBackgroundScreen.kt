@@ -281,6 +281,38 @@ fun CallBackgroundScreen(
                     )
                 }
 
+                // Layout preset: one tap that sets gesture, answer side,
+                // and end-call position together. Any manual change after
+                // applying a preset leaves no preset selected (custom).
+                Text(
+                    text = "Layout preset",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(spacing.small)
+                ) {
+                    CallLayoutPreset.entries.forEach { preset ->
+                        val selected = settings.answerGesture == preset.gesture &&
+                            settings.answerSide == preset.side &&
+                            settings.endCallAlignment == preset.endAlignment
+                        FilterChip(
+                            selected = selected,
+                            onClick = {
+                                settingsViewModel.onAnswerGestureChanged(preset.gesture)
+                                settingsViewModel.onAnswerSideChanged(preset.side)
+                                settingsViewModel.onEndCallAlignmentChanged(preset.endAlignment)
+                            },
+                            label = { Text(text = preset.label) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            modifier = Modifier.testTag("layout_preset_${preset.name.lowercase()}")
+                        )
+                    }
+                }
+
                 // Answer gesture: tap the buttons, or swipe the bar.
                 Text(
                     text = "Answer gesture",
@@ -564,4 +596,18 @@ fun CallBackgroundScreen(
             }
         }
     }
+}
+
+/** One-tap layout presets: fixed combinations of gesture, answer side,
+ * and end-call position. Not stored — the selected preset is derived
+ * from the current values, so a manual tweak shows no preset selected. */
+private enum class CallLayoutPreset(
+    val label: String,
+    val gesture: AnswerGesture,
+    val side: AnswerSide,
+    val endAlignment: EndCallAlignment
+) {
+    CLASSIC("Classic", AnswerGesture.TAP, AnswerSide.RIGHT, EndCallAlignment.CENTER),
+    LEFT_HANDED("Left-handed", AnswerGesture.TAP, AnswerSide.LEFT, EndCallAlignment.LEFT),
+    SWIPE("Swipe", AnswerGesture.SWIPE, AnswerSide.RIGHT, EndCallAlignment.CENTER)
 }

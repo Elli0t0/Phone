@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.15] - 2026-10-16
+
+- Call screen customisation (5): layout presets in the call background studio — Classic, Left-handed, and Swipe set the answer gesture, answer side, and end-call position together in one tap. Any manual change after a preset shows no preset selected (custom).
+
 ## [0.10.14] - 2026-10-16
 
 - Call screen customisation (4): end call position — Left, Center (default) or Right for the red end-call button on the ongoing call screen, in the call background studio.
