@@ -20,12 +20,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.telecom.SimAccountInfo
 
 @Composable
@@ -38,6 +41,12 @@ fun CallingSimDialog(
     val spacing = LocalSpacing.current
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = Modifier.liquidGlass(
+            shape = RoundedCornerShape(PhoneDimens.dialogCornerRadius)
+        ),
+        shape = RoundedCornerShape(PhoneDimens.dialogCornerRadius),
+        containerColor = Color.Transparent,
+        tonalElevation = 0.dp,
         title = {
             Text(
                 text = stringResource(id = R.string.contact_calling_sim_title),

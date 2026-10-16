@@ -21,6 +21,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -162,6 +163,31 @@ object Motion {
      * reveal with a 25ms stagger, later rows appear immediately.
      */
     fun staggerDelayMs(index: Int): Int = if (index < 8) index * 25 else 0
+
+    /**
+     * Staggered fade/slide-in for popup menu items (Recents filter).
+     * ON fades + slides with a stagger delay, REDUCED fades only at
+     * ~60% duration with no stagger/slide, OFF is instant.
+     */
+    fun popupItemEnter(option: AnimationOption, index: Int): EnterTransition {
+        if (option == AnimationOption.OFF) return EnterTransition.None
+        val duration = scaledDurationMs(Durations.Short, option)
+        val fade = fadeIn(
+            animationSpec = tween(
+                durationMillis = duration,
+                delayMillis = if (option == AnimationOption.ON) staggerDelayMs(index) else 0
+            )
+        )
+        if (option == AnimationOption.REDUCED) return fade
+        val slide = slideInVertically(
+            animationSpec = tween(
+                durationMillis = duration,
+                delayMillis = staggerDelayMs(index),
+                easing = Easings.Emphasized
+            )
+        ) { it / 4 }
+        return fade + slide
+    }
 }
 
 /**

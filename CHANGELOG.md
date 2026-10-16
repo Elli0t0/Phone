@@ -29,6 +29,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Call screens honour their liquid-glass switch: with call-screen glass off, the in-call controls and dock render flat instead of glass.
 
+## [0.10.38] - 2026-10-16
+
+- Liquid glass across the app (4): the Recents filter menu is now a glass popup (22dp corners, specular rim, translucent fill) with staggered fade/slide-in items that respect the Animations setting, and the Dual-SIM picker and calling-SIM dialogs are glass.
+
+## [0.10.39] - 2026-10-16
+
+- Liquid glass across the app (5): the Contacts top bar is split into clean glass pills (Groups on the left, actions on the right), and an interactive vertical glass A–Z fast-scroll scrubber with a floating glass letter preview bubble runs along the right edge.
+
+## [0.10.40] - 2026-10-16
+
+- Liquid glass across the app (6): the contact detail screen is redesigned in glass — hero card, Call/Message action buttons, info section cards, and the floating action bar — and the History card shows a trailing chevron plus a summary of the last call with that contact.
+
+## [0.10.41] - 2026-10-16
+
+- Liquid glass across the app (7): expanding a grouped call in Recents now shows a breakdown list of the individual calls (type, exact time, duration, SIM badge) inside a recessed glass container, with the four actions as staggered glass icon buttons.
+
+## [0.10.42] - 2026-10-16
+
+- Liquid glass across the app (8): the call background is an animated liquid aurora, the caller avatar gets pulsing glass rings, call controls are glass icon buttons with a bright active state, the swipe track shimmers and tints green/red with the drag, quick replies are glass chips, and a live equalizer wave sits next to the call timer.
+
+## [0.10.43] - 2026-10-16
+
+- Liquid glass across the app (9): the Call Studio preview scales its layout proportionally and always shows the caller header and call buttons, the reorder list uses 40dp glass icon buttons with chevrons, and the option selector chips are glass with animated selection.
+
+## [0.10.44] - 2026-10-16
+
+- App-wide motion: a shared bouncyClick modifier on dialpad keys, Recents cards, action buttons, contact rows, and bottom-bar tabs; the dialed number animates per character with haptic feedback on key presses and backspace; screen transitions use spring scale + fade and tab switches cross-fade with a subtle slide, all respecting the Animations setting.
+
+## [0.11.0] - 2026-10-16
+
+- Final polish: full visual/logic audit, all unit tests pass, and every color, size, glass token, and motion value lives in core/design.
+
 ## [0.10.31] - 2026-10-16
 
 - Liquid glass across the app (3): dialpad keys are now circular liquid-glass discs (no more square gray ripple; the key scales to 0.90 and springs back), the Call button is a glossy liquid-glass emerald button, the no-match Create new contact / Message actions are glass pills that animate in/out, and the T9 suggestion chips are glass chips showing the contact name and the matched number with the dialed digits highlighted in accent. Key press feedback is now the glass surface scale (the digit-dip pulse is gone).

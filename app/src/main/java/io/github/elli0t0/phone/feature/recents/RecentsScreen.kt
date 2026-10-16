@@ -4,6 +4,8 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.ContactsContract
 import androidx.activity.ComponentActivity
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -25,6 +27,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -45,6 +48,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -65,7 +69,9 @@ import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.permissions.CallLogPermissionStatus
 import io.github.elli0t0.phone.core.permissions.rememberCallLogPermissionState
 import io.github.elli0t0.phone.core.telecom.CallManager
@@ -203,12 +209,50 @@ fun RecentsScreen(
                         }
                         DropdownMenu(
                             expanded = filterMenuExpanded,
-                            onDismissRequest = { filterMenuExpanded = false }
+                            onDismissRequest = { filterMenuExpanded = false },
+                            modifier = Modifier.liquidGlass(
+                                shape = RoundedCornerShape(PhoneDimens.recentsFilterPopupCornerRadius),
+                                elevation = 16.dp
+                            ),
+                            shape = RoundedCornerShape(PhoneDimens.recentsFilterPopupCornerRadius),
+                            containerColor = Color.Transparent,
+                            tonalElevation = 0.dp,
+                            shadowElevation = 0.dp
                         ) {
-                            CallFilter.entries.forEach { filter ->
+                            val animationOption = LocalAppSettings.current.animationOption
+                            CallFilter.entries.forEachIndexed { index, filter ->
+                                AnimatedVisibility(
+                                    visible = true,
+                                    enter = Motion.popupItemEnter(animationOption, index),
+                                    exit = fadeOut()
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text(text = stringResource(id = filter.titleRes)) },
+                                        leadingIcon = if (filter == uiState.selectedFilter) {
+                                            {
+                                                Icon(
+                                                    painter = painterResource(id = R.drawable.ic_check),
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                        } else {
+                                            null
+                                        },
+                                        onClick = { filterMenuExpanded = false; viewModel.onFilterSelected(filter) },
+                                        modifier = Modifier.testTag("filter_menu_${filter.name.lowercase()}")
+                                    )
+                                }
+                            }
+                            HorizontalDivider()
+                            AnimatedVisibility(
+                                visible = true,
+                                enter = Motion.popupItemEnter(animationOption, CallFilter.entries.size),
+                                exit = fadeOut()
+                            ) {
                                 DropdownMenuItem(
-                                    text = { Text(text = stringResource(id = filter.titleRes)) },
-                                    leadingIcon = if (filter == uiState.selectedFilter) {
+                                    text = { Text(text = stringResource(id = R.string.recents_pick_date)) },
+                                    leadingIcon = if (uiState.selectedDate != null) {
                                         {
                                             Icon(
                                                 painter = painterResource(id = R.drawable.ic_check),
@@ -219,27 +263,10 @@ fun RecentsScreen(
                                     } else {
                                         null
                                     },
-                                    onClick = { filterMenuExpanded = false; viewModel.onFilterSelected(filter) },
-                                    modifier = Modifier.testTag("filter_menu_${filter.name.lowercase()}")
+                                    onClick = { filterMenuExpanded = false; showDatePicker = true },
+                                    modifier = Modifier.testTag("filter_menu_date")
                                 )
                             }
-                            HorizontalDivider()
-                            DropdownMenuItem(
-                                text = { Text(text = stringResource(id = R.string.recents_pick_date)) },
-                                leadingIcon = if (uiState.selectedDate != null) {
-                                    {
-                                        Icon(
-                                            painter = painterResource(id = R.drawable.ic_check),
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                } else {
-                                    null
-                                },
-                                onClick = { filterMenuExpanded = false; showDatePicker = true },
-                                modifier = Modifier.testTag("filter_menu_date")
-                            )
                         }
                     }
                     androidx.compose.material3.IconButton(
