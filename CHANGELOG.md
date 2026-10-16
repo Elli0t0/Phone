@@ -15,7 +15,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.10.34] - 2026-10-16
 
-- Settings: a Liquid glass section with a switch for the dialpad (keys, Call button, no-match pills, T9 chips). The remaining sections gain their switches as they are wired.
+- Settings: a Liquid glass section with a switch for every section — bottom bar, dialpad, headers, contact detail, call screens. Each switch falls back to the flat rendering for its section; the bottom-bar, detail, headers, and call-screen switches become live as their wiring lands in 0.10.35–0.10.37.
+
+## [0.10.35] - 2026-10-16
+
+- The bottom bar honours its liquid-glass switch: with bottom-bar glass off, the bar is flat and the selected-tab indicator is a flat oval instead of the glass droplet.
+
+## [0.10.36] - 2026-10-16
+
+- Contact detail and headers honour their liquid-glass switches: with detail glass off, the floating action bar is flat; with headers glass off, the floating header pill is flat.
+
+## [0.10.37] - 2026-10-16
+
+- Call screens honour their liquid-glass switch: with call-screen glass off, the in-call controls and dock render flat instead of glass.
 
 ## [0.10.31] - 2026-10-16
 

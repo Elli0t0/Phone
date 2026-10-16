@@ -21,8 +21,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -88,30 +90,14 @@ fun DialKeyView(
     val keySource = remember { MutableInteractionSource() }
     val isPressed by keySource.collectIsPressedAsState()
     val animationOption = LocalAppSettings.current.animationOption
+    val glassDialpad = LocalAppSettings.current.glassDialpad
     val keyScale by animateFloatAsState(
         targetValue = if (isPressed && animationOption == AnimationOption.ON) 0.90f else 1f,
         animationSpec = spring(dampingRatio = 0.55f, stiffness = 500f),
         label = "keyPressScale"
     )
-    Box(
-        modifier = modifier
-            .size(PhoneDimens.keypadTouchSize)
-            .graphicsLayer {
-                scaleX = keyScale
-                scaleY = keyScale
-            }
-            .liquidGlass(shape = CircleShape, elevation = 0.dp)
-            .combinedClickable(
-                interactionSource = keySource,
-                indication = null,
-                onClick = onClick,
-                onLongClick = {
-                    if (onLongClick != null) onLongClick() else onClick()
-                }
-            )
-            .testTag("dial_key_$keyTag"),
-        contentAlignment = Alignment.Center
-    ) {
+    // Key content shared by the glass and flat branches.
+    val keyContent: @Composable () -> Unit = {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -146,6 +132,49 @@ fun DialKeyView(
             )
         }
     }
+    if (glassDialpad) {
+        Box(
+            modifier = modifier
+                .size(PhoneDimens.keypadTouchSize)
+                .graphicsLayer {
+                    scaleX = keyScale
+                    scaleY = keyScale
+                }
+                .liquidGlass(shape = CircleShape, elevation = 0.dp)
+                .combinedClickable(
+                    interactionSource = keySource,
+                    indication = null,
+                    onClick = onClick,
+                    onLongClick = {
+                        if (onLongClick != null) onLongClick() else onClick()
+                    }
+                )
+                .testTag("dial_key_$keyTag"),
+            contentAlignment = Alignment.Center
+        ) {
+            keyContent()
+        }
+    } else {
+        // Flat key: bare digits with press-scale and a circle-clipped ripple.
+        Box(
+            modifier = modifier
+                .size(PhoneDimens.keypadTouchSize)
+                .clip(CircleShape)
+                .pressScale(keySource)
+                .combinedClickable(
+                    interactionSource = keySource,
+                    indication = ripple(),
+                    onClick = onClick,
+                    onLongClick = {
+                        if (onLongClick != null) onLongClick() else onClick()
+                    }
+                )
+                .testTag("dial_key_$keyTag"),
+            contentAlignment = Alignment.Center
+        ) {
+            keyContent()
+        }
+    }
 }
 
 /**
@@ -163,6 +192,7 @@ fun DialpadSuggestionChips(
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
+    val glassDialpad = LocalAppSettings.current.glassDialpad
     LazyRow(
         modifier = modifier.testTag("dialpad_suggestion_chips"),
         horizontalArrangement = Arrangement.spacedBy(spacing.small),
@@ -171,45 +201,66 @@ fun DialpadSuggestionChips(
         contentPadding = PaddingValues(horizontal = spacing.small)
     ) {
         items(contacts.take(8), key = { it.id }) { contact ->
-            LiquidGlassChip(
-                selected = false,
-                onClick = { onSelect(contact) },
-                modifier = Modifier.testTag("dialpad_chip_${contact.id}")
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center
+            if (glassDialpad) {
+                LiquidGlassChip(
+                    selected = false,
+                    onClick = { onSelect(contact) },
+                    modifier = Modifier.testTag("dialpad_chip_${contact.id}")
                 ) {
-                    Text(
-                        text = contact.displayName.trim().take(1).uppercase(),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
-                Spacer(modifier = Modifier.size(6.dp))
-                Column {
-                    Text(
-                        text = contact.displayName,
-                        style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    val number = contact.primaryNumberPreview
-                    if (!number.isNullOrBlank()) {
+                    DialpadChipAvatar(contact.displayName)
+                    Spacer(modifier = Modifier.size(6.dp))
+                    Column {
                         Text(
-                            text = matchedNumberText(number, dialedDigits),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            text = contact.displayName,
+                            style = MaterialTheme.typography.bodyMedium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
+                        val number = contact.primaryNumberPreview
+                        if (!number.isNullOrBlank()) {
+                            Text(
+                                text = matchedNumberText(number, dialedDigits),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 }
+            } else {
+                AssistChip(
+                    onClick = { onSelect(contact) },
+                    label = {
+                        Text(
+                            text = contact.displayName,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    },
+                    leadingIcon = { DialpadChipAvatar(contact.displayName) },
+                    modifier = Modifier.testTag("dialpad_chip_${contact.id}")
+                )
             }
         }
+    }
+}
+
+/** Initial avatar used by both the glass and the flat T9 chips. */
+@Composable
+private fun DialpadChipAvatar(name: String) {
+    Box(
+        modifier = Modifier
+            .size(24.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.primaryContainer),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = name.trim().take(1).uppercase(),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
     }
 }
 
@@ -271,6 +322,7 @@ fun DialpadNoMatchActions(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.height(12.dp))
+        if (LocalAppSettings.current.glassDialpad) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -326,6 +378,34 @@ fun DialpadNoMatchActions(
                         text = stringResource(id = R.string.dialpad_message),
                         style = MaterialTheme.typography.labelLarge
                     )
+                }
+            }
+        }
+        } else {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilledTonalButton(
+                    onClick = onCreateContact,
+                    modifier = Modifier.testTag("dialpad_no_match_create")
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_add),
+                        contentDescription = null
+                    )
+                    Spacer(modifier = Modifier.size(4.dp))
+                    Text(text = stringResource(id = R.string.dialpad_create_contact))
+                }
+                FilledTonalButton(
+                    onClick = onMessage,
+                    modifier = Modifier.testTag("dialpad_no_match_message")
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_message),
+                        contentDescription = null
+                    )
+                    Spacer(modifier = Modifier.size(4.dp))
+                    Text(text = stringResource(id = R.string.dialpad_message))
                 }
             }
         }

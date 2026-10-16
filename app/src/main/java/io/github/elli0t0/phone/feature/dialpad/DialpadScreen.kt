@@ -47,6 +47,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -123,6 +125,7 @@ fun DialpadScreen(
     // @Composable context, so it cannot read a CompositionLocal.
     val defaultSim = LocalAppSettings.current.defaultSim
     val animationOption = LocalAppSettings.current.animationOption
+    val glassDialpad = LocalAppSettings.current.glassDialpad
     val clipboardManager = LocalClipboardManager.current
     val coroutineScope = rememberCoroutineScope()
 
@@ -550,8 +553,11 @@ fun DialpadScreen(
             // Placeholder empty box for balance (same size as backspace)
             Box(modifier = Modifier.size(56.dp))
 
-            // Call button: glossy liquid-glass emerald. With no digits it does nothing.
+            // Call button: glossy liquid-glass emerald, or the flat green
+            // FAB when the dialpad's liquid glass is off. With no digits
+            // it does nothing.
             val callButtonSource = remember { MutableInteractionSource() }
+            if (glassDialpad) {
             Box(
                 modifier = Modifier
                     .size(PhoneDimens.callButtonSize)
@@ -581,6 +587,29 @@ fun DialpadScreen(
                     tint = OnAccentBlue,
                     modifier = Modifier.size(32.dp)
                 )
+            }
+            } else {
+                FloatingActionButton(
+                    onClick = {
+                        if (uiState.canCall) {
+                            lightHaptic()
+                            callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
+                        }
+                    },
+                    modifier = Modifier
+                        .size(PhoneDimens.callButtonSize)
+                        .testTag("btn_call"),
+                    shape = CircleShape,
+                    containerColor = if (darkTheme) KeypadCallButtonGreenDark else KeypadCallButtonGreenLight,
+                    contentColor = OnAccentBlue,
+                    elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_phone),
+                        contentDescription = stringResource(id = R.string.cd_call_button),
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
             }
 
             // Right spacer for balance (backspace now sits by the number display).
