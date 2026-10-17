@@ -382,7 +382,10 @@ fun ContactDetailScreen(
                             .verticalScroll(scrollState)
                             .padding(horizontal = spacing.screenHorizontalPadding)
                             .padding(top = topBarHeight)
-                            .padding(bottom = navBarBottom + PhoneDimens.bottomBarReservedHeight),
+                            // The detail bar carries an extra top margin
+                            // the main bar lacks, so add it here to keep
+                            // the last card (History) clear of the bar.
+                            .padding(bottom = navBarBottom + PhoneDimens.bottomBarReservedHeight + PhoneDimens.bottomBarBottomMargin),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                     Spacer(modifier = Modifier.height(spacing.medium))
