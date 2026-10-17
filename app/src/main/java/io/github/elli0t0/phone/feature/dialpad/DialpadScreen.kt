@@ -527,48 +527,68 @@ fun DialpadScreen(
                     }
                 }
                 // Backspace at the right of the number, with accelerated repeat deletion.
-                // Hidden when the number is empty (fade + scale); the
+                // Fades + scales out when the number is empty; the
                 // number stays centered because the backspace overlays it.
-                AnimatedVisibility(
-                    visible = uiState.rawNumber.isNotEmpty(),
-                    enter = fadeIn() + scaleIn(),
-                    exit = fadeOut() + scaleOut(),
-                    modifier = Modifier.align(Alignment.CenterEnd)
+                // (AnimatedVisibility cannot be used here: the enclosing
+                // Column resolves it to the ColumnScope overload, which
+                // cannot be called inside this Box.)
+                val backspaceVisible = uiState.rawNumber.isNotEmpty()
+                val backspaceAlpha by animateFloatAsState(
+                    targetValue = if (backspaceVisible) 1f else 0f,
+                    animationSpec = tween(durationMillis = Motion.scaledDurationMs(Motion.Durations.Short, animationOption)),
+                    label = "backspaceAlpha"
+                )
+                val backspaceScale by animateFloatAsState(
+                    targetValue = if (backspaceVisible) 1f else 0.8f,
+                    animationSpec = tween(durationMillis = Motion.scaledDurationMs(Motion.Durations.Short, animationOption)),
+                    label = "backspaceScale"
+                )
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .size(56.dp)
+                        .graphicsLayer {
+                            alpha = backspaceAlpha
+                            scaleX = backspaceScale
+                            scaleY = backspaceScale
+                        },
+                    contentAlignment = Alignment.Center
                 ) {
                     Box(
-                        modifier = Modifier.size(56.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .pointerInput(Unit) {
-                                    awaitEachGesture {
-                                        val down = awaitFirstDown(requireUnconsumed = false)
-                                        // Consume the press so the parent number
-                                        // row's long-press (paste) never fires
-                                        // from a backspace long-press.
-                                        down.consume()
-                                        lightHaptic()
-                                        viewModel.onBackspacePressed()
-                                        viewModel.startBackspaceRepeat(onTickHaptic = { lightHaptic() })
-                                        try {
-                                            waitForUpOrCancellation()
-                                        } finally {
-                                            viewModel.stopBackspaceRepeat()
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .then(
+                                if (backspaceVisible) {
+                                    Modifier.pointerInput(Unit) {
+                                        awaitEachGesture {
+                                            val down = awaitFirstDown(requireUnconsumed = false)
+                                            // Consume the press so the parent number
+                                            // row's long-press (paste) never fires
+                                            // from a backspace long-press.
+                                            down.consume()
+                                            lightHaptic()
+                                            viewModel.onBackspacePressed()
+                                            viewModel.startBackspaceRepeat(onTickHaptic = { lightHaptic() })
+                                            try {
+                                                waitForUpOrCancellation()
+                                            } finally {
+                                                viewModel.stopBackspaceRepeat()
+                                            }
                                         }
                                     }
+                                } else {
+                                    Modifier
                                 }
-                                .testTag("btn_backspace"),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_backspace),
-                                contentDescription = stringResource(id = R.string.cd_backspace_button),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                        }
+                            .testTag("btn_backspace"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_backspace),
+                            contentDescription = stringResource(id = R.string.cd_backspace_button),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }
