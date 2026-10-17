@@ -88,6 +88,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Glass fill is near-opaque (0.88 alpha) on the floating bar and header pill for legibility without blur.
 - One app-level snackbar host above the floating bar (nav inset + bar margin + bar height + gap); Contacts no longer has a per-screen host under the bar.
 
+## [0.11.4] - 2026-10-17
+
+- Contact detail now uses the app-level snackbar host (no per-screen host under the detail bar) and its floating action bar gets the outer shadow.
+
 ## [0.10.31] - 2026-10-16
 
 - Liquid glass across the app (3): dialpad keys are now circular liquid-glass discs (no more square gray ripple; the key scales to 0.90 and springs back), the Call button is a glossy liquid-glass emerald button, the no-match Create new contact / Message actions are glass pills that animate in/out, and the T9 suggestion chips are glass chips showing the contact name and the matched number with the dialed digits highlighted in accent. Key press feedback is now the glass surface scale (the digit-dip pulse is gone).

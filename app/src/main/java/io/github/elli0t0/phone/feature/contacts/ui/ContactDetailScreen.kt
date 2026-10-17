@@ -48,8 +48,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -74,6 +72,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import io.github.elli0t0.phone.LocalAppSnackbarHostState
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.core.design.LiquidGlassCard
@@ -129,7 +128,9 @@ fun ContactDetailScreen(
     // Read here, not inside placeCallWithSim: the handler is not a
     // @Composable context, so it cannot read a CompositionLocal.
     val defaultSim = LocalAppSettings.current.defaultSim
-    val snackbarHostState = remember { SnackbarHostState() }
+    // App-level snackbar host (MainActivity): one host above the
+    // floating bar for every screen, no per-screen host under the bar.
+    val snackbarHostState = LocalAppSnackbarHostState.current
     val coroutineScope = rememberCoroutineScope()
 
     var showMoreMenu by remember { mutableStateOf(false) }
@@ -325,7 +326,6 @@ fun ContactDetailScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize().testTag("contact_detail_screen"),
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         bottomBar = {
             if (uiState.contact != null) {
                 ContactDetailBottomBar(
@@ -991,7 +991,8 @@ private fun ContactDetailBottomBar(
                 modifier = Modifier
                     .fillMaxWidth(PhoneDimens.detailBottomBarWidthFraction)
                     .height(PhoneDimens.bottomBarHeight),
-                shape = RoundedCornerShape(PhoneDimens.bottomBarCornerPercent)
+                shape = RoundedCornerShape(PhoneDimens.bottomBarCornerPercent),
+                floating = true
             ) {
                 barContent()
             }
