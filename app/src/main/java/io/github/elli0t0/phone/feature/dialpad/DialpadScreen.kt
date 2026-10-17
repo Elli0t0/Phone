@@ -87,8 +87,8 @@ import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.KeypadCallButtonGreenDark
 import io.github.elli0t0.phone.core.design.KeypadCallButtonGreenLight
-import io.github.elli0t0.phone.core.design.KeypadPageDark
-import io.github.elli0t0.phone.core.design.isDarkGlassTheme
+
+
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.Motion
@@ -202,14 +202,11 @@ fun DialpadScreen(
         }
     }
 
-    // Keypad page background: #161618 in dark, theme background in light.
+    // Keypad page background: the theme background, like every other page.
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                if (isDarkGlassTheme()) KeypadPageDark
-                else MaterialTheme.colorScheme.background
-            )
+            .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = spacing.screenHorizontalPadding)
             // Top: status-bar inset (the dialpad has no Scaffold of its own).
             // Bottom: clearance above the overlaid bottom bar

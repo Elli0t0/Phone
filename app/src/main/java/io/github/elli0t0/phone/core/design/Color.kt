@@ -96,8 +96,6 @@ val DarkSurfaceContainerLow = Color(0xFF17181C)
 val DarkSurfaceContainer = Color(0xFF1E2024)
 val DarkSurfaceContainerHigh = Color(0xFF27292F)
 val DarkSurfaceContainerHighest = Color(0xFF32343B)
-// Dark keypad page: lighter than the pure-black page, per the reference.
-val KeypadPageDark = Color(0xFF161618)
 val DarkOnBackground = Color(0xFFE2E2E6)
 val DarkOnSurface = Color(0xFFE2E2E6)
 val DarkOnSurfaceVariant = Color(0xFF8E9099)
