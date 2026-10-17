@@ -49,6 +49,7 @@ import io.github.elli0t0.phone.core.design.LiquidGlassPillShape
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.dialogEnter
 import io.github.elli0t0.phone.core.design.firstLoadReveal
 import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.permissions.ContactsPermissionState
@@ -245,7 +246,8 @@ private fun ContactsContent(
                             .liquidGlass(
                                 shape = RoundedCornerShape(PhoneDimens.menuCornerRadius),
                                 floating = true
-                            ),
+                            )
+                            .dialogEnter(),
                         shape = RoundedCornerShape(PhoneDimens.menuCornerRadius),
                         containerColor = Color.Transparent,
                         tonalElevation = 0.dp,

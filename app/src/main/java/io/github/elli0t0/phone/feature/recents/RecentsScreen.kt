@@ -70,6 +70,7 @@ import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.dialogEnter
 import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.permissions.CallLogPermissionStatus
 import io.github.elli0t0.phone.core.permissions.rememberCallLogPermissionState
@@ -218,7 +219,8 @@ fun RecentsScreen(
                                 .liquidGlass(
                                     shape = RoundedCornerShape(PhoneDimens.recentsFilterPopupCornerRadius),
                                     floating = true
-                                ),
+                                )
+                                .dialogEnter(),
                             shape = RoundedCornerShape(PhoneDimens.recentsFilterPopupCornerRadius),
                             containerColor = Color.Transparent,
                             tonalElevation = 0.dp,
