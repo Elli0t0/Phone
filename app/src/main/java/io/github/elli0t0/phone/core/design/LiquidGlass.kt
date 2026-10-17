@@ -80,10 +80,15 @@ data class GlassColors(
     val activeContent: Color
 )
 
-/** Glass colors for the dark (white tints) or light (dark tints) theme. */
+/**
+ * Glass colors for the dark (white tints) or light (dark tints) theme.
+ * No real blur is available, so the container fill is near-opaque
+ * (>= 0.88 alpha) for legibility: list text must not show through the
+ * floating bar or the header pill.
+ */
 fun glassColors(dark: Boolean): GlassColors = if (dark) {
     GlassColors(
-        container = Color(0xFF2C2C2E).copy(alpha = 0.60f),
+        container = Color(0xFF2C2C2E).copy(alpha = 0.88f),
         containerStrong = LiquidGlassSurfaceStrong,
         onSurface = LiquidGlassOnSurface,
         onSurfaceMuted = LiquidGlassOnSurfaceMuted,
@@ -93,7 +98,7 @@ fun glassColors(dark: Boolean): GlassColors = if (dark) {
     )
 } else {
     GlassColors(
-        container = Color.White.copy(alpha = 0.72f),
+        container = Color.White.copy(alpha = 0.88f),
         containerStrong = LiquidGlassSurfaceStrongLight,
         onSurface = LiquidGlassOnSurfaceLight,
         onSurfaceMuted = LiquidGlassOnSurfaceMutedLight,

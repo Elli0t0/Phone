@@ -31,6 +31,9 @@ object PhoneDimens {
     // Large size) + gap (12dp) + 16dp, plus the navigation-bar inset
     // added at the call site.
     val bottomBarReservedHeight = 96.dp
+    // Bottom scrim: page color fades from 0% to this alpha over the
+    // fade zone above the bar, then stays at this alpha under the bar.
+    val bottomScrimMaxAlpha = 0.85f
     // Overflow-menu (glass) popup surface.
     val menuCornerRadius = 28.dp
     val menuElevation = 16.dp

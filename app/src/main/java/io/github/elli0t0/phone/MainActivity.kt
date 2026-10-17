@@ -21,13 +21,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -37,12 +42,13 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.PhoneTheme
+import io.github.elli0t0.phone.core.design.bottomBarSizeSpec
 import io.github.elli0t0.phone.core.permissions.SetupPermissions
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.navigation.PhoneBottomBar
@@ -75,6 +81,14 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
+
+/**
+ * The one app-level snackbar state. Screens show messages through it
+ * instead of per-screen hosts that sit under the floating bar.
+ */
+val LocalAppSnackbarHostState = staticCompositionLocalOf<SnackbarHostState> {
+    error("LocalAppSnackbarHostState not provided")
 }
 
 @Composable
@@ -139,10 +153,14 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
         }
     }
 
+    // One app-level snackbar host, provided to every screen.
+    val snackbarHostState = remember { SnackbarHostState() }
+
     // The bottom bar is an overlay: content runs edge-to-edge behind it,
     // and each list keeps its own bottom clearance above the bar.
     // The root Box paints one opaque theme background so the window
     // background never shows through during a tab transition.
+    CompositionLocalProvider(LocalAppSnackbarHostState provides snackbarHostState) {
     Box(
         modifier = Modifier.fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
@@ -198,8 +216,11 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
         }
         // Fade scrim behind the floating bar: list content fades out
         // before it can bleed through the bar's tab labels/icons.
-        // Height: bar reserved height + nav-bar inset + 40dp fade zone.
-        // Plain Box, no clickable, so touches pass through to the list.
+        // Height: bar reserved height + nav-bar inset + a fade zone
+        // (one reserved height, ~96dp) above the bar. The gradient
+        // fades 0% -> max alpha over the fade zone (the top half),
+        // then stays at the max alpha under the bar. Plain Box, no
+        // clickable, so touches pass through to the list.
         AnimatedVisibility(
             visible = showBottomBar,
             enter = fadeIn(tween(
@@ -222,13 +243,12 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
-                    .height(PhoneDimens.bottomBarReservedHeight + 40.dp)
+                    .height(PhoneDimens.bottomBarReservedHeight * 2)
                     .background(
                         Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                MaterialTheme.colorScheme.background.copy(alpha = 0.92f)
-                            )
+                            0.0f to Color.Transparent,
+                            0.5f to MaterialTheme.colorScheme.background.copy(alpha = PhoneDimens.bottomScrimMaxAlpha),
+                            1.0f to MaterialTheme.colorScheme.background.copy(alpha = PhoneDimens.bottomScrimMaxAlpha)
                         )
                     )
             )
@@ -246,5 +266,20 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
                 shrinkProgress = { barShrinkProgress.value }
             )
         }
+        // One app-level snackbar host above the floating bar: nav
+        // inset + bar bottom margin + current bar height + a small
+        // gap, so the snackbar is never covered by the bar.
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(
+                    bottom = PhoneDimens.bottomBarBottomMargin +
+                        bottomBarSizeSpec(appSettings.bottomBarSize).height +
+                        LocalSpacing.current.small
+                )
+        )
+    }
     }
 }

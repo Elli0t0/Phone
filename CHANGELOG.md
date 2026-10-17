@@ -81,6 +81,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Glass brushes (fill, sheen, rim, shadow) are built once per theme/tint/selection (GlassSpec) instead of on every frame.
 - Contacts overflow menu, SIM picker, and Calling SIM dialogs now use the outer shadow (floating popups).
 
+## [0.11.3] - 2026-10-17
+
+- Haze blur skipped: its API could not be verified against this project's Compose version (BOM 2024.09.00), so the translucent fallback stands instead.
+- Bottom scrim: page color fades 0% to 85% over ~96dp above the floating bar, then stays at 85% under the bar, so list text fades out before reaching the bar.
+- Glass fill is near-opaque (0.88 alpha) on the floating bar and header pill for legibility without blur.
+- One app-level snackbar host above the floating bar (nav inset + bar margin + bar height + gap); Contacts no longer has a per-screen host under the bar.
+
 ## [0.10.31] - 2026-10-16
 
 - Liquid glass across the app (3): dialpad keys are now circular liquid-glass discs (no more square gray ripple; the key scales to 0.90 and springs back), the Call button is a glossy liquid-glass emerald button, the no-match Create new contact / Message actions are glass pills that animate in/out, and the T9 suggestion chips are glass chips showing the contact name and the matched number with the dialed digits highlighted in accent. Key press feedback is now the glass surface scale (the digit-dip pulse is gone).
