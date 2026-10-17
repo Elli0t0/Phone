@@ -210,10 +210,15 @@ fun RecentsScreen(
                         DropdownMenu(
                             expanded = filterMenuExpanded,
                             onDismissRequest = { filterMenuExpanded = false },
-                            modifier = Modifier.liquidGlass(
-                                shape = RoundedCornerShape(PhoneDimens.recentsFilterPopupCornerRadius),
-                                floating = true
-                            ),
+                            modifier = Modifier
+                                .background(
+                                    color = MaterialTheme.colorScheme.surface,
+                                    shape = RoundedCornerShape(PhoneDimens.recentsFilterPopupCornerRadius)
+                                )
+                                .liquidGlass(
+                                    shape = RoundedCornerShape(PhoneDimens.recentsFilterPopupCornerRadius),
+                                    floating = true
+                                ),
                             shape = RoundedCornerShape(PhoneDimens.recentsFilterPopupCornerRadius),
                             containerColor = Color.Transparent,
                             tonalElevation = 0.dp,

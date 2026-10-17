@@ -130,6 +130,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Search fields are glass now: the shared search bar (Contacts, Recents, Dialpad) sits in a liquid-glass container with a transparent field; the focus border stays accent.
 - The duplicates banner is a liquid-glass card now (was a solid surface card). List cards stay solid.
 
+## [0.11.13] - 2026-10-17
+
+- Glass menus are legible now: the Contacts overflow menu and the Recents filter menu draw an opaque surface under the glass, so list content no longer bleeds through the menu items.
+
 ## [0.10.31] - 2026-10-16
 
 - Liquid glass across the app (3): dialpad keys are now circular liquid-glass discs (no more square gray ripple; the key scales to 0.90 and springs back), the Call button is a glossy liquid-glass emerald button, the no-match Create new contact / Message actions are glass pills that animate in/out, and the T9 suggestion chips are glass chips showing the contact name and the matched number with the dialed digits highlighted in accent. Key press feedback is now the glass surface scale (the digit-dip pulse is gone).

@@ -232,13 +232,20 @@ private fun ContactsContent(
                     DropdownMenu(
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false },
-                        // Glass menu: the liquid-glass modifier draws the
-                        // background, rim, and shadow; the Surface itself
-                        // stays transparent so it does not double-draw.
-                        modifier = Modifier.liquidGlass(
-                            shape = RoundedCornerShape(PhoneDimens.menuCornerRadius),
-                            floating = true
-                        ),
+                        // Glass menu: an opaque surface under the glass
+                        // keeps list content from bleeding through;
+                        // the liquid-glass modifier adds sheen/rim/shadow.
+                        // The Surface itself stays transparent so it does
+                        // not double-draw.
+                        modifier = Modifier
+                            .background(
+                                color = MaterialTheme.colorScheme.surface,
+                                shape = RoundedCornerShape(PhoneDimens.menuCornerRadius)
+                            )
+                            .liquidGlass(
+                                shape = RoundedCornerShape(PhoneDimens.menuCornerRadius),
+                                floating = true
+                            ),
                         shape = RoundedCornerShape(PhoneDimens.menuCornerRadius),
                         containerColor = Color.Transparent,
                         tonalElevation = 0.dp,
