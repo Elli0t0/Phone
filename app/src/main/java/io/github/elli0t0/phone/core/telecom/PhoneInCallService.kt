@@ -28,6 +28,7 @@ import io.github.elli0t0.phone.feature.call.CallActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -968,6 +969,9 @@ class PhoneInCallService : InCallService() {
         lookupJob?.cancel()
         callStartTimeoutJob?.cancel()
         callStartTimeoutJob = null
+        // Cancel the scope itself: its Job is never cancelled otherwise,
+        // so coroutines launched on it after onDestroy would keep running.
+        serviceScope.cancel()
         releaseProximityWakeLock()
         dismissNotification()
     }

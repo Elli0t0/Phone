@@ -150,6 +150,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The edit/new-contact action bar is glass now: the top bar (Cancel + Save) draws liquid glass over a transparent container instead of a solid background.
 
+## [0.11.18] - 2026-10-17
+
+- Hardening: the in-call service now cancels its coroutine scope in onDestroy (its Job was never cancelled), and the app declares no cleartext traffic (INTERNET stays, used only for the opt-in update check).
+
 ## [0.10.31] - 2026-10-16
 
 - Liquid glass across the app (3): dialpad keys are now circular liquid-glass discs (no more square gray ripple; the key scales to 0.90 and springs back), the Call button is a glossy liquid-glass emerald button, the no-match Create new contact / Message actions are glass pills that animate in/out, and the T9 suggestion chips are glass chips showing the contact name and the matched number with the dialed digits highlighted in accent. Key press feedback is now the glass surface scale (the digit-dip pulse is gone).
