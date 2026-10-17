@@ -327,6 +327,7 @@ private fun ContactsContent(
                         modifier = Modifier
                             .animateItem()
                             .firstLoadReveal(revealIndex++, listRevealed)
+                            .padding(bottom = PhoneDimens.duplicatesCardFavoritesGap)
                     )
                 }
             }
@@ -338,7 +339,9 @@ private fun ContactsContent(
                         modifier = Modifier
                             .animateItem()
                             .firstLoadReveal(revealIndex++, listRevealed)
-                            .padding(vertical = spacing.small)
+                            // Top gap comes from the preceding item
+                            // (duplicates card gap, or top bar padding).
+                            .padding(bottom = spacing.small)
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_star),

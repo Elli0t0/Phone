@@ -73,10 +73,9 @@ import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.calllog.model.CallGroup
 import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import io.github.elli0t0.phone.data.calllog.model.CallType
+import android.text.format.DateFormat
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
-import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -100,7 +99,8 @@ fun CallLogRow(
 ) {
     val spacing = LocalSpacing.current
     var showMenu by remember { mutableStateOf(false) }
-    val formattedTime = remember(group.date) { sharedTimeFormat.format(Date(group.date)) }
+    val timeFormat = rememberTimeFormat()
+    val formattedTime = remember(group.date, timeFormat) { timeFormat.format(Date(group.date)) }
     // Expanded details respect the Animations setting: ON expands +
     // fades, REDUCED fades only at ~60% duration, OFF is instant.
     val animationOption = LocalAppSettings.current.animationOption
@@ -398,6 +398,7 @@ private fun ExpandedCallDetails(
     val call = group.primaryCall
     val spacing = LocalSpacing.current
     val context = LocalContext.current
+    val timeFormat = rememberTimeFormat()
     val scope = rememberCoroutineScope()
     val animationOption = LocalAppSettings.current.animationOption
     val canBlock = remember {
@@ -428,7 +429,7 @@ private fun ExpandedCallDetails(
                 typeLabel
             }
             Text(
-                text = "$typeAndDuration · ${sharedTimeFormat.format(Date(call.date))}",
+                text = "$typeAndDuration · ${timeFormat.format(Date(call.date))}",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = spacing.small)
@@ -576,10 +577,20 @@ private fun ExpandedActionButton(
     }
 }
 
-// Shared across all recents rows: one formatter instead of one per row.
-// SimpleDateFormat is not thread-safe, but all composition runs on the
-// main thread, so sharing one instance here is safe.
-private val sharedTimeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+/**
+ * The recents time format: honors the user's 12/24-hour setting and
+ * locale (DateFormat.getTimeFormat), rebuilt when the 24-hour
+ * setting or configuration changes. DateFormat is not thread-safe,
+ * but all composition runs on the main thread, so one instance per
+ * composition is safe.
+ */
+@Composable
+private fun rememberTimeFormat(): java.text.DateFormat {
+    val context = LocalContext.current
+    return remember(context, DateFormat.is24HourFormat(context)) {
+        DateFormat.getTimeFormat(context)
+    }
+}
 
 private fun formatDuration(durationSeconds: Long, type: CallType): String {
     if (type == CallType.Missed || type == CallType.Rejected || type == CallType.Blocked) {
@@ -674,11 +685,12 @@ private fun CallBreakdownRow(
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
+    val timeFormat = rememberTimeFormat()
     val typeColor = callTypeColor(entry.type)
     val showDuration = entry.type == CallType.Incoming || entry.type == CallType.Outgoing ||
         entry.type == CallType.Voicemail || entry.type == CallType.Unknown
     val detailParts = buildList {
-        add(sharedTimeFormat.format(Date(entry.date)))
+        add(timeFormat.format(Date(entry.date)))
         if (showDuration) {
             add(formatDuration(entry.durationSeconds, entry.type))
         }

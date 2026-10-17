@@ -105,6 +105,8 @@ object PhoneDimens {
     val studioReorderButtonSize = 40.dp
     val studioReorderIconSize = 24.dp
     val studioReorderDisabledAlpha = 0.38f
+    // Contacts: gap between the duplicates banner and the favorites card.
+    val duplicatesCardFavoritesGap = 12.dp
     // Dual-SIM picker dialog rows.
     val simPickerRowMinHeight = 64.dp
     val simPickerRowCornerRadius = 12.dp
