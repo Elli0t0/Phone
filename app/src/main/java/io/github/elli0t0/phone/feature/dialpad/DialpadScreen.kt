@@ -657,6 +657,13 @@ fun DialpadScreen(
                             callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
                         }
                     }
+                    // Solid green under the glass: the glass fill alone
+                    // (22% alpha) washes out to near-white in light
+                    // theme, so the button was nearly invisible.
+                    .background(
+                        color = if (darkTheme) KeypadCallButtonGreenDark else KeypadCallButtonGreenLight,
+                        shape = CircleShape
+                    )
                     .liquidGlass(
                         shape = CircleShape,
                         tint = if (darkTheme) KeypadCallButtonGreenDark else KeypadCallButtonGreenLight,

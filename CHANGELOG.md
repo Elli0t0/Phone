@@ -138,6 +138,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Contact detail: the scrolling content now clears the floating bottom bar by an extra margin (the detail bar carries a top margin the main bar lacks), so the History card no longer slides behind the bar.
 
+## [0.11.15] - 2026-10-17
+
+- Keypad call button is visible in light theme again: it draws a solid green disc under the glass (the glass fill alone washed out to near-white over a light background).
+
 ## [0.10.31] - 2026-10-16
 
 - Liquid glass across the app (3): dialpad keys are now circular liquid-glass discs (no more square gray ripple; the key scales to 0.90 and springs back), the Call button is a glossy liquid-glass emerald button, the no-match Create new contact / Message actions are glass pills that animate in/out, and the T9 suggestion chips are glass chips showing the contact name and the matched number with the dialed digits highlighted in accent. Key press feedback is now the glass surface scale (the digit-dip pulse is gone).
