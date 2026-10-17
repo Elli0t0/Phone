@@ -106,6 +106,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Call Studio sections finish the group-card treatment: every settings group is a solid card, all switches match the main Settings switch (white thumb on accent track), and selected chips are filled accent with onPrimary text instead of accent text on glass.
 
+## [0.11.8] - 2026-10-17
+
+- Keypad backspace hides when the number is empty (fade + scale) instead of sitting dimmed; the number stays centered because the backspace overlays it.
+- Dark theme: accent text reads in a lighter tone (the accent lightened toward white), while buttons stay filled accent.
+
 ## [0.10.31] - 2026-10-16
 
 - Liquid glass across the app (3): dialpad keys are now circular liquid-glass discs (no more square gray ripple; the key scales to 0.90 and springs back), the Call button is a glossy liquid-glass emerald button, the no-match Create new contact / Message actions are glass pills that animate in/out, and the T9 suggestion chips are glass chips showing the contact name and the matched number with the dialed digits highlighted in accent. Key press feedback is now the glass surface scale (the digit-dip pulse is gone).

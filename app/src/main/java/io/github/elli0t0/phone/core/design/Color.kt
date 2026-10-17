@@ -3,6 +3,17 @@ package io.github.elli0t0.phone.core.design
 import androidx.compose.ui.graphics.Color
 
 // App color palette
+
+/** Mixes this color toward white by [fraction] (0 = unchanged, 1 = white). */
+fun Color.lighten(fraction: Float): Color {
+    return Color(
+        red = red + (1f - red) * fraction,
+        green = green + (1f - green) * fraction,
+        blue = blue + (1f - blue) * fraction,
+        alpha = alpha
+    )
+}
+
 val AccentBlue = Color(0xFF2473FE)
 val AccentBlueDark = Color(0xFF3E89FF)
 val OnAccentBlue = Color(0xFFFFFFFF)

@@ -82,7 +82,10 @@ fun PhoneTheme(
         darkTheme -> {
             val accent = Color(appSettings.accentColor)
             DefaultDarkColorScheme.copy(
-                primary = accent,
+                // Dark contrast: accent text reads in a lighter tone
+                // (a lightened accent, still a filled accent for
+                // buttons). Secondary keeps the unlightened accent.
+                primary = accent.lighten(0.4f),
                 secondary = accent
             )
         }
