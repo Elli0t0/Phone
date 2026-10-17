@@ -90,6 +90,18 @@ object PhoneDimens {
     // phone size, then scaled proportionally to fit the preview box.
     val studioPreviewReferenceWidth = 360.dp
     val studioPreviewReferenceHeight = 640.dp
+    // Studio preview card: phone-shaped (9:19.5), 60% of the screen
+    // tall, capped at this height, with a glass frame around it.
+    val studioPreviewMaxHeight = 520.dp
+    val studioPreviewCornerRadius = 28.dp
+    val studioPreviewFramePadding = 4.dp
+    // Floating Preview pill thumbnail (phone-shaped) and its corner radius.
+    val studioPreviewThumbnailHeight = 70.dp
+    val studioPreviewThumbnailCornerRadius = 12.dp
+    // Full-screen glass icon button in the preview corner.
+    val studioPreviewFullscreenIconSize = 20.dp
+    // Studio settings group cards.
+    val studioGroupCardCornerRadius = 24.dp
     val studioReorderButtonSize = 40.dp
     val studioReorderIconSize = 24.dp
     val studioReorderDisabledAlpha = 0.38f

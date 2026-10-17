@@ -96,6 +96,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Recents now uses the app-level snackbar host (no per-screen host under the bar) and its filter popup gets the outer shadow. Keypad keys no longer pass a dead elevation to liquid glass.
 
+## [0.11.6] - 2026-10-17
+
+- Call Background studio is one scrolling page: the phone-shaped preview card (9:19.5, 60% of the screen tall, capped at 520dp, glass frame) is the first item and scrolls away with the settings; the Incoming|Ongoing switch is a segmented control under it; Full screen is a glass icon button in the preview corner.
+- When the preview scrolls off-screen, a floating glass Preview pill (small live thumbnail + label) appears at the bottom center; tap scrolls back to the preview.
+- Studio groups in this screen are solid cards; the switch matches the main Settings switch (white thumb on accent track).
+
 ## [0.10.31] - 2026-10-16
 
 - Liquid glass across the app (3): dialpad keys are now circular liquid-glass discs (no more square gray ripple; the key scales to 0.90 and springs back), the Call button is a glossy liquid-glass emerald button, the no-match Create new contact / Message actions are glass pills that animate in/out, and the T9 suggestion chips are glass chips showing the contact name and the matched number with the dialed digits highlighted in accent. Key press feedback is now the glass surface scale (the digit-dip pulse is gone).

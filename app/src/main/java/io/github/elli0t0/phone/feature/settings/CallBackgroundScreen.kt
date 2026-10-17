@@ -1,57 +1,88 @@
 package io.github.elli0t0.phone.feature.settings
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
-import androidx.compose.material3.Switch
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.design.LiquidGlassIconButton
+import io.github.elli0t0.phone.core.design.LiquidGlassPill
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.data.call.CallState
 import io.github.elli0t0.phone.data.call.OngoingCallModel
+import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AnswerGesture
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.ControlButtonSize
@@ -60,6 +91,7 @@ import io.github.elli0t0.phone.data.settings.model.IncomingAvatarShape
 import io.github.elli0t0.phone.data.settings.model.IncomingAvatarSize
 import io.github.elli0t0.phone.feature.call.ui.IncomingCallScreen
 import io.github.elli0t0.phone.feature.call.ui.OngoingCallScreen
+import kotlinx.coroutines.launch
 
 /**
  * Call background studio as a full page: the top half is a live
@@ -228,193 +260,374 @@ fun CallBackgroundScreen(
             )
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            // Live preview: the real call screen with a sample caller.
-            // Preview buttons are inert. Full screen shows it edge to edge.
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .padding(
-                        horizontal = spacing.screenHorizontalPadding,
-                        vertical = spacing.small
-                    )
-                    .clip(RoundedCornerShape(24.dp))
-            ) {
-                ScaledCallPreview(modifier = Modifier.fillMaxSize()) {
-                    CallPreviewContent(
-                        previewOngoing = previewOngoing,
-                        mockCall = mockCall,
-                        selected = selected,
-                        backgroundColor = backgroundColor,
-                        dimDraft = dimDraft,
-                        showNumber = settings.showNumberOnCallScreen,
-                        answerGesture = settings.answerGesture,
-                        quickReplies = quickReplies
-                    )
-                }
-                Button(
-                    onClick = { previewFullscreen = true },
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(spacing.small)
-                        .testTag("call_preview_fullscreen")
-                ) {
-                    Text(text = stringResource(id = R.string.settings_call_preview_fullscreen))
-                }
-            }
-
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(
-                        horizontal = spacing.screenHorizontalPadding,
-                        vertical = spacing.small
-                    ),
+        // One scrolling page: the preview is the first item and
+        // scrolls away with the settings, instead of being pinned
+        // at 50% height with only the lower half scrolling.
+        val listState = rememberLazyListState()
+        val scope = rememberCoroutineScope()
+        val previewVisible by remember {
+            derivedStateOf { listState.firstVisibleItemIndex == 0 }
+        }
+        val previewHeight = minOf(
+            LocalConfiguration.current.screenHeightDp.dp * 0.6f,
+            PhoneDimens.studioPreviewMaxHeight
+        )
+        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize().testTag("call_background_list"),
+                contentPadding = PaddingValues(
+                    horizontal = spacing.screenHorizontalPadding,
+                    vertical = spacing.small
+                ),
                 verticalArrangement = Arrangement.spacedBy(spacing.medium)
             ) {
-                // Preview switch: incoming / ongoing.
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(spacing.small)
-                ) {
-                    StudioOptionChip(
-                        selected = !previewOngoing,
-                        onClick = {
-                            previewOngoing = false
-                        },
-                        label = stringResource(id = R.string.settings_call_preview_incoming),
-                        testTag = "call_preview_incoming"
-                    )
-                    StudioOptionChip(
-                        selected = previewOngoing,
-                        onClick = {
-                            previewOngoing = true
-                        },
-                        label = stringResource(id = R.string.settings_call_preview_ongoing),
-                        testTag = "call_preview_ongoing"
-                    )
+                // Item 0: phone-shaped preview card + segmented control.
+                item {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(spacing.medium),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        // Glass-framed preview card: the real call
+                        // screen with a sample caller. Preview buttons
+                        // are inert. Full screen shows it edge to edge.
+                        Box(
+                            modifier = Modifier
+                                .height(previewHeight)
+                                .aspectRatio(9f / 19.5f)
+                                .liquidGlass(
+                                    shape = RoundedCornerShape(PhoneDimens.studioPreviewCornerRadius),
+                                    floating = true
+                                )
+                                .padding(PhoneDimens.studioPreviewFramePadding)
+                                .clip(
+                                    RoundedCornerShape(
+                                        PhoneDimens.studioPreviewCornerRadius -
+                                            PhoneDimens.studioPreviewFramePadding
+                                    )
+                                )
+                                .testTag("call_preview_card")
+                        ) {
+                            CallPreviewContent(
+                                previewOngoing = previewOngoing,
+                                mockCall = mockCall,
+                                selected = selected,
+                                backgroundColor = backgroundColor,
+                                dimDraft = dimDraft,
+                                showNumber = settings.showNumberOnCallScreen,
+                                answerGesture = settings.answerGesture,
+                                quickReplies = quickReplies
+                            )
+                            LiquidGlassIconButton(
+                                onClick = { previewFullscreen = true },
+                                forceDarkGlass = true,
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(spacing.small)
+                                    .testTag("call_preview_fullscreen")
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_fullscreen),
+                                    contentDescription = stringResource(id = R.string.settings_call_preview_fullscreen),
+                                    tint = Color.White,
+                                    modifier = Modifier.size(PhoneDimens.studioPreviewFullscreenIconSize)
+                                )
+                            }
+                        }
+                        // Preview switch: incoming / ongoing.
+                        SingleChoiceSegmentedButtonRow(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            SegmentedButton(
+                                selected = !previewOngoing,
+                                onClick = { previewOngoing = false },
+                                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                                colors = SegmentedButtonDefaults.colors(
+                                    activeContainerColor = MaterialTheme.colorScheme.primary,
+                                    activeContentColor = MaterialTheme.colorScheme.onPrimary,
+                                    activeBorderColor = MaterialTheme.colorScheme.primary,
+                                    inactiveContainerColor = Color.Transparent,
+                                    inactiveContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                ),
+                                label = { Text(text = stringResource(id = R.string.settings_call_preview_incoming)) },
+                                modifier = Modifier.testTag("call_preview_incoming")
+                            )
+                            SegmentedButton(
+                                selected = previewOngoing,
+                                onClick = { previewOngoing = true },
+                                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                                colors = SegmentedButtonDefaults.colors(
+                                    activeContainerColor = MaterialTheme.colorScheme.primary,
+                                    activeContentColor = MaterialTheme.colorScheme.onPrimary,
+                                    activeBorderColor = MaterialTheme.colorScheme.primary,
+                                    inactiveContainerColor = Color.Transparent,
+                                    inactiveContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                ),
+                                label = { Text(text = stringResource(id = R.string.settings_call_preview_ongoing)) },
+                                modifier = Modifier.testTag("call_preview_ongoing")
+                            )
+                        }
+                    }
                 }
 
                 // Size sections live here (not in CallStudioSections)
-                // to keep each file small enough to ship.
+                // to keep each file small enough to ship. Each group
+                // is a card item in the page.
                 // Control button size: how big the ongoing-call buttons are.
-                Text(
-                    text = "Control button size",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(spacing.small)
-                ) {
-                    ControlButtonSize.entries.forEach { size ->
-                        StudioOptionChip(
-                            selected = settings.controlButtonSize == size,
-                            onClick = {
-                                settingsViewModel.onControlButtonSizeChanged(size)
-                            },
-                            label = size.label,
-                            testTag = "control_button_size_${size.name.lowercase()}"
-                        )
+                item {
+                    StudioGroupCard(title = "Control button size") {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(spacing.small)
+                        ) {
+                            ControlButtonSize.entries.forEach { size ->
+                                StudioOptionChip(
+                                    selected = settings.controlButtonSize == size,
+                                    onClick = {
+                                        settingsViewModel.onControlButtonSizeChanged(size)
+                                    },
+                                    label = size.label,
+                                    testTag = "control_button_size_${size.name.lowercase()}"
+                                )
+                            }
+                        }
                     }
                 }
 
                 // Keypad key size: how big the in-call keypad keys are.
-                Text(
-                    text = "Keypad key size",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(spacing.small)
-                ) {
-                    DtmfKeySize.entries.forEach { size ->
-                        StudioOptionChip(
-                            selected = settings.dtmfKeySize == size,
-                            onClick = {
-                                settingsViewModel.onDtmfKeySizeChanged(size)
-                            },
-                            label = size.label,
-                            testTag = "dtmf_key_size_${size.name.lowercase()}"
-                        )
+                item {
+                    StudioGroupCard(title = "Keypad key size") {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(spacing.small)
+                        ) {
+                            DtmfKeySize.entries.forEach { size ->
+                                StudioOptionChip(
+                                    selected = settings.dtmfKeySize == size,
+                                    onClick = {
+                                        settingsViewModel.onDtmfKeySizeChanged(size)
+                                    },
+                                    label = size.label,
+                                    testTag = "dtmf_key_size_${size.name.lowercase()}"
+                                )
+                            }
+                        }
                     }
                 }
 
                 // Avatar size: how big the caller avatar is on
                 // the incoming call screen.
-                Text(
-                    text = "Avatar size",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(spacing.small)
-                ) {
-                    IncomingAvatarSize.entries.forEach { size ->
-                        StudioOptionChip(
-                            selected = settings.incomingAvatarSize == size,
-                            onClick = {
-                                settingsViewModel.onIncomingAvatarSizeChanged(size)
-                            },
-                            label = size.label,
-                            testTag = "incoming_avatar_size_${size.name.lowercase()}"
-                        )
+                item {
+                    StudioGroupCard(title = "Avatar size") {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(spacing.small)
+                        ) {
+                            IncomingAvatarSize.entries.forEach { size ->
+                                StudioOptionChip(
+                                    selected = settings.incomingAvatarSize == size,
+                                    onClick = {
+                                        settingsViewModel.onIncomingAvatarSizeChanged(size)
+                                    },
+                                    label = size.label,
+                                    testTag = "incoming_avatar_size_${size.name.lowercase()}"
+                                )
+                            }
+                        }
                     }
                 }
 
                 // Avatar shape for the caller avatar on the
                 // incoming call screen.
-                Text(
-                    text = "Avatar shape",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(spacing.small)
-                ) {
-                    IncomingAvatarShape.entries.forEach { shape ->
-                        StudioOptionChip(
-                            selected = settings.incomingAvatarShape == shape,
-                            onClick = {
-                                settingsViewModel.onIncomingAvatarShapeChanged(shape)
-                            },
-                            label = shape.label,
-                            testTag = "incoming_avatar_shape_${shape.name.lowercase()}"
-                        )
+                item {
+                    StudioGroupCard(title = "Avatar shape") {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(spacing.small)
+                        ) {
+                            IncomingAvatarShape.entries.forEach { shape ->
+                                StudioOptionChip(
+                                    selected = settings.incomingAvatarShape == shape,
+                                    onClick = {
+                                        settingsViewModel.onIncomingAvatarShapeChanged(shape)
+                                    },
+                                    label = shape.label,
+                                    testTag = "incoming_avatar_shape_${shape.name.lowercase()}"
+                                )
+                            }
+                        }
                     }
                 }
 
                 // Quick replies position: above (default) or below the answer buttons.
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(text = "Quick replies below buttons", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-                    Switch(checked = settings.quickRepliesBelowButtons, onCheckedChange = { settingsViewModel.onQuickRepliesBelowButtonsChanged(it) }, modifier = Modifier.testTag("quick_replies_below_buttons_switch"))
+                item {
+                    StudioGroupCard(title = null) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(text = "Quick replies below buttons", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+                            AppSwitch(checked = settings.quickRepliesBelowButtons, onCheckedChange = { settingsViewModel.onQuickRepliesBelowButtonsChanged(it) }, modifier = Modifier.testTag("quick_replies_below_buttons_switch"))
+                        }
+                    }
                 }
 
-                CallStudioSections(
-                    selected = selected,
-                    accentColor = accentColor,
-                    onSelect = onSelect,
-                    dimDraft = dimDraft,
-                    onDimDraftChange = { dimDraft = it },
-                    onEditCustomColor = {
-                        customColorHexInput = String.format(
-                            "#%06X",
-                            0xFFFFFF and settings.callBackgroundCustomColor.toInt()
-                        )
-                        customColorError = false
-                        showCustomColorDialog = true
+                item {
+                    CallStudioSections(
+                        selected = selected,
+                        accentColor = accentColor,
+                        onSelect = onSelect,
+                        dimDraft = dimDraft,
+                        onDimDraftChange = { dimDraft = it },
+                        onEditCustomColor = {
+                            customColorHexInput = String.format(
+                                "#%06X",
+                                0xFFFFFF and settings.callBackgroundCustomColor.toInt()
+                            )
+                            customColorError = false
+                            showCustomColorDialog = true
+                        }
+                    )
+                }
+            }
+            // Floating Preview pill, shown when the preview scrolled
+            // off-screen: a small live thumbnail + label. Tap scrolls
+            // back to the preview.
+            AnimatedVisibility(
+                visible = !previewVisible,
+                enter = fadeIn() + scaleIn(initialScale = 0.9f),
+                exit = fadeOut() + scaleOut(targetScale = 0.9f),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(bottom = spacing.medium)
+            ) {
+                LiquidGlassPill(
+                    floating = true,
+                    modifier = Modifier
+                        .clickable { scope.launch { listState.animateScrollToItem(0) } }
+                        .testTag("call_preview_pill")
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .height(PhoneDimens.studioPreviewThumbnailHeight)
+                            .aspectRatio(9f / 19.5f)
+                            .clip(RoundedCornerShape(PhoneDimens.studioPreviewThumbnailCornerRadius))
+                    ) {
+                        ScaledCallPreview(modifier = Modifier.fillMaxSize()) {
+                            CallPreviewContent(
+                                previewOngoing = previewOngoing,
+                                mockCall = mockCall,
+                                selected = selected,
+                                backgroundColor = backgroundColor,
+                                dimDraft = dimDraft,
+                                showNumber = settings.showNumberOnCallScreen,
+                                answerGesture = settings.answerGesture,
+                                quickReplies = quickReplies
+                            )
+                        }
                     }
-                )
+                    Text(
+                        text = stringResource(id = R.string.settings_call_background),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(start = spacing.small)
+                    )
+                }
             }
         }
+    }
+}
+
+/**
+ * One settings group as a solid card: an optional title plus the
+ * group's controls. Groups in the Call Studio are card items in
+ * the page. Shared with CallStudioSections (same package).
+ */
+@Composable
+fun StudioGroupCard(
+    title: String?,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        ),
+        shape = RoundedCornerShape(PhoneDimens.studioGroupCardCornerRadius),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(LocalSpacing.current.medium),
+            verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.small)
+        ) {
+            if (title != null) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            content()
+        }
+    }
+}
+
+/**
+ * Custom switch: wide 52x28dp track with a large white round thumb,
+ * matching the main Settings switch (white thumb on accent track).
+ * Shared with SettingsScreen's SettingsSwitch; moves to core/design
+ * when SettingsScreen is split.
+ */
+@Composable
+fun AppSwitch(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // Thumb slide respects the Animations setting: ON keeps the
+    // default spring, REDUCED shortens to a fade-speed tween,
+    // OFF snaps instantly.
+    val animationOption = LocalAppSettings.current.animationOption
+    val thumbSpec: AnimationSpec<Dp> = when (animationOption) {
+        AnimationOption.ON -> spring(stiffness = Spring.StiffnessMediumLow)
+        AnimationOption.REDUCED -> tween(
+            durationMillis = Motion.scaledDurationMs(200, animationOption),
+            easing = Motion.Easings.Standard
+        )
+        AnimationOption.OFF -> snap()
+    }
+    val thumbOffset by animateDpAsState(
+        targetValue = if (checked) {
+            PhoneDimens.settingsSwitchWidth - PhoneDimens.settingsSwitchThumbSize -
+                PhoneDimens.settingsSwitchThumbPadding * 2
+        } else {
+            PhoneDimens.settingsSwitchThumbPadding
+        },
+        animationSpec = thumbSpec
+    )
+    Box(
+        modifier = modifier
+            .size(
+                width = PhoneDimens.settingsSwitchWidth,
+                height = PhoneDimens.settingsSwitchHeight
+            )
+            .clip(RoundedCornerShape(PhoneDimens.settingsSwitchCornerPercent))
+            .background(
+                if (checked) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.surfaceVariant
+            )
+            .toggleable(
+                value = checked,
+                role = Role.Switch,
+                onValueChange = onCheckedChange
+            ),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Box(
+            modifier = Modifier
+                .offset(x = thumbOffset)
+                .size(PhoneDimens.settingsSwitchThumbSize)
+                .clip(CircleShape)
+                .background(Color.White)
+        )
     }
 }
 
