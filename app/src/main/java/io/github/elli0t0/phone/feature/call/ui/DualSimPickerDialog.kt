@@ -2,6 +2,7 @@ package io.github.elli0t0.phone.feature.call.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -23,15 +23,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.design.LiquidGlassPopupSurface
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
-import io.github.elli0t0.phone.core.design.liquidGlass
+import io.github.elli0t0.phone.core.design.dialogEnter
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.core.telecom.SimAccountInfo
@@ -46,23 +48,23 @@ fun DualSimPickerDialog(
     val spacing = LocalSpacing.current
     val lightHaptic = rememberLightHaptic()
 
-    AlertDialog(
+    Dialog(
         onDismissRequest = onDismiss,
-        modifier = Modifier.liquidGlass(
-            shape = RoundedCornerShape(PhoneDimens.dialogCornerRadius),
-            floating = true
-        ),
-        shape = RoundedCornerShape(PhoneDimens.dialogCornerRadius),
-        containerColor = Color.Transparent,
-        tonalElevation = 0.dp,
-        title = {
-            Text(
-                text = stringResource(id = R.string.call_sim_picker_title),
-                style = MaterialTheme.typography.titleMedium
-            )
-        },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        LiquidGlassPopupSurface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = spacing.large)
+                .dialogEnter()
+                .testTag("sim_picker_dialog")
+        ) {
+            Column(modifier = Modifier.padding(spacing.large)) {
+                Text(
+                    text = stringResource(id = R.string.call_sim_picker_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = spacing.medium)
+                )
                 Text(
                     text = targetNumber,
                     style = MaterialTheme.typography.bodyMedium,
@@ -103,13 +105,15 @@ fun DualSimPickerDialog(
                         Spacer(modifier = Modifier.height(spacing.small))
                     }
                 }
-            }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(text = stringResource(id = R.string.action_cancel))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text(text = stringResource(id = R.string.action_cancel))
+                    }
+                }
             }
         }
-    )
+    }
 }

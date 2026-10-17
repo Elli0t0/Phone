@@ -20,9 +20,12 @@ import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.composed
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -366,6 +369,35 @@ fun Modifier.glassPress(source: MutableInteractionSource): Modifier = composed {
                 drawContent()
                 drawRect(Color.White.copy(alpha = 0.18f * sheen))
             }
+    }
+}
+
+/**
+ * Dialog enter: the popup scales 0.92→1 and fades in (Medium
+ * duration, Emphasized easing). Enter-only; dismiss is instant.
+ * Inactive when the Animations setting is OFF.
+ */
+fun Modifier.dialogEnter(): Modifier = composed {
+    val option = LocalAppSettings.current.animationOption
+    if (option == AnimationOption.OFF) {
+        this
+    } else {
+        var entered by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) { entered = true }
+        val progress by animateFloatAsState(
+            targetValue = if (entered) 1f else 0f,
+            animationSpec = tween(
+                durationMillis = Motion.scaledDurationMs(Motion.Durations.Medium, option),
+                easing = Motion.Easings.Emphasized
+            ),
+            label = "dialogEnter"
+        )
+        val scale = 0.92f + 0.08f * progress
+        graphicsLayer {
+            scaleX = scale
+            scaleY = scale
+            alpha = progress
+        }
     }
 }
 
