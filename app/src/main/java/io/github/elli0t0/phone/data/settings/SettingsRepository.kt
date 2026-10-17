@@ -25,6 +25,7 @@ import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
+import io.github.elli0t0.phone.data.settings.model.HeaderSize
 import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.CallDisplay
@@ -53,6 +54,7 @@ interface SettingsRepository {
     suspend fun setShowBottomBarLabels(show: Boolean)
     suspend fun setBottomBarStyle(style: BottomBarStyle)
     suspend fun setBottomBarSize(size: BottomBarSize)
+    suspend fun setHeaderSize(size: HeaderSize)
     suspend fun setShrinkBottomBarOnScroll(shrink: Boolean)
     suspend fun setGlassBottomBar(enabled: Boolean)
     suspend fun setGlassDialpad(enabled: Boolean)
@@ -103,6 +105,7 @@ class DataStoreSettingsRepository(
         val BOTTOM_BAR_LABELS = booleanPreferencesKey("bottom_bar_labels")
         val BOTTOM_BAR_STYLE = stringPreferencesKey("bottom_bar_style")
         val BOTTOM_BAR_SIZE = stringPreferencesKey("bottom_bar_size")
+        val HEADER_SIZE = stringPreferencesKey("header_size")
         val BOTTOM_BAR_SHRINK = booleanPreferencesKey("bottom_bar_shrink")
         val GLASS_BOTTOM_BAR = booleanPreferencesKey("glass_bottom_bar")
         val GLASS_DIALPAD = booleanPreferencesKey("glass_dialpad")
@@ -161,6 +164,9 @@ class DataStoreSettingsRepository(
 
         val barSizeStr = prefs[Keys.BOTTOM_BAR_SIZE]
         val barSize = barSizeStr?.let { runCatching { BottomBarSize.valueOf(it) }.getOrNull() } ?: BottomBarSize.MEDIUM
+
+        val headerSizeStr = prefs[Keys.HEADER_SIZE]
+        val headerSize = headerSizeStr?.let { runCatching { HeaderSize.valueOf(it) }.getOrNull() } ?: HeaderSize.STANDARD
 
         val barShrink = prefs[Keys.BOTTOM_BAR_SHRINK] ?: false
 
@@ -262,6 +268,7 @@ class DataStoreSettingsRepository(
             listDensity = density,
             cardStyle = cardStyle,
             fontSizeScale = fontScale,
+            headerSize = headerSize,
             animationOption = anim,
             showBottomBarLabels = showLabels,
             bottomBarStyle = barStyle,
@@ -364,6 +371,12 @@ class DataStoreSettingsRepository(
     override suspend fun setBottomBarSize(size: BottomBarSize) {
         dataStore.edit { prefs ->
             prefs[Keys.BOTTOM_BAR_SIZE] = size.name
+        }
+    }
+
+    override suspend fun setHeaderSize(size: HeaderSize) {
+        dataStore.edit { prefs ->
+            prefs[Keys.HEADER_SIZE] = size.name
         }
     }
 

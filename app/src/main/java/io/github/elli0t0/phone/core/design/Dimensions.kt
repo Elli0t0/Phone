@@ -41,6 +41,8 @@ object PhoneDimens {
     // ~38% of the screen (min 260dp), title centered at ~42% of its
     // height, action row at the bottom 12dp above the first list item.
     val headerHeightFraction = 0.38f
+    val headerHeightFractionCompact = 0.22f
+    val headerHeightFractionStandard = 0.30f
     val headerMinHeight = 260.dp
     val headerTitleCenterFraction = 0.42f
     val headerTitleExpandedSize = 34.sp

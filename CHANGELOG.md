@@ -154,6 +154,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Hardening: the in-call service now cancels its coroutine scope in onDestroy (its Job was never cancelled), and the app declares no cleartext traffic (INTERNET stays, used only for the opt-in update check).
 
+## [0.11.19] - 2026-10-18
+
+- Settings > Appearance: new Header size (Compact 22% / Standard 30% / Large 38%). Standard is the default.
+- Update check hardened: the connection is always disconnected, rate limiting (GitHub 403/429) and offline get their own states with Retry, and About notes the check contacts api.github.com only when you tap it.
+- The system call-settings row no longer risks a crash when its intent cannot be resolved.
+
 ## [0.10.31] - 2026-10-16
 
 - Liquid glass across the app (3): dialpad keys are now circular liquid-glass discs (no more square gray ripple; the key scales to 0.90 and springs back), the Call button is a glossy liquid-glass emerald button, the no-match Create new contact / Message actions are glass pills that animate in/out, and the T9 suggestion chips are glass chips showing the contact name and the matched number with the dialed digits highlighted in accent. Key press feedback is now the glass surface scale (the digit-dip pulse is gone).

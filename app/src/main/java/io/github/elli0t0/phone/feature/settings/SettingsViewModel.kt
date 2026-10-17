@@ -19,6 +19,7 @@ import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
+import io.github.elli0t0.phone.data.settings.model.HeaderSize
 import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.CallDisplay
@@ -108,6 +109,12 @@ class SettingsViewModel(
     fun onBottomBarSizeChanged(size: BottomBarSize) {
         viewModelScope.launch {
             settingsRepository.setBottomBarSize(size)
+        }
+    }
+
+    fun onHeaderSizeChanged(size: HeaderSize) {
+        viewModelScope.launch {
+            settingsRepository.setHeaderSize(size)
         }
     }
 

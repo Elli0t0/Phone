@@ -34,17 +34,24 @@ import io.github.elli0t0.phone.core.design.LiquidGlassPillShape
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.data.settings.model.HeaderSize
 
 /**
- * Expanded header height: ~38% of the screen, at least 260dp.
+ * Expanded header height: the Header size setting's fraction of the
+ * screen (Compact 22%, Standard 30%, Large 38%), at least 260dp.
  * Shared by the header item and the floating pill (the pill fades in
  * across exactly this scroll distance).
  */
 @Composable
 fun pageHeaderHeight(): Dp {
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+    val fraction = when (LocalAppSettings.current.headerSize) {
+        HeaderSize.COMPACT -> PhoneDimens.headerHeightFractionCompact
+        HeaderSize.STANDARD -> PhoneDimens.headerHeightFractionStandard
+        HeaderSize.LARGE -> PhoneDimens.headerHeightFraction
+    }
     return maxOf(
-        screenHeight * PhoneDimens.headerHeightFraction,
+        screenHeight * fraction,
         PhoneDimens.headerMinHeight
     )
 }

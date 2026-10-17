@@ -158,6 +158,12 @@ enum class BottomBarSize(val label: String) {
     LARGE("Large")
 }
 
+enum class HeaderSize(val label: String) {
+    COMPACT("Compact"),
+    STANDARD("Standard"),
+    LARGE("Large")
+}
+
 data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val accentColor: Long = AccentPreset.ONE_UI_BLUE.colorValue,
@@ -167,6 +173,7 @@ data class AppSettings(
     val listDensity: ListDensity = ListDensity.DEFAULT,
     val cardStyle: CardStyle = CardStyle.ROUNDED,
     val fontSizeScale: Float = 1.0f,
+    val headerSize: HeaderSize = HeaderSize.STANDARD,
     val animationOption: AnimationOption = AnimationOption.ON,
     val showBottomBarLabels: Boolean = true,
     val bottomBarStyle: BottomBarStyle = BottomBarStyle.GLASS,
