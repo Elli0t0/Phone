@@ -26,8 +26,8 @@ import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.asFrameworkPaint
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.luminance
@@ -258,7 +258,13 @@ fun Modifier.outerShadow(
     dy: Dp = 4.dp
 ): Modifier = drawBehind {
     val outline = shape.createOutline(size, layoutDirection, this)
-    val path = Path().apply { addOutline(outline) }
+    val path = Path().apply {
+        when (outline) {
+            is Outline.Rectangle -> addRect(outline.rect)
+            is Outline.Rounded -> addRoundRect(outline.roundRect)
+            is Outline.Generic -> addPath(outline.path)
+        }
+    }
     clipPath(path, ClipOp.Difference) {
         drawIntoCanvas { canvas ->
             val paint = Paint().apply {
@@ -267,7 +273,7 @@ fun Modifier.outerShadow(
                     setShadowLayer(blur.toPx(), 0f, dy.toPx(), color.toArgb())
                 }
             }
-            canvas.drawOutline(outline, paint)
+            canvas.drawPath(path, paint)
         }
     }
 }
@@ -303,7 +309,7 @@ fun Modifier.liquidGlass(
     elevation: Dp = 8.dp,
 ): Modifier {
     val dark = isDarkGlassTheme() || forceDarkGlass
-    val base = if (tint.isSpecified) tint else MaterialTheme.colorScheme.primary
+    val base = if (tint != Color.Unspecified) tint else MaterialTheme.colorScheme.primary
     val spec = remember(dark, base, isSelected) { GlassSpec.create(dark, base, isSelected) }
     return this
         .then(if (floating) Modifier.outerShadow(shape, spec.shadow) else Modifier)
