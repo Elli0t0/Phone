@@ -75,6 +75,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Contacts overflow menu is liquid glass (background, rim, and shadow from the liquid-glass modifier) instead of the plain Material menu.
 - Bottom-bar clearance is now sized for the largest bar (68dp Large + 12dp gap + 16dp), so list content clears the bar with margin at every bar size; the fade scrim behind the floating bar grows with it.
 
+## [0.11.2] - 2026-10-17
+
+- Fixed the glass rendering bug: liquid glass no longer draws a hardware shadow under a translucent fill (that showed through as dark rectangles in cards and dark squares under round-button icons). Shadows are now drawn only outside the shape (outerShadow) and only for floating surfaces — bottom bar, header pill, detail bar, popups; cards, keys, chips, icon buttons, and gem buttons get sheen + rim only.
+- Glass brushes (fill, sheen, rim, shadow) are built once per theme/tint/selection (GlassSpec) instead of on every frame.
+- Contacts overflow menu, SIM picker, and Calling SIM dialogs now use the outer shadow (floating popups).
+
 ## [0.10.31] - 2026-10-16
 
 - Liquid glass across the app (3): dialpad keys are now circular liquid-glass discs (no more square gray ripple; the key scales to 0.90 and springs back), the Call button is a glossy liquid-glass emerald button, the no-match Create new contact / Message actions are glass pills that animate in/out, and the T9 suggestion chips are glass chips showing the contact name and the matched number with the dialed digits highlighted in accent. Key press feedback is now the glass surface scale (the digit-dip pulse is gone).

@@ -15,17 +15,23 @@ import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.compositeOver
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.asFrameworkPaint
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlin.math.PI
@@ -141,12 +147,17 @@ val SquircleShape: Shape = GenericShape { size, _ ->
 
 /**
  * Reusable glass surface: a translucent fill with a 1dp vertical-gradient
- * border (white 35% to 5%) and a soft shadow (black, 10% alpha).
- * Placed over a gradient or image background it reads as frosted glass.
+ * border (white 35% to 5%). Placed over a gradient or image background it
+ * reads as frosted glass.
  *
  * Colors default to the current theme (white tints on dark, dark tints
  * on light). Pass explicit colors when the surface sits over a background
  * that does not follow the theme, e.g. the always-dark call background.
+ *
+ * The shadow is drawn OUTSIDE the shape ([outerShadow]), never as a
+ * hardware shadow under the translucent fill (that shows through as a
+ * dark rectangle). [floating] is true for the surfaces that float above
+ * content (bottom bar, header pill); cards and inline surfaces pass false.
  *
  * Real blur (Haze) was checked first: Haze 2.0.1 is the latest stable release,
  * but its new modular 2.x API is unverified against this project's Compose
@@ -159,16 +170,12 @@ fun GlassSurface(
     shape: Shape = LiquidGlassDockShape,
     dark: Boolean = isDarkGlassTheme(),
     containerColor: Color = glassColors(dark).container,
+    floating: Boolean = true,
     content: @Composable BoxScope.() -> Unit
 ) {
     Box(
         modifier = modifier
-            .shadow(
-                elevation = 8.dp,
-                shape = shape,
-                spotColor = Color.Black.copy(alpha = 0.10f),
-                ambientColor = Color.Black.copy(alpha = 0.10f)
-            )
+            .then(if (floating) Modifier.outerShadow(shape, Color.Black.copy(alpha = 0.10f)) else Modifier)
             .clip(shape)
             .background(containerColor)
             .border(
@@ -186,61 +193,124 @@ fun GlassSurface(
 }
 
 /**
+ * The brushes and shadow color of one liquid-glass treatment, built once
+ * and remembered. [fill] is the translucent tint gradient, [sheen] the
+ * specular highlight drawn over it, [rim] the 1dp refractive border,
+ * [shadow] the color used by [outerShadow] for floating surfaces.
+ */
+private class GlassSpec(
+    val fill: Brush,
+    val sheen: Brush,
+    val rim: Brush,
+    val shadow: Color
+) {
+    companion object {
+        fun create(dark: Boolean, base: Color, isSelected: Boolean): GlassSpec {
+            val topAlpha = if (dark) 0.24f else 0.78f
+            val bottomAlpha = if (dark) 0.12f else 0.52f
+            val borderTopAlpha = if (dark) 0.48f else 0.92f
+            val borderBottomAlpha = if (dark) 0.14f else 0.30f
+            val fillTopAlpha = if (isSelected) 0.22f else 0.08f
+            val fillBottomAlpha = if (isSelected) 0.14f else 0.04f
+            val rimMidAlpha = if (isSelected) 0.45f else 0.15f
+            return GlassSpec(
+                fill = Brush.linearGradient(
+                    colors = listOf(
+                        base.copy(alpha = fillTopAlpha),
+                        base.copy(alpha = fillBottomAlpha)
+                    ),
+                    start = Offset.Zero,
+                    end = Offset.Infinite
+                ),
+                sheen = Brush.linearGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = topAlpha),
+                        Color.White.copy(alpha = bottomAlpha)
+                    ),
+                    start = Offset.Zero,
+                    end = Offset.Infinite
+                ),
+                rim = Brush.linearGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = borderTopAlpha),
+                        base.copy(alpha = rimMidAlpha),
+                        Color.White.copy(alpha = borderBottomAlpha)
+                    ),
+                    start = Offset.Zero,
+                    end = Offset.Infinite
+                ),
+                shadow = base.copy(alpha = 0.35f)
+            )
+        }
+    }
+}
+
+/**
+ * A shadow drawn only OUTSIDE the shape: the shape interior is cut out
+ * (ClipOp.Difference), so no shadow ever shows through a translucent fill.
+ * If this does not render correctly on a device, drop shadows completely
+ * rather than reintroducing a hardware shadow under a translucent fill.
+ */
+fun Modifier.outerShadow(
+    shape: Shape,
+    color: Color,
+    blur: Dp = 14.dp,
+    dy: Dp = 4.dp
+): Modifier = drawBehind {
+    val outline = shape.createOutline(size, layoutDirection, this)
+    val path = Path().apply { addOutline(outline) }
+    clipPath(path, ClipOp.Difference) {
+        drawIntoCanvas { canvas ->
+            val paint = Paint().apply {
+                asFrameworkPaint().apply {
+                    this.color = android.graphics.Color.TRANSPARENT
+                    setShadowLayer(blur.toPx(), 0f, dy.toPx(), color.toArgb())
+                }
+            }
+            canvas.drawOutline(outline, paint)
+        }
+    }
+}
+
+/**
  * True liquid glass: a refractive, tactile surface.
  *
- * Fill: a translucent multi-stop gradient (bright specular highlight at the
- * top-left fading to a softly tinted translucent base). Rim: a 1.dp diagonal
- * refractive border (bright white at the top-left, subtle accent tint in the
- * center, soft reflection at the bottom-right). Shadow: a colored
- * elevation/glow via graphicsLayer, tinted by the surface/accent color.
+ * Fill: a translucent tint gradient. Sheen: a bright specular highlight
+ * at the top-left fading toward the bottom-right, drawn over the fill.
+ * Rim: a 1.dp diagonal refractive border (bright white at the top-left,
+ * subtle accent tint in the center, soft reflection at the bottom-right).
+ * Shadow: only for [floating] surfaces, drawn OUTSIDE the shape via
+ * [outerShadow]. Never a hardware shadow under a translucent fill — that
+ * shows through as a dark inset rectangle.
  *
  * Dark detection follows the app theme (ThemeMode), not the system theme,
  * so glass matches the app setting in both Light and Dark themes.
  * [forceDarkGlass] forces the dark treatment, e.g. surfaces over the
- * always-dark call background.
+ * always-dark call background. [floating] is true only for the bottom bar,
+ * header pill, details/edit bar, and popups; cards, keys, chips, icon
+ * buttons, and gem buttons pass false and get sheen + rim only.
+ *
+ * [elevation] is ignored (no hardware shadow is drawn). It is kept for
+ * source compatibility while call sites migrate to [floating].
  */
 @Composable
 fun Modifier.liquidGlass(
     shape: Shape = RoundedCornerShape(24.dp),
     tint: Color = Color.Unspecified,
-    elevation: Dp = 8.dp,
     isSelected: Boolean = false,
     forceDarkGlass: Boolean = false,
+    floating: Boolean = false,
+    elevation: Dp = 8.dp,
 ): Modifier {
-    val isDark = isDarkGlassTheme() || forceDarkGlass
-    val baseTint = if (tint != Color.Unspecified) tint else MaterialTheme.colorScheme.primary
-    val topAlpha = if (isDark) 0.24f else 0.78f
-    val bottomAlpha = if (isDark) 0.12f else 0.52f
-    val borderTopAlpha = if (isDark) 0.48f else 0.92f
-    val borderBottomAlpha = if (isDark) 0.14f else 0.30f
-
-    val fillBrush = Brush.linearGradient(
-        colors = listOf(
-            Color.White.copy(alpha = topAlpha).compositeOver(baseTint.copy(alpha = if (isSelected) 0.22f else 0.08f)),
-            Color.White.copy(alpha = bottomAlpha).compositeOver(baseTint.copy(alpha = if (isSelected) 0.14f else 0.04f))
-        ),
-        start = Offset.Zero,
-        end = Offset.Infinite
-    )
-    val rimBrush = Brush.linearGradient(
-        colors = listOf(
-            Color.White.copy(alpha = borderTopAlpha),
-            baseTint.copy(alpha = if (isSelected) 0.45f else 0.15f),
-            Color.White.copy(alpha = borderBottomAlpha)
-        ),
-        start = Offset.Zero,
-        end = Offset.Infinite
-    )
+    val dark = isDarkGlassTheme() || forceDarkGlass
+    val base = if (tint.isSpecified) tint else MaterialTheme.colorScheme.primary
+    val spec = remember(dark, base, isSelected) { GlassSpec.create(dark, base, isSelected) }
     return this
-        .graphicsLayer {
-            shadowElevation = elevation.toPx()
-            this.shape = shape
-            clip = true
-            ambientShadowColor = baseTint.copy(alpha = 0.25f)
-            spotShadowColor = baseTint.copy(alpha = 0.35f)
-        }
-        .background(brush = fillBrush, shape = shape)
-        .border(width = 1.dp, brush = rimBrush, shape = shape)
+        .then(if (floating) Modifier.outerShadow(shape, spec.shadow) else Modifier)
+        .clip(shape)
+        .background(spec.fill)
+        .background(spec.sheen)
+        .border(1.dp, spec.rim, shape)
 }
 
 /**
@@ -253,13 +323,13 @@ fun LiquidGlassCard(
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(24.dp),
     tint: Color = Color.Unspecified,
-    elevation: Dp = 8.dp,
     isSelected: Boolean = false,
     forceDarkGlass: Boolean = false,
+    floating: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Column(
-        modifier = modifier.liquidGlass(shape, tint, elevation, isSelected, forceDarkGlass),
+        modifier = modifier.liquidGlass(shape, tint, isSelected, forceDarkGlass, floating),
         content = content
     )
 }
@@ -273,15 +343,15 @@ fun LiquidGlassPill(
     modifier: Modifier = Modifier,
     shape: Shape = LiquidGlassPillShape,
     tint: Color = Color.Unspecified,
-    elevation: Dp = 8.dp,
     isSelected: Boolean = false,
     forceDarkGlass: Boolean = false,
+    floating: Boolean = false,
     content: @Composable RowScope.() -> Unit
 ) {
     Row(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier.liquidGlass(shape, tint, elevation, isSelected, forceDarkGlass),
+        modifier = modifier.liquidGlass(shape, tint, isSelected, forceDarkGlass, floating),
         content = content
     )
 }
@@ -296,9 +366,9 @@ fun LiquidGlassIconButton(
     modifier: Modifier = Modifier,
     shape: Shape = CircleShape,
     tint: Color = Color.Unspecified,
-    elevation: Dp = 8.dp,
     isSelected: Boolean = false,
     forceDarkGlass: Boolean = false,
+    floating: Boolean = false,
     content: @Composable BoxScope.() -> Unit
 ) {
     Box(
@@ -306,7 +376,7 @@ fun LiquidGlassIconButton(
         modifier = modifier
             .clip(shape)
             .clickable(onClick = onClick)
-            .liquidGlass(shape, tint, elevation, isSelected, forceDarkGlass),
+            .liquidGlass(shape, tint, isSelected, forceDarkGlass, floating),
         content = content
     )
 }
@@ -322,8 +392,8 @@ fun LiquidGlassChip(
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(percent = 50),
     tint: Color = Color.Unspecified,
-    elevation: Dp = 6.dp,
     forceDarkGlass: Boolean = false,
+    floating: Boolean = false,
     content: @Composable RowScope.() -> Unit
 ) {
     Row(
@@ -332,7 +402,7 @@ fun LiquidGlassChip(
         modifier = modifier
             .clip(shape)
             .clickable(onClick = onClick)
-            .liquidGlass(shape, tint, elevation, selected, forceDarkGlass),
+            .liquidGlass(shape, tint, selected, forceDarkGlass, floating),
         content = content
     )
 }
@@ -348,8 +418,8 @@ fun LiquidGlassGemButton(
     modifier: Modifier = Modifier,
     tint: Color,
     shape: Shape = CircleShape,
-    elevation: Dp = 10.dp,
     forceDarkGlass: Boolean = false,
+    floating: Boolean = false,
     content: @Composable BoxScope.() -> Unit
 ) {
     Box(
@@ -357,26 +427,28 @@ fun LiquidGlassGemButton(
         modifier = modifier
             .clip(shape)
             .clickable(onClick = onClick)
-            .liquidGlass(shape, tint, elevation, true, forceDarkGlass),
+            .liquidGlass(shape, tint, true, forceDarkGlass, floating),
         content = content
     )
 }
 
 /**
- * Liquid-glass popup surface: a larger, higher-elevation glass container
- * for dialogs, menus, and bottom sheets. Content lays out in a Column.
+ * Liquid-glass popup surface: a larger glass container for dialogs,
+ * menus, and bottom sheets. Popups float above content, so [floating]
+ * defaults to true and the shadow is drawn outside the shape.
+ * Content lays out in a Column.
  */
 @Composable
 fun LiquidGlassPopupSurface(
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(28.dp),
     tint: Color = Color.Unspecified,
-    elevation: Dp = 16.dp,
     forceDarkGlass: Boolean = false,
+    floating: Boolean = true,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Column(
-        modifier = modifier.liquidGlass(shape, tint, elevation, false, forceDarkGlass),
+        modifier = modifier.liquidGlass(shape, tint, false, forceDarkGlass, floating),
         content = content
     )
 }

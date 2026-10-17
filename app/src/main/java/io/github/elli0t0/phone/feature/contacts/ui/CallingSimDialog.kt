@@ -42,7 +42,8 @@ fun CallingSimDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.liquidGlass(
-            shape = RoundedCornerShape(PhoneDimens.dialogCornerRadius)
+            shape = RoundedCornerShape(PhoneDimens.dialogCornerRadius),
+            floating = true
         ),
         shape = RoundedCornerShape(PhoneDimens.dialogCornerRadius),
         containerColor = Color.Transparent,

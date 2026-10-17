@@ -237,7 +237,7 @@ private fun ContactsContent(
                         // stays transparent so it does not double-draw.
                         modifier = Modifier.liquidGlass(
                             shape = RoundedCornerShape(PhoneDimens.menuCornerRadius),
-                            elevation = PhoneDimens.menuElevation
+                            floating = true
                         ),
                         shape = RoundedCornerShape(PhoneDimens.menuCornerRadius),
                         containerColor = Color.Transparent,
