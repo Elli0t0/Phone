@@ -124,7 +124,7 @@ fun DialKeyView(
             modifier = modifier
                 .size(PhoneDimens.keypadTouchSize)
                 .bouncyClick(keySource)
-                .liquidGlass(shape = CircleShape, elevation = 0.dp)
+                .liquidGlass(shape = CircleShape)
                 .combinedClickable(
                     interactionSource = keySource,
                     indication = null,

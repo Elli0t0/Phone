@@ -41,8 +41,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
@@ -65,6 +63,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import io.github.elli0t0.phone.LocalAppSnackbarHostState
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalAppSettings
@@ -124,7 +123,9 @@ fun RecentsScreen(
     // @Composable context, so it cannot read a CompositionLocal.
     val defaultSim = LocalAppSettings.current.defaultSim
     val clipboardManager = LocalClipboardManager.current
-    val snackbarHostState = remember { SnackbarHostState() }
+    // App-level snackbar host (MainActivity): one host above the
+    // floating bar for every screen, no per-screen host under the bar.
+    val snackbarHostState = LocalAppSnackbarHostState.current
 
     var simPickerTargetNumber by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
     var searchVisible by remember { mutableStateOf(uiState.searchQuery.isNotEmpty()) }
@@ -174,8 +175,7 @@ fun RecentsScreen(
     }
 
     Scaffold(
-        modifier = modifier.fillMaxSize().testTag("recents_screen"),
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        modifier = modifier.fillMaxSize().testTag("recents_screen")
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -212,7 +212,7 @@ fun RecentsScreen(
                             onDismissRequest = { filterMenuExpanded = false },
                             modifier = Modifier.liquidGlass(
                                 shape = RoundedCornerShape(PhoneDimens.recentsFilterPopupCornerRadius),
-                                elevation = 16.dp
+                                floating = true
                             ),
                             shape = RoundedCornerShape(PhoneDimens.recentsFilterPopupCornerRadius),
                             containerColor = Color.Transparent,
