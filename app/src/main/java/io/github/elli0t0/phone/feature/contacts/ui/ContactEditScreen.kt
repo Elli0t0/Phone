@@ -57,6 +57,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -65,6 +66,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.contacts.model.ContactEmail
@@ -190,7 +192,9 @@ fun ContactEditScreen(
         modifier = modifier.fillMaxSize().testTag("contact_edit_screen"),
         topBar = {
             TopAppBar(
-                modifier = Modifier.padding(top = spacing.small),
+                modifier = Modifier
+                    .padding(top = spacing.small)
+                    .liquidGlass(shape = RectangleShape, floating = true),
                 title = {
                     Text(
                         text = if (uiState.isNewContact) {
@@ -218,7 +222,7 @@ fun ContactEditScreen(
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         }
     ) { innerPadding ->

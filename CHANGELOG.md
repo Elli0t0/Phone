@@ -146,6 +146,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Glass menus animate in like the dialogs: the Contacts overflow menu and the Recents filter menu now scale 0.92 to 1 plus fade-in (Medium, Emphasized). The plain menus keep the default dropdown animation.
 
+## [0.11.17] - 2026-10-17
+
+- The edit/new-contact action bar is glass now: the top bar (Cancel + Save) draws liquid glass over a transparent container instead of a solid background.
+
 ## [0.10.31] - 2026-10-16
 
 - Liquid glass across the app (3): dialpad keys are now circular liquid-glass discs (no more square gray ripple; the key scales to 0.90 and springs back), the Call button is a glossy liquid-glass emerald button, the no-match Create new contact / Message actions are glass pills that animate in/out, and the T9 suggestion chips are glass chips showing the contact name and the matched number with the dialed digits highlighted in accent. Key press feedback is now the glass surface scale (the digit-dip pulse is gone).
