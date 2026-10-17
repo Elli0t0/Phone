@@ -1,8 +1,13 @@
 package io.github.elli0t0.phone.core.design
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -15,11 +20,14 @@ import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.composed
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ClipOp
@@ -30,10 +38,12 @@ import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
@@ -325,6 +335,41 @@ fun Modifier.liquidGlass(
 }
 
 /**
+ * Glass press: a press effect for glass surfaces (keys, chips, icon
+ * buttons, gem buttons, bar items). While pressed, the surface scales
+ * down slightly (spring) and a white sheen brightens it. Only active
+ * when the Animations setting is ON; REDUCED and OFF leave the
+ * surface untouched.
+ */
+fun Modifier.glassPress(source: MutableInteractionSource): Modifier = composed {
+    val option = LocalAppSettings.current.animationOption
+    if (option != AnimationOption.ON) {
+        this
+    } else {
+        val pressed by source.collectIsPressedAsState()
+        val scale by animateFloatAsState(
+            targetValue = if (pressed) 0.92f else 1f,
+            animationSpec = spring(dampingRatio = 0.55f, stiffness = 600f),
+            label = "glassPressScale"
+        )
+        val sheen by animateFloatAsState(
+            targetValue = if (pressed) 1f else 0f,
+            animationSpec = tween(durationMillis = 180),
+            label = "glassPressSheen"
+        )
+        this
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .drawWithContent {
+                drawContent()
+                drawRect(Color.White.copy(alpha = 0.18f * sheen))
+            }
+    }
+}
+
+/**
  * Liquid-glass card. Content lays out in a Column (like Card), so
  * multi-child content stacks vertically instead of overlapping —
  * GlassSurface's Box content stacks children on top of each other.
@@ -382,12 +427,14 @@ fun LiquidGlassIconButton(
     floating: Boolean = false,
     content: @Composable BoxScope.() -> Unit
 ) {
+    val source = remember { MutableInteractionSource() }
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .clip(shape)
-            .clickable(onClick = onClick)
-            .liquidGlass(shape, tint, isSelected, forceDarkGlass, floating),
+            .clickable(interactionSource = source, indication = null, onClick = onClick)
+            .liquidGlass(shape, tint, isSelected, forceDarkGlass, floating)
+            .glassPress(source),
         content = content
     )
 }
@@ -407,13 +454,15 @@ fun LiquidGlassChip(
     floating: Boolean = false,
     content: @Composable RowScope.() -> Unit
 ) {
+    val source = remember { MutableInteractionSource() }
     Row(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .clip(shape)
-            .clickable(onClick = onClick)
-            .liquidGlass(shape, tint, selected, forceDarkGlass, floating),
+            .clickable(interactionSource = source, indication = null, onClick = onClick)
+            .liquidGlass(shape, tint, selected, forceDarkGlass, floating)
+            .glassPress(source),
         content = content
     )
 }
@@ -433,12 +482,14 @@ fun LiquidGlassGemButton(
     floating: Boolean = false,
     content: @Composable BoxScope.() -> Unit
 ) {
+    val source = remember { MutableInteractionSource() }
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .clip(shape)
-            .clickable(onClick = onClick)
-            .liquidGlass(shape, tint, true, forceDarkGlass, floating),
+            .clickable(interactionSource = source, indication = null, onClick = onClick)
+            .liquidGlass(shape, tint, true, forceDarkGlass, floating)
+            .glassPress(source),
         content = content
     )
 }

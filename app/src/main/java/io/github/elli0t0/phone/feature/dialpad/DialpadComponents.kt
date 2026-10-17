@@ -50,6 +50,7 @@ import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.design.bouncyClick
+import io.github.elli0t0.phone.core.design.glassPress
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 
 data class DialKey(
@@ -123,8 +124,8 @@ fun DialKeyView(
         Box(
             modifier = modifier
                 .size(PhoneDimens.keypadTouchSize)
-                .bouncyClick(keySource)
                 .liquidGlass(shape = CircleShape)
+                .glassPress(keySource)
                 .combinedClickable(
                     interactionSource = keySource,
                     indication = null,

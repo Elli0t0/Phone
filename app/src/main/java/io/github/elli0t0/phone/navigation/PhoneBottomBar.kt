@@ -8,7 +8,6 @@ import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -68,7 +67,7 @@ import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.bottomBarSizeSpec
 import io.github.elli0t0.phone.core.design.liquidGlass
-import io.github.elli0t0.phone.core.design.bouncyClick
+import io.github.elli0t0.phone.core.design.glassPress
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
 import io.github.elli0t0.phone.data.settings.model.ThemeMode
@@ -259,10 +258,9 @@ fun PhoneBottomBar(
                             )
                         }
                     }
-                    // Shared press interaction source: bouncyClick and
+                    // Shared press interaction source: glassPress and
                     // the clickable observe the same press state, so
-                    // the item bounces (0.90) while pressed, ripples,
-                    // and haptics.
+                    // the item scales + sheens while pressed, and haptics.
                     val itemSource = remember { MutableInteractionSource() }
                     Box(
                         modifier = Modifier
@@ -270,10 +268,10 @@ fun PhoneBottomBar(
                             .fillMaxHeight()
                             .padding(PhoneDimens.bottomBarItemInset)
                             .clip(pillShape)
-                            .bouncyClick(itemSource)
+                            .glassPress(itemSource)
                             .clickable(
                                 interactionSource = itemSource,
-                                indication = LocalIndication.current
+                                indication = null
                             ) {
                                 if (currentRoute != screen.route) {
                                     lightHaptic()
