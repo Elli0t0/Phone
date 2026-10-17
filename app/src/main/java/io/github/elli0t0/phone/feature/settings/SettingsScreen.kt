@@ -100,6 +100,7 @@ import io.github.elli0t0.phone.feature.setup.SetupChecklist
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
+import io.github.elli0t0.phone.data.settings.model.HeaderSize
 import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.CallDisplay
@@ -110,8 +111,10 @@ import io.github.elli0t0.phone.data.settings.model.ContactSortOrder
 import io.github.elli0t0.phone.data.settings.model.ListDensity
 import io.github.elli0t0.phone.data.settings.model.StartTab
 import io.github.elli0t0.phone.data.settings.model.ThemeMode
+import java.net.ConnectException
 import java.net.HttpURLConnection
 import java.net.URL
+import java.net.UnknownHostException
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -163,6 +166,7 @@ fun SettingsScreen(
     var showAnimDialog by remember { mutableStateOf(false) }
     var showBottomBarStyleDialog by remember { mutableStateOf(false) }
     var showBottomBarSizeDialog by remember { mutableStateOf(false) }
+    var showHeaderSizeDialog by remember { mutableStateOf(false) }
     var showSortDialog by remember { mutableStateOf(false) }
     var showFormatDialog by remember { mutableStateOf(false) }
     var showCallDisplayDialog by remember { mutableStateOf(false) }
@@ -181,13 +185,15 @@ fun SettingsScreen(
     val runUpdateCheck: () -> Unit = {
         updateCheckState = UpdateCheckState.Checking
         updateScope.launch {
-            val latest = fetchLatestRelease()
-            updateCheckState = if (latest == null) {
-                UpdateCheckState.Error
-            } else if (compareVersions(latest.tag, currentVersionName) > 0) {
-                UpdateCheckState.Available(latest.tag, latest.url)
-            } else {
-                UpdateCheckState.UpToDate
+            updateCheckState = when (val result = fetchLatestRelease()) {
+                is FetchResult.Success -> if (compareVersions(result.release.tag, currentVersionName) > 0) {
+                    UpdateCheckState.Available(result.release.tag, result.release.url)
+                } else {
+                    UpdateCheckState.UpToDate
+                }
+                FetchResult.RateLimited -> UpdateCheckState.RateLimited
+                FetchResult.Offline -> UpdateCheckState.Offline
+                FetchResult.Error -> UpdateCheckState.Error
             }
         }
     }
@@ -201,9 +207,13 @@ fun SettingsScreen(
     var ussdRequestId by remember { mutableIntStateOf(0) }
     // The system call-settings screen is a dead row when nothing
     // handles its intent, so it is hidden instead of doing nothing.
+    // resolveActivity can throw on some devices, so a failure also
+    // hides the row instead of crashing Settings.
     val showSupplementaryRow = remember {
-        Intent(TelecomManager.ACTION_SHOW_CALL_SETTINGS)
-            .resolveActivity(context.packageManager) != null
+        runCatching {
+            Intent(TelecomManager.ACTION_SHOW_CALL_SETTINGS)
+                .resolveActivity(context.packageManager) != null
+        }.getOrDefault(false)
     }
     val dialUssdFallback: (String) -> Unit = { code ->
         runCatching {
@@ -485,6 +495,16 @@ fun SettingsScreen(
         )
     }
 
+    if (showHeaderSizeDialog) {
+        SettingsChoiceDialog(
+            title = stringResource(id = R.string.settings_header_size),
+            options = HeaderSize.entries.map { it.label to it },
+            selected = settings.headerSize,
+            onSelect = { viewModel.onHeaderSizeChanged(it); showHeaderSizeDialog = false },
+            onDismiss = { showHeaderSizeDialog = false }
+        )
+    }
+
     if (showSortDialog) {
         SettingsChoiceDialog(
             title = stringResource(id = R.string.settings_sort_order),
@@ -561,13 +581,21 @@ fun SettingsScreen(
             onDismissRequest = { showAboutDialog = false },
             title = { Text(text = stringResource(id = R.string.settings_about_phone)) },
             text = {
-                Text(
-                    text = stringResource(
-                        id = R.string.settings_about_version,
-                        versionName,
-                        versionCode
+                Column {
+                    Text(
+                        text = stringResource(
+                            id = R.string.settings_about_version,
+                            versionName,
+                            versionCode
+                        )
                     )
-                )
+                    Spacer(modifier = Modifier.height(spacing.small))
+                    Text(
+                        text = "Checking for updates contacts api.github.com only when you tap it.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             },
             confirmButton = {
                 TextButton(
@@ -610,6 +638,12 @@ fun SettingsScreen(
                     UpdateCheckState.UpToDate -> {
                         Text(text = "You're up to date ($currentVersionName).")
                     }
+                    UpdateCheckState.RateLimited -> {
+                        Text(text = "Rate limited by GitHub. Try again later.")
+                    }
+                    UpdateCheckState.Offline -> {
+                        Text(text = "You're offline. Check your connection and try again.")
+                    }
                     UpdateCheckState.Error -> {
                         Text(text = "Couldn't check for updates.")
                     }
@@ -632,6 +666,8 @@ fun SettingsScreen(
                             Text(text = "View release")
                         }
                     }
+                    UpdateCheckState.RateLimited,
+                    UpdateCheckState.Offline,
                     UpdateCheckState.Error -> {
                         Button(onClick = runUpdateCheck) {
                             Text(text = "Retry")
@@ -935,6 +971,16 @@ fun SettingsScreen(
                                     }
                                 }
                             }
+                        )
+
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        Spacer(modifier = Modifier.height(spacing.small))
+
+                        SettingsRow(
+                            title = stringResource(id = R.string.settings_header_size),
+                            subtitle = settings.headerSize.label,
+                            onClick = { showHeaderSizeDialog = true }
                         )
                     }
                 }
@@ -1695,29 +1741,55 @@ private sealed interface UpdateCheckState {
     data object Checking : UpdateCheckState
     data class Available(val tag: String, val url: String) : UpdateCheckState
     data object UpToDate : UpdateCheckState
+    data object RateLimited : UpdateCheckState
+    data object Offline : UpdateCheckState
     data object Error : UpdateCheckState
 }
 
 private data class LatestRelease(val tag: String, val url: String)
 
+private sealed interface FetchResult {
+    data class Success(val release: LatestRelease) : FetchResult
+    data object RateLimited : FetchResult
+    data object Offline : FetchResult
+    data object Error : FetchResult
+}
+
 // Newest release from the GitHub API. Pre-releases are included (the app
 // ships pre-releases), so the releases list — newest first — is used
-// instead of /releases/latest. Null on any failure.
-private suspend fun fetchLatestRelease(): LatestRelease? = withContext(Dispatchers.IO) {
-    runCatching {
-        val connection = URL("https://api.github.com/repos/Elli0t0/Phone/releases?per_page=1")
+// instead of /releases/latest. The connection is always disconnected,
+// and rate limiting (403/429) and offline are reported distinctly.
+private suspend fun fetchLatestRelease(): FetchResult = withContext(Dispatchers.IO) {
+    var connection: HttpURLConnection? = null
+    try {
+        connection = URL("https://api.github.com/repos/Elli0t0/Phone/releases?per_page=1")
             .openConnection() as HttpURLConnection
         connection.setRequestProperty("User-Agent", "Phone-App")
         connection.connectTimeout = 5000
         connection.readTimeout = 5000
-        if (connection.responseCode != HttpURLConnection.HTTP_OK) return@runCatching null
-        val body = connection.inputStream.bufferedReader().use { it.readText() }
-        val release = JSONArray(body).optJSONObject(0) ?: return@runCatching null
-        LatestRelease(
-            tag = release.getString("tag_name").removePrefix("v"),
-            url = release.getString("html_url")
-        )
-    }.getOrNull()
+        when (connection.responseCode) {
+            HttpURLConnection.HTTP_OK -> {
+                val body = connection.inputStream.bufferedReader().use { it.readText() }
+                val release = JSONArray(body).optJSONObject(0) ?: return@withContext FetchResult.Error
+                FetchResult.Success(
+                    LatestRelease(
+                        tag = release.getString("tag_name").removePrefix("v"),
+                        url = release.getString("html_url")
+                    )
+                )
+            }
+            HttpURLConnection.HTTP_FORBIDDEN, 429 -> FetchResult.RateLimited
+            else -> FetchResult.Error
+        }
+    } catch (_: UnknownHostException) {
+        FetchResult.Offline
+    } catch (_: ConnectException) {
+        FetchResult.Offline
+    } catch (_: Exception) {
+        FetchResult.Error
+    } finally {
+        connection?.disconnect()
+    }
 }
 
 // Dotted version comparison: > 0 when [a] is newer than [b].
