@@ -124,6 +124,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Popups animate in: the SIM picker and Calling SIM dialogs now use LiquidGlassPopupSurface with a scale 0.92 to 1 plus fade-in (Medium duration, Emphasized easing) and a fading scrim. Enter-only; dismiss is instant. Inactive when Animations is OFF.
 
+## [0.11.12] - 2026-10-17
+
+- Bottom bar: a one-shot specular sweep (a white band crossing the bar, fading in and out) runs on every tab change. The spring selection pill is unchanged. Inactive when Animations is OFF.
+- Search fields are glass now: the shared search bar (Contacts, Recents, Dialpad) sits in a liquid-glass container with a transparent field; the focus border stays accent.
+- The duplicates banner is a liquid-glass card now (was a solid surface card). List cards stay solid.
+
 ## [0.10.31] - 2026-10-16
 
 - Liquid glass across the app (3): dialpad keys are now circular liquid-glass discs (no more square gray ripple; the key scales to 0.90 and springs back), the Call button is a glossy liquid-glass emerald button, the no-match Create new contact / Message actions are glass pills that animate in/out, and the T9 suggestion chips are glass chips showing the contact name and the matched number with the dialed digits highlighted in accent. Key press feedback is now the glass surface scale (the digit-dip pulse is gone).

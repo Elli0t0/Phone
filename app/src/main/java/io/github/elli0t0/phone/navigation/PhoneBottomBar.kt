@@ -39,7 +39,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
@@ -141,6 +143,28 @@ fun PhoneBottomBar(
                     )
                     AnimationOption.ON -> Motion.bouncy()
                 }
+            )
+        }
+    }
+
+    // One-shot specular sweep across the bar when the tab changes.
+    // Skipped on first composition and when Animations is OFF.
+    val sweepProgress = remember { Animatable(0f) }
+    var sweepStarted by remember { mutableStateOf(false) }
+    LaunchedEffect(selectedIndex) {
+        if (!sweepStarted) {
+            sweepStarted = true
+        } else if (animationOption != AnimationOption.OFF) {
+            sweepProgress.snapTo(0f)
+            sweepProgress.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(
+                    durationMillis = Motion.scaledDurationMs(
+                        Motion.Durations.Long,
+                        animationOption
+                    ),
+                    easing = Motion.Easings.Emphasized
+                )
             )
         }
     }
@@ -388,6 +412,33 @@ fun PhoneBottomBar(
                     }
                 }
             }
+            // Specular sweep: a white band that crosses the bar once
+            // per tab change, fading in and out. Drawn on top of the
+            // items; it handles no input, so taps pass through.
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(pillShape)
+                    .drawBehind {
+                        val p = sweepProgress.value.coerceIn(0f, 1f)
+                        if (p > 0f && p < 1f) {
+                            val bandWidth = size.width * 0.4f
+                            val x = lerp(-bandWidth, size.width + bandWidth, p)
+                            val alpha = sin(p * PI).toFloat() * 0.28f
+                            drawRect(
+                                brush = Brush.horizontalGradient(
+                                    colors = listOf(
+                                        Color.Transparent,
+                                        Color.White.copy(alpha = alpha),
+                                        Color.Transparent
+                                    ),
+                                    startX = x - bandWidth / 2f,
+                                    endX = x + bandWidth / 2f
+                                )
+                            )
+                        }
+                    }
+            )
         }
         if (LocalAppSettings.current.bottomBarStyle == BottomBarStyle.GLASS && glassBottomBar) {
             GlassSurface(
