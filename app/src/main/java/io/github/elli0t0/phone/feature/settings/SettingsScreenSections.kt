@@ -43,6 +43,8 @@ import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import kotlin.math.roundToInt
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import androidx.compose.runtime.Composable
+import io.github.elli0t0.phone.core.design.Spacing
+import android.content.Context
 
 /**
  * The Settings LazyColumn sections (Appearance, Liquid glass, Layout,
@@ -51,17 +53,16 @@ import androidx.compose.runtime.Composable
  * its dialogs via [dialogs]; the dialogs themselves live in the main
  * SettingsScreen function.
  */
-@Composable
 fun androidx.compose.foundation.lazy.LazyListScope.settingsSections(
     settings: AppSettings,
     viewModel: SettingsViewModel,
     dialogs: SettingsDialogState,
     dialerState: io.github.elli0t0.phone.core.telecom.DefaultDialerState,
     showSupplementaryRow: Boolean,
-    requiredSetupComplete: Boolean
+    requiredSetupComplete: Boolean,
+    spacing: Spacing,
+    context: Context
 ) {
-    val spacing = LocalSpacing.current
-    val context = LocalContext.current
 item {
     Spacer(modifier = Modifier.height(spacing.extraSmall))
 }

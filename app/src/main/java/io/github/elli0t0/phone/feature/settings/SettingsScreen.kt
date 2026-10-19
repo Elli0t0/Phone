@@ -244,14 +244,18 @@ fun SettingsScreen(
                 dialogs = dialogs,
                 dialerState = dialerState,
                 showSupplementaryRow = showSupplementaryRow,
-                requiredSetupComplete = requiredSetupComplete
+                requiredSetupComplete = requiredSetupComplete,
+                spacing = spacing,
+                context = context
             )
             settingsSectionsLayoutNav(
                 settings = settings,
                 viewModel = viewModel,
                 dialogs = dialogs,
                 dialerState = dialerState,
-                showSupplementaryRow = showSupplementaryRow
+                showSupplementaryRow = showSupplementaryRow,
+                spacing = spacing,
+                context = context
             )
             settingsSectionsContinued(
                 settings = settings,
@@ -259,7 +263,9 @@ fun SettingsScreen(
                 dialogs = dialogs,
                 dialerState = dialerState,
                 showSupplementaryRow = showSupplementaryRow,
-                runUpdateCheck = runUpdateCheck
+                runUpdateCheck = runUpdateCheck,
+                spacing = spacing,
+                context = context
             )
         }
     }

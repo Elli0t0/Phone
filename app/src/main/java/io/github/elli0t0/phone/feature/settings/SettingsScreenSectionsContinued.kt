@@ -25,6 +25,8 @@ import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import androidx.compose.runtime.Composable
+import io.github.elli0t0.phone.core.design.Spacing
+import android.content.Context
 
 /**
  * The Settings LazyColumn sections (Appearance, Liquid glass, Layout,
@@ -33,17 +35,16 @@ import androidx.compose.runtime.Composable
  * its dialogs via [dialogs]; the dialogs themselves live in the main
  * SettingsScreen function.
  */
-@Composable
 fun androidx.compose.foundation.lazy.LazyListScope.settingsSectionsContinued(
     settings: AppSettings,
     viewModel: SettingsViewModel,
     dialogs: SettingsDialogState,
     dialerState: io.github.elli0t0.phone.core.telecom.DefaultDialerState,
     showSupplementaryRow: Boolean,
-    runUpdateCheck: () -> Unit
+    runUpdateCheck: () -> Unit,
+    spacing: Spacing,
+    context: Context
 ) {
-    val spacing = LocalSpacing.current
-    val context = LocalContext.current
 // Category 4: Contacts Display
 item {
     SettingsSectionHeader(title = stringResource(id = R.string.settings_cat_contacts))
