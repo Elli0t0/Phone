@@ -121,7 +121,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 
-private sealed interface UpdateCheckState {
+sealed interface UpdateCheckState {
     data object Checking : UpdateCheckState
     data class Available(val tag: String, val url: String) : UpdateCheckState
     data object UpToDate : UpdateCheckState
