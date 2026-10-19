@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.AccentBlue
+import io.github.elli0t0.phone.core.design.GlassListCard
 import io.github.elli0t0.phone.core.design.CallAnswerGreen
 import io.github.elli0t0.phone.core.design.CallRejectedOrange
 import io.github.elli0t0.phone.core.design.LiquidGlassIconButton
@@ -360,13 +361,11 @@ fun DaySectionCard(
     rowContent: @Composable (CallGroup) -> Unit
 ) {
     val spacing = LocalSpacing.current
-    Card(
+    GlassListCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(bottom = spacing.small),
-        shape = RoundedCornerShape(PhoneDimens.recentsDayCardCornerRadius),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        shape = RoundedCornerShape(PhoneDimens.recentsDayCardCornerRadius)
     ) {
         calls.forEachIndexed { index, group ->
             rowContent(group)

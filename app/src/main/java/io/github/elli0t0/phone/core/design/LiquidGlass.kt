@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,6 +49,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
+import io.github.elli0t0.phone.data.settings.model.GlassIntensity
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
@@ -223,14 +226,32 @@ private class GlassSpec(
     val shadow: Color
 ) {
     companion object {
-        fun create(dark: Boolean, base: Color, isSelected: Boolean): GlassSpec {
-            val topAlpha = if (dark) 0.24f else 0.78f
-            val bottomAlpha = if (dark) 0.12f else 0.52f
-            val borderTopAlpha = if (dark) 0.48f else 0.92f
-            val borderBottomAlpha = if (dark) 0.14f else 0.30f
-            val fillTopAlpha = if (isSelected) 0.22f else 0.08f
-            val fillBottomAlpha = if (isSelected) 0.14f else 0.04f
-            val rimMidAlpha = if (isSelected) 0.45f else 0.15f
+        fun create(
+            dark: Boolean,
+            base: Color,
+            isSelected: Boolean,
+            intensity: GlassIntensity = GlassIntensity.STANDARD,
+            reduceTransparency: Boolean = false
+        ): GlassSpec {
+            // Glass intensity scales every glass alpha: Subtle softens the
+            // effect, Strong deepens it. Reduce transparency makes the
+            // fill more opaque (less see-through) without changing the
+            // sheen or rim.
+            val scale = when (intensity) {
+                GlassIntensity.SUBTLE -> 0.6f
+                GlassIntensity.STANDARD -> 1.0f
+                GlassIntensity.STRONG -> 1.4f
+            }
+            val fillBoost = if (reduceTransparency) 1.8f else 1.0f
+            fun scaled(alpha: Float, boost: Float = 1.0f) =
+                (alpha * scale * boost).coerceIn(0f, 1f)
+            val topAlpha = scaled(if (dark) 0.24f else 0.78f)
+            val bottomAlpha = scaled(if (dark) 0.12f else 0.52f)
+            val borderTopAlpha = scaled(if (dark) 0.48f else 0.92f)
+            val borderBottomAlpha = scaled(if (dark) 0.14f else 0.30f)
+            val fillTopAlpha = scaled(if (isSelected) 0.22f else 0.08f, fillBoost)
+            val fillBottomAlpha = scaled(if (isSelected) 0.14f else 0.04f, fillBoost)
+            val rimMidAlpha = scaled(if (isSelected) 0.45f else 0.15f)
             return GlassSpec(
                 fill = Brush.linearGradient(
                     colors = listOf(
@@ -257,7 +278,7 @@ private class GlassSpec(
                     start = Offset.Zero,
                     end = Offset.Infinite
                 ),
-                shadow = base.copy(alpha = 0.35f)
+                shadow = base.copy(alpha = scaled(0.35f))
             )
         }
     }
@@ -328,7 +349,10 @@ fun Modifier.liquidGlass(
 ): Modifier {
     val dark = isDarkGlassTheme() || forceDarkGlass
     val base = if (tint != Color.Unspecified) tint else MaterialTheme.colorScheme.primary
-    val spec = remember(dark, base, isSelected) { GlassSpec.create(dark, base, isSelected) }
+    val settings = LocalAppSettings.current
+    val spec = remember(dark, base, isSelected, settings.glassIntensity, settings.reduceTransparency) {
+        GlassSpec.create(dark, base, isSelected, settings.glassIntensity, settings.reduceTransparency)
+    }
     return this
         .then(if (floating) Modifier.outerShadow(shape, spec.shadow) else Modifier)
         .clip(shape)
@@ -420,6 +444,33 @@ fun LiquidGlassCard(
         modifier = modifier.liquidGlass(shape, tint, isSelected, forceDarkGlass, floating),
         content = content
     )
+}
+
+/**
+ * A list card that is glass when the Glass cards setting is on and a
+ * solid surface card otherwise. Used by the Contacts and Recents list
+ * cards (ContactRow, ContactGroupCard, FavoritesHintRow, DaySectionCard).
+ * Content lays out in a Column (like Card).
+ */
+@Composable
+fun GlassListCard(
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(24.dp),
+    content: @Composable ColumnScope.() -> Unit
+) {
+    if (LocalAppSettings.current.glassCards) {
+        LiquidGlassCard(modifier = modifier, shape = shape, content = content)
+    } else {
+        Card(
+            modifier = modifier,
+            shape = shape,
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            content = content
+        )
+    }
 }
 
 /**

@@ -164,6 +164,12 @@ enum class HeaderSize(val label: String) {
     LARGE("Large")
 }
 
+enum class GlassIntensity(val label: String) {
+    SUBTLE("Subtle"),
+    STANDARD("Standard"),
+    STRONG("Strong")
+}
+
 data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val accentColor: Long = AccentPreset.ONE_UI_BLUE.colorValue,
@@ -186,6 +192,9 @@ data class AppSettings(
     val glassHeaders: Boolean = true,
     val glassContactDetail: Boolean = true,
     val glassCallScreens: Boolean = true,
+    val glassIntensity: GlassIntensity = GlassIntensity.STANDARD,
+    val reduceTransparency: Boolean = false,
+    val glassCards: Boolean = false,
     val defaultStartTab: StartTab = StartTab.KEYPAD,
     val contactSortOrder: ContactSortOrder = ContactSortOrder.FIRST_NAME,
     val contactNameFormat: ContactNameFormat = ContactNameFormat.FIRST_NAME_FIRST,

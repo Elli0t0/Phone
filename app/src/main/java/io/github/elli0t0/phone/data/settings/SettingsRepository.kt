@@ -25,6 +25,7 @@ import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
+import io.github.elli0t0.phone.data.settings.model.GlassIntensity
 import io.github.elli0t0.phone.data.settings.model.HeaderSize
 import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
 import io.github.elli0t0.phone.data.settings.model.CallBackground
@@ -61,6 +62,9 @@ interface SettingsRepository {
     suspend fun setGlassHeaders(enabled: Boolean)
     suspend fun setGlassContactDetail(enabled: Boolean)
     suspend fun setGlassCallScreens(enabled: Boolean)
+    suspend fun setGlassIntensity(intensity: GlassIntensity)
+    suspend fun setReduceTransparency(enabled: Boolean)
+    suspend fun setGlassCards(enabled: Boolean)
     suspend fun setDefaultStartTab(tab: StartTab)
     suspend fun setContactSortOrder(order: ContactSortOrder)
     suspend fun setContactNameFormat(format: ContactNameFormat)
@@ -112,6 +116,9 @@ class DataStoreSettingsRepository(
         val GLASS_HEADERS = booleanPreferencesKey("glass_headers")
         val GLASS_CONTACT_DETAIL = booleanPreferencesKey("glass_contact_detail")
         val GLASS_CALL_SCREENS = booleanPreferencesKey("glass_call_screens")
+        val GLASS_INTENSITY = stringPreferencesKey("glass_intensity")
+        val REDUCE_TRANSPARENCY = booleanPreferencesKey("reduce_transparency")
+        val GLASS_CARDS = booleanPreferencesKey("glass_cards")
         val DEFAULT_START_TAB = stringPreferencesKey("default_start_tab")
         val CONTACT_SORT_ORDER = stringPreferencesKey("contact_sort_order")
         val CONTACT_NAME_FORMAT = stringPreferencesKey("contact_name_format")
@@ -175,6 +182,12 @@ class DataStoreSettingsRepository(
         val glassHeaders = prefs[Keys.GLASS_HEADERS] ?: true
         val glassContactDetail = prefs[Keys.GLASS_CONTACT_DETAIL] ?: true
         val glassCallScreens = prefs[Keys.GLASS_CALL_SCREENS] ?: true
+
+        val intensityStr = prefs[Keys.GLASS_INTENSITY]
+        val glassIntensity = intensityStr?.let { runCatching { GlassIntensity.valueOf(it) }.getOrNull() } ?: GlassIntensity.STANDARD
+
+        val reduceTransparency = prefs[Keys.REDUCE_TRANSPARENCY] ?: false
+        val glassCards = prefs[Keys.GLASS_CARDS] ?: false
 
         val tabStr = prefs[Keys.DEFAULT_START_TAB]
         val startTab = tabStr?.let { runCatching { StartTab.valueOf(it) }.getOrNull() } ?: StartTab.KEYPAD
@@ -279,6 +292,9 @@ class DataStoreSettingsRepository(
             glassHeaders = glassHeaders,
             glassContactDetail = glassContactDetail,
             glassCallScreens = glassCallScreens,
+            glassIntensity = glassIntensity,
+            reduceTransparency = reduceTransparency,
+            glassCards = glassCards,
             defaultStartTab = startTab,
             contactSortOrder = sortOrder,
             contactNameFormat = nameFormat,
@@ -413,6 +429,24 @@ class DataStoreSettingsRepository(
     override suspend fun setGlassCallScreens(enabled: Boolean) {
         dataStore.edit { prefs ->
             prefs[Keys.GLASS_CALL_SCREENS] = enabled
+        }
+    }
+
+    override suspend fun setGlassIntensity(intensity: GlassIntensity) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLASS_INTENSITY] = intensity.name
+        }
+    }
+
+    override suspend fun setReduceTransparency(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.REDUCE_TRANSPARENCY] = enabled
+        }
+    }
+
+    override suspend fun setGlassCards(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLASS_CARDS] = enabled
         }
     }
 

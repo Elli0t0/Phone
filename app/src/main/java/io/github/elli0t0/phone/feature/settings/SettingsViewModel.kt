@@ -19,6 +19,7 @@ import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
+import io.github.elli0t0.phone.data.settings.model.GlassIntensity
 import io.github.elli0t0.phone.data.settings.model.HeaderSize
 import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
 import io.github.elli0t0.phone.data.settings.model.CallBackground
@@ -151,6 +152,24 @@ class SettingsViewModel(
     fun onGlassCallScreensChanged(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setGlassCallScreens(enabled)
+        }
+    }
+
+    fun onGlassIntensityChanged(intensity: GlassIntensity) {
+        viewModelScope.launch {
+            settingsRepository.setGlassIntensity(intensity)
+        }
+    }
+
+    fun onReduceTransparencyChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setReduceTransparency(enabled)
+        }
+    }
+
+    fun onGlassCardsChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setGlassCards(enabled)
         }
     }
 

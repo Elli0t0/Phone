@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.FavoriteCardGradients
 import io.github.elli0t0.phone.core.design.FavoriteHintOrange
+import io.github.elli0t0.phone.core.design.GlassListCard
 import io.github.elli0t0.phone.core.design.LiquidGlassCard
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
@@ -115,7 +116,7 @@ fun ContactRow(
     val rowSource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
 
-    Card(
+    GlassListCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = spacing.extraSmall)
@@ -125,9 +126,7 @@ fun ContactRow(
                 indication = ripple()
             ) { lightHaptic(); onClick() }
             .testTag("contact_item_${contact.id}"),
-        shape = MaterialTheme.shapes.extraLarge,
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        shape = MaterialTheme.shapes.extraLarge
     ) {
         Row(
             modifier = Modifier
@@ -166,13 +165,11 @@ fun ContactGroupCard(
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
-    Card(
+    GlassListCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(bottom = spacing.small),
-        shape = MaterialTheme.shapes.extraLarge,
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        shape = MaterialTheme.shapes.extraLarge
     ) {
         contacts.forEachIndexed { index, contact ->
             ContactGroupRow(
@@ -248,7 +245,7 @@ fun FavoritesHintRow(
     val spacing = LocalSpacing.current
     val hintSource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
-    Card(
+    GlassListCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(bottom = spacing.small)
@@ -258,9 +255,7 @@ fun FavoritesHintRow(
                 indication = ripple()
             ) { lightHaptic(); onClick() }
             .testTag("favorites_hint_row"),
-        shape = RoundedCornerShape(PhoneDimens.contactsPillCornerPercent),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        shape = RoundedCornerShape(PhoneDimens.contactsPillCornerPercent)
     ) {
         Row(
             modifier = Modifier
@@ -307,7 +302,7 @@ fun ProfileRow(
     }
     val rowSource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
-    Card(
+    GlassListCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(bottom = spacing.small)
@@ -317,9 +312,7 @@ fun ProfileRow(
                 indication = ripple()
             ) { lightHaptic(); onClick() }
             .testTag("profile_row"),
-        shape = RoundedCornerShape(PhoneDimens.contactsPillCornerPercent),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        shape = RoundedCornerShape(PhoneDimens.contactsPillCornerPercent)
     ) {
         Row(
             modifier = Modifier
