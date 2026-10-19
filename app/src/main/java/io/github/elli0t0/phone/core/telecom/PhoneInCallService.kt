@@ -156,8 +156,8 @@ class PhoneInCallService : InCallService() {
     }
 
     companion object {
-        private const val TAG = "PhoneCall"
-        private const val PROXIMITY_WAKE_LOCK_TAG = "Phone:Proximity"
+        internal const val TAG = "PhoneCall"
+        internal const val PROXIMITY_WAKE_LOCK_TAG = "Phone:Proximity"
         const val NOTIFICATION_ID = 1001
         const val NOTIFICATION_INCOMING_ID = 1001
         const val NOTIFICATION_ONGOING_ID = 1002
@@ -172,11 +172,11 @@ class PhoneInCallService : InCallService() {
         const val ACTION_DECLINE_CALL = "io.github.elli0t0.phone.action.DECLINE_CALL"
         const val ACTION_HANG_UP_CALL = "io.github.elli0t0.phone.action.HANG_UP_CALL"
 
-        private const val REQUEST_CODE_CONTENT = 100
-        private const val REQUEST_CODE_FULL_SCREEN = 101
-        private const val REQUEST_CODE_ANSWER = 102
-        private const val REQUEST_CODE_DECLINE = 103
-        private const val REQUEST_CODE_HANG_UP = 104
+        internal const val REQUEST_CODE_CONTENT = 100
+        internal const val REQUEST_CODE_FULL_SCREEN = 101
+        internal const val REQUEST_CODE_ANSWER = 102
+        internal const val REQUEST_CODE_DECLINE = 103
+        internal const val REQUEST_CODE_HANG_UP = 104
 
         internal var instance: PhoneInCallService? = null
 
