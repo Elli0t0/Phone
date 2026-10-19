@@ -20,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.data.settings.model.AppSettings
 
 /**
  * The Settings LazyColumn sections (Appearance, Liquid glass, Layout,
@@ -28,6 +29,7 @@ import io.github.elli0t0.phone.core.design.LocalSpacing
  * its dialogs via [dialogs]; the dialogs themselves live in the main
  * SettingsScreen function.
  */
+@Composable
 fun androidx.compose.foundation.lazy.LazyListScope.settingsSectionsLayoutNav(
     settings: AppSettings,
     viewModel: SettingsViewModel,

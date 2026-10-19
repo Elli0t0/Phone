@@ -158,6 +158,17 @@ fun SettingsScreen(
     }
 
     val dialogs = remember { SettingsDialogState() }
+
+    // The system call-settings screen is a dead row when nothing
+    // handles its intent, so it is hidden instead of doing nothing.
+    // resolveActivity can throw on some devices, so a failure also
+    // hides the row instead of crashing Settings.
+    val showSupplementaryRow = remember {
+        runCatching {
+            Intent(TelecomManager.ACTION_SHOW_CALL_SETTINGS)
+                .resolveActivity(context.packageManager) != null
+        }.getOrDefault(false)
+    }
     // Update check state; null = idle. The state drives the result dialog.
     var updateCheckState by remember { mutableStateOf<UpdateCheckState?>(null) }
     val updateScope = rememberCoroutineScope()
@@ -187,13 +198,15 @@ fun SettingsScreen(
         dialogs = dialogs,
         updateCheckState = updateCheckState,
         runUpdateCheck = runUpdateCheck,
-        currentVersionName = currentVersionName
+        currentVersionName = currentVersionName,
+        lightHaptic = lightHaptic
     )
     SettingsDialogsAbout(
         settings = settings,
         viewModel = viewModel,
         dialogs = dialogs,
         updateCheckState = updateCheckState,
+        onUpdateCheckStateChange = { updateCheckState = it },
         runUpdateCheck = runUpdateCheck,
         currentVersionName = currentVersionName
     )
@@ -230,7 +243,8 @@ fun SettingsScreen(
                 viewModel = viewModel,
                 dialogs = dialogs,
                 dialerState = dialerState,
-                showSupplementaryRow = showSupplementaryRow
+                showSupplementaryRow = showSupplementaryRow,
+                requiredSetupComplete = requiredSetupComplete
             )
             settingsSectionsLayoutNav(
                 settings = settings,

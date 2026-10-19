@@ -21,6 +21,9 @@ import androidx.core.content.pm.PackageInfoCompat
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.data.settings.model.AppSettings
+import androidx.compose.ui.platform.LocalContext
+import io.github.elli0t0.phone.core.design.LocalSpacing
 
 /**
  * All Settings dialogs (choice pickers, About, update check, USSD).
@@ -32,9 +35,13 @@ fun SettingsDialogsAbout(
     viewModel: SettingsViewModel,
     dialogs: SettingsDialogState,
     updateCheckState: UpdateCheckState?,
+    onUpdateCheckStateChange: (UpdateCheckState?) -> Unit,
     runUpdateCheck: () -> Unit,
     currentVersionName: String
 ) {
+    val context = LocalContext.current
+    val spacing = LocalSpacing.current
+    with(settings) {
 if (dialogs.showAboutDialog) {
     val packageInfo = remember {
         runCatching { context.packageManager.getPackageInfo(context.packageName, 0) }.getOrNull()
@@ -89,7 +96,7 @@ if (dialogs.showAboutDialog) {
 if (updateCheckState != null) {
     val state = updateCheckState
     AlertDialog(
-        onDismissRequest = { updateCheckState = null },
+        onDismissRequest = { onUpdateCheckStateChange(null) },
         title = { Text(text = stringResource(id = R.string.update_check_title)) },
         text = {
             when (state) {
@@ -119,7 +126,7 @@ if (updateCheckState != null) {
                 is UpdateCheckState.Available -> {
                     Button(
                         onClick = {
-                            updateCheckState = null
+                            onUpdateCheckStateChange(null)
                             runCatching {
                                 context.startActivity(
                                     Intent(Intent.ACTION_VIEW, Uri.parse(state.url))
@@ -138,7 +145,7 @@ if (updateCheckState != null) {
                     }
                 }
                 else -> {
-                    TextButton(onClick = { updateCheckState = null }) {
+                    TextButton(onClick = { onUpdateCheckStateChange(null) }) {
                         Text(text = stringResource(id = R.string.action_ok))
                     }
                 }
@@ -208,4 +215,5 @@ when (val state = dialogs.ussdState) {
     }
     null -> Unit
 }
+    }
 }

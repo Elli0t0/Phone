@@ -56,6 +56,7 @@ import io.github.elli0t0.phone.data.settings.model.ContactSortOrder
 import io.github.elli0t0.phone.data.settings.model.ListDensity
 import io.github.elli0t0.phone.data.settings.model.StartTab
 import io.github.elli0t0.phone.data.settings.model.ThemeMode
+import io.github.elli0t0.phone.data.settings.model.AppSettings
 
 /**
  * All Settings dialogs (choice pickers, About, update check, USSD).
@@ -68,9 +69,11 @@ fun SettingsDialogs(
     dialogs: SettingsDialogState,
     updateCheckState: UpdateCheckState?,
     runUpdateCheck: () -> Unit,
-    currentVersionName: String
+    currentVersionName: String,
+    lightHaptic: () -> Unit
 ) {
     val context = LocalContext.current
+    with(settings) {
 if (dialogs.showResetDialog) {
     AlertDialog(
         onDismissRequest = { dialogs.showResetDialog = false },
@@ -382,4 +385,5 @@ if (dialogs.showQuickDeclineDialog) {
     )
 }
 
+    }
 }

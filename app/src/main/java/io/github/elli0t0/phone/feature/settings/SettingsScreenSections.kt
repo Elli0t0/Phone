@@ -41,6 +41,7 @@ import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.feature.setup.SetupChecklist
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import kotlin.math.roundToInt
+import io.github.elli0t0.phone.data.settings.model.AppSettings
 
 /**
  * The Settings LazyColumn sections (Appearance, Liquid glass, Layout,
@@ -49,12 +50,14 @@ import kotlin.math.roundToInt
  * its dialogs via [dialogs]; the dialogs themselves live in the main
  * SettingsScreen function.
  */
+@Composable
 fun androidx.compose.foundation.lazy.LazyListScope.settingsSections(
     settings: AppSettings,
     viewModel: SettingsViewModel,
     dialogs: SettingsDialogState,
     dialerState: io.github.elli0t0.phone.core.telecom.DefaultDialerState,
-    showSupplementaryRow: Boolean
+    showSupplementaryRow: Boolean,
+    requiredSetupComplete: Boolean
 ) {
     val spacing = LocalSpacing.current
     val context = LocalContext.current
