@@ -36,6 +36,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.telecom.SimAccountInfo
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
@@ -54,7 +55,7 @@ fun ContactDetailContent(
     displayName: String,
     phones: List<ContactPhone>,
     uiState: ContactDetailUiState,
-    simAccounts: List<android.telecom.PhoneAccountHandle>,
+    simAccounts: List<SimAccountInfo>,
     scrollState: androidx.compose.foundation.ScrollState,
     navBarBottom: androidx.compose.ui.unit.Dp,
     topBarHeight: androidx.compose.ui.unit.Dp,
