@@ -57,12 +57,15 @@ import io.github.elli0t0.phone.data.settings.model.ListDensity
 import io.github.elli0t0.phone.data.settings.model.StartTab
 import io.github.elli0t0.phone.data.settings.model.ThemeMode
 import io.github.elli0t0.phone.data.settings.model.AppSettings
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 
 /**
  * All Settings dialogs (choice pickers, About, update check, USSD).
  * Extracted from SettingsScreen to keep that file under 400 lines.
  */
 @Composable
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 fun SettingsDialogs(
     settings: AppSettings,
     viewModel: SettingsViewModel,

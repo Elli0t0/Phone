@@ -27,6 +27,8 @@ import io.github.elli0t0.phone.data.settings.model.AppSettings
 import androidx.compose.runtime.Composable
 import io.github.elli0t0.phone.core.design.Spacing
 import android.content.Context
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 
 /**
  * The Settings LazyColumn sections (Appearance, Liquid glass, Layout,
@@ -35,6 +37,7 @@ import android.content.Context
  * its dialogs via [dialogs]; the dialogs themselves live in the main
  * SettingsScreen function.
  */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 fun androidx.compose.foundation.lazy.LazyListScope.settingsSectionsContinued(
     settings: AppSettings,
     viewModel: SettingsViewModel,

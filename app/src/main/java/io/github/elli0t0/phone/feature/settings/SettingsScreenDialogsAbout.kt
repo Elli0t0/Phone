@@ -24,12 +24,15 @@ import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import androidx.compose.ui.platform.LocalContext
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 
 /**
  * All Settings dialogs (choice pickers, About, update check, USSD).
  * Extracted from SettingsScreen to keep that file under 400 lines.
  */
 @Composable
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 fun SettingsDialogsAbout(
     settings: AppSettings,
     viewModel: SettingsViewModel,
