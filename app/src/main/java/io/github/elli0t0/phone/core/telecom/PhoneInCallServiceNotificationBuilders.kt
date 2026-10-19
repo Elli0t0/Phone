@@ -58,7 +58,7 @@ internal fun PhoneInCallService.buildIncomingNotification(call: Call, cachedDisp
         }
         val contentPendingIntent = PendingIntent.getActivity(
             this,
-            REQUEST_CODE_CONTENT,
+            PhoneInCallService.REQUEST_CODE_CONTENT,
             contentIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -68,28 +68,28 @@ internal fun PhoneInCallService.buildIncomingNotification(call: Call, cachedDisp
         }
         val fullScreenPendingIntent = PendingIntent.getActivity(
             this,
-            REQUEST_CODE_FULL_SCREEN,
+            PhoneInCallService.REQUEST_CODE_FULL_SCREEN,
             fullScreenIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         val answerIntent = Intent(this, CallActivity::class.java).apply {
-            action = ACTION_ANSWER_CALL
+            action = PhoneInCallService.ACTION_ANSWER_CALL
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
         val answerPendingIntent = PendingIntent.getActivity(
             this,
-            REQUEST_CODE_ANSWER,
+            PhoneInCallService.REQUEST_CODE_ANSWER,
             answerIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         val declineIntent = Intent(this, CallActionReceiver::class.java).apply {
-            action = ACTION_DECLINE_CALL
+            action = PhoneInCallService.ACTION_DECLINE_CALL
         }
         val declinePendingIntent = PendingIntent.getBroadcast(
             this,
-            REQUEST_CODE_DECLINE,
+            PhoneInCallService.REQUEST_CODE_DECLINE,
             declineIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -105,7 +105,7 @@ internal fun PhoneInCallService.buildIncomingNotification(call: Call, cachedDisp
             answerPendingIntent
         )
 
-        val builder = NotificationCompat.Builder(this, INCOMING_CHANNEL_ID)
+        val builder = NotificationCompat.Builder(this, PhoneInCallService.INCOMING_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_phone)
             .setContentTitle(title)
             .setContentText(contentText)
@@ -125,7 +125,7 @@ internal fun PhoneInCallService.buildIncomingNotification(call: Call, cachedDisp
             try {
                 notificationManager.canUseFullScreenIntent()
             } catch (e: Exception) {
-                Log.e(TAG, "canUseFullScreenIntent check failed", e)
+                Log.e(PhoneInCallService.TAG, "canUseFullScreenIntent check failed", e)
                 true
             }
         } else {
@@ -135,14 +135,14 @@ internal fun PhoneInCallService.buildIncomingNotification(call: Call, cachedDisp
             try {
                 builder.setFullScreenIntent(fullScreenPendingIntent, true)
             } catch (e: SecurityException) {
-                Log.e(TAG, "setFullScreenIntent SecurityException", e)
+                Log.e(PhoneInCallService.TAG, "setFullScreenIntent SecurityException", e)
             } catch (e: Exception) {
-                Log.e(TAG, "setFullScreenIntent failed", e)
+                Log.e(PhoneInCallService.TAG, "setFullScreenIntent failed", e)
             }
         }
         return builder.build()
     } catch (e: Exception) {
-        Log.e(TAG, "buildIncomingNotification failed", e)
+        Log.e(PhoneInCallService.TAG, "buildIncomingNotification failed", e)
         return null
     }
 }
@@ -183,7 +183,7 @@ internal fun PhoneInCallService.buildCallStartNotification(call: Call, cachedDis
         }
         val contentPendingIntent = PendingIntent.getActivity(
             this,
-            REQUEST_CODE_CONTENT,
+            PhoneInCallService.REQUEST_CODE_CONTENT,
             contentIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -193,17 +193,17 @@ internal fun PhoneInCallService.buildCallStartNotification(call: Call, cachedDis
         }
         val fullScreenPendingIntent = PendingIntent.getActivity(
             this,
-            REQUEST_CODE_FULL_SCREEN,
+            PhoneInCallService.REQUEST_CODE_FULL_SCREEN,
             fullScreenIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         val hangUpIntent = Intent(this, CallActionReceiver::class.java).apply {
-            action = ACTION_HANG_UP_CALL
+            action = PhoneInCallService.ACTION_HANG_UP_CALL
         }
         val hangUpPendingIntent = PendingIntent.getBroadcast(
             this,
-            REQUEST_CODE_HANG_UP,
+            PhoneInCallService.REQUEST_CODE_HANG_UP,
             hangUpIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -218,7 +218,7 @@ internal fun PhoneInCallService.buildCallStartNotification(call: Call, cachedDis
             hangUpPendingIntent
         )
 
-        val builder = NotificationCompat.Builder(this, CALL_START_CHANNEL_ID)
+        val builder = NotificationCompat.Builder(this, PhoneInCallService.CALL_START_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_phone)
             .setContentTitle(title)
             .setContentText(contentText)
@@ -233,7 +233,7 @@ internal fun PhoneInCallService.buildCallStartNotification(call: Call, cachedDis
             try {
                 notificationManager.canUseFullScreenIntent()
             } catch (e: Exception) {
-                Log.e(TAG, "canUseFullScreenIntent check failed", e)
+                Log.e(PhoneInCallService.TAG, "canUseFullScreenIntent check failed", e)
                 true
             }
         } else {
@@ -244,14 +244,14 @@ internal fun PhoneInCallService.buildCallStartNotification(call: Call, cachedDis
             try {
                 builder.setFullScreenIntent(fullScreenPendingIntent, true)
             } catch (e: SecurityException) {
-                Log.e(TAG, "setFullScreenIntent SecurityException", e)
+                Log.e(PhoneInCallService.TAG, "setFullScreenIntent SecurityException", e)
             } catch (e: Exception) {
-                Log.e(TAG, "setFullScreenIntent failed", e)
+                Log.e(PhoneInCallService.TAG, "setFullScreenIntent failed", e)
             }
         }
         return builder.build()
     } catch (e: Exception) {
-        Log.e(TAG, "buildCallStartNotification failed", e)
+        Log.e(PhoneInCallService.TAG, "buildCallStartNotification failed", e)
         return null
     }
 }
@@ -292,17 +292,17 @@ internal fun PhoneInCallService.buildOngoingNotification(call: Call, cachedDispl
         }
         val contentPendingIntent = PendingIntent.getActivity(
             this,
-            REQUEST_CODE_CONTENT,
+            PhoneInCallService.REQUEST_CODE_CONTENT,
             contentIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         val hangUpIntent = Intent(this, CallActionReceiver::class.java).apply {
-            action = ACTION_HANG_UP_CALL
+            action = PhoneInCallService.ACTION_HANG_UP_CALL
         }
         val hangUpPendingIntent = PendingIntent.getBroadcast(
             this,
-            REQUEST_CODE_HANG_UP,
+            PhoneInCallService.REQUEST_CODE_HANG_UP,
             hangUpIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -318,7 +318,7 @@ internal fun PhoneInCallService.buildOngoingNotification(call: Call, cachedDispl
         )
 
         // Quiet ongoing notification: LOW importance, no heads-up, no full-screen intent.
-        val builder = NotificationCompat.Builder(this, ONGOING_CHANNEL_ID)
+        val builder = NotificationCompat.Builder(this, PhoneInCallService.ONGOING_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_phone)
             .setContentTitle(title)
             .setContentText(contentText)
@@ -341,7 +341,7 @@ internal fun PhoneInCallService.buildOngoingNotification(call: Call, cachedDispl
         }
         return builder.build()
     } catch (e: Exception) {
-        Log.e(TAG, "buildOngoingNotification failed", e)
+        Log.e(PhoneInCallService.TAG, "buildOngoingNotification failed", e)
         return null
     }
 }

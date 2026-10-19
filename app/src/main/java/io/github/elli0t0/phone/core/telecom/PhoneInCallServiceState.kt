@@ -50,12 +50,12 @@ internal fun PhoneInCallService.refreshBluetoothDevices() {
                 ?.sorted()
                 ?: emptyList()
         } catch (e: SecurityException) {
-            Log.e(TAG, "bondedDevices SecurityException", e)
+            Log.e(PhoneInCallService.TAG, "bondedDevices SecurityException", e)
             emptyList()
         }
         CallRepository.updateBluetoothDevices(names)
     } catch (e: Exception) {
-        Log.e(TAG, "refreshBluetoothDevices failed", e)
+        Log.e(PhoneInCallService.TAG, "refreshBluetoothDevices failed", e)
     }
 }
 
@@ -83,7 +83,7 @@ internal fun PhoneInCallService.updateProximityWakeLock() {
             releaseProximityWakeLock()
         }
     } catch (e: Exception) {
-        Log.e(TAG, "updateProximityWakeLock failed", e)
+        Log.e(PhoneInCallService.TAG, "updateProximityWakeLock failed", e)
     }
 }
 
@@ -94,24 +94,24 @@ internal fun PhoneInCallService.acquireProximityWakeLock() {
             val powerManager =
                 getSystemService(Context.POWER_SERVICE) as? PowerManager ?: return
             if (!powerManager.isWakeLockLevelSupported(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK)) {
-                Log.d(TAG, "proximity wake lock not supported on this device")
+                Log.d(PhoneInCallService.TAG, "proximity wake lock not supported on this device")
                 return
             }
             lock = powerManager.newWakeLock(
                 PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK,
-                PROXIMITY_WAKE_LOCK_TAG
+                PhoneInCallService.PROXIMITY_WAKE_LOCK_TAG
             )
             lock.setReferenceCounted(false)
             proximityWakeLock = lock
         }
         if (!lock.isHeld) {
             lock.acquire()
-            Log.d(TAG, "proximity wake lock acquired")
+            Log.d(PhoneInCallService.TAG, "proximity wake lock acquired")
         }
     } catch (e: SecurityException) {
-        Log.e(TAG, "acquireProximityWakeLock SecurityException", e)
+        Log.e(PhoneInCallService.TAG, "acquireProximityWakeLock SecurityException", e)
     } catch (e: Exception) {
-        Log.e(TAG, "acquireProximityWakeLock failed", e)
+        Log.e(PhoneInCallService.TAG, "acquireProximityWakeLock failed", e)
     }
 }
 
@@ -120,12 +120,12 @@ internal fun PhoneInCallService.releaseProximityWakeLock() {
         val lock = proximityWakeLock ?: return
         if (lock.isHeld) {
             lock.release()
-            Log.d(TAG, "proximity wake lock released")
+            Log.d(PhoneInCallService.TAG, "proximity wake lock released")
         }
     } catch (e: RuntimeException) {
-        Log.e(TAG, "releaseProximityWakeLock RuntimeException", e)
+        Log.e(PhoneInCallService.TAG, "releaseProximityWakeLock RuntimeException", e)
     } catch (e: Exception) {
-        Log.e(TAG, "releaseProximityWakeLock failed", e)
+        Log.e(PhoneInCallService.TAG, "releaseProximityWakeLock failed", e)
     }
 }
 
@@ -146,7 +146,7 @@ internal fun PhoneInCallService.handleCallState(call: Call) {
         when {
             call.state == Call.STATE_RINGING -> {
                 // Switch foreground to incoming if not already there.
-                if (currentForegroundId != NOTIFICATION_INCOMING_ID) {
+                if (currentForegroundId != PhoneInCallService.NOTIFICATION_INCOMING_ID) {
                     startForegroundForCall(call)
                 } else {
                     postIncomingCallNotification(call)
@@ -156,7 +156,7 @@ internal fun PhoneInCallService.handleCallState(call: Call) {
                 startCallActivity()
                 if (isActivityVisible || CallRepository.isCallActivityVisible.value) {
                     transitionToOngoing(call)
-                } else if (currentForegroundId != NOTIFICATION_CALL_START_ID) {
+                } else if (currentForegroundId != PhoneInCallService.NOTIFICATION_CALL_START_ID) {
                     startForegroundForCall(call)
                 }
             }
@@ -164,7 +164,7 @@ internal fun PhoneInCallService.handleCallState(call: Call) {
                 startCallActivity()
                 if (isActivityVisible || CallRepository.isCallActivityVisible.value) {
                     transitionToOngoing(call)
-                } else if (currentForegroundId != NOTIFICATION_CALL_START_ID) {
+                } else if (currentForegroundId != PhoneInCallService.NOTIFICATION_CALL_START_ID) {
                     startForegroundForCall(call)
                 }
             }
@@ -176,13 +176,13 @@ internal fun PhoneInCallService.handleCallState(call: Call) {
             else -> {
                 if (isActivityVisible || CallRepository.isCallActivityVisible.value) {
                     transitionToOngoing(call)
-                } else if (currentForegroundId != NOTIFICATION_CALL_START_ID) {
+                } else if (currentForegroundId != PhoneInCallService.NOTIFICATION_CALL_START_ID) {
                     startForegroundForCall(call)
                 }
             }
         }
     } catch (e: Exception) {
-        Log.e(TAG, "handleCallState failed state=${call.state}", e)
+        Log.e(PhoneInCallService.TAG, "handleCallState failed state=${call.state}", e)
     }
     updateProximityWakeLock()
 }

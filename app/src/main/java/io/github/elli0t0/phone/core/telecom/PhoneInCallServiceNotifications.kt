@@ -36,7 +36,7 @@ internal fun PhoneInCallService.updateCallNotification(call: Call, cachedDisplay
     try {
         when {
             call.state == Call.STATE_RINGING -> {
-                if (currentForegroundId != NOTIFICATION_INCOMING_ID) {
+                if (currentForegroundId != PhoneInCallService.NOTIFICATION_INCOMING_ID) {
                     startForegroundForCall(call)
                 } else {
                     postIncomingCallNotification(call, cachedDisplayName)
@@ -54,7 +54,7 @@ internal fun PhoneInCallService.updateCallNotification(call: Call, cachedDisplay
             }
         }
     } catch (e: Exception) {
-        Log.e(TAG, "updateCallNotification failed", e)
+        Log.e(PhoneInCallService.TAG, "updateCallNotification failed", e)
     }
 }
 
@@ -67,13 +67,13 @@ internal fun PhoneInCallService.publishForeground(id: Int, notification: Notific
             startForeground(id, notification)
         }
         currentForegroundId = id
-        Log.d(TAG, "notification posted foreground id=$id")
+        Log.d(PhoneInCallService.TAG, "notification posted foreground id=$id")
     } catch (e: Exception) {
-        Log.e(TAG, "startForeground failed, falling back to notify", e)
+        Log.e(PhoneInCallService.TAG, "startForeground failed, falling back to notify", e)
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
         notificationManager?.notify(id, notification)
-        Log.d(TAG, "notification posted notify fallback id=$id")
+        Log.d(PhoneInCallService.TAG, "notification posted notify fallback id=$id")
     }
 }
 
@@ -82,14 +82,14 @@ internal fun PhoneInCallService.transitionToOngoing(call: Call, cachedDisplayNam
         val notification = buildOngoingNotification(call, cachedDisplayName) ?: return
         // Replace the foreground notification with LOW ongoing. Cancel alone
         // does NOT update the foreground notification: the HIGH one stays.
-        publishForeground(NOTIFICATION_ONGOING_ID, notification)
+        publishForeground(PhoneInCallService.NOTIFICATION_ONGOING_ID, notification)
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
-        notificationManager?.cancel(NOTIFICATION_INCOMING_ID)
-        notificationManager?.cancel(NOTIFICATION_CALL_START_ID)
-        Log.d(TAG, "transitioned foreground to ongoing LOW id=$NOTIFICATION_ONGOING_ID")
+        notificationManager?.cancel(PhoneInCallService.NOTIFICATION_INCOMING_ID)
+        notificationManager?.cancel(PhoneInCallService.NOTIFICATION_CALL_START_ID)
+        Log.d(PhoneInCallService.TAG, "transitioned foreground to ongoing LOW id=$PhoneInCallService.NOTIFICATION_ONGOING_ID")
     } catch (e: Exception) {
-        Log.e(TAG, "transitionToOngoing failed", e)
+        Log.e(PhoneInCallService.TAG, "transitionToOngoing failed", e)
     }
 }
 
@@ -103,24 +103,24 @@ internal fun PhoneInCallService.startForegroundForCall(call: Call) {
             else -> buildCallStartNotification(call, null)
         }
         if (notification == null) {
-            Log.e(TAG, "startForegroundForCall built null notification state=${call.state}")
+            Log.e(PhoneInCallService.TAG, "startForegroundForCall built null notification state=${call.state}")
             return
         }
         val foregroundId = when {
-            call.state == Call.STATE_RINGING -> NOTIFICATION_INCOMING_ID
-            isOutgoingState(call.state) -> NOTIFICATION_CALL_START_ID
-            else -> NOTIFICATION_ONGOING_ID
+            call.state == Call.STATE_RINGING -> PhoneInCallService.NOTIFICATION_INCOMING_ID
+            isOutgoingState(call.state) -> PhoneInCallService.NOTIFICATION_CALL_START_ID
+            else -> PhoneInCallService.NOTIFICATION_ONGOING_ID
         }
         publishForeground(foregroundId, notification)
     } catch (e: Exception) {
-        Log.e(TAG, "startForegroundForCall failed", e)
+        Log.e(PhoneInCallService.TAG, "startForegroundForCall failed", e)
     }
 }
 
 internal fun PhoneInCallService.ensureIncomingChannel(notificationManager: NotificationManager) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         val channel = NotificationChannel(
-            INCOMING_CHANNEL_ID,
+            PhoneInCallService.INCOMING_CHANNEL_ID,
             "Incoming calls",
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
@@ -136,7 +136,7 @@ internal fun PhoneInCallService.ensureIncomingChannel(notificationManager: Notif
 internal fun PhoneInCallService.ensureCallStartChannel(notificationManager: NotificationManager) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         val channel = NotificationChannel(
-            CALL_START_CHANNEL_ID,
+            PhoneInCallService.CALL_START_CHANNEL_ID,
             "Call start",
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
@@ -152,13 +152,13 @@ internal fun PhoneInCallService.ensureCallStartChannel(notificationManager: Noti
 internal fun PhoneInCallService.ensureOngoingChannel(notificationManager: NotificationManager) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         try {
-            notificationManager.deleteNotificationChannel(OLD_ONGOING_CHANNEL_ID)
+            notificationManager.deleteNotificationChannel(PhoneInCallService.OLD_ONGOING_CHANNEL_ID)
         } catch (e: Exception) {
-            Log.e(TAG, "delete old ongoing channel failed", e)
+            Log.e(PhoneInCallService.TAG, "delete old ongoing channel failed", e)
         }
 
         val channel = NotificationChannel(
-            ONGOING_CHANNEL_ID,
+            PhoneInCallService.ONGOING_CHANNEL_ID,
             "Ongoing calls",
             NotificationManager.IMPORTANCE_LOW
         ).apply {
@@ -179,17 +179,17 @@ internal fun PhoneInCallService.postIncomingCallNotification(call: Call, cachedD
     }
     try {
         val notification = buildIncomingNotification(call, cachedDisplayName) ?: return
-        if (currentForegroundId == NOTIFICATION_INCOMING_ID) {
-            publishForeground(NOTIFICATION_INCOMING_ID, notification)
+        if (currentForegroundId == PhoneInCallService.NOTIFICATION_INCOMING_ID) {
+            publishForeground(PhoneInCallService.NOTIFICATION_INCOMING_ID, notification)
         } else {
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
-            notificationManager.cancel(NOTIFICATION_ONGOING_ID)
-            notificationManager.cancel(NOTIFICATION_CALL_START_ID)
-            notificationManager.notify(NOTIFICATION_INCOMING_ID, notification)
-            Log.d(TAG, "notification posted incoming id=$NOTIFICATION_INCOMING_ID")
+            notificationManager.cancel(PhoneInCallService.NOTIFICATION_ONGOING_ID)
+            notificationManager.cancel(PhoneInCallService.NOTIFICATION_CALL_START_ID)
+            notificationManager.notify(PhoneInCallService.NOTIFICATION_INCOMING_ID, notification)
+            Log.d(PhoneInCallService.TAG, "notification posted incoming id=$PhoneInCallService.NOTIFICATION_INCOMING_ID")
         }
     } catch (e: Exception) {
-        Log.e(TAG, "postIncomingCallNotification failed", e)
+        Log.e(PhoneInCallService.TAG, "postIncomingCallNotification failed", e)
     }
 }
 
@@ -200,15 +200,15 @@ internal fun PhoneInCallService.postCallStartNotification(call: Call, cachedDisp
     }
     try {
         val notification = buildCallStartNotification(call, cachedDisplayName) ?: return
-        if (currentForegroundId == NOTIFICATION_CALL_START_ID) {
-            publishForeground(NOTIFICATION_CALL_START_ID, notification)
+        if (currentForegroundId == PhoneInCallService.NOTIFICATION_CALL_START_ID) {
+            publishForeground(PhoneInCallService.NOTIFICATION_CALL_START_ID, notification)
         } else {
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
-            notificationManager.notify(NOTIFICATION_CALL_START_ID, notification)
-            Log.d(TAG, "notification posted callStart id=$NOTIFICATION_CALL_START_ID")
+            notificationManager.notify(PhoneInCallService.NOTIFICATION_CALL_START_ID, notification)
+            Log.d(PhoneInCallService.TAG, "notification posted callStart id=$PhoneInCallService.NOTIFICATION_CALL_START_ID")
         }
     } catch (e: Exception) {
-        Log.e(TAG, "postCallStartNotification failed", e)
+        Log.e(PhoneInCallService.TAG, "postCallStartNotification failed", e)
     }
 }
 
