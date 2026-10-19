@@ -463,7 +463,7 @@ fun CallBackgroundScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(text = stringResource(id = R.string.call_bg_quick_replies_below),, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+                            Text(text = stringResource(id = R.string.call_bg_quick_replies_below), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
                             AppSwitch(checked = settings.quickRepliesBelowButtons, onCheckedChange = { settingsViewModel.onQuickRepliesBelowButtonsChanged(it) }, modifier = Modifier.testTag("quick_replies_below_buttons_switch"))
                         }
                     }
