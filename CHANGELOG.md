@@ -164,6 +164,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.22] - 2026-10-19
+
+- Settings: the call-studio and call-background strings, the About update-check strings and the Recents duration/missed strings are now in the language files (English + Persian), instead of hardcoded English in the UI code.
+- SettingsScreen split into focused files (main, components, dialog state, dialogs, section groups), ContactDetailScreen split into content, rows and bottom bar, and PhoneInCallService split into state, notifications and notification builders — every file under 400 lines. The Settings switch and the call-background switch are now one shared component.
+
 ## [0.11.21] - 2026-10-19
 
 - Settings > Liquid glass: new Glass intensity (Subtle / Standard / Strong) scaling the glass effect, Reduce transparency making glass surfaces more opaque, and Glass cards (off by default) putting the Contacts and Recents list cards in liquid glass.
