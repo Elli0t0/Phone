@@ -591,17 +591,18 @@ private fun rememberTimeFormat(): java.text.DateFormat {
     }
 }
 
+@Composable
 private fun formatDuration(durationSeconds: Long, type: CallType): String {
     if (type == CallType.Missed || type == CallType.Rejected || type == CallType.Blocked) {
-        return "Missed"
+        return stringResource(id = R.string.recents_missed)
     }
-    if (durationSeconds <= 0L) return "0 sec"
+    if (durationSeconds <= 0L) return stringResource(id = R.string.recents_duration_zero)
     val mins = durationSeconds / 60
     val secs = durationSeconds % 60
     return if (mins > 0) {
-        "${mins}m ${secs}s"
+        stringResource(id = R.string.recents_duration_min_sec, mins, secs)
     } else {
-        "${secs}s"
+        stringResource(id = R.string.recents_duration_sec, secs)
     }
 }
 

@@ -92,7 +92,7 @@ fun CallStudioSections(
         // Layout preset: one tap that sets gesture, answer side,
         // and end-call position together. Any manual change after
         // applying a preset leaves no preset selected (custom).
-        StudioGroupCard(title = "Layout preset") {
+        StudioGroupCard(title = stringResource(id = R.string.studio_layout_preset)) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(spacing.small)
             ) {
@@ -107,7 +107,7 @@ fun CallStudioSections(
                             settingsViewModel.onAnswerSideChanged(preset.side)
                             settingsViewModel.onEndCallAlignmentChanged(preset.endAlignment)
                         },
-                        label = preset.label,
+                        label = stringResource(id = preset.labelRes),
                         testTag = "layout_preset_${preset.name.lowercase()}"
                     )
                 }
@@ -115,7 +115,7 @@ fun CallStudioSections(
         }
 
         // Answer gesture: tap the buttons, or swipe the bar.
-        StudioGroupCard(title = "Answer gesture") {
+        StudioGroupCard(title = stringResource(id = R.string.studio_answer_gesture)) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(spacing.small)
             ) {
@@ -134,7 +134,7 @@ fun CallStudioSections(
 
         // Answer side: which side the answer button (or swipe
         // direction) sits on.
-        StudioGroupCard(title = "Answer side") {
+        StudioGroupCard(title = stringResource(id = R.string.studio_answer_side)) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(spacing.small)
             ) {
@@ -153,7 +153,7 @@ fun CallStudioSections(
 
         // Answer button size: how big the answer/decline buttons
         // (or the swipe thumb) are on the incoming call screen.
-        StudioGroupCard(title = "Answer button size") {
+        StudioGroupCard(title = stringResource(id = R.string.studio_answer_button_size)) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(spacing.small)
             ) {
@@ -178,7 +178,7 @@ fun CallStudioSections(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "Quick replies",
+                    text = stringResource(id = R.string.studio_quick_replies),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f)
@@ -196,7 +196,7 @@ fun CallStudioSections(
         // hidden buttons can be added back.
         val shownButtons = settings.ongoingCallButtons
         val hiddenButtons = OngoingCallButton.entries - shownButtons.toSet()
-        StudioGroupCard(title = "Call controls") {
+        StudioGroupCard(title = stringResource(id = R.string.studio_call_controls)) {
             Column(verticalArrangement = Arrangement.spacedBy(spacing.small)) {
             shownButtons.forEachIndexed { index, button ->
                 Row(
@@ -271,7 +271,7 @@ fun CallStudioSections(
 
         // Control grid alignment: how the ongoing-call buttons
         // spread across each row.
-        StudioGroupCard(title = "Control grid alignment") {
+        StudioGroupCard(title = stringResource(id = R.string.studio_control_grid_alignment)) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(spacing.small)
             ) {
@@ -290,7 +290,7 @@ fun CallStudioSections(
 
         // End call position: where the red end-call button sits
         // on the ongoing call screen.
-        StudioGroupCard(title = "End call position") {
+        StudioGroupCard(title = stringResource(id = R.string.studio_end_call_position)) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(spacing.small)
             ) {
@@ -308,7 +308,7 @@ fun CallStudioSections(
         }
 
         // End call size: how big the red end-call button is.
-        StudioGroupCard(title = "End call size") {
+        StudioGroupCard(title = stringResource(id = R.string.studio_end_call_size)) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(spacing.small)
             ) {
@@ -327,7 +327,7 @@ fun CallStudioSections(
 
         // Caller info position: name/number at the top, or
         // vertically centered above the controls.
-        StudioGroupCard(title = "Caller info position") {
+        StudioGroupCard(title = stringResource(id = R.string.studio_caller_info_position)) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(spacing.small)
             ) {
@@ -475,14 +475,14 @@ fun CallStudioSections(
  * and end-call position. Not stored — the selected preset is derived
  * from the current values, so a manual tweak shows no preset selected. */
 private enum class CallLayoutPreset(
-    val label: String,
+    val labelRes: Int,
     val gesture: AnswerGesture,
     val side: AnswerSide,
     val endAlignment: EndCallAlignment
 ) {
-    CLASSIC("Classic", AnswerGesture.TAP, AnswerSide.RIGHT, EndCallAlignment.CENTER),
-    LEFT_HANDED("Left-handed", AnswerGesture.TAP, AnswerSide.LEFT, EndCallAlignment.LEFT),
-    SWIPE("Swipe", AnswerGesture.SWIPE, AnswerSide.RIGHT, EndCallAlignment.CENTER)
+    CLASSIC(R.string.studio_preset_classic, AnswerGesture.TAP, AnswerSide.RIGHT, EndCallAlignment.CENTER),
+    LEFT_HANDED(R.string.studio_preset_left_handed, AnswerGesture.TAP, AnswerSide.LEFT, EndCallAlignment.LEFT),
+    SWIPE(R.string.studio_preset_swipe, AnswerGesture.SWIPE, AnswerSide.RIGHT, EndCallAlignment.CENTER)
 }
 
 /**

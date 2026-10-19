@@ -164,13 +164,13 @@ fun CallBackgroundScreen(
                             customColorHexInput = it
                             customColorError = false
                         },
-                        label = { Text("Hex code (e.g. #0072DE)") },
+                        label = { Text(stringResource(id = R.string.settings_hex_code)) },
                         singleLine = true,
                         isError = customColorError
                     )
                     if (customColorError) {
                         Text(
-                            text = "Invalid hex color format",
+                            text = stringResource(id = R.string.settings_invalid_hex),
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(top = spacing.small)
@@ -376,7 +376,7 @@ fun CallBackgroundScreen(
                 // is a card item in the page.
                 // Control button size: how big the ongoing-call buttons are.
                 item {
-                    StudioGroupCard(title = "Control button size") {
+                    StudioGroupCard(title = stringResource(id = R.string.call_bg_control_button_size)) {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(spacing.small)
                         ) {
@@ -396,7 +396,7 @@ fun CallBackgroundScreen(
 
                 // Keypad key size: how big the in-call keypad keys are.
                 item {
-                    StudioGroupCard(title = "Keypad key size") {
+                    StudioGroupCard(title = stringResource(id = R.string.call_bg_keypad_key_size)) {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(spacing.small)
                         ) {
@@ -417,7 +417,7 @@ fun CallBackgroundScreen(
                 // Avatar size: how big the caller avatar is on
                 // the incoming call screen.
                 item {
-                    StudioGroupCard(title = "Avatar size") {
+                    StudioGroupCard(title = stringResource(id = R.string.call_bg_avatar_size)) {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(spacing.small)
                         ) {
@@ -438,7 +438,7 @@ fun CallBackgroundScreen(
                 // Avatar shape for the caller avatar on the
                 // incoming call screen.
                 item {
-                    StudioGroupCard(title = "Avatar shape") {
+                    StudioGroupCard(title = stringResource(id = R.string.call_bg_avatar_shape)) {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(spacing.small)
                         ) {
@@ -463,7 +463,7 @@ fun CallBackgroundScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(text = "Quick replies below buttons", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+                            Text(text = stringResource(id = R.string.call_bg_quick_replies_below),, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
                             AppSwitch(checked = settings.quickRepliesBelowButtons, onCheckedChange = { settingsViewModel.onQuickRepliesBelowButtonsChanged(it) }, modifier = Modifier.testTag("quick_replies_below_buttons_switch"))
                         }
                     }

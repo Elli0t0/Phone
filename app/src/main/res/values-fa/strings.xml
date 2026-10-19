@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="studio_layout_preset">پیش‌تنظیم چیدمان</string>
+    <string name="studio_answer_gesture">ژست پاسخ</string>
+    <string name="studio_answer_side">سمت پاسخ</string>
+    <string name="studio_answer_button_size">اندازه دکمه پاسخ</string>
+    <string name="studio_quick_replies">پاسخ‌های سریع</string>
+    <string name="studio_call_controls">کنترل‌های تماس</string>
+    <string name="studio_control_grid_alignment">تراز شبکه کنترل</string>
+    <string name="studio_end_call_position">موقعیت دکمه پایان تماس</string>
+    <string name="studio_end_call_size">اندازه دکمه پایان تماس</string>
+    <string name="studio_caller_info_position">موقعیت اطلاعات تماس‌گیرنده</string>
+    <string name="studio_preset_classic">کلاسیک</string>
+    <string name="studio_preset_left_handed">چپ‌دست</string>
+    <string name="studio_preset_swipe">کشویی</string>
+    <string name="call_bg_control_button_size">اندازه دکمه کنترل</string>
+    <string name="call_bg_keypad_key_size">اندازه کلید صفحه‌کلید</string>
+    <string name="call_bg_avatar_size">اندازه آواتار</string>
+    <string name="call_bg_avatar_shape">شکل آواتار</string>
+    <string name="call_bg_quick_replies_below">پاسخ‌های سریع زیر دکمه‌ها</string>
+    <string name="settings_hex_code">کد هگز (مثلاً #0072DE)</string>
+    <string name="settings_invalid_hex">قالب رنگ هگز نامعتبر است</string>
+    <string name="settings_about_update_note">بررسی به‌روزرسانی فقط وقتی که روی آن ضربه بزنید با api.github.com تماس می‌گیرد.</string>
+    <string name="update_check_title">بررسی به‌روزرسانی</string>
+    <string name="update_check_checking">در حال بررسی به‌روزرسانی…</string>
+    <string name="update_check_available">نسخه جدید موجود است: %1$s.</string>
+    <string name="update_check_up_to_date">شما به‌روز هستید (%1$s).</string>
+    <string name="update_check_rate_limited">محدودیت نرخ گیت‌هاب. بعداً دوباره تلاش کنید.</string>
+    <string name="update_check_offline">شما آفلاین هستید. اتصال خود را بررسی کنید و دوباره تلاش کنید.</string>
+    <string name="update_check_error">بررسی به‌روزرسانی ناموفق بود.</string>
+    <string name="update_check_view_release">مشاهده نسخه</string>
+    <string name="update_check_retry">تلاش مجدد</string>
+    <string name="recents_missed">ازدست‌رفته</string>
+    <string name="recents_duration_zero">0 ثانیه</string>
+    <string name="recents_duration_min_sec">%1$dd %2$dث</string>
+    <string name="recents_duration_sec">%1$dث</string>
+</resources>
