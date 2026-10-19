@@ -42,6 +42,7 @@ import io.github.elli0t0.phone.feature.setup.SetupChecklist
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import kotlin.math.roundToInt
 import io.github.elli0t0.phone.data.settings.model.AppSettings
+import androidx.compose.runtime.Composable
 
 /**
  * The Settings LazyColumn sections (Appearance, Liquid glass, Layout,

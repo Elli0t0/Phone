@@ -258,7 +258,8 @@ fun SettingsScreen(
                 viewModel = viewModel,
                 dialogs = dialogs,
                 dialerState = dialerState,
-                showSupplementaryRow = showSupplementaryRow
+                showSupplementaryRow = showSupplementaryRow,
+                runUpdateCheck = runUpdateCheck
             )
         }
     }

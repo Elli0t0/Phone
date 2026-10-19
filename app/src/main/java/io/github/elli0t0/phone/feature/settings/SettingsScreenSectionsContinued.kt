@@ -24,6 +24,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.data.settings.model.AppSettings
+import androidx.compose.runtime.Composable
 
 /**
  * The Settings LazyColumn sections (Appearance, Liquid glass, Layout,
@@ -38,7 +39,8 @@ fun androidx.compose.foundation.lazy.LazyListScope.settingsSectionsContinued(
     viewModel: SettingsViewModel,
     dialogs: SettingsDialogState,
     dialerState: io.github.elli0t0.phone.core.telecom.DefaultDialerState,
-    showSupplementaryRow: Boolean
+    showSupplementaryRow: Boolean,
+    runUpdateCheck: () -> Unit
 ) {
     val spacing = LocalSpacing.current
     val context = LocalContext.current
