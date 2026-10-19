@@ -308,13 +308,13 @@ fun SettingsScreen(
                             customColorHexInput = it
                             customColorError = false
                         },
-                        label = { Text("Hex code (e.g. #0072DE)") },
+                        label = { Text(stringResource(id = R.string.settings_hex_code)) },
                         singleLine = true,
                         isError = customColorError
                     )
                     if (customColorError) {
                         Text(
-                            text = "Invalid hex color format",
+                            text = stringResource(id = R.string.settings_invalid_hex),
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(top = PhoneDimens.settingsErrorTextTopPadding)
@@ -603,7 +603,7 @@ fun SettingsScreen(
                     )
                     Spacer(modifier = Modifier.height(spacing.small))
                     Text(
-                        text = "Checking for updates contacts api.github.com only when you tap it.",
+                        text = stringResource(id = R.string.settings_about_update_note),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -638,26 +638,26 @@ fun SettingsScreen(
         val state = updateCheckState
         AlertDialog(
             onDismissRequest = { updateCheckState = null },
-            title = { Text(text = "Check for update") },
+            title = { Text(text = stringResource(id = R.string.update_check_title)) },
             text = {
                 when (state) {
                     UpdateCheckState.Checking -> {
-                        Text(text = "Checking for updates…")
+                        Text(text = stringResource(id = R.string.update_check_checking))
                     }
                     is UpdateCheckState.Available -> {
-                        Text(text = "A new version is available: ${state.tag}.")
+                        Text(text = stringResource(id = R.string.update_check_available, state.tag))
                     }
                     UpdateCheckState.UpToDate -> {
-                        Text(text = "You're up to date ($currentVersionName).")
+                        Text(text = stringResource(id = R.string.update_check_up_to_date, currentVersionName))
                     }
                     UpdateCheckState.RateLimited -> {
-                        Text(text = "Rate limited by GitHub. Try again later.")
+                        Text(text = stringResource(id = R.string.update_check_rate_limited))
                     }
                     UpdateCheckState.Offline -> {
-                        Text(text = "You're offline. Check your connection and try again.")
+                        Text(text = stringResource(id = R.string.update_check_offline))
                     }
                     UpdateCheckState.Error -> {
-                        Text(text = "Couldn't check for updates.")
+                        Text(text = stringResource(id = R.string.update_check_error))
                     }
                     null -> Unit
                 }
@@ -675,14 +675,14 @@ fun SettingsScreen(
                                 }
                             }
                         ) {
-                            Text(text = "View release")
+                            Text(text = stringResource(id = R.string.update_check_view_release))
                         }
                     }
                     UpdateCheckState.RateLimited,
                     UpdateCheckState.Offline,
                     UpdateCheckState.Error -> {
                         Button(onClick = runUpdateCheck) {
-                            Text(text = "Retry")
+                            Text(text = stringResource(id = R.string.update_check_retry))
                         }
                     }
                     else -> {
@@ -1364,7 +1364,7 @@ fun SettingsScreen(
                             onClick = { showAboutDialog = true }
                         )
                         SettingsRow(
-                            title = "Check for update",
+                            title = stringResource(id = R.string.update_check_title),
                             onClick = runUpdateCheck
                         )
                     }
