@@ -151,7 +151,7 @@ class PhoneInCallService : InCallService() {
         isActivityVisible = false
     }
 
-    private fun dismissNotification() {
+    internal fun dismissNotification() {
         dismissNotification(this)
     }
 

@@ -188,7 +188,7 @@ internal fun PhoneInCallService.handleCallState(call: Call) {
 }
 
 internal fun PhoneInCallService.startCallActivity() {
-    startCallActivity(this)
+    PhoneInCallService.startCallActivity(this)
 }
 
 internal fun PhoneInCallService.resolveContactNameInBackground(call: Call) {
@@ -208,7 +208,7 @@ internal fun PhoneInCallService.resolveContactNameInBackground(call: Call) {
 
 internal fun PhoneInCallService.resolveName(rawNumber: String, call: Call): String? {
     if (rawNumber.isNotBlank() && ContextCompat.checkSelfPermission(
-            this@PhoneInCallService,
+            this,
             Manifest.permission.READ_CONTACTS
         ) == PackageManager.PERMISSION_GRANTED
     ) {
