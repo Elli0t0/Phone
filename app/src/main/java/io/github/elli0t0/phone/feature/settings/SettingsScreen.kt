@@ -100,6 +100,7 @@ import io.github.elli0t0.phone.feature.setup.SetupChecklist
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
+import io.github.elli0t0.phone.data.settings.model.GlassIntensity
 import io.github.elli0t0.phone.data.settings.model.HeaderSize
 import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
 import io.github.elli0t0.phone.data.settings.model.CallBackground
@@ -167,6 +168,7 @@ fun SettingsScreen(
     var showBottomBarStyleDialog by remember { mutableStateOf(false) }
     var showBottomBarSizeDialog by remember { mutableStateOf(false) }
     var showHeaderSizeDialog by remember { mutableStateOf(false) }
+    var showGlassIntensityDialog by remember { mutableStateOf(false) }
     var showSortDialog by remember { mutableStateOf(false) }
     var showFormatDialog by remember { mutableStateOf(false) }
     var showCallDisplayDialog by remember { mutableStateOf(false) }
@@ -502,6 +504,16 @@ fun SettingsScreen(
             selected = settings.headerSize,
             onSelect = { viewModel.onHeaderSizeChanged(it); showHeaderSizeDialog = false },
             onDismiss = { showHeaderSizeDialog = false }
+        )
+    }
+
+    if (showGlassIntensityDialog) {
+        SettingsChoiceDialog(
+            title = stringResource(id = R.string.settings_glass_intensity),
+            options = GlassIntensity.entries.map { it.label to it },
+            selected = settings.glassIntensity,
+            onSelect = { viewModel.onGlassIntensityChanged(it); showGlassIntensityDialog = false },
+            onDismiss = { showGlassIntensityDialog = false }
         )
     }
 
@@ -1047,6 +1059,38 @@ fun SettingsScreen(
                             subtitle = stringResource(id = R.string.settings_glass_call_screens_desc),
                             checked = settings.glassCallScreens,
                             onCheckedChange = { viewModel.onGlassCallScreensChanged(it) }
+                        )
+
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        Spacer(modifier = Modifier.height(spacing.small))
+
+                        SettingsRow(
+                            title = stringResource(id = R.string.settings_glass_intensity),
+                            subtitle = settings.glassIntensity.label,
+                            onClick = { showGlassIntensityDialog = true }
+                        )
+
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        Spacer(modifier = Modifier.height(spacing.small))
+
+                        SettingsSwitchRow(
+                            title = stringResource(id = R.string.settings_reduce_transparency),
+                            subtitle = stringResource(id = R.string.settings_reduce_transparency_desc),
+                            checked = settings.reduceTransparency,
+                            onCheckedChange = { viewModel.onReduceTransparencyChanged(it) }
+                        )
+
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        Spacer(modifier = Modifier.height(spacing.small))
+
+                        SettingsSwitchRow(
+                            title = stringResource(id = R.string.settings_glass_cards),
+                            subtitle = stringResource(id = R.string.settings_glass_cards_desc),
+                            checked = settings.glassCards,
+                            onCheckedChange = { viewModel.onGlassCardsChanged(it) }
                         )
                     }
                 }
