@@ -1,0 +1,431 @@
+package io.github.elli0t0.phone.feature.settings
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import android.telecom.TelecomManager
+import android.telephony.TelephonyManager
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.core.content.pm.PackageInfoCompat
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import io.github.elli0t0.phone.PhoneApplication
+import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.Motion
+import io.github.elli0t0.phone.core.design.pressScale
+import io.github.elli0t0.phone.core.design.rememberLightHaptic
+import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.permissions.SetupPermissions
+import io.github.elli0t0.phone.core.telecom.rememberDefaultDialerState
+import io.github.elli0t0.phone.core.telecom.UssdHelper
+import io.github.elli0t0.phone.core.telecom.UssdSim
+import io.github.elli0t0.phone.feature.setup.SetupChecklist
+import io.github.elli0t0.phone.data.settings.model.AccentPreset
+import io.github.elli0t0.phone.data.settings.model.AnimationOption
+import io.github.elli0t0.phone.data.settings.model.BottomBarSize
+import io.github.elli0t0.phone.data.settings.model.GlassIntensity
+import io.github.elli0t0.phone.data.settings.model.HeaderSize
+import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
+import io.github.elli0t0.phone.data.settings.model.CallBackground
+import io.github.elli0t0.phone.data.settings.model.CallDisplay
+import io.github.elli0t0.phone.data.settings.model.DefaultSim
+import io.github.elli0t0.phone.data.settings.model.CardStyle
+import io.github.elli0t0.phone.data.settings.model.ContactNameFormat
+import io.github.elli0t0.phone.data.settings.model.ContactSortOrder
+import io.github.elli0t0.phone.data.settings.model.ListDensity
+import io.github.elli0t0.phone.data.settings.model.StartTab
+import io.github.elli0t0.phone.data.settings.model.ThemeMode
+import java.net.ConnectException
+import java.net.HttpURLConnection
+import java.net.URL
+import java.net.UnknownHostException
+import kotlin.math.roundToInt
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+
+@Composable
+fun SettingsSectionHeader(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(vertical = PhoneDimens.settingsSectionHeaderVerticalPadding)
+    )
+}
+
+// Settings row: title with the current value as a subtitle.
+// Tapping the row opens the picker dialog for that setting.
+@Composable
+fun SettingsRow(
+    title: String,
+    subtitle: String? = null,
+    titleColor: Color = MaterialTheme.colorScheme.onSurface,
+    onClick: () -> Unit
+) {
+    val rowSource = remember { MutableInteractionSource() }
+    val lightHaptic = rememberLightHaptic()
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .pressScale(rowSource)
+            .clickable(
+                interactionSource = rowSource,
+                indication = ripple()
+            ) { lightHaptic(); onClick() }
+            .padding(vertical = PhoneDimens.settingsRowVerticalPadding)
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+            color = titleColor
+        )
+        if (subtitle != null) {
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+// Switch row: title + description on the left, switch on the right.
+@Composable
+fun SettingsSwitchRow(
+    title: String,
+    subtitle: String? = null,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = PhoneDimens.settingsSwitchRowVerticalPadding),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(modifier = Modifier.weight(1f).padding(end = PhoneDimens.settingsSwitchRowTextEndPadding)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
+            )
+            if (subtitle != null) {
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        AppSwitch(
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
+    }
+}
+
+// Custom switch: wide 52x28dp track with a large white round thumb.
+// Material3 Switch has a fixed size, so this draws the exact track/thumb.
+// Radio-option picker dialog used by every choice setting.
+@Composable
+fun <T> SettingsChoiceDialog(
+    title: String,
+    options: List<Pair<String, T>>,
+    selected: T,
+    onSelect: (T) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val lightHaptic = rememberLightHaptic()
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = title) },
+        text = {
+            Column {
+                options.forEach { (label, value) ->
+                    val optionSource = remember { MutableInteractionSource() }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .pressScale(optionSource)
+                            .clickable(
+                                interactionSource = optionSource,
+                                indication = ripple()
+                            ) { lightHaptic(); onSelect(value) }
+                            .padding(vertical = PhoneDimens.settingsRowVerticalPadding),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = value == selected,
+                            onClick = { onSelect(value) }
+                        )
+                        Spacer(modifier = Modifier.width(PhoneDimens.settingsChoiceOptionGap))
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(id = R.string.action_cancel))
+            }
+        }
+    )
+}
+
+// USSD request state for the Call waiting flow.
+sealed interface UssdState {
+    data class Sending(val code: String, val simLabel: String) : UssdState
+    data class Result(val message: String) : UssdState
+}
+
+// Call waiting dialog: title, description, three full-width actions,
+// Cancel bottom-right. Tapping an action runs its MMI code on the
+// chosen SIM (SIM picker first on dual SIM).
+@Composable
+fun CallWaitingDialog(
+    onDismiss: () -> Unit,
+    onAction: (String) -> Unit
+) {
+    val spacing = LocalSpacing.current
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = MaterialTheme.shapes.extraLarge,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        ) {
+            Column(modifier = Modifier.padding(spacing.large)) {
+                Text(
+                    text = stringResource(id = R.string.settings_call_waiting),
+                    style = MaterialTheme.typography.titleLarge
+                )
+                Spacer(modifier = Modifier.height(spacing.medium))
+                Text(
+                    text = stringResource(id = R.string.call_waiting_desc),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(spacing.medium))
+                FilledTonalButton(
+                    onClick = { onAction("*43#") },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = stringResource(id = R.string.call_waiting_activate))
+                }
+                Spacer(modifier = Modifier.height(spacing.small))
+                FilledTonalButton(
+                    onClick = { onAction("#43#") },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = stringResource(id = R.string.call_waiting_deactivate))
+                }
+                Spacer(modifier = Modifier.height(spacing.small))
+                FilledTonalButton(
+                    onClick = { onAction("*#43#") },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = stringResource(id = R.string.call_waiting_check))
+                }
+                Spacer(modifier = Modifier.height(spacing.medium))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text(text = stringResource(id = R.string.action_cancel))
+                    }
+                }
+            }
+        }
+    }
+}
+
+// SIM picker for the USSD flow: one row per active SIM, Cancel dismisses.
+@Composable
+fun UssdSimPickerDialog(
+    sims: List<UssdSim>,
+    onSimSelected: (UssdSim) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val spacing = LocalSpacing.current
+    val lightHaptic = rememberLightHaptic()
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = stringResource(id = R.string.call_sim_picker_title)) },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                sims.forEach { sim ->
+                    val simSource = remember { MutableInteractionSource() }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(PhoneDimens.settingsSimRowCornerRadius))
+                            .pressScale(simSource)
+                            .clickable(
+                                interactionSource = simSource,
+                                indication = ripple()
+                            ) { lightHaptic(); onSimSelected(sim) }
+                            .padding(
+                                horizontal = spacing.small,
+                                vertical = spacing.medium
+                            ),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_sim_card),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(PhoneDimens.settingsSimRowIconSize)
+                        )
+                        Spacer(modifier = Modifier.width(spacing.medium))
+                        Text(
+                            text = sim.label,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(id = R.string.action_cancel))
+            }
+        }
+    )
+}
+
+// Editor for the three quick-decline messages shown on the incoming call
+// screen. Blank entries fall back to the built-in defaults.
+@Composable
+fun QuickDeclineMessagesDialog(
+    initialMessages: List<String>,
+    onSave: (List<String>) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var message1 by remember { mutableStateOf(initialMessages.getOrNull(0) ?: "") }
+    var message2 by remember { mutableStateOf(initialMessages.getOrNull(1) ?: "") }
+    var message3 by remember { mutableStateOf(initialMessages.getOrNull(2) ?: "") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = stringResource(id = R.string.settings_quick_decline)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(PhoneDimens.settingsChoiceOptionGap)) {
+                OutlinedTextField(
+                    value = message1,
+                    onValueChange = { message1 = it },
+                    label = { Text(text = "1") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = message2,
+                    onValueChange = { message2 = it },
+                    label = { Text(text = "2") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = message3,
+                    onValueChange = { message3 = it },
+                    label = { Text(text = "3") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onSave(listOf(message1, message2, message3)) }) {
+                Text(text = stringResource(id = R.string.action_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(id = R.string.action_cancel))
+            }
+        }
+    )
+}
+
+/** Result of an update check, driving the About update dialog. */
