@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.23] - 2026-10-21
+
+- Keypad contact suggestions are now full-width list rows (contact photo or initial avatar, name, and the number with the dialed digits highlighted) instead of horizontal chips: up to three matches show at once, and an "N more..." row expands the rest in place.
+
 ## [0.11.22] - 2026-10-19
 
 - Settings: the call-studio and call-background strings, the About update-check strings and the Recents duration/missed strings are now in the language files (English + Persian), instead of hardcoded English in the UI code.

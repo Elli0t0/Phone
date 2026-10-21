@@ -3,6 +3,8 @@ package io.github.elli0t0.phone.feature.dialpad
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -28,6 +31,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,6 +58,7 @@ import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.design.bouncyClick
 import io.github.elli0t0.phone.core.design.glassPress
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
+import io.github.elli0t0.phone.feature.contacts.ui.ContactAvatar
 
 data class DialKey(
     val digit: Char,
@@ -163,10 +170,11 @@ fun DialKeyView(
 }
 
 /**
- * T9 suggestion chips above the keypad: matching contacts as a
- * horizontal glass chip row (initial avatar + name + matched number).
- * The dialed digits inside the number are highlighted in the accent
- * color. Tapping a chip selects the contact, filling its number into
+ * T9 suggestions above the keypad: matching contacts as full-width
+ * list rows (photo/initial avatar + name + number), up to three at a
+ * time, with an "N more..." row that expands the rest in place. The
+ * dialed digits inside the number are highlighted in the accent
+ * color. Tapping a row selects the contact, filling its number into
  * the dialpad.
  */
 @Composable
@@ -177,78 +185,99 @@ fun DialpadSuggestionChips(
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
-    val glassDialpad = LocalAppSettings.current.glassDialpad
-    LazyRow(
-        modifier = modifier.testTag("dialpad_suggestion_chips"),
-        horizontalArrangement = Arrangement.spacedBy(spacing.small),
-        verticalAlignment = Alignment.CenterVertically,
-        // End padding so the last chip is never clipped abruptly.
-        contentPadding = PaddingValues(horizontal = spacing.small)
-    ) {
-        items(contacts.take(8), key = { it.id }) { contact ->
-            if (glassDialpad) {
-                LiquidGlassChip(
-                    selected = false,
-                    onClick = { onSelect(contact) },
-                    modifier = Modifier.testTag("dialpad_chip_${contact.id}")
-                ) {
-                    DialpadChipAvatar(contact.displayName)
-                    Spacer(modifier = Modifier.size(6.dp))
-                    Column {
-                        Text(
-                            text = contact.displayName,
-                            style = MaterialTheme.typography.bodyMedium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        val number = contact.primaryNumberPreview
-                        if (!number.isNullOrBlank()) {
-                            Text(
-                                text = matchedNumberText(number, dialedDigits),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                }
-            } else {
-                AssistChip(
-                    onClick = { onSelect(contact) },
-                    label = {
-                        Text(
-                            text = contact.displayName,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+    var expanded by remember(dialedDigits) { mutableStateOf(false) }
+    val capped = contacts.take(8)
+    val visible = if (expanded) capped else capped.take(3)
+    val suggestionRows: @Composable () -> Unit = {
+        visible.forEach { contact ->
+            DialpadSuggestionRow(
+                contact = contact,
+                dialedDigits = dialedDigits,
+                onClick = { onSelect(contact) }
+            )
+        }
+    }
+    Column(modifier = modifier.testTag("dialpad_suggestion_chips")) {
+        if (expanded) {
+            Column(
+                modifier = Modifier
+                    .heightIn(max = 232.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                suggestionRows()
+            }
+        } else {
+            suggestionRows()
+        }
+        if (capped.size > 3) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded }
+                    .padding(horizontal = spacing.medium, vertical = spacing.small)
+                    .testTag("dialpad_suggestions_more"),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = if (expanded) {
+                        stringResource(id = R.string.dialpad_show_less)
+                    } else {
+                        stringResource(
+                            id = R.string.dialpad_more_matches,
+                            capped.size - 3
                         )
                     },
-                    leadingIcon = { DialpadChipAvatar(contact.displayName) },
-                    modifier = Modifier.testTag("dialpad_chip_${contact.id}")
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
     }
 }
 
-/** Initial avatar used by both the glass and the flat T9 chips. */
+/** One full-width suggestion row: avatar, name, highlighted number. */
 @Composable
-private fun DialpadChipAvatar(name: String) {
-    Box(
+private fun DialpadSuggestionRow(
+    contact: ContactSummary,
+    dialedDigits: String,
+    onClick: () -> Unit
+) {
+    val spacing = LocalSpacing.current
+    Row(
         modifier = Modifier
-            .size(24.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.primaryContainer),
-        contentAlignment = Alignment.Center
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = spacing.medium, vertical = spacing.small)
+            .testTag("dialpad_chip_${contact.id}"),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = name.trim().take(1).uppercase(),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onPrimaryContainer
+        ContactAvatar(
+            photoUri = contact.photoUri,
+            displayName = contact.displayName,
+            size = 40.dp,
+            textStyle = MaterialTheme.typography.titleSmall
         )
+        Spacer(modifier = Modifier.size(spacing.medium))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = contact.displayName,
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            val number = contact.primaryNumberPreview
+            if (!number.isNullOrBlank()) {
+                Text(
+                    text = matchedNumberText(number, dialedDigits),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
     }
 }
-
 /**
  * The contact's number with the dialed digits highlighted in the accent
  * color. Matching is digits-only, mapped back onto the displayed text;

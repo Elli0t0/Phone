@@ -34,4 +34,6 @@
     <string name="recents_duration_zero">0 ثانیه</string>
     <string name="recents_duration_min_sec">%1$dd %2$dث</string>
     <string name="recents_duration_sec">%1$dث</string>
+    <string name="dialpad_more_matches">%1$d مورد دیگر…</string>
+    <string name="dialpad_show_less">نمایش کمتر</string>
 </resources>

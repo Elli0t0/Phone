@@ -132,6 +132,8 @@
     <string name="cd_backspace_button">Backspace</string>
     <string name="dialpad_empty_search">No matching contacts</string>
     <string name="dialpad_create_contact">Create new contact</string>
+    <string name="dialpad_more_matches">%1$d more…</string>
+    <string name="dialpad_show_less">Show less</string>
     <string name="dialpad_message">Message</string>
     <string name="cd_dialpad_key">Key %1$s</string>
     <string name="permission_call_title">Phone Call Permission</string>
