@@ -262,6 +262,7 @@ private fun DialpadSuggestionRow(
             Text(
                 text = contact.displayName,
                 style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
