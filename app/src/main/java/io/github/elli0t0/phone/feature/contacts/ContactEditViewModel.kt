@@ -19,7 +19,9 @@ import kotlinx.coroutines.launch
 class ContactEditViewModel(
     private val contactsRepository: ContactsRepository,
     initialContact: ContactDetail? = null,
-    initialPhone: String = ""
+    initialPhone: String = "",
+    initialName: String = "",
+    initialEmail: String = ""
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -30,7 +32,15 @@ class ContactEditViewModel(
                 lookupKey = initialContact.lookupKey,
                 displayName = initialContact.displayName,
                 organization = initialContact.organization.orEmpty(),
-                phones = if (initialContact.phones.isNotEmpty()) initialContact.phones else listOf(ContactPhone(number = "")),
+                // Add-to-existing: the number arrives as a NEW phone row
+                // (default Mobile type) appended after the contact's own
+                // rows; existing rows are never replaced.
+                phones = when {
+                    initialPhone.isNotBlank() ->
+                        initialContact.phones + ContactPhone(number = initialPhone)
+                    initialContact.phones.isNotEmpty() -> initialContact.phones
+                    else -> listOf(ContactPhone(number = ""))
+                },
                 emails = initialContact.emails,
                 initialPhotoUri = initialContact.photoUri,
                 customRingtone = initialContact.customRingtone,
@@ -39,8 +49,13 @@ class ContactEditViewModel(
         } else {
             ContactEditUiState(
                 isNewContact = true,
+                displayName = initialName,
                 phones = listOf(ContactPhone(number = initialPhone)),
-                emails = emptyList()
+                emails = if (initialEmail.isNotBlank()) {
+                    listOf(ContactEmail(address = initialEmail))
+                } else {
+                    emptyList()
+                }
             )
         }
     )
@@ -234,11 +249,13 @@ class ContactEditViewModel(
         fun provideFactory(
             repository: ContactsRepository,
             initialContact: ContactDetail? = null,
-            initialPhone: String = ""
+            initialPhone: String = "",
+            initialName: String = "",
+            initialEmail: String = ""
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return ContactEditViewModel(repository, initialContact, initialPhone) as T
+                return ContactEditViewModel(repository, initialContact, initialPhone, initialName, initialEmail) as T
             }
         }
     }

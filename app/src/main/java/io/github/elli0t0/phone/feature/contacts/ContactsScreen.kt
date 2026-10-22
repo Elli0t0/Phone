@@ -30,14 +30,27 @@ import io.github.elli0t0.phone.feature.contacts.ui.ContactEditScreen
 import io.github.elli0t0.phone.feature.contacts.ui.ContactHistoryScreen
 import io.github.elli0t0.phone.feature.contacts.ui.ContactListScreen
 import io.github.elli0t0.phone.feature.contacts.ui.GroupsScreen
+import io.github.elli0t0.phone.feature.contacts.ui.ContactPickerScreen
+import io.github.elli0t0.phone.navigation.AppendPhoneRequest
+import io.github.elli0t0.phone.navigation.CreateContactRequest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 private sealed interface ContactsNavDestination {
     data object List : ContactsNavDestination
     data class Detail(val contactId: Long, val lookupKey: String) : ContactsNavDestination
     data class History(val contactId: Long, val lookupKey: String) : ContactsNavDestination
-    data class Create(val initialPhone: String = "") : ContactsNavDestination
-    data class Edit(val contact: ContactDetail) : ContactsNavDestination
+    data class Create(
+        val initialPhone: String = "",
+        val initialName: String = "",
+        val initialEmail: String = ""
+    ) : ContactsNavDestination
+    data class Edit(
+        val contact: ContactDetail,
+        val appendPhone: String = "",
+        val returnToList: Boolean = false
+    ) : ContactsNavDestination
+    data class PickContact(val number: String) : ContactsNavDestination
     data object Groups : ContactsNavDestination
 }
 
@@ -47,6 +60,7 @@ private fun destinationDepth(destination: ContactsNavDestination): Int = when (d
     ContactsNavDestination.Groups -> 1
     is ContactsNavDestination.Detail -> 2
     is ContactsNavDestination.Create -> 2
+    is ContactsNavDestination.PickContact -> 2
     is ContactsNavDestination.History -> 3
     is ContactsNavDestination.Edit -> 3
 }
@@ -56,8 +70,12 @@ fun ContactsScreen(
     modifier: Modifier = Modifier,
     onNavigateToSettings: () -> Unit = {},
     onShowBottomBarChanged: (Boolean) -> Unit = {},
-    pendingCreateNumber: String? = null,
-    onPendingCreateNumberConsumed: () -> Unit = {},
+    pendingCreateRequest: CreateContactRequest? = null,
+    onPendingCreateRequestConsumed: () -> Unit = {},
+    pendingAddNumber: String? = null,
+    onPendingAddNumberConsumed: () -> Unit = {},
+    pendingAppendRequest: AppendPhoneRequest? = null,
+    onPendingAppendRequestConsumed: () -> Unit = {},
     pendingOpenContactId: Long? = null,
     onPendingOpenContactIdConsumed: () -> Unit = {}
 ) {
@@ -85,12 +103,43 @@ fun ContactsScreen(
     val snackbarHostState = LocalAppSnackbarHostState.current
     val coroutineScope = rememberCoroutineScope()
 
-    // A number from the keypad with no matching contact opens the
-    // editor prefilled with it, then clears the pending value.
-    LaunchedEffect(pendingCreateNumber) {
-        if (pendingCreateNumber != null) {
-            currentDestination = ContactsNavDestination.Create(pendingCreateNumber)
-            onPendingCreateNumberConsumed()
+    // A create request (keypad / Recents / system insert intent) opens
+    // the editor prefilled with the number (and name/email when the
+    // source provided them), then clears the pending value.
+    LaunchedEffect(pendingCreateRequest) {
+        if (pendingCreateRequest != null) {
+            currentDestination = ContactsNavDestination.Create(
+                pendingCreateRequest.phone,
+                pendingCreateRequest.name,
+                pendingCreateRequest.email
+            )
+            onPendingCreateRequestConsumed()
+        }
+    }
+
+    // "Add to a contact" opens the in-app picker for the number.
+    LaunchedEffect(pendingAddNumber) {
+        if (pendingAddNumber != null) {
+            listViewModel.clearSearchQuery()
+            currentDestination = ContactsNavDestination.PickContact(pendingAddNumber)
+            onPendingAddNumberConsumed()
+        }
+    }
+
+    // A system insert-or-edit intent targeting an existing contact
+    // opens its editor with the number appended as a new phone row.
+    LaunchedEffect(pendingAppendRequest) {
+        if (pendingAppendRequest != null) {
+            val request = pendingAppendRequest
+            onPendingAppendRequestConsumed()
+            val detail = repository.getContactDetail(request.lookupKey, request.contactId).first()
+            if (detail != null) {
+                currentDestination = ContactsNavDestination.Edit(
+                    detail,
+                    appendPhone = request.phone,
+                    returnToList = true
+                )
+            }
         }
     }
 
@@ -249,10 +298,16 @@ fun ContactsScreen(
 
                 is ContactsNavDestination.Create -> {
                     val createViewModel: ContactEditViewModel = viewModel(
-                        // Keyed by the prefilled number: a fresh editor
-                        // for each number, never a stale previous input.
-                        key = "create_contact_${dest.initialPhone}",
-                        factory = ContactEditViewModel.provideFactory(repository, null, dest.initialPhone)
+                        // Keyed by the prefilled values: a fresh editor
+                        // for each request, never a stale previous input.
+                        key = "create_contact_${dest.initialPhone}_${dest.initialName.hashCode()}_${dest.initialEmail.hashCode()}",
+                        factory = ContactEditViewModel.provideFactory(
+                            repository,
+                            null,
+                            dest.initialPhone,
+                            dest.initialName,
+                            dest.initialEmail
+                        )
                     )
                     val createUiState by createViewModel.uiState.collectAsStateWithLifecycle()
 
@@ -291,8 +346,8 @@ fun ContactsScreen(
 
                 is ContactsNavDestination.Edit -> {
                     val editViewModel: ContactEditViewModel = viewModel(
-                        key = "edit_${dest.contact.id}",
-                        factory = ContactEditViewModel.provideFactory(repository, dest.contact)
+                        key = "edit_${dest.contact.id}_${dest.appendPhone}",
+                        factory = ContactEditViewModel.provideFactory(repository, dest.contact, dest.appendPhone)
                     )
                     val editUiState by editViewModel.uiState.collectAsStateWithLifecycle()
 
@@ -310,14 +365,22 @@ fun ContactsScreen(
                         onRemoveEmail = editViewModel::removeEmailRow,
                         onSaveClick = {
                             editViewModel.saveContact { savedId ->
-                                currentDestination = ContactsNavDestination.Detail(savedId, dest.contact.lookupKey)
+                                currentDestination = if (dest.returnToList) {
+                                    ContactsNavDestination.List
+                                } else {
+                                    ContactsNavDestination.Detail(savedId, dest.contact.lookupKey)
+                                }
                                 coroutineScope.launch {
                                     snackbarHostState.showSnackbar(context.getString(R.string.snackbar_contact_updated))
                                 }
                             }
                         },
                         onCancelClick = {
-                            currentDestination = ContactsNavDestination.Detail(dest.contact.id, dest.contact.lookupKey)
+                            currentDestination = if (dest.returnToList) {
+                                ContactsNavDestination.List
+                            } else {
+                                ContactsNavDestination.Detail(dest.contact.id, dest.contact.lookupKey)
+                            }
                         },
                         onPhotoPicked = editViewModel::onPhotoPickedForPreview,
                         onConfirmSaveCroppedPhoto = editViewModel::onConfirmSaveCroppedPhoto,
@@ -328,6 +391,31 @@ fun ContactsScreen(
                         onPhotoOptionsRequest = { editViewModel.setPhotoOptionsDialogVisible(true) },
                         onDismissPhotoOptions = { editViewModel.setPhotoOptionsDialogVisible(false) },
                         onRingtoneSelected = editViewModel::onRingtoneSelected
+                    )
+                }
+
+                is ContactsNavDestination.PickContact -> {
+                    ContactPickerScreen(
+                        uiState = uiState,
+                        onSearchQueryChanged = listViewModel::onSearchQueryChanged,
+                        onClearSearch = listViewModel::clearSearchQuery,
+                        onContactClick = { contact ->
+                            coroutineScope.launch {
+                                val detail = repository.getContactDetail(contact.lookupKey, contact.id).first()
+                                listViewModel.clearSearchQuery()
+                                if (detail != null) {
+                                    currentDestination = ContactsNavDestination.Edit(
+                                        detail,
+                                        appendPhone = dest.number,
+                                        returnToList = true
+                                    )
+                                }
+                            }
+                        },
+                        onBack = {
+                            listViewModel.clearSearchQuery()
+                            currentDestination = ContactsNavDestination.List
+                        }
                     )
                 }
 

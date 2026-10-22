@@ -4,11 +4,13 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -48,12 +50,47 @@ fun PhoneNavHost(
         { Motion.innerPopEnterTransition(animationOption) }
     val innerPopExitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition =
         { Motion.innerPopExitTransition(animationOption) }
-    // Number from the keypad with no matching contact: the Contacts tab
-    // opens the editor prefilled with it, then clears the pending value.
-    var pendingCreateNumber by remember { mutableStateOf<String?>(null) }
+    // Create-contact request (keypad / Recents / system insert intent):
+    // the Contacts tab opens the editor prefilled, then clears it.
+    var pendingCreateRequest by remember { mutableStateOf<CreateContactRequest?>(null) }
+    // Number to add to an existing contact: the Contacts tab opens the
+    // in-app picker for it, then clears the pending value.
+    var pendingAddNumber by remember { mutableStateOf<String?>(null) }
+    // Append-a-number request from a system insert-or-edit intent.
+    var pendingAppendRequest by remember { mutableStateOf<AppendPhoneRequest?>(null) }
     // Contact id from Recents: the Contacts tab opens that contact's
     // detail, then clears the pending value.
     var pendingOpenContactId by remember { mutableStateOf<Long?>(null) }
+
+    // System INSERT / INSERT_OR_EDIT intents (posted by MainActivity)
+    // route into the same in-app create / append flows.
+    val externalRequest by ExternalContactRequests.flow.collectAsStateWithLifecycle()
+    LaunchedEffect(externalRequest) {
+        when (val request = externalRequest) {
+            is ExternalContactRequest.Create -> {
+                pendingCreateRequest = CreateContactRequest(request.phone, request.name, request.email)
+                navController.navigate(Screen.Contacts.route) {
+                    popUpTo(navController.graph.findStartDestination().id) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            }
+            is ExternalContactRequest.Append -> {
+                pendingAppendRequest = AppendPhoneRequest(request.contactId, request.lookupKey, request.phone)
+                navController.navigate(Screen.Contacts.route) {
+                    popUpTo(navController.graph.findStartDestination().id) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            }
+            null -> Unit
+        }
+        if (externalRequest != null) ExternalContactRequests.consume()
+    }
     NavHost(
         navController = navController,
         startDestination = startDestination,
@@ -93,6 +130,26 @@ fun PhoneNavHost(
                         restoreState = true
                     }
                 },
+                onCreateContact = { number ->
+                    pendingCreateRequest = CreateContactRequest(phone = number)
+                    navController.navigate(Screen.Contacts.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
+                onAddToExistingContact = { number ->
+                    pendingAddNumber = number
+                    navController.navigate(Screen.Contacts.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
                 onNavigateToSettings = {
                     navController.navigate(Screen.Settings.route)
                 }
@@ -110,8 +167,12 @@ fun PhoneNavHost(
                     navController.navigate(Screen.Settings.route)
                 },
                 onShowBottomBarChanged = onContactsBarVisibilityChanged,
-                pendingCreateNumber = pendingCreateNumber,
-                onPendingCreateNumberConsumed = { pendingCreateNumber = null },
+                pendingCreateRequest = pendingCreateRequest,
+                onPendingCreateRequestConsumed = { pendingCreateRequest = null },
+                pendingAddNumber = pendingAddNumber,
+                onPendingAddNumberConsumed = { pendingAddNumber = null },
+                pendingAppendRequest = pendingAppendRequest,
+                onPendingAppendRequestConsumed = { pendingAppendRequest = null },
                 pendingOpenContactId = pendingOpenContactId,
                 onPendingOpenContactIdConsumed = { pendingOpenContactId = null }
             )
@@ -128,7 +189,7 @@ fun PhoneNavHost(
                     navController.navigate(Screen.Settings.route)
                 },
                 onCreateContact = { number ->
-                    pendingCreateNumber = number
+                    pendingCreateRequest = CreateContactRequest(phone = number)
                     navController.navigate(Screen.Contacts.route) {
                         popUpTo(navController.graph.findStartDestination().id) {
                             saveState = true

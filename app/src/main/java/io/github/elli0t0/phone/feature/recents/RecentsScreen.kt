@@ -95,6 +95,8 @@ import kotlinx.coroutines.launch
 fun RecentsScreen(
     onNavigateToContactDetail: (Long) -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
+    onCreateContact: (String) -> Unit = {},
+    onAddToExistingContact: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -129,6 +131,9 @@ fun RecentsScreen(
     val snackbarHostState = LocalAppSnackbarHostState.current
 
     var simPickerTargetNumber by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
+    // Unknown number chosen for in-app "Add to contacts": shows the
+    // create-new / add-to-existing chooser dialog.
+    var addNumber by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
     var searchVisible by remember { mutableStateOf(uiState.searchQuery.isNotEmpty()) }
     var menuExpanded by remember { mutableStateOf(false) }
     var filterMenuExpanded by remember { mutableStateOf(false) }
@@ -165,6 +170,40 @@ fun RecentsScreen(
                 CallManager.placeCall(context, num, sim.handle)
             },
             onDismiss = { simPickerTargetNumber = null }
+        )
+    }
+
+    if (addNumber != null) {
+        val numberToAdd = addNumber.orEmpty()
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { addNumber = null },
+            title = { Text(stringResource(id = R.string.action_add_contact)) },
+            text = {
+                Column {
+                    TextButton(
+                        onClick = {
+                            addNumber = null
+                            onCreateContact(numberToAdd)
+                        }
+                    ) {
+                        Text(stringResource(id = R.string.dialpad_create_contact))
+                    }
+                    TextButton(
+                        onClick = {
+                            addNumber = null
+                            onAddToExistingContact(numberToAdd)
+                        }
+                    ) {
+                        Text(stringResource(id = R.string.add_to_existing_contact))
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { addNumber = null }) {
+                    Text(stringResource(id = R.string.action_cancel))
+                }
+            }
         )
     }
 
@@ -489,11 +528,7 @@ fun RecentsScreen(
                                                 }
                                             },
                                             onAddContactClick = {
-                                                val intent = Intent(Intent.ACTION_INSERT).apply {
-                                                    type = ContactsContract.Contacts.CONTENT_TYPE
-                                                    putExtra(ContactsContract.Intents.Insert.PHONE, group.number)
-                                                }
-                                                context.startActivity(intent)
+                                                addNumber = group.number
                                             },
                                             onCopyNumberClick = {
                                                 clipboardManager.setText(AnnotatedString(group.number))

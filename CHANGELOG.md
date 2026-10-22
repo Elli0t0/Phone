@@ -164,6 +164,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.26] - 2026-10-23
+
+- Saving a number now happens fully inside the app — the system contact chooser is gone. Recents "Add to contacts" offers Create new contact (the app's editor, number prefilled as a Mobile row, cursor in Name) or Add to existing contact (an in-app picker with the same search and alphabetical list as Contacts; the chosen contact's editor opens with the number appended as a new phone row — existing data is never replaced — and saving returns to the list, which refreshes in place).
+- The app is now also a target for other apps: system Insert / Insert-or-edit contact intents open the same in-app screens, prefilled with the intent's name, phone and email, or appending the number to the targeted contact.
+
 ## [0.11.25] - 2026-10-23
 
 - The call screen now runs in its own task (singleInstance, excluded from Recents): when a call arrives while you are using the app and you decline it — from the banner or the call screen — you stay on the exact screen you were on, with the typed number, scroll position and open contact untouched. Decline and hang-up paths only reject/disconnect the call and clear its notifications.

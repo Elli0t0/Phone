@@ -175,6 +175,7 @@
     <string name="action_message">Message</string>
     <string name="action_open_contact">Open contact</string>
     <string name="action_add_contact">Add to contacts</string>
+    <string name="add_to_existing_contact">Add to existing contact</string>
     <string name="action_copy_number">Copy number</string>
     <string name="action_delete_call">Delete from log</string>
     <string name="snackbar_number_copied">Number copied to clipboard</string>

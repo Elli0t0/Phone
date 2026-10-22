@@ -49,12 +49,15 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
@@ -186,6 +189,13 @@ fun ContactEditScreen(
             displayName = uiState.displayName.ifBlank { stringResource(id = R.string.contact_unknown) },
             onDismiss = onDismissPhotoPreview
         )
+    }
+
+    // New contact: put the cursor in the Name field (the number is
+    // already prefilled when arriving from the save-number flows).
+    val nameFocusRequester = remember { FocusRequester() }
+    LaunchedEffect(uiState.isNewContact) {
+        if (uiState.isNewContact) nameFocusRequester.requestFocus()
     }
 
     Scaffold(
@@ -323,7 +333,7 @@ fun ContactEditScreen(
                         shape = MaterialTheme.shapes.medium,
                         colors = EditFieldColors(),
                         singleLine = true,
-                        modifier = Modifier.fillMaxWidth().testTag("input_contact_name")
+                        modifier = Modifier.fillMaxWidth().focusRequester(nameFocusRequester).testTag("input_contact_name")
                     )
                     Spacer(modifier = Modifier.height(spacing.medium))
                     TextField(

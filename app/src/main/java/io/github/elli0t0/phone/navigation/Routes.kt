@@ -55,3 +55,17 @@ sealed class Screen(
         val bottomNavItems = listOf(Dialpad, Recents, Contacts)
     }
 }
+
+/** In-app "create contact" request, optionally prefilled (keypad, Recents, system insert intents). */
+data class CreateContactRequest(
+    val phone: String = "",
+    val name: String = "",
+    val email: String = ""
+)
+
+/** In-app "append this number as a new phone row on that contact" request. */
+data class AppendPhoneRequest(
+    val contactId: Long,
+    val lookupKey: String,
+    val phone: String
+)
