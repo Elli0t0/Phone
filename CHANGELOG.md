@@ -164,6 +164,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.25] - 2026-10-23
+
+- The call screen now runs in its own task (singleInstance, excluded from Recents): when a call arrives while you are using the app and you decline it — from the banner or the call screen — you stay on the exact screen you were on, with the typed number, scroll position and open contact untouched. Decline and hang-up paths only reject/disconnect the call and clear its notifications.
+- Incoming presentation unchanged in behavior and now guaranteed by the task split: Pop-up shows the heads-up banner only, Full screen opens the call screen.
+- New Settings > About > Debug log: PhoneNav lifecycle entries (MainActivity and CallActivity create/new-intent/start/stop/destroy with task id, plus every answer/reject/disconnect) are kept in-app and viewable without a computer.
+
 ## [0.11.24] - 2026-10-22
 
 - Keypad contact suggestions: contact names now use the theme's on-surface color explicitly — they were invisible (black on black) in dark mode.

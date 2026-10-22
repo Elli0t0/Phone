@@ -36,4 +36,5 @@
     <string name="recents_duration_sec">%1$dث</string>
     <string name="dialpad_more_matches">%1$d مورد دیگر…</string>
     <string name="dialpad_show_less">نمایش کمتر</string>
+    <string name="settings_debug_log">گزارش اشکال‌زدایی</string>
 </resources>

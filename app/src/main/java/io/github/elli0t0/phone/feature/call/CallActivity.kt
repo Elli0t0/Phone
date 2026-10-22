@@ -30,6 +30,7 @@ import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneTheme
 import io.github.elli0t0.phone.core.telecom.PhoneInCallService
+import io.github.elli0t0.phone.core.telecom.PhoneNavLog
 import io.github.elli0t0.phone.data.call.CallRepository
 import io.github.elli0t0.phone.data.call.CallState
 import io.github.elli0t0.phone.data.settings.model.CallBackground
@@ -44,6 +45,7 @@ class CallActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("PhoneCall", "activity onCreate CallActivity action=${intent?.action}")
+        PhoneNavLog.log("CallActivity onCreate taskId=$taskId isFinishing=$isFinishing")
         try {
             val isDefault = io.github.elli0t0.phone.core.telecom.DefaultDialerHelper.isDefaultDialer(this)
             Log.d("PhoneCall", "activity onCreate isDefaultDialer=$isDefault")
@@ -214,14 +216,26 @@ class CallActivity : ComponentActivity() {
         PhoneInCallService.onCallActivityPaused(this)
     }
 
+    override fun onStart() {
+        super.onStart()
+        PhoneNavLog.log("CallActivity onStart taskId=$taskId isFinishing=$isFinishing")
+    }
+
+    override fun onStop() {
+        super.onStop()
+        PhoneNavLog.log("CallActivity onStop taskId=$taskId isFinishing=$isFinishing")
+    }
+
     override fun onDestroy() {
         super.onDestroy()
+        PhoneNavLog.log("CallActivity onDestroy taskId=$taskId isFinishing=$isFinishing")
         CallRepository.setCallActivityVisible(false)
         PhoneInCallService.onCallActivityPaused(this)
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        PhoneNavLog.log("CallActivity onNewIntent taskId=$taskId isFinishing=$isFinishing")
         setIntent(intent)
         handleIntent(intent)
         CallRepository.setCallActivityVisible(true)

@@ -3,8 +3,11 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -17,6 +20,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -24,6 +29,7 @@ import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import androidx.compose.ui.platform.LocalContext
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.telecom.PhoneNavLog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 
@@ -69,6 +75,15 @@ if (dialogs.showAboutDialog) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                Spacer(modifier = Modifier.height(spacing.small))
+                TextButton(
+                    onClick = {
+                        dialogs.showAboutDialog = false
+                        dialogs.showDebugLogDialog = true
+                    }
+                ) {
+                    Text(text = stringResource(id = R.string.settings_debug_log))
+                }
             }
         },
         confirmButton = {
@@ -90,6 +105,27 @@ if (dialogs.showAboutDialog) {
         },
         dismissButton = {
             TextButton(onClick = { dialogs.showAboutDialog = false }) {
+                Text(text = stringResource(id = R.string.action_cancel))
+            }
+        }
+    )
+}
+
+if (dialogs.showDebugLogDialog) {
+    AlertDialog(
+        onDismissRequest = { dialogs.showDebugLogDialog = false },
+        title = { Text(text = stringResource(id = R.string.settings_debug_log)) },
+        text = {
+            Text(
+                text = PhoneNavLog.snapshot(),
+                style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+                modifier = Modifier
+                    .heightIn(max = 400.dp)
+                    .verticalScroll(rememberScrollState())
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { dialogs.showDebugLogDialog = false }) {
                 Text(text = stringResource(id = R.string.action_cancel))
             }
         }

@@ -6,6 +6,7 @@ import android.telecom.VideoProfile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import io.github.elli0t0.phone.core.telecom.PhoneNavLog
 
 object CallRepository {
     private val _currentCall = MutableStateFlow<Call?>(null)
@@ -117,10 +118,12 @@ object CallRepository {
     }
 
     fun answerCall() {
+        PhoneNavLog.log("CallRepository answerCall")
         _currentCall.value?.answer(VideoProfile.STATE_AUDIO_ONLY)
     }
 
     fun rejectCall() {
+        PhoneNavLog.log("CallRepository rejectCall")
         val call = _currentCall.value ?: return
         if (call.state == Call.STATE_RINGING) {
             call.reject(false, null)
@@ -131,6 +134,7 @@ object CallRepository {
 
     /** Declines a ringing call and sends the given text as a reply SMS. */
     fun rejectCallWithMessage(message: String) {
+        PhoneNavLog.log("CallRepository rejectCallWithMessage")
         val call = _currentCall.value ?: return
         if (call.state == Call.STATE_RINGING) {
             call.reject(true, message)
@@ -140,6 +144,7 @@ object CallRepository {
     }
 
     fun disconnectCall() {
+        PhoneNavLog.log("CallRepository disconnectCall")
         _currentCall.value?.disconnect()
     }
 

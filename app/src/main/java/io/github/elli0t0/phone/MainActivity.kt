@@ -1,5 +1,6 @@
 package io.github.elli0t0.phone
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -54,10 +55,12 @@ import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.navigation.PhoneBottomBar
 import io.github.elli0t0.phone.navigation.PhoneNavHost
 import io.github.elli0t0.phone.navigation.Screen
+import io.github.elli0t0.phone.core.telecom.PhoneNavLog
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        PhoneNavLog.log("MainActivity onCreate taskId=$taskId isFinishing=$isFinishing")
         enableEdgeToEdge()
         val app = application as PhoneApplication
         setContent {
@@ -80,6 +83,26 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        PhoneNavLog.log("MainActivity onNewIntent taskId=$taskId isFinishing=$isFinishing")
+    }
+
+    override fun onStart() {
+        super.onStart()
+        PhoneNavLog.log("MainActivity onStart taskId=$taskId isFinishing=$isFinishing")
+    }
+
+    override fun onStop() {
+        super.onStop()
+        PhoneNavLog.log("MainActivity onStop taskId=$taskId isFinishing=$isFinishing")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        PhoneNavLog.log("MainActivity onDestroy taskId=$taskId isFinishing=$isFinishing")
     }
 }
 

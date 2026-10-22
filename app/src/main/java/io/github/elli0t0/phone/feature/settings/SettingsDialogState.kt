@@ -77,6 +77,7 @@ class SettingsDialogState {
     var showQuickDeclineDialog by mutableStateOf(false)
     var showBlockedNumbers by mutableStateOf(false)
     var showAboutDialog by mutableStateOf(false)
+    var showDebugLogDialog by mutableStateOf(false)
     var showCallWaitingDialog by mutableStateOf(false)
     var showUssdSimPicker by mutableStateOf(false)
     var customColorHexInput by mutableStateOf("")

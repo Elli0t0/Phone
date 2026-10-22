@@ -331,6 +331,7 @@
     <string name="settings_supplementary">Supplementary services</string>
     <string name="settings_permissions">Permissions</string>
     <string name="settings_about_phone">About Phone</string>
+    <string name="settings_debug_log">Debug log</string>
     <string name="settings_about_version">Version %1$s (%2$d)</string>
     <string name="settings_view_source">View source</string>
     <string name="blocked_numbers_title">Block numbers</string>

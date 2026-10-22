@@ -58,8 +58,9 @@
         <activity
             android:name=".feature.call.CallActivity"
             android:exported="false"
-            android:launchMode="singleTask"
-            android:excludeFromRecents="false"
+            android:launchMode="singleInstance"
+            android:taskAffinity=""
+            android:excludeFromRecents="true"
             android:screenOrientation="portrait"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
