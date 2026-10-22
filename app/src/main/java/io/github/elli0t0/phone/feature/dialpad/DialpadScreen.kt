@@ -108,6 +108,7 @@ import kotlinx.coroutines.launch
 fun DialpadScreen(
     onNavigateToSettings: () -> Unit = {},
     onCreateContact: (String) -> Unit = {},
+    onAddToExistingContact: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -287,6 +288,10 @@ fun DialpadScreen(
                         lightHaptic()
                         onCreateContact(uiState.rawNumber)
                     },
+                    onAddToContact = {
+                        lightHaptic()
+                        onAddToExistingContact(uiState.rawNumber)
+                    },
                     onMessage = {
                         lightHaptic()
                         context.startActivity(
@@ -348,7 +353,8 @@ fun DialpadScreen(
                         lightHaptic()
                         viewModel.onContactSelected(it)
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    contactCounts = uiState.matchingContactCounts
                 )
             }
             }

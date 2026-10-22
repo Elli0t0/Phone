@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
+import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
 import io.github.elli0t0.phone.data.contacts.ContactsRepository
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 import kotlinx.coroutines.FlowPreview
@@ -72,7 +73,22 @@ class DialpadViewModel(
         } else {
             emptyList()
         }
-        _uiState.value = _uiState.value.copy(matchingContacts = matches)
+        // De-duplicate before showing: the same contact, or two entries
+        // with the same name and normalized number, collapse into one
+        // row; the group size rides along as a "N contacts" hint.
+        val groups = matches.groupBy { contact ->
+            val number = contact.primaryNumberPreview
+            if (number.isNullOrBlank()) {
+                "id:${contact.id}"
+            } else {
+                "num:${PhoneNumberMatcher.normalize(number)}|" +
+                    PhoneNumberMatcher.normalizeName(contact.displayName)
+            }
+        }
+        _uiState.value = _uiState.value.copy(
+            matchingContacts = groups.values.map { it.first() },
+            matchingContactCounts = groups.values.associate { group -> group.first().id to group.size }
+        )
     }
 
     private var backspaceRepeatJob: kotlinx.coroutines.Job? = null

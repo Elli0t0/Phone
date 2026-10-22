@@ -182,7 +182,8 @@ fun DialpadSuggestionChips(
     contacts: List<ContactSummary>,
     dialedDigits: String,
     onSelect: (ContactSummary) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    contactCounts: Map<Long, Int> = emptyMap()
 ) {
     val spacing = LocalSpacing.current
     var expanded by remember(dialedDigits) { mutableStateOf(false) }
@@ -193,6 +194,7 @@ fun DialpadSuggestionChips(
             DialpadSuggestionRow(
                 contact = contact,
                 dialedDigits = dialedDigits,
+                count = contactCounts[contact.id] ?: 1,
                 onClick = { onSelect(contact) }
             )
         }
@@ -240,6 +242,7 @@ fun DialpadSuggestionChips(
 private fun DialpadSuggestionRow(
     contact: ContactSummary,
     dialedDigits: String,
+    count: Int = 1,
     onClick: () -> Unit
 ) {
     val spacing = LocalSpacing.current
@@ -259,13 +262,25 @@ private fun DialpadSuggestionRow(
         )
         Spacer(modifier = Modifier.size(spacing.medium))
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = contact.displayName,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = contact.displayName,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+                if (count > 1) {
+                    Spacer(modifier = Modifier.size(spacing.small))
+                    Text(
+                        text = stringResource(id = R.string.dialpad_contacts_count, count),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
+                    )
+                }
+            }
             val number = contact.primaryNumberPreview
             if (!number.isNullOrBlank()) {
                 Text(
@@ -319,11 +334,14 @@ private fun matchedNumberText(number: String, dialed: String): AnnotatedString {
 
 /**
  * Actions for a dialed number that matches no contact: create a new
- * contact prefilled with the number, or message the number.
+ * contact prefilled with the number, add it to an existing contact,
+ * or message the number. Three chips on a single line; labels
+ * ellipsize instead of wrapping.
  */
 @Composable
 fun DialpadNoMatchActions(
     onCreateContact: () -> Unit,
+    onAddToContact: () -> Unit,
     onMessage: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -338,24 +356,34 @@ fun DialpadNoMatchActions(
         )
         Spacer(modifier = Modifier.height(12.dp))
         if (LocalAppSettings.current.glassDialpad) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            val createSource = remember { MutableInteractionSource() }
-            LiquidGlassPill(
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .clip(LiquidGlassPillShape)
-                    .bouncyClick(createSource)
-                    .clickable(
-                        interactionSource = createSource,
-                        indication = ripple()
-                    ) { onCreateContact() }
-                    .testTag("dialpad_no_match_create")
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                NoMatchGlassChip(
+                    iconRes = R.drawable.ic_add,
+                    labelRes = R.string.dialpad_create_contact,
+                    chipTestTag = "dialpad_no_match_create",
+                    onClick = onCreateContact,
+                    modifier = Modifier.weight(1f)
+                )
+                NoMatchGlassChip(
+                    iconRes = R.drawable.ic_person,
+                    labelRes = R.string.add_to_existing_contact,
+                    chipTestTag = "dialpad_no_match_add",
+                    onClick = onAddToContact,
+                    modifier = Modifier.weight(1f)
+                )
+                NoMatchGlassChip(
+                    iconRes = R.drawable.ic_message,
+                    labelRes = R.string.dialpad_message,
+                    chipTestTag = "dialpad_no_match_message",
+                    onClick = onMessage,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        } else {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilledTonalButton(
+                    onClick = onCreateContact,
+                    modifier = Modifier.weight(1f).testTag("dialpad_no_match_create")
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_add),
@@ -364,25 +392,28 @@ fun DialpadNoMatchActions(
                     Spacer(modifier = Modifier.size(4.dp))
                     Text(
                         text = stringResource(id = R.string.dialpad_create_contact),
-                        style = MaterialTheme.typography.labelLarge
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
-            }
-            val messageSource = remember { MutableInteractionSource() }
-            LiquidGlassPill(
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .clip(LiquidGlassPillShape)
-                    .bouncyClick(messageSource)
-                    .clickable(
-                        interactionSource = messageSource,
-                        indication = ripple()
-                    ) { onMessage() }
-                    .testTag("dialpad_no_match_message")
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                FilledTonalButton(
+                    onClick = onAddToContact,
+                    modifier = Modifier.weight(1f).testTag("dialpad_no_match_add")
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_person),
+                        contentDescription = null
+                    )
+                    Spacer(modifier = Modifier.size(4.dp))
+                    Text(
+                        text = stringResource(id = R.string.add_to_existing_contact),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                FilledTonalButton(
+                    onClick = onMessage,
+                    modifier = Modifier.weight(1f).testTag("dialpad_no_match_message")
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_message),
@@ -391,42 +422,54 @@ fun DialpadNoMatchActions(
                     Spacer(modifier = Modifier.size(4.dp))
                     Text(
                         text = stringResource(id = R.string.dialpad_message),
-                        style = MaterialTheme.typography.labelLarge
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-                }
-            }
-        }
-        } else {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                FilledTonalButton(
-                    onClick = onCreateContact,
-                    modifier = Modifier.testTag("dialpad_no_match_create")
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_add),
-                        contentDescription = null
-                    )
-                    Spacer(modifier = Modifier.size(4.dp))
-                    Text(text = stringResource(id = R.string.dialpad_create_contact))
-                }
-                FilledTonalButton(
-                    onClick = onMessage,
-                    modifier = Modifier.testTag("dialpad_no_match_message")
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_message),
-                        contentDescription = null
-                    )
-                    Spacer(modifier = Modifier.size(4.dp))
-                    Text(text = stringResource(id = R.string.dialpad_message))
                 }
             }
         }
     }
 }
 
+@Composable
+private fun NoMatchGlassChip(
+    iconRes: Int,
+    labelRes: Int,
+    chipTestTag: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val source = remember { MutableInteractionSource() }
+    LiquidGlassPill(
+        tint = MaterialTheme.colorScheme.primary,
+        modifier = modifier
+            .clip(LiquidGlassPillShape)
+            .bouncyClick(source)
+            .clickable(
+                interactionSource = source,
+                indication = ripple()
+            ) { onClick() }
+            .testTag(chipTestTag)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                painter = painterResource(id = iconRes),
+                contentDescription = null
+            )
+            Spacer(modifier = Modifier.size(4.dp))
+            Text(
+                text = stringResource(id = labelRes),
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
 @Composable
 fun DialpadSearchRow(
     contact: ContactSummary,

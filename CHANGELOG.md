@@ -164,6 +164,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.27] - 2026-10-23
+
+- Keypad suggestions are de-duplicated: the same contact, or two entries with the same name and number, show as one row with an "N contacts" hint.
+- Keypad no-match actions are now three single-line chips: Create new contact, Add to a contact (the in-app picker from 0.11.26), and Message — labels ellipsize instead of wrapping.
+- The call button is a vivid solid green with a white handset in both themes, so it always looks enabled.
+
 ## [0.11.26] - 2026-10-23
 
 - Saving a number now happens fully inside the app — the system contact chooser is gone. Recents "Add to contacts" offers Create new contact (the app's editor, number prefilled as a Mobile row, cursor in Name) or Add to existing contact (an in-app picker with the same search and alphabetical list as Contacts; the chosen contact's editor opens with the number appended as a new phone row — existing data is never replaced — and saving returns to the list, which refreshes in place).

@@ -6,6 +6,7 @@ data class DialpadUiState(
     val rawNumber: String = "",
     val formattedNumber: String = "",
     val matchingContacts: List<ContactSummary> = emptyList(),
+    val matchingContactCounts: Map<Long, Int> = emptyMap(),
     val nameSearchQuery: String = "",
     val nameSearchResults: List<ContactSummary> = emptyList(),
     val isSearching: Boolean = false,

@@ -44,8 +44,8 @@ val CallDeclineRed = Color(0xFFE53935)
 val CallAnswerGreen = Color(0xFF43A047)
 val CallRejectedOrange = Color(0xFFFB8C00)
 // Keypad call button green.
-val KeypadCallButtonGreenDark = Color(0xFF4AA564)
-val KeypadCallButtonGreenLight = Color(0xFF3DAA5C)
+val KeypadCallButtonGreenDark = Color(0xFF34A853)
+val KeypadCallButtonGreenLight = Color(0xFF34A853)
 val FavoriteHintOrange = Color(0xFFFFA726)
 // Contact avatar fallback: soft two-tone pastel gradients,
 // picked deterministically from the contact name.

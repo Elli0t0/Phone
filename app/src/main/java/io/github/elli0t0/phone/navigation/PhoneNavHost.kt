@@ -188,6 +188,16 @@ fun PhoneNavHost(
                 onNavigateToSettings = {
                     navController.navigate(Screen.Settings.route)
                 },
+                onAddToExistingContact = { number ->
+                    pendingAddNumber = number
+                    navController.navigate(Screen.Contacts.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                },
                 onCreateContact = { number ->
                     pendingCreateRequest = CreateContactRequest(phone = number)
                     navController.navigate(Screen.Contacts.route) {
