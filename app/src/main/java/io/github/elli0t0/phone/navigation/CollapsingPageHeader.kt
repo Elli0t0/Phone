@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
@@ -38,7 +39,7 @@ import io.github.elli0t0.phone.data.settings.model.HeaderSize
 
 /**
  * Expanded header height: the Header size setting's fraction of the
- * screen (Compact 22%, Standard 30%, Large 38%), at least 260dp.
+ * screen (Compact 22%, Standard 30%, Large 38%), at least 220dp.
  * Shared by the header item and the floating pill (the pill fades in
  * across exactly this scroll distance).
  */
@@ -199,4 +200,32 @@ fun FloatingActionsPill(
             }
         }
     }
+}
+
+/**
+ * Bottom scrim behind the floating bottom bar: a 56dp gradient over
+ * the list area fading to the page background at 55% alpha. It is
+ * drawn BEHIND the list content (first child of the screen's root
+ * box), so it tints only the background showing around the cards,
+ * never the cards themselves. Real backdrop blur is not available
+ * in this project (see the glass notes), so the gradient is the
+ * honest fallback.
+ */
+@Composable
+fun BottomListScrim(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(PhoneDimens.bottomScrimHeight)
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color.Transparent,
+                        MaterialTheme.colorScheme.background.copy(
+                            alpha = PhoneDimens.bottomScrimMaxAlpha
+                        )
+                    )
+                )
+            )
+    )
 }

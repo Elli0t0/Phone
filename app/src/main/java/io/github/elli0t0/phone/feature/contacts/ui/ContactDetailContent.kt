@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
@@ -45,6 +46,7 @@ import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.contacts.model.ContactDetail
 import io.github.elli0t0.phone.data.contacts.model.ContactPhone
 import io.github.elli0t0.phone.feature.contacts.ContactDetailUiState
+import io.github.elli0t0.phone.core.common.bidiWrap
 
 /**
  * The scrolling detail content: header card, Call/Message actions,
@@ -104,10 +106,11 @@ DetailGlassCard(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = displayName,
+                    text = bidiWrap(displayName),
                     style = MaterialTheme.typography.headlineMedium.copy(
                         fontSize = PhoneDimens.detailHeaderNameSize,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        textDirection = TextDirection.Content
                     ),
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
@@ -117,8 +120,8 @@ DetailGlassCard(
                 if (!primaryNumber.isNullOrBlank()) {
                     Spacer(modifier = Modifier.height(spacing.extraSmall))
                     Text(
-                        text = primaryNumber,
-                        style = MaterialTheme.typography.bodyLarge,
+                        text = bidiWrap(primaryNumber),
+                        style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Content),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

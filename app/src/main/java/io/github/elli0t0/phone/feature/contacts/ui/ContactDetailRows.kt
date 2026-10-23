@@ -97,6 +97,8 @@ import io.github.elli0t0.phone.data.contacts.model.ContactEmail
 import io.github.elli0t0.phone.data.contacts.model.ContactPhone
 import io.github.elli0t0.phone.data.contacts.util.ContactPhotoUtil
 import io.github.elli0t0.phone.feature.contacts.ContactDetailUiState
+import io.github.elli0t0.phone.core.common.bidiWrap
+import androidx.compose.ui.text.style.TextDirection
 
 
 @Composable
@@ -148,8 +150,8 @@ fun PhoneRowItem(
         Spacer(modifier = Modifier.width(spacing.medium))
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = PhoneNumberFormatter.format(phone.number),
-                style = MaterialTheme.typography.bodyLarge,
+                text = bidiWrap(PhoneNumberFormatter.format(phone.number)),
+                style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Content),
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(

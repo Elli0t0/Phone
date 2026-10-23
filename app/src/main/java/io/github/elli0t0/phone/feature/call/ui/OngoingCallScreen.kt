@@ -73,6 +73,8 @@ import io.github.elli0t0.phone.data.settings.model.EndCallButtonSize
 import io.github.elli0t0.phone.data.settings.model.IncomingAvatarShape
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.feature.contacts.ui.ContactAvatar
+import io.github.elli0t0.phone.core.common.bidiWrap
+import androidx.compose.ui.text.style.TextDirection
 
 @Composable
 fun OngoingCallScreen(
@@ -209,10 +211,11 @@ fun OngoingCallScreen(
                 )
                 Spacer(modifier = Modifier.height(spacing.medium))
                 Text(
-                    text = titleText,
+                    text = bidiWrap(titleText),
                     style = MaterialTheme.typography.headlineLarge.copy(
                         fontWeight = FontWeight.Bold,
-                        fontSize = PhoneDimens.ongoingTitleSize
+                        fontSize = PhoneDimens.ongoingTitleSize,
+                        textDirection = TextDirection.Content
                     ),
                     color = Color.White,
                     textAlign = TextAlign.Center,
@@ -220,8 +223,8 @@ fun OngoingCallScreen(
                 )
                 if (hasName && showNumber && callModel.number.isNotBlank()) {
                     Text(
-                        text = formattedNumber,
-                        style = MaterialTheme.typography.bodyLarge.copy(fontSize = PhoneDimens.ongoingNumberSize),
+                        text = bidiWrap(formattedNumber),
+                        style = MaterialTheme.typography.bodyLarge.copy(fontSize = PhoneDimens.ongoingNumberSize, textDirection = TextDirection.Content),
                         color = Color.White.copy(alpha = 0.7f),
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(bottom = spacing.extraSmall)

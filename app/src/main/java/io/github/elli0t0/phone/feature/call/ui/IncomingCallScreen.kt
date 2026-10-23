@@ -83,6 +83,8 @@ import io.github.elli0t0.phone.data.call.OngoingCallModel
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import kotlin.math.roundToInt
+import io.github.elli0t0.phone.core.common.bidiWrap
+import androidx.compose.ui.text.style.TextDirection
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -197,10 +199,11 @@ fun IncomingCallScreen(
             Spacer(modifier = Modifier.height(spacing.medium))
 
             Text(
-                text = titleText,
+                text = bidiWrap(titleText),
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = PhoneDimens.incomingTitleSize
+                    fontSize = PhoneDimens.incomingTitleSize,
+                    textDirection = TextDirection.Content
                 ),
                 color = Color.White,
                 textAlign = TextAlign.Center,
@@ -209,8 +212,8 @@ fun IncomingCallScreen(
 
             if (hasName && showNumber && callModel.number.isNotBlank()) {
                 Text(
-                    text = formattedNumber,
-                    style = MaterialTheme.typography.bodyLarge,
+                    text = bidiWrap(formattedNumber),
+                    style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Content),
                     color = Color.White.copy(alpha = 0.8f),
                     textAlign = TextAlign.Center
                 )

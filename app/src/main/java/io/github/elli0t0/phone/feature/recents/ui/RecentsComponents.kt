@@ -80,6 +80,8 @@ import java.util.Date
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import io.github.elli0t0.phone.core.common.bidiWrap
+import androidx.compose.ui.text.style.TextDirection
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -241,8 +243,8 @@ fun CallLogRow(
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = group.displayTitle,
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                            text = bidiWrap(group.displayTitle),
+                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium, textDirection = TextDirection.Content),
                             color = nameColor,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -265,8 +267,8 @@ fun CallLogRow(
                         }
                     }
                     Text(
-                        text = subtitleParts.joinToString(" · "),
-                        style = MaterialTheme.typography.bodySmall,
+                        text = bidiWrap(subtitleParts.joinToString(" · ")),
+                        style = MaterialTheme.typography.bodySmall.copy(textDirection = TextDirection.Content),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis

@@ -58,6 +58,7 @@ import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 import io.github.elli0t0.phone.data.contacts.model.DuplicateGroup
 import io.github.elli0t0.phone.feature.contacts.ContactsUiState
 import io.github.elli0t0.phone.navigation.FloatingActionsPill
+import io.github.elli0t0.phone.navigation.BottomListScrim
 import io.github.elli0t0.phone.navigation.PageHeaderItem
 
 @Composable
@@ -281,6 +282,8 @@ private fun ContactsContent(
         }
 
         Box(modifier = Modifier.fillMaxSize()) {
+        // Bottom scrim behind the list (never over the cards).
+        BottomListScrim(modifier = Modifier.align(Alignment.BottomCenter))
         if (uiState.allContacts.isEmpty() && !uiState.isLoading) {
             EmptyContactsState(onAddContactClick = onAddContactClick)
         } else if (uiState.filteredContacts.isEmpty() && uiState.searchQuery.isNotEmpty()) {

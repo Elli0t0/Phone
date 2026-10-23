@@ -33,8 +33,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
@@ -46,6 +48,11 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -215,9 +222,13 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
     val showBottomBar = Screen.bottomNavItems.any { it.route == currentRoute } &&
         (currentRoute != Screen.Contacts.route || showContactsBar)
 
-    // Shrink on scroll: scrolling down compacts the bar to icons only,
-    // scrolling up restores it. One animated target; the connection
-    // consumes nothing, so lists scroll untouched.
+    // Shrink on scroll: post-scroll only, consumed delta only, with a
+    // directional accumulator — shrink after ~48dp of downward scroll,
+    // expand after ~12dp upward, expand when the list is at its top
+    // and after ~700ms without scroll, and reset on every destination
+    // change. The keypad never shrinks the bar (it does not scroll,
+    // and the gate keeps it that way). One animated target; the
+    // connection consumes nothing, so lists scroll untouched.
     val shrinkEnabled = appSettings.shrinkBottomBarOnScroll
     var barShrunk by remember { mutableStateOf(false) }
     val barShrinkProgress = remember { Animatable(0f) }
@@ -231,27 +242,54 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
             )
         )
     }
-    val barScrollConnection = remember(shrinkEnabled) {
+    val density = LocalDensity.current
+    val shrinkThresholdPx = with(density) { 48.dp.toPx() }
+    val expandThresholdPx = with(density) { 12.dp.toPx() }
+    var downAccum by remember { mutableFloatStateOf(0f) }
+    var upAccum by remember { mutableFloatStateOf(0f) }
+    var idleJob by remember { mutableStateOf<Job?>(null) }
+    val barScope = rememberCoroutineScope()
+    LaunchedEffect(currentRoute) {
+        barShrunk = false
+        downAccum = 0f
+        upAccum = 0f
+    }
+    val barScrollConnection = remember(shrinkEnabled, currentRoute) {
         object : NestedScrollConnection {
-            override fun onPreScroll(
-                available: Offset,
-                source: NestedScrollSource
-            ): Offset {
-                if (shrinkEnabled) {
-                    if (available.y < 0) barShrunk = true
-                    else if (available.y > 0) barShrunk = false
-                }
-                return Offset.Zero
-            }
-
             override fun onPostScroll(
                 consumed: Offset,
                 available: Offset,
                 source: NestedScrollSource
             ): Offset {
-                if (shrinkEnabled) {
-                    if (consumed.y < 0) barShrunk = true
-                    else if (consumed.y > 0) barShrunk = false
+                if (shrinkEnabled && currentRoute != Screen.Dialpad.route) {
+                    idleJob?.cancel()
+                    idleJob = barScope.launch {
+                        delay(700)
+                        barShrunk = false
+                        downAccum = 0f
+                        upAccum = 0f
+                    }
+                    when {
+                        // At the top of the list: the child consumed
+                        // nothing and the drag is left over — expand.
+                        consumed.y == 0f && available.y > 0f -> {
+                            barShrunk = false
+                            downAccum = 0f
+                            upAccum = 0f
+                        }
+                        consumed.y < 0f -> {
+                            // Scrolling down the list.
+                            upAccum = 0f
+                            downAccum += -consumed.y
+                            if (downAccum >= shrinkThresholdPx) barShrunk = true
+                        }
+                        consumed.y > 0f -> {
+                            // Scrolling back up.
+                            downAccum = 0f
+                            upAccum += consumed.y
+                            if (upAccum >= expandThresholdPx) barShrunk = false
+                        }
+                    }
                 }
                 return Offset.Zero
             }

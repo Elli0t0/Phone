@@ -53,6 +53,8 @@ import io.github.elli0t0.phone.core.design.bouncyClick
 import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
+import io.github.elli0t0.phone.core.common.bidiWrap
+import androidx.compose.ui.text.style.TextDirection
 
 @Composable
 fun ContactSearchBar(
@@ -149,8 +151,8 @@ fun ContactRow(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = displayName,
-                    style = MaterialTheme.typography.bodyLarge,
+                    text = bidiWrap(displayName),
+                    style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Content),
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -229,8 +231,8 @@ private fun ContactGroupRow(
         Spacer(modifier = Modifier.width(spacing.medium))
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = displayName,
-                style = MaterialTheme.typography.bodyLarge,
+                text = bidiWrap(displayName),
+                style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Content),
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
@@ -332,8 +334,8 @@ fun ProfileRow(
             Spacer(modifier = Modifier.width(spacing.medium))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = displayName,
-                    style = MaterialTheme.typography.bodyLarge,
+                    text = bidiWrap(displayName),
+                    style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Content),
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -562,8 +564,8 @@ fun FavoriteContactCard(
             )
             Spacer(modifier = Modifier.height(PhoneDimens.contactsFavoriteAvatarNameGap))
             Text(
-                text = displayName,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                text = bidiWrap(displayName),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, textDirection = TextDirection.Content),
                 color = Color.White,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis

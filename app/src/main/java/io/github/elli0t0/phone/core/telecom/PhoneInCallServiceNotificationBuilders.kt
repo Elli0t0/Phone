@@ -31,6 +31,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import io.github.elli0t0.phone.core.common.bidiWrap
 
 internal fun PhoneInCallService.buildIncomingNotification(call: Call, cachedDisplayName: String? = null): Notification? {
     try {
@@ -107,8 +108,8 @@ internal fun PhoneInCallService.buildIncomingNotification(call: Call, cachedDisp
 
         val builder = NotificationCompat.Builder(this, PhoneInCallService.INCOMING_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_phone)
-            .setContentTitle(title)
-            .setContentText(contentText)
+            .setContentTitle(bidiWrap(title))
+            .setContentText(bidiWrap(contentText))
             .setContentIntent(contentPendingIntent)
             .setOngoing(true)
             .setAutoCancel(false)
@@ -220,8 +221,8 @@ internal fun PhoneInCallService.buildCallStartNotification(call: Call, cachedDis
 
         val builder = NotificationCompat.Builder(this, PhoneInCallService.CALL_START_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_phone)
-            .setContentTitle(title)
-            .setContentText(contentText)
+            .setContentTitle(bidiWrap(title))
+            .setContentText(bidiWrap(contentText))
             .setContentIntent(contentPendingIntent)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -320,8 +321,8 @@ internal fun PhoneInCallService.buildOngoingNotification(call: Call, cachedDispl
         // Quiet ongoing notification: LOW importance, no heads-up, no full-screen intent.
         val builder = NotificationCompat.Builder(this, PhoneInCallService.ONGOING_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_phone)
-            .setContentTitle(title)
-            .setContentText(contentText)
+            .setContentTitle(bidiWrap(title))
+            .setContentText(bidiWrap(contentText))
             .setContentIntent(contentPendingIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)

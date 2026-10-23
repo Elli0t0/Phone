@@ -43,7 +43,8 @@ object PhoneDimens {
     val headerHeightFraction = 0.38f
     val headerHeightFractionCompact = 0.22f
     val headerHeightFractionStandard = 0.30f
-    val headerMinHeight = 260.dp
+    val headerMinHeight = 220.dp
+    val bottomScrimMaxAlpha = 0.55f
     val headerTitleCenterFraction = 0.42f
     val headerTitleExpandedSize = 34.sp
     val headerActionsBottomPaddingExpanded = 12.dp

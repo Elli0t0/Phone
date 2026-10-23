@@ -164,6 +164,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.33] - 2026-10-23
+
+- Bottom bar shrink rewritten: it now reacts to post-scroll consumed deltas only, with a directional accumulator — shrink after ~48 dp of downward scroll, expand after ~12 dp upward, expand at the top of the list and after ~700 ms without scroll, and reset on every destination change. It never shrinks on the keypad, and labels follow the labels setting whenever the bar is expanded.
+- New bottom scrim behind the Recents and Contacts lists: a 56 dp gradient fading to the page background at 55% alpha, drawn behind the list so it never tints the cards.
+- Page headers: the shared header height minimum is now 220 dp (Compact 22% / Standard 30% / Large 38% of the screen), driving both Recents and Contacts.
+- Bidi fix: contact names and numbers are unicode-wrapped and rendered with content-based text direction in Recents, Contacts, contact details, both call screens, and call notifications — Persian/Arabic names with parentheses or adjacent numbers no longer reorder.
+
 ## [0.11.32] - 2026-10-23
 
 - Edit / New contact: the glass top bar is gone — the title is a large heading that scrolls with the form, and Cancel / Save live in a floating rounded glass pill at the bottom (~75% width, 60 dp, above the keyboard and navigation bar, press animation; Save shows inline progress). The form's bottom padding clears the pill.
