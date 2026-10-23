@@ -33,7 +33,7 @@ object PhoneDimens {
     val bottomBarReservedHeight = 96.dp
     // Bottom scrim: page color fades from 0% to this alpha over the
     // fade zone above the bar, then stays at this alpha under the bar.
-    val bottomScrimMaxAlpha = 0.85f
+    val bottomScrimMaxAlpha = 0.55f
     // Overflow-menu (glass) popup surface.
     val menuCornerRadius = 28.dp
     val menuElevation = 16.dp
@@ -44,7 +44,6 @@ object PhoneDimens {
     val headerHeightFractionCompact = 0.22f
     val headerHeightFractionStandard = 0.30f
     val headerMinHeight = 220.dp
-    val bottomScrimMaxAlpha = 0.55f
     val headerTitleCenterFraction = 0.42f
     val headerTitleExpandedSize = 34.sp
     val headerActionsBottomPaddingExpanded = 12.dp
