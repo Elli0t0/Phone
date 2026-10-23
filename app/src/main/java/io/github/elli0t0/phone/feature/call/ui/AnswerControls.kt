@@ -51,7 +51,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.round
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -138,16 +137,6 @@ private fun backSpecFloat(
     damping: Float = 0.6f,
     stiffness: Float = 400f
 ): AnimationSpec<Float> = when (option) {
-    AnimationOption.ON -> spring(dampingRatio = damping, stiffness = stiffness)
-    AnimationOption.REDUCED -> tween(durationMillis = Motion.Durations.Short)
-    AnimationOption.OFF -> snap()
-}
-
-private fun backSpecOffset(
-    option: AnimationOption,
-    damping: Float = 0.6f,
-    stiffness: Float = 400f
-): AnimationSpec<Offset> = when (option) {
     AnimationOption.ON -> spring(dampingRatio = damping, stiffness = stiffness)
     AnimationOption.REDUCED -> tween(durationMillis = Motion.Durations.Short)
     AnimationOption.OFF -> snap()
@@ -588,13 +577,16 @@ private fun SwipeDragButton(
     val option = LocalAppSettings.current.animationOption
     val haptic = LocalHapticFeedback.current
     val density = LocalDensity.current
-    val offset = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
+    var dragOffset by remember { mutableStateOf(Offset.Zero) }
+    var flying by remember { mutableStateOf(false) }
+    val flyProgress = remember { Animatable(0f) }
     val fade = remember { Animatable(1f) }
     var gone by remember { mutableStateOf(false) }
     var thresholdFired by remember { mutableStateOf(false) }
     var lastSegmentTime by remember { mutableStateOf(0L) }
     var lastSegmentSpeedPx by remember { mutableStateOf(0f) }
     val commitPx = with(density) { PhoneDimens.swipeCommitDistance.toPx() }
+    val flyDistancePx = with(density) { 120.dp.toPx() }
     val color = if (isAnswer) CallAnswerGreen else CallDeclineRed
     // When the other button commits, this one only fades out.
     LaunchedEffect(anyCommitted) {
@@ -602,18 +594,24 @@ private fun SwipeDragButton(
             fade.animateTo(0f, tween(durationMillis = Motion.Durations.Short))
         }
     }
+    val shownOffset = if (flying) {
+        val direction = dragOffset / dragOffset.getDistance().coerceAtLeast(1f)
+        dragOffset + direction * (flyDistancePx * flyProgress.value)
+    } else {
+        dragOffset
+    }
     Box(
         modifier = Modifier
-            .offset { offset.value.round() }
+            .offset { shownOffset.round() }
             .graphicsLayer {
-                val progress = (offset.value.getDistance() / commitPx).coerceIn(0f, 1f)
+                val progress = (dragOffset.getDistance() / commitPx).coerceIn(0f, 1f)
                 val k = 1f + 0.12f * progress
                 scaleX = k
                 scaleY = k
                 alpha = fade.value
             }
             .drawBehind {
-                val progress = (offset.value.getDistance() / commitPx).coerceIn(0f, 1f)
+                val progress = (dragOffset.getDistance() / commitPx).coerceIn(0f, 1f)
                 if (progress > 0f) {
                     val radius = size.maxDimension * 1.1f
                     drawCircle(
@@ -643,21 +641,33 @@ private fun SwipeDragButton(
                     onDragEnd = {
                         scope.launch {
                             val speedDp = with(density) { lastSegmentSpeedPx.toDp().value }
-                            val distance = offset.value.getDistance()
+                            val distance = dragOffset.getDistance()
                             if (distance >= commitPx || speedDp > 1200f) {
                                 gone = true
-                                val direction = offset.value / distance.coerceAtLeast(1f)
-                                val target = offset.value + direction * with(density) { 120.dp.toPx() }
-                                launch { offset.animateTo(target, tween(durationMillis = Motion.Durations.Short)) }
+                                flying = true
+                                launch {
+                                    flyProgress.animateTo(
+                                        1f,
+                                        tween(durationMillis = Motion.Durations.Short)
+                                    )
+                                }
                                 fade.animateTo(0f, tween(durationMillis = Motion.Durations.Short))
                                 onCommit()
                             } else {
-                                offset.animateTo(Offset.Zero, backSpecOffset(option))
+                                val from = dragOffset
+                                Animatable(1f).animateTo(0f, backSpecFloat(option)) {
+                                    dragOffset = from * value
+                                }
                             }
                         }
                     },
                     onDragCancel = {
-                        scope.launch { offset.animateTo(Offset.Zero, backSpecOffset(option)) }
+                        scope.launch {
+                            val from = dragOffset
+                            Animatable(1f).animateTo(0f, backSpecFloat(option)) {
+                                dragOffset = from * value
+                            }
+                        }
                     }
                 ) { change, drag ->
                     change.consume()
@@ -669,15 +679,13 @@ private fun SwipeDragButton(
                         }
                     }
                     lastSegmentTime = now
-                    scope.launch {
-                        offset.snapTo(offset.value + drag)
-                        val distance = offset.value.getDistance()
-                        if (!thresholdFired && distance >= commitPx) {
-                            thresholdFired = true
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        } else if (distance < commitPx * 0.8f) {
-                            thresholdFired = false
-                        }
+                    dragOffset += drag
+                    val distance = dragOffset.getDistance()
+                    if (!thresholdFired && distance >= commitPx) {
+                        thresholdFired = true
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    } else if (distance < commitPx * 0.8f) {
+                        thresholdFired = false
                     }
                 }
             }
@@ -696,7 +704,6 @@ private fun SwipeDragButton(
         )
     }
 }
-
 // ----- LIQUID -----
 
 @Composable
