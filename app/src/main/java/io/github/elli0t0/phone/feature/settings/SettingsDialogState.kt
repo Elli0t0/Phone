@@ -73,6 +73,7 @@ class SettingsDialogState {
     var showFormatDialog by mutableStateOf(false)
     var showCallDisplayDialog by mutableStateOf(false)
     var showCallBackgroundPage by mutableStateOf(false)
+    var showAnswerStylePage by mutableStateOf(false)
     var showDefaultSimDialog by mutableStateOf(false)
     var showQuickDeclineDialog by mutableStateOf(false)
     var showBlockedNumbers by mutableStateOf(false)

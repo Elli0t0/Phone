@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.elli0t0.phone.data.settings.SettingsRepository
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AnswerGesture
+import io.github.elli0t0.phone.data.settings.model.AnswerStyle
 import io.github.elli0t0.phone.data.settings.model.AnswerSide
 import io.github.elli0t0.phone.data.settings.model.CallerInfoPosition
 import io.github.elli0t0.phone.data.settings.model.AnswerButtonSize
@@ -221,6 +222,18 @@ class SettingsViewModel(
     fun onAnswerGestureChanged(gesture: AnswerGesture) {
         viewModelScope.launch {
             settingsRepository.setAnswerGesture(gesture)
+        }
+    }
+
+    fun onAnswerStyleChanged(style: AnswerStyle) {
+        viewModelScope.launch {
+            settingsRepository.setAnswerStyle(style)
+        }
+    }
+
+    fun onSliderOnlyWhenLockedChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setSliderOnlyWhenLocked(enabled)
         }
     }
 

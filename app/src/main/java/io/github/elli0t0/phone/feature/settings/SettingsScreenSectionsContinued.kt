@@ -139,6 +139,16 @@ item {
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsRow(
+                title = stringResource(id = R.string.settings_answer_style),
+                subtitle = settings.answerStyle.label,
+                onClick = { dialogs.showAnswerStylePage = true }
+            )
+
+            Spacer(modifier = Modifier.height(spacing.small))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            Spacer(modifier = Modifier.height(spacing.small))
+
+            SettingsRow(
                 title = stringResource(id = R.string.settings_call_background),
                 subtitle = settings.callBackground.label,
                 onClick = { dialogs.showCallBackgroundPage = true }

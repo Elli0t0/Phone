@@ -164,6 +164,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.29] - 2026-10-23
+
+- Settings > Calls has a new "Answer style" page above Call background: four live mini-previews of the real answer controls (Classic, Slider, Swipe buttons, Liquid) with an animated selection ring — tapping a tile applies the style.
+- "Try it" on the same page renders the selected style at full size over the call background and reports Answered / Declined without a real call.
+- "Slider only when locked" switch appears when the Slider style is selected.
+- The Call background page preview now uses the selected answer style.
+
 ## [0.11.28] - 2026-10-23
 
 - New answer-style engine: one AnswerControls component renders the incoming-call answer/decline controls in four styles — Classic, Slider, Swipe buttons, and Liquid — all honoring the Animations setting and exposing Answer/Decline to TalkBack as custom actions.

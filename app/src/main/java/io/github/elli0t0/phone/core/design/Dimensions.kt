@@ -72,6 +72,9 @@ object PhoneDimens {
     val liquidPillHeight = 76.dp
     val liquidPillMaxWidth = 300.dp
     val liquidKnobSize = 68.dp
+    // Answer style settings page: preview tiles and the Try-it area.
+    val answerStylePreviewHeight = 116.dp
+    val answerStyleTryItHeight = 300.dp
     // Ongoing call screen: caller info, controls, end-call, DTMF keypad.
     val ongoingHeaderTopPadding = 40.dp
     val ongoingTitleSize = 36.sp

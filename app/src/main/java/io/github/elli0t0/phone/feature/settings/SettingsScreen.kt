@@ -275,7 +275,18 @@ fun SettingsScreen(
     // the list, so tapping the row visibly did nothing. System Back
     // closes the open page instead of leaving Settings.
     BackHandler(enabled = dialogs.showCallBackgroundPage) { dialogs.showCallBackgroundPage = false }
+    BackHandler(enabled = dialogs.showAnswerStylePage) { dialogs.showAnswerStylePage = false }
     BackHandler(enabled = dialogs.showBlockedNumbers) { dialogs.showBlockedNumbers = false }
+
+    if (dialogs.showAnswerStylePage) {
+        AnswerStyleScreen(
+            selected = settings.answerStyle,
+            sliderOnlyWhenLocked = settings.sliderOnlyWhenLocked,
+            onSelect = { viewModel.onAnswerStyleChanged(it) },
+            onSliderOnlyWhenLockedChange = { viewModel.onSliderOnlyWhenLockedChanged(it) },
+            onNavigateBack = { dialogs.showAnswerStylePage = false }
+        )
+    }
 
     if (dialogs.showCallBackgroundPage) {
         CallBackgroundScreen(

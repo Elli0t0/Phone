@@ -66,6 +66,12 @@
     <string name="settings_call_waiting">Call waiting</string>
     <string name="settings_call_display">Incoming call display</string>
     <string name="settings_call_background">Call background</string>
+    <string name="settings_answer_style">Answer style</string>
+    <string name="settings_slider_only_locked">Slider only when locked</string>
+    <string name="settings_slider_only_locked_desc">Use the slider only when the phone is locked; otherwise show the classic buttons.</string>
+    <string name="settings_answer_style_try_it">Try it</string>
+    <string name="answer_preview_answered">Answered</string>
+    <string name="answer_preview_declined">Declined</string>
     <string name="settings_call_background_style">Background</string>
     <string name="settings_call_background_dim">Background dim</string>
     <string name="settings_call_background_dim_desc">Darken the call background with a black overlay</string>
