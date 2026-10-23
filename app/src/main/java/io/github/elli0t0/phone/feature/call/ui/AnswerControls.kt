@@ -602,7 +602,7 @@ private fun SwipeDragButton(
     }
     Box(
         modifier = Modifier
-            .offset { shownOffset.round() }
+            .offset { IntOffset(shownOffset.x.roundToInt(), shownOffset.y.roundToInt()) }
             .graphicsLayer {
                 val progress = (dragOffset.getDistance() / commitPx).coerceIn(0f, 1f)
                 val k = 1f + 0.12f * progress
