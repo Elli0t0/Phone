@@ -77,6 +77,20 @@ object CallRepository {
         }
     }
 
+    fun updatePhotoUri(uri: String?) {
+        val current = _ongoingCallModel.value ?: return
+        if (!uri.isNullOrBlank() && current.photoUri != uri) {
+            _ongoingCallModel.value = current.copy(photoUri = uri)
+        }
+    }
+
+    fun updateSimLabel(label: String?) {
+        val current = _ongoingCallModel.value ?: return
+        if (!label.isNullOrBlank() && current.simLabel != label) {
+            _ongoingCallModel.value = current.copy(simLabel = label)
+        }
+    }
+
     private fun updateCallModel() {
         val call = _currentCall.value
         if (call == null) {
@@ -113,7 +127,9 @@ object CallRepository {
             isMuted = currentModel?.isMuted ?: false,
             isSpeakerOn = currentModel?.isSpeakerOn ?: false,
             audioRoute = currentModel?.audioRoute ?: CallAudioState.ROUTE_EARPIECE,
-            availableAudioRoutes = currentModel?.availableAudioRoutes ?: (CallAudioState.ROUTE_EARPIECE or CallAudioState.ROUTE_SPEAKER)
+            availableAudioRoutes = currentModel?.availableAudioRoutes ?: (CallAudioState.ROUTE_EARPIECE or CallAudioState.ROUTE_SPEAKER),
+            photoUri = currentModel?.photoUri,
+            simLabel = currentModel?.simLabel
         )
     }
 

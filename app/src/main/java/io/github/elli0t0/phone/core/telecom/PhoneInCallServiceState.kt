@@ -197,10 +197,35 @@ internal fun PhoneInCallService.resolveContactNameInBackground(call: Call) {
         val handle = call.details?.handle
         val rawNumber = handle?.schemeSpecificPart ?: ""
         val resolvedName = resolveName(rawNumber, call)
-        if (!resolvedName.isNullOrBlank()) {
-            withContext(Dispatchers.Main) {
+        // Photo from the same in-memory contact index the name came
+        // from, and the SIM label from the call's phone account.
+        val photoUri = if (rawNumber.isNotBlank() && ContextCompat.checkSelfPermission(
+                this@resolveContactNameInBackground,
+                Manifest.permission.READ_CONTACTS
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            ContactNameIndex.ensureStarted(contentResolver)
+            ContactNameIndex.resolve(rawNumber)?.photoUri
+        } else {
+            null
+        }
+        val accountHandle = call.details?.accountHandle
+        val simLabel = accountHandle?.let { account ->
+            runCatching {
+                TelecomHelper.getCallCapablePhoneAccounts(this@resolveContactNameInBackground)
+                    .firstOrNull { it.handle == account }?.label
+            }.getOrNull()
+        }
+        withContext(Dispatchers.Main) {
+            if (!resolvedName.isNullOrBlank()) {
                 CallRepository.updateDisplayName(resolvedName)
                 updateCallNotification(call, resolvedName)
+            }
+            if (!photoUri.isNullOrBlank()) {
+                CallRepository.updatePhotoUri(photoUri)
+            }
+            if (!simLabel.isNullOrBlank()) {
+                CallRepository.updateSimLabel(simLabel)
             }
         }
     }

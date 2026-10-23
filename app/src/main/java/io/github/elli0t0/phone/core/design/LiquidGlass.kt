@@ -175,10 +175,10 @@ val SquircleShape: Shape = GenericShape { size, _ ->
  * on light). Pass explicit colors when the surface sits over a background
  * that does not follow the theme, e.g. the always-dark call background.
  *
- * The shadow is drawn OUTSIDE the shape ([outerShadow]), never as a
- * hardware shadow under the translucent fill (that shows through as a
- * dark rectangle). [floating] is true for the surfaces that float above
- * content (bottom bar, header pill); cards and inline surfaces pass false.
+ * No shadow is drawn on glass: sheen + rim only (a shadow under a
+ * translucent fill shows through as a dark rectangle). [floating] is
+ * true for the surfaces that float above content (bottom bar, header
+ * pill); cards and inline surfaces pass false.
  *
  * Real blur (Haze) was checked first: Haze 2.0.1 is the latest stable release,
  * but its new modular 2.x API is unverified against this project's Compose
@@ -196,7 +196,6 @@ fun GlassSurface(
 ) {
     Box(
         modifier = modifier
-            .then(if (floating) Modifier.outerShadow(shape, Color.Black.copy(alpha = 0.10f)) else Modifier)
             .clip(shape)
             .background(containerColor)
             .border(
@@ -214,16 +213,14 @@ fun GlassSurface(
 }
 
 /**
- * The brushes and shadow color of one liquid-glass treatment, built once
+ * The brushes of one liquid-glass treatment, built once
  * and remembered. [fill] is the translucent tint gradient, [sheen] the
- * specular highlight drawn over it, [rim] the 1dp refractive border,
- * [shadow] the color used by [outerShadow] for floating surfaces.
+ * specular highlight drawn over it, [rim] the 1dp refractive border.
  */
 private class GlassSpec(
     val fill: Brush,
     val sheen: Brush,
-    val rim: Brush,
-    val shadow: Color
+    val rim: Brush
 ) {
     companion object {
         fun create(
@@ -277,42 +274,8 @@ private class GlassSpec(
                     ),
                     start = Offset.Zero,
                     end = Offset.Infinite
-                ),
-                shadow = base.copy(alpha = scaled(0.35f))
+                )
             )
-        }
-    }
-}
-
-/**
- * A shadow drawn only OUTSIDE the shape: the shape interior is cut out
- * (ClipOp.Difference), so no shadow ever shows through a translucent fill.
- * If this does not render correctly on a device, drop shadows completely
- * rather than reintroducing a hardware shadow under a translucent fill.
- */
-fun Modifier.outerShadow(
-    shape: Shape,
-    color: Color,
-    blur: Dp = 14.dp,
-    dy: Dp = 4.dp
-): Modifier = drawBehind {
-    val outline = shape.createOutline(size, layoutDirection, this)
-    val path = Path().apply {
-        when (outline) {
-            is Outline.Rectangle -> addRect(outline.rect)
-            is Outline.Rounded -> addRoundRect(outline.roundRect)
-            is Outline.Generic -> addPath(outline.path)
-        }
-    }
-    clipPath(path, ClipOp.Difference) {
-        drawIntoCanvas { canvas ->
-            val paint = Paint().apply {
-                asFrameworkPaint().apply {
-                    this.color = android.graphics.Color.TRANSPARENT
-                    setShadowLayer(blur.toPx(), 0f, dy.toPx(), color.toArgb())
-                }
-            }
-            canvas.drawPath(path, paint)
         }
     }
 }
@@ -324,9 +287,8 @@ fun Modifier.outerShadow(
  * at the top-left fading toward the bottom-right, drawn over the fill.
  * Rim: a 1.dp diagonal refractive border (bright white at the top-left,
  * subtle accent tint in the center, soft reflection at the bottom-right).
- * Shadow: only for [floating] surfaces, drawn OUTSIDE the shape via
- * [outerShadow]. Never a hardware shadow under a translucent fill — that
- * shows through as a dark inset rectangle.
+ * No shadow is drawn on glass — sheen + rim only. A hardware shadow
+ * under a translucent fill shows through as a dark inset rectangle.
  *
  * Dark detection follows the app theme (ThemeMode), not the system theme,
  * so glass matches the app setting in both Light and Dark themes.
@@ -354,7 +316,6 @@ fun Modifier.liquidGlass(
         GlassSpec.create(dark, base, isSelected, settings.glassIntensity, settings.reduceTransparency)
     }
     return this
-        .then(if (floating) Modifier.outerShadow(shape, spec.shadow) else Modifier)
         .clip(shape)
         .background(spec.fill)
         .background(spec.sheen)

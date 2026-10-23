@@ -164,6 +164,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.30] - 2026-10-23
+
+- Glass surfaces no longer draw any shadow: the outer shadow is removed from the liquid-glass treatment and the glass surface (sheen + rim only). Flat solid surfaces keep their soft shadows.
+- Ongoing call screen: the caller identity is now an avatar (contact photo, or gradient initials, ~96 dp, shape/size from the avatar settings) above the name, formatted number, SIM label, and timer. With the centered caller-info position the block sits at ~30% of the screen height, and the controls stay in the lower third.
+- The call model now carries the contact photo and SIM label, resolved in the background from the contact index and the call's phone account.
+- Removed the decorative equalizer bars next to the call timer (they showed no real data).
+
 ## [0.11.29] - 2026-10-23
 
 - Settings > Calls has a new "Answer style" page above Call background: four live mini-previews of the real answer controls (Classic, Slider, Swipe buttons, Liquid) with an animated selection ring — tapping a tile applies the style.

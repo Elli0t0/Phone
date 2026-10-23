@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -69,7 +70,9 @@ import io.github.elli0t0.phone.data.settings.model.ControlButtonSize
 import io.github.elli0t0.phone.data.settings.model.ControlGridAlignment
 import io.github.elli0t0.phone.data.settings.model.DtmfKeySize
 import io.github.elli0t0.phone.data.settings.model.EndCallButtonSize
+import io.github.elli0t0.phone.data.settings.model.IncomingAvatarShape
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
+import io.github.elli0t0.phone.feature.contacts.ui.ContactAvatar
 
 @Composable
 fun OngoingCallScreen(
@@ -169,19 +172,42 @@ fun OngoingCallScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = spacing.screenHorizontalPadding, vertical = spacing.large),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Caller info position: top (default), or centered in the
-            // space above the controls via a spacer above the info.
-            if (LocalAppSettings.current.callerInfoPosition == CallerInfoPosition.CENTER) {
-                Spacer(modifier = Modifier.weight(1f))
+            // Caller info position: top (default), or centered at
+            // ~30% of the height (a 14% spacer plus half the identity
+            // block lands its center there).
+            val infoCentered =
+                LocalAppSettings.current.callerInfoPosition == CallerInfoPosition.CENTER
+            if (infoCentered) {
+                Spacer(modifier = Modifier.fillMaxHeight(0.14f))
             }
-            // Caller info: name, number, state or duration.
+            // Caller identity: avatar above the name, then the
+            // formatted number, the SIM label, and the state/timer.
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(top = PhoneDimens.ongoingHeaderTopPadding)
+                modifier = if (infoCentered) {
+                    Modifier
+                } else {
+                    Modifier.padding(top = PhoneDimens.ongoingHeaderTopPadding)
+                }
             ) {
+                val avatarScale = LocalAppSettings.current.incomingAvatarSize.scale
+                val avatarShape = if (
+                    LocalAppSettings.current.incomingAvatarShape == IncomingAvatarShape.ROUNDED
+                ) {
+                    RoundedCornerShape(24)
+                } else {
+                    CircleShape
+                }
+                ContactAvatar(
+                    photoUri = callModel.photoUri,
+                    displayName = titleText,
+                    modifier = Modifier.clip(avatarShape),
+                    size = PhoneDimens.ongoingAvatarSize * avatarScale,
+                    textStyle = MaterialTheme.typography.displaySmall
+                )
+                Spacer(modifier = Modifier.height(spacing.medium))
                 Text(
                     text = titleText,
                     style = MaterialTheme.typography.headlineLarge.copy(
@@ -201,23 +227,24 @@ fun OngoingCallScreen(
                         modifier = Modifier.padding(bottom = spacing.extraSmall)
                     )
                 }
-                // Live equalizer wave next to the call timer while active.
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(spacing.small)
-                ) {
-                    if (callModel.state == CallState.ACTIVE) {
-                        EqualizerBars()
-                    }
+                if (!callModel.simLabel.isNullOrBlank()) {
                     Text(
-                        text = stateText,
-                        style = MaterialTheme.typography.titleMedium.copy(fontSize = PhoneDimens.ongoingStateSize),
-                        color = Color.White.copy(alpha = 0.6f)
+                        text = callModel.simLabel,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.6f),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(bottom = spacing.extraSmall)
                     )
                 }
+                Text(
+                    text = stateText,
+                    style = MaterialTheme.typography.titleMedium.copy(fontSize = PhoneDimens.ongoingStateSize),
+                    color = Color.White.copy(alpha = 0.6f)
+                )
             }
 
-            // Center: in-call DTMF keypad, or empty space when controls are shown.
+            // Center: in-call DTMF keypad when open; the controls stay
+            // in the lower third via the weight spacer below.
             if (showKeypad) {
                 InCallKeypadGrid(
                     isMuted = callModel.isMuted,
@@ -227,9 +254,8 @@ fun OngoingCallScreen(
                     onDigit = onDtmfDigit,
                     onClose = { showKeypad = false }
                 )
-            } else {
-                Spacer(modifier = Modifier.weight(1f))
             }
+            Spacer(modifier = Modifier.weight(1f))
 
             // Bottom: control grid + red circular end-call button.
             // The end-call button aligns per the setting; the grid is
@@ -509,74 +535,6 @@ private fun InCallKeypadGrid(
                 isActive = isMuted,
                 onClick = onMuteToggle,
                 testTag = "keypad_mute_button"
-            )
-        }
-    }
-}
-
-/**
- * Live equalizer wave next to the call timer.
- * ON: four bars bounce on independent loops. REDUCED / OFF: static bars.
- */
-@Composable
-private fun EqualizerBars(modifier: Modifier = Modifier) {
-    if (LocalAppSettings.current.animationOption == AnimationOption.ON) {
-        EqualizerBarsAnimated(modifier)
-    } else {
-        EqualizerBarsRow(listOf(0.5f, 0.5f, 0.5f, 0.5f), modifier)
-    }
-}
-
-@Composable
-private fun EqualizerBarsAnimated(modifier: Modifier = Modifier) {
-    val transition = rememberInfiniteTransition(label = "equalizer")
-    val heights = listOf(
-        equalizerHeight(transition, 0),
-        equalizerHeight(transition, 1),
-        equalizerHeight(transition, 2),
-        equalizerHeight(transition, 3)
-    )
-    EqualizerBarsRow(heights, modifier)
-}
-
-@Composable
-private fun equalizerHeight(
-    transition: InfiniteTransition,
-    index: Int
-): Float {
-    val value by transition.animateFloat(
-        initialValue = 0.25f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 420 + index * 130,
-                easing = FastOutSlowInEasing
-            ),
-            repeatMode = RepeatMode.Reverse,
-            initialStartOffset = StartOffset(index * 90)
-        ),
-        label = "eqBar$index"
-    )
-    return value
-}
-
-@Composable
-private fun EqualizerBarsRow(
-    heights: List<Float>,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(PhoneDimens.inCallEqualizerBarSpacing),
-        verticalAlignment = Alignment.Bottom
-    ) {
-        heights.forEach { fraction ->
-            Box(
-                modifier = Modifier
-                    .width(PhoneDimens.inCallEqualizerBarWidth)
-                    .height(PhoneDimens.inCallEqualizerBarMaxHeight * fraction)
-                    .clip(RoundedCornerShape(percent = 50))
-                    .background(InCallEqualizerBar)
             )
         }
     }

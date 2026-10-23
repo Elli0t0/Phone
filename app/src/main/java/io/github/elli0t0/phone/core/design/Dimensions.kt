@@ -76,6 +76,7 @@ object PhoneDimens {
     val answerStylePreviewHeight = 116.dp
     val answerStyleTryItHeight = 300.dp
     // Ongoing call screen: caller info, controls, end-call, DTMF keypad.
+    val ongoingAvatarSize = 96.dp
     val ongoingHeaderTopPadding = 40.dp
     val ongoingTitleSize = 36.sp
     val ongoingNumberSize = 17.sp
