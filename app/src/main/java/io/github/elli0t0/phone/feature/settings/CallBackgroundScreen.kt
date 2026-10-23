@@ -84,6 +84,7 @@ import io.github.elli0t0.phone.data.call.CallState
 import io.github.elli0t0.phone.data.call.OngoingCallModel
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AnswerGesture
+import io.github.elli0t0.phone.data.settings.model.AnswerStyle
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.ControlButtonSize
 import io.github.elli0t0.phone.data.settings.model.DtmfKeySize
@@ -222,7 +223,7 @@ fun CallBackgroundScreen(
                 backgroundColor = backgroundColor,
                 dimDraft = dimDraft,
                 showNumber = settings.showNumberOnCallScreen,
-                answerGesture = settings.answerGesture,
+                answerStyle = settings.answerStyle,
                 quickReplies = quickReplies
             )
             IconButton(
@@ -316,7 +317,7 @@ fun CallBackgroundScreen(
                                 backgroundColor = backgroundColor,
                                 dimDraft = dimDraft,
                                 showNumber = settings.showNumberOnCallScreen,
-                                answerGesture = settings.answerGesture,
+                                answerStyle = settings.answerStyle,
                                 quickReplies = quickReplies
                             )
                             LiquidGlassIconButton(
@@ -519,7 +520,7 @@ fun CallBackgroundScreen(
                                 backgroundColor = backgroundColor,
                                 dimDraft = dimDraft,
                                 showNumber = settings.showNumberOnCallScreen,
-                                answerGesture = settings.answerGesture,
+                                answerStyle = settings.answerStyle,
                                 quickReplies = quickReplies
                             )
                         }
@@ -677,7 +678,7 @@ private fun CallPreviewContent(
     backgroundColor: Long,
     dimDraft: Float,
     showNumber: Boolean,
-    answerGesture: AnswerGesture,
+    answerStyle: AnswerStyle,
     quickReplies: List<String>
 ) {
     if (previewOngoing) {
@@ -704,7 +705,7 @@ private fun CallPreviewContent(
             accentColor = backgroundColor,
             dim = dimDraft,
             showNumber = showNumber,
-            answerGesture = answerGesture
+            answerStyle = answerStyle
         )
     }
 }

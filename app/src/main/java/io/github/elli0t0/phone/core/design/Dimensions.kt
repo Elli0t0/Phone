@@ -62,6 +62,16 @@ object PhoneDimens {
     val incomingActionsBottomPadding = 48.dp
     val incomingActionButtonSize = 76.dp
     val incomingActionIconSize = 36.dp
+    // Answer styles: classic label gap, slider, swipe buttons, liquid pill.
+    val answerLabelGap = 12.dp
+    val sliderTrackHeight = 72.dp
+    val sliderKnobSize = 64.dp
+    val sliderTrackPadding = 4.dp
+    val sliderDeclineSize = 72.dp
+    val swipeCommitDistance = 96.dp
+    val liquidPillHeight = 76.dp
+    val liquidPillMaxWidth = 300.dp
+    val liquidKnobSize = 68.dp
     // Ongoing call screen: caller info, controls, end-call, DTMF keypad.
     val ongoingHeaderTopPadding = 40.dp
     val ongoingTitleSize = 36.sp

@@ -164,6 +164,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.28] - 2026-10-23
+
+- New answer-style engine: one AnswerControls component renders the incoming-call answer/decline controls in four styles — Classic, Slider, Swipe buttons, and Liquid — all honoring the Animations setting and exposing Answer/Decline to TalkBack as custom actions.
+- Classic: button-only halos (1→1.25 scale, 400 ms offset between the two), labels 12 dp below, and the answer handset wiggles every 3 seconds. Slider: glass track with a growing green fill and shimmer label, commits at 85%, plus a separate decline circle. Swipe buttons: drag either round button in any direction (glow, scale, haptic at the threshold; commit at 96 dp or on a fast fling) with sequenced chevron hints. Liquid: one glass pill with a stretchy center knob, drag right to answer or left to decline, committing at 70%.
+- The chosen style is stored as a new setting; the old answer gesture migrates automatically (Tap → Classic, Swipe → Swipe buttons). A "slider only when locked" option (on by default) falls back to Classic while the phone is unlocked. The Settings UI for picking a style arrives in the next version.
+- Incoming avatar pulse rings now match the spec exactly (scale 1→1.35, alpha 0.22→0, 2.4 s) and stay behind the avatar; the flat quick-reply chips got the same press animation as the glass ones.
+
 ## [0.11.27] - 2026-10-23
 
 - Keypad suggestions are de-duplicated: the same contact, or two entries with the same name and number, show as one row with an "N contacts" hint.

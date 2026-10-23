@@ -75,6 +75,13 @@ enum class AnswerGesture(val label: String) {
     SWIPE("Swipe")
 }
 
+enum class AnswerStyle(val label: String) {
+    CLASSIC("Classic"),
+    SLIDER("Slider"),
+    SWIPE_BUTTONS("Swipe buttons"),
+    LIQUID("Liquid")
+}
+
 enum class AnswerSide(val label: String) {
     RIGHT("Answer on right"),
     LEFT("Answer on left")
@@ -203,6 +210,8 @@ data class AppSettings(
     val callBackgroundDim: Float = 0f,
     val callBackgroundCustomColor: Long = AccentPreset.ONE_UI_BLUE.colorValue,
     val answerGesture: AnswerGesture = AnswerGesture.TAP,
+    val answerStyle: AnswerStyle = AnswerStyle.CLASSIC,
+    val sliderOnlyWhenLocked: Boolean = true,
     val answerSide: AnswerSide = AnswerSide.RIGHT,
     val endCallAlignment: EndCallAlignment = EndCallAlignment.CENTER,
     val callerInfoPosition: CallerInfoPosition = CallerInfoPosition.TOP,

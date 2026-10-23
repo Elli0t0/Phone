@@ -361,10 +361,10 @@ fun PulseRings(
                     modifier = Modifier
                         .matchParentSize()
                         .graphicsLayer {
-                            val k = 1f + 0.9f * p
+                            val k = 1f + 0.35f * p
                             scaleX = k
                             scaleY = k
-                            alpha = 0.35f * (1f - p)
+                            alpha = 0.22f * (1f - p)
                         }
                         .background(color = color, shape = CircleShape)
                 )

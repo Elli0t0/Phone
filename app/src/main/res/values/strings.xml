@@ -206,6 +206,7 @@
     <string name="call_holding">On hold</string>
     <string name="call_disconnected">Call ended</string>
     <string name="call_action_answer">Answer</string>
+    <string name="call_slide_to_answer">Slide to answer</string>
     <string name="call_action_decline">Decline</string>
     <string name="call_action_end">End call</string>
     <string name="call_control_move_up">Move up</string>

@@ -12,6 +12,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AnswerGesture
+import io.github.elli0t0.phone.data.settings.model.AnswerStyle
 import io.github.elli0t0.phone.data.settings.model.AnswerSide
 import io.github.elli0t0.phone.data.settings.model.CallerInfoPosition
 import io.github.elli0t0.phone.data.settings.model.AnswerButtonSize
@@ -73,6 +74,8 @@ interface SettingsRepository {
     suspend fun setCallBackgroundDim(dim: Float)
     suspend fun setCallBackgroundCustomColor(color: Long)
     suspend fun setAnswerGesture(gesture: AnswerGesture)
+    suspend fun setAnswerStyle(style: AnswerStyle)
+    suspend fun setSliderOnlyWhenLocked(enabled: Boolean)
     suspend fun setAnswerSide(side: AnswerSide)
     suspend fun setEndCallAlignment(alignment: EndCallAlignment)
     suspend fun setCallerInfoPosition(position: CallerInfoPosition)
@@ -127,6 +130,8 @@ class DataStoreSettingsRepository(
         val CALL_BACKGROUND_DIM = floatPreferencesKey("call_background_dim")
         val CALL_BACKGROUND_CUSTOM_COLOR = longPreferencesKey("call_background_custom_color")
         val ANSWER_GESTURE = stringPreferencesKey("answer_gesture")
+        val ANSWER_STYLE = stringPreferencesKey("call_answer_style")
+        val SLIDER_ONLY_WHEN_LOCKED = booleanPreferencesKey("call_slider_only_when_locked")
         val ANSWER_SIDE = stringPreferencesKey("answer_side")
         val END_CALL_ALIGNMENT = stringPreferencesKey("end_call_alignment")
         val CALLER_INFO_POSITION = stringPreferencesKey("caller_info_position")
@@ -212,6 +217,18 @@ class DataStoreSettingsRepository(
         val answerGestureStr = prefs[Keys.ANSWER_GESTURE]
         val answerGesture = answerGestureStr?.let { runCatching { AnswerGesture.valueOf(it) }.getOrNull() }
             ?: AnswerGesture.TAP
+
+        // Answer style: the stored style wins; before it was ever set,
+        // migrate the old answer gesture (TAP -> CLASSIC,
+        // SWIPE -> SWIPE_BUTTONS).
+        val answerStyleStr = prefs[Keys.ANSWER_STYLE]
+        val answerStyle = answerStyleStr?.let { runCatching { AnswerStyle.valueOf(it) }.getOrNull() }
+            ?: when (answerGesture) {
+                AnswerGesture.TAP -> AnswerStyle.CLASSIC
+                AnswerGesture.SWIPE -> AnswerStyle.SWIPE_BUTTONS
+            }
+
+        val sliderOnlyWhenLocked = prefs[Keys.SLIDER_ONLY_WHEN_LOCKED] ?: true
 
         val answerSideStr = prefs[Keys.ANSWER_SIDE]
         val answerSide = answerSideStr?.let { runCatching { AnswerSide.valueOf(it) }.getOrNull() }
@@ -303,6 +320,8 @@ class DataStoreSettingsRepository(
             callBackgroundDim = callBackgroundDim,
             callBackgroundCustomColor = callBackgroundCustomColor,
             answerGesture = answerGesture,
+            answerStyle = answerStyle,
+            sliderOnlyWhenLocked = sliderOnlyWhenLocked,
             answerSide = answerSide,
             endCallAlignment = endCallAlignment,
             callerInfoPosition = callerInfoPosition,
@@ -495,6 +514,18 @@ class DataStoreSettingsRepository(
     override suspend fun setAnswerGesture(gesture: AnswerGesture) {
         dataStore.edit { prefs ->
             prefs[Keys.ANSWER_GESTURE] = gesture.name
+        }
+    }
+
+    override suspend fun setAnswerStyle(style: AnswerStyle) {
+        dataStore.edit { prefs ->
+            prefs[Keys.ANSWER_STYLE] = style.name
+        }
+    }
+
+    override suspend fun setSliderOnlyWhenLocked(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.SLIDER_ONLY_WHEN_LOCKED] = enabled
         }
     }
 

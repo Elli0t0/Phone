@@ -153,7 +153,7 @@ class CallActivity : ComponentActivity() {
                                     },
                                     dim = settings.callBackgroundDim,
                                     showNumber = settings.showNumberOnCallScreen,
-                                    answerGesture = settings.answerGesture
+                                    answerStyle = settings.answerStyle
                                 )
                             } else {
                                 OngoingCallScreen(
