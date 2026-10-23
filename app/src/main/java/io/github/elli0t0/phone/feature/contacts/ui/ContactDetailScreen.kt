@@ -107,7 +107,6 @@ fun ContactDetailScreen(
     var simPickerNumber by remember { mutableStateOf<String?>(null) }
     var showCallingSimDialog by remember { mutableStateOf(false) }
     val simAccounts = remember(context) { TelecomHelper.getCallCapablePhoneAccounts(context) }
-    val avatarSource = remember { MutableInteractionSource() }
     val simRowSource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
 
@@ -352,12 +351,9 @@ fun ContactDetailScreen(
                         simAccounts = simAccounts,
                         scrollState = scrollState,
                         navBarBottom = navBarBottom,
-                        topBarHeight = topBarHeight,
-                        avatarSource = avatarSource,
+                        contentTopPadding = statusBarTop + PhoneDimens.detailContentTopGap,
                         simRowSource = simRowSource,
                         onHeaderHeightMeasured = { headerHeightPx = it },
-                        onPhotoOptionsRequest = onPhotoOptionsRequest,
-                        onPhotoPicked = { photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
                         onCall = ::placeCallWithSim,
                         onPhonePickerAction = { phonePickerAction = it },
                         onShowCallingSimDialog = { showCallingSimDialog = true },

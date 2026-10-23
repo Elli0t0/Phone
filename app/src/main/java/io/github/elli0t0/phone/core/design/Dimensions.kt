@@ -191,6 +191,19 @@ object PhoneDimens {
     val dialogCornerRadius = 28.dp
     // Contact detail / edit: large avatar with camera badge.
     val detailAvatarSize = 112.dp
+    // Contact details header card: avatar at the right, name size,
+    // content top gap under the status bar, and the History card's
+    // clearance above the floating bar (gap + bottom scrim height).
+    val detailHeaderAvatarSize = 72.dp
+    val detailHeaderNameSize = 28.sp
+    val detailContentTopGap = 8.dp
+    val detailHistoryGap = 24.dp
+    val bottomScrimHeight = 56.dp
+    // Contact edit: floating Cancel/Save pill and the form's bottom
+    // padding beneath it (pill height + 24 dp).
+    val editSavePillHeight = 60.dp
+    val editSavePillWidthFraction = 0.75f
+    val editFormBottomPadding = 84.dp
     val detailPhotoBadgeSize = 36.dp
     val detailPhotoBadgeIconSize = 18.dp
     val detailPhotoBadgeElevation = 2.dp

@@ -164,6 +164,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.32] - 2026-10-23
+
+- Edit / New contact: the glass top bar is gone — the title is a large heading that scrolls with the form, and Cancel / Save live in a floating rounded glass pill at the bottom (~75% width, 60 dp, above the keyboard and navigation bar, press animation; Save shows inline progress). The form's bottom padding clears the pill.
+- Contact details: the camera badge is removed (photo editing lives in Edit). The header card is a row — name (28 sp bold, up to 2 lines) with the number under it on the left, a ~72 dp round avatar on the right, and the Call / Message buttons below inside the card.
+- Details content now starts 8 dp under the status bar (no more ~110 dp of dead space), and the bottom clearance (bar + navigation inset + 24 dp + scrim height) keeps the History card fully visible above the floating bar.
+
 ## [0.11.31] - 2026-10-23
 
 - Call background page: the Incoming/Ongoing switch is now a glass segmented control — a rounded glass track with one sliding accent pill (spring, gated by the Animations setting) and onPrimary selected text, no square edges.

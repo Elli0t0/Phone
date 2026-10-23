@@ -20,11 +20,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -198,53 +202,36 @@ fun ContactEditScreen(
         if (uiState.isNewContact) nameFocusRequester.requestFocus()
     }
 
-    Scaffold(
-        modifier = modifier.fillMaxSize().testTag("contact_edit_screen"),
-        topBar = {
-            TopAppBar(
-                modifier = Modifier
-                    .padding(top = spacing.small)
-                    .liquidGlass(shape = RectangleShape, floating = true),
-                title = {
-                    Text(
-                        text = if (uiState.isNewContact) {
-                            stringResource(id = R.string.contact_create_title)
-                        } else {
-                            stringResource(id = R.string.contact_edit_title)
-                        }
-                    )
-                },
-                navigationIcon = {
-                    TextButton(onClick = onCancelClick, modifier = Modifier.padding(start = spacing.screenHorizontalPadding).testTag("btn_edit_cancel")) {
-                        Text(text = stringResource(id = R.string.action_cancel))
-                    }
-                },
-                actions = {
-                    if (uiState.isLoading) {
-                        CircularProgressIndicator(modifier = Modifier.size(PhoneDimens.editLoadingSize).padding(end = spacing.medium))
-                    } else {
-                        Button(
-                            onClick = onSaveClick,
-                            shape = MaterialTheme.shapes.medium,
-                            modifier = Modifier.padding(end = spacing.screenHorizontalPadding).testTag("btn_edit_save")
-                        ) {
-                            Text(text = stringResource(id = R.string.action_save))
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
-            )
-        }
-    ) { innerPadding ->
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .testTag("contact_edit_screen")
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(rememberScrollState())
-                .padding(innerPadding)
-                .padding(horizontal = spacing.screenHorizontalPadding, vertical = spacing.medium),
+                .statusBarsPadding()
+                .padding(horizontal = spacing.screenHorizontalPadding)
+                .padding(top = spacing.medium, bottom = PhoneDimens.editFormBottomPadding),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Scrolling page heading (no top bar): the title scrolls
+            // away with the form; Cancel / Save live in the floating
+            // pill at the bottom.
+            Text(
+                text = if (uiState.isNewContact) {
+                    stringResource(id = R.string.contact_create_title)
+                } else {
+                    stringResource(id = R.string.contact_edit_title)
+                },
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = spacing.medium)
+            )
             // Validation Error Alert
             if (uiState.validationErrorRes != null) {
                 Card(
@@ -482,7 +469,57 @@ fun ContactEditScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(PhoneDimens.editBottomSpacer))
+        }
+
+        // Floating Cancel / Save pill: glass, ~75% width, above the
+        // IME and the navigation bar, with the standard press
+        // animation. Save shows an inline progress indicator while
+        // the contact is being written.
+        val cancelSource = remember { MutableInteractionSource() }
+        val saveSource = remember { MutableInteractionSource() }
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .imePadding()
+                .padding(bottom = spacing.medium)
+                .fillMaxWidth(PhoneDimens.editSavePillWidthFraction)
+                .height(PhoneDimens.editSavePillHeight)
+                .liquidGlass(shape = RoundedCornerShape(50), floating = true)
+                .testTag("edit_save_pill"),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TextButton(
+                onClick = onCancelClick,
+                interactionSource = cancelSource,
+                modifier = Modifier
+                    .weight(1f)
+                    .pressScale(cancelSource)
+                    .testTag("btn_edit_cancel")
+            ) {
+                Text(text = stringResource(id = R.string.action_cancel))
+            }
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(PhoneDimens.editLoadingSize))
+                } else {
+                    TextButton(
+                        onClick = onSaveClick,
+                        interactionSource = saveSource,
+                        modifier = Modifier
+                            .pressScale(saveSource)
+                            .testTag("btn_edit_save")
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.action_save),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
         }
     }
 }

@@ -33,6 +33,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
@@ -58,12 +60,9 @@ fun ContactDetailContent(
     simAccounts: List<SimAccountInfo>,
     scrollState: androidx.compose.foundation.ScrollState,
     navBarBottom: androidx.compose.ui.unit.Dp,
-    topBarHeight: androidx.compose.ui.unit.Dp,
-    avatarSource: MutableInteractionSource,
+    contentTopPadding: androidx.compose.ui.unit.Dp,
     simRowSource: MutableInteractionSource,
     onHeaderHeightMeasured: (Int) -> Unit,
-    onPhotoOptionsRequest: () -> Unit,
-    onPhotoPicked: () -> Unit,
     onCall: (String) -> Unit,
     onPhonePickerAction: (String) -> Unit,
     onShowCallingSimDialog: () -> Unit,
@@ -80,16 +79,19 @@ Column(
         .background(MaterialTheme.colorScheme.background)
         .verticalScroll(scrollState)
         .padding(horizontal = spacing.screenHorizontalPadding)
-        .padding(top = topBarHeight)
-        // The detail bar carries an extra top margin
-        // the main bar lacks, so add it here to keep
-        // the last card (History) clear of the bar.
-        .padding(bottom = navBarBottom + PhoneDimens.bottomBarReservedHeight + PhoneDimens.bottomBarBottomMargin),
+        .padding(top = contentTopPadding)
+        // Clearance above the floating bar so the last card
+        // (History) is never covered: bar height + navigation
+        // inset (both in the other terms) + a 24 dp gap + the
+        // bottom scrim height.
+        .padding(bottom = navBarBottom + PhoneDimens.bottomBarReservedHeight + PhoneDimens.detailHistoryGap + PhoneDimens.bottomScrimHeight),
     horizontalAlignment = Alignment.CenterHorizontally
 ) {
 Spacer(modifier = Modifier.height(spacing.medium))
 
-// Top card: avatar, name, organization, primary number
+// Top card: name (left, up to 2 lines), number under it, round
+// avatar at the right, and the Call / Message buttons below.
+// No camera badge: photo editing lives in the Edit screen.
 DetailGlassCard(
     modifier = Modifier.fillMaxWidth()
         .onGloballyPositioned { onHeaderHeightMeasured(it.size.height) }
@@ -97,137 +99,90 @@ DetailGlassCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(spacing.medium),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(spacing.medium)
     ) {
-        // Large Avatar with camera badge
-        Box(
-            modifier = Modifier
-                .size(PhoneDimens.detailAvatarSize)
-                .testTag("contact_detail_avatar"),
-            contentAlignment = Alignment.Center
-        ) {
-            ContactAvatar(
-                photoUri = contact.photoUri,
-                displayName = displayName,
-                size = PhoneDimens.detailAvatarSize,
-                textStyle = MaterialTheme.typography.displayMedium,
-                modifier = Modifier
-                    .pressScale(avatarSource)
-                    .clickable(
-                        interactionSource = avatarSource,
-                        indication = ripple()
-                    ) {
-                        lightHaptic()
-                        if (!contact.photoUri.isNullOrBlank()) {
-                            onPhotoOptionsRequest()
-                        } else {
-                            onPhotoPicked()
-                        }
-                    }
-            )
-
-            // Camera/Edit photo badge
-            Surface(
-                modifier = Modifier
-                    .size(PhoneDimens.detailPhotoBadgeSize)
-                    .align(Alignment.BottomEnd)
-                    .clip(CircleShape)
-                    .clickable {
-                        if (!contact.photoUri.isNullOrBlank()) {
-                            onPhotoOptionsRequest()
-                        } else {
-                            onPhotoPicked()
-                        }
-                    },
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shadowElevation = PhoneDimens.detailPhotoBadgeElevation
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_camera),
-                        contentDescription = stringResource(id = R.string.cd_edit_photo),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(PhoneDimens.detailPhotoBadgeIconSize)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = displayName,
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontSize = PhoneDimens.detailHeaderNameSize,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                val primaryNumber = contact.phones.firstOrNull()?.number
+                if (!primaryNumber.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(spacing.extraSmall))
+                    Text(
+                        text = primaryNumber,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (!contact.organization.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(spacing.extraSmall))
+                    Text(
+                        text = contact.organization,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
+            Spacer(modifier = Modifier.width(spacing.medium))
+            ContactAvatar(
+                photoUri = contact.photoUri,
+                displayName = displayName,
+                size = PhoneDimens.detailHeaderAvatarSize,
+                textStyle = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.testTag("contact_detail_avatar")
+            )
         }
 
         Spacer(modifier = Modifier.height(spacing.medium))
 
-        // Large Contact Display Name
-        Text(
-            text = displayName,
-            style = MaterialTheme.typography.headlineLarge,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-
-        // Organization
-        if (!contact.organization.isNullOrBlank()) {
-            Spacer(modifier = Modifier.height(spacing.extraSmall))
-            Text(
-                text = contact.organization,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+        // Call / Message round buttons below the identity row.
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ContactActionButton(
+                icon = R.drawable.ic_phone,
+                label = stringResource(id = R.string.action_call),
+                onClick = {
+                    if (phones.size == 1) {
+                        onCall(phones.first().number)
+                    } else if (phones.size > 1) {
+                        onPhonePickerAction("call")
+                    }
+                },
+                enabled = phones.isNotEmpty(),
+                testTag = "btn_action_call"
             )
-        }
-
-        // Primary number
-        val primaryNumber = contact.phones.firstOrNull()?.number
-        if (!primaryNumber.isNullOrBlank()) {
-            Spacer(modifier = Modifier.height(spacing.extraSmall))
-            Text(
-                text = primaryNumber,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            ContactActionButton(
+                icon = R.drawable.ic_message,
+                label = stringResource(id = R.string.action_message),
+                onClick = {
+                    if (phones.size == 1) {
+                        val smsIntent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:${Uri.encode(phones.first().number)}")).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        context.startActivity(smsIntent)
+                    } else if (phones.size > 1) {
+                        onPhonePickerAction("message")
+                    }
+                },
+                enabled = phones.isNotEmpty(),
+                testTag = "btn_action_message"
             )
         }
     }
 }
 
-Spacer(modifier = Modifier.height(spacing.medium))
-
-// Call / Message row; the other actions are in the bottom bar.
-Row(
-    modifier = Modifier.fillMaxWidth(),
-    horizontalArrangement = Arrangement.SpaceEvenly,
-    verticalAlignment = Alignment.CenterVertically
-) {
-    ContactActionButton(
-        icon = R.drawable.ic_phone,
-        label = stringResource(id = R.string.action_call),
-        onClick = {
-            if (phones.size == 1) {
-                onCall(phones.first().number)
-            } else if (phones.size > 1) {
-                onPhonePickerAction("call")
-            }
-        },
-        enabled = phones.isNotEmpty(),
-        testTag = "btn_action_call"
-    )
-    ContactActionButton(
-        icon = R.drawable.ic_message,
-        label = stringResource(id = R.string.action_message),
-        onClick = {
-            if (phones.size == 1) {
-                val smsIntent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:${Uri.encode(phones.first().number)}")).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(smsIntent)
-            } else if (phones.size > 1) {
-                onPhonePickerAction("message")
-            }
-        },
-        enabled = phones.isNotEmpty(),
-        testTag = "btn_action_message"
-    )
-}
-
 Spacer(modifier = Modifier.height(spacing.large))
-
 // Phone Numbers Section
 if (contact.phones.isNotEmpty()) {
     DetailSectionCard(title = stringResource(id = R.string.contact_details_phones)) {
