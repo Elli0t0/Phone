@@ -164,6 +164,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.31] - 2026-10-23
+
+- Call background page: the Incoming/Ongoing switch is now a glass segmented control — a rounded glass track with one sliding accent pill (spring, gated by the Animations setting) and onPrimary selected text, no square edges.
+- The floating pill shown when the preview scrolls off is now labeled "Preview" (with its live thumbnail), and the page's bottom padding is tall enough that the pill never covers the last settings row.
+
 ## [0.11.30] - 2026-10-23
 
 - Glass surfaces no longer draw any shadow: the outer shadow is removed from the liquid-glass treatment and the glass surface (sheen + rim only). Flat solid surfaces keep their soft shadows.

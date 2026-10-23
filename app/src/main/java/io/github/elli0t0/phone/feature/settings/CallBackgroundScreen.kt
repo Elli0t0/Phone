@@ -17,6 +17,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -278,8 +280,10 @@ fun CallBackgroundScreen(
                 state = listState,
                 modifier = Modifier.fillMaxSize().testTag("call_background_list"),
                 contentPadding = PaddingValues(
-                    horizontal = spacing.screenHorizontalPadding,
-                    vertical = spacing.small
+                    start = spacing.screenHorizontalPadding,
+                    end = spacing.screenHorizontalPadding,
+                    top = spacing.small,
+                    bottom = PhoneDimens.studioPreviewPillClearance
                 ),
                 verticalArrangement = Arrangement.spacedBy(spacing.medium)
             ) {
@@ -336,39 +340,18 @@ fun CallBackgroundScreen(
                                 )
                             }
                         }
-                        // Preview switch: incoming / ongoing.
-                        SingleChoiceSegmentedButtonRow(
+                        // Preview switch: incoming / ongoing, as a
+                        // glass segmented control with one sliding pill.
+                        GlassSegmentedControl(
+                            options = listOf(
+                                stringResource(id = R.string.settings_call_preview_incoming),
+                                stringResource(id = R.string.settings_call_preview_ongoing)
+                            ),
+                            selectedIndex = if (previewOngoing) 1 else 0,
+                            onSelect = { previewOngoing = it == 1 },
+                            optionTestTags = listOf("call_preview_incoming", "call_preview_ongoing"),
                             modifier = Modifier.fillMaxWidth()
-                        ) {
-                            SegmentedButton(
-                                selected = !previewOngoing,
-                                onClick = { previewOngoing = false },
-                                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                                colors = SegmentedButtonDefaults.colors(
-                                    activeContainerColor = MaterialTheme.colorScheme.primary,
-                                    activeContentColor = MaterialTheme.colorScheme.onPrimary,
-                                    activeBorderColor = MaterialTheme.colorScheme.primary,
-                                    inactiveContainerColor = Color.Transparent,
-                                    inactiveContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                                ),
-                                label = { Text(text = stringResource(id = R.string.settings_call_preview_incoming)) },
-                                modifier = Modifier.testTag("call_preview_incoming")
-                            )
-                            SegmentedButton(
-                                selected = previewOngoing,
-                                onClick = { previewOngoing = true },
-                                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                                colors = SegmentedButtonDefaults.colors(
-                                    activeContainerColor = MaterialTheme.colorScheme.primary,
-                                    activeContentColor = MaterialTheme.colorScheme.onPrimary,
-                                    activeBorderColor = MaterialTheme.colorScheme.primary,
-                                    inactiveContainerColor = Color.Transparent,
-                                    inactiveContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                                ),
-                                label = { Text(text = stringResource(id = R.string.settings_call_preview_ongoing)) },
-                                modifier = Modifier.testTag("call_preview_ongoing")
-                            )
-                        }
+                        )
                     }
                 }
 
@@ -526,7 +509,7 @@ fun CallBackgroundScreen(
                         }
                     }
                     Text(
-                        text = stringResource(id = R.string.settings_call_background),
+                        text = stringResource(id = R.string.settings_call_preview),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(start = spacing.small)
@@ -629,6 +612,72 @@ fun AppSwitch(
                 .clip(CircleShape)
                 .background(Color.White)
         )
+    }
+}
+
+/**
+ * Glass segmented control: a rounded glass track with one sliding
+ * selection pill (filled accent, onPrimary label). The pill's slide
+ * honours the Animations setting. No square edges anywhere.
+ */
+@Composable
+private fun GlassSegmentedControl(
+    options: List<String>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit,
+    optionTestTags: List<String>,
+    modifier: Modifier = Modifier
+) {
+    val animationOption = LocalAppSettings.current.animationOption
+    val trackShape = RoundedCornerShape(50)
+    BoxWithConstraints(
+        modifier = modifier
+            .height(PhoneDimens.studioSegmentedControlHeight)
+            .liquidGlass(shape = trackShape)
+    ) {
+        val segmentWidth = maxWidth / options.size
+        val pillSpec: AnimationSpec<Dp> = when (animationOption) {
+            AnimationOption.ON -> spring(dampingRatio = 0.8f, stiffness = 380f)
+            AnimationOption.REDUCED -> tween(durationMillis = Motion.Durations.Short)
+            AnimationOption.OFF -> snap()
+        }
+        val pillOffset by animateDpAsState(
+            targetValue = segmentWidth * selectedIndex,
+            animationSpec = pillSpec,
+            label = "segmentedPill"
+        )
+        // Sliding selection pill under the labels.
+        Box(
+            modifier = Modifier
+                .offset(x = pillOffset)
+                .width(segmentWidth)
+                .fillMaxHeight()
+                .padding(PhoneDimens.studioSegmentedPillPadding)
+                .clip(trackShape)
+                .background(MaterialTheme.colorScheme.primary)
+        )
+        Row(modifier = Modifier.fillMaxSize()) {
+            options.forEachIndexed { index, label ->
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clickable { onSelect(index) }
+                        .testTag(optionTestTags.getOrElse(index) { "segmented_$index" }),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (index == selectedIndex) {
+                            MaterialTheme.colorScheme.onPrimary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
+                }
+            }
+        }
     }
 }
 

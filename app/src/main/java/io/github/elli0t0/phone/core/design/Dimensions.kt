@@ -114,6 +114,11 @@ object PhoneDimens {
     // Floating Preview pill thumbnail (phone-shaped) and its corner radius.
     val studioPreviewThumbnailHeight = 70.dp
     val studioPreviewThumbnailCornerRadius = 12.dp
+    // Bottom clearance so the floating Preview pill never covers the
+    // last settings row, and the glass segmented control's height.
+    val studioPreviewPillClearance = 110.dp
+    val studioSegmentedControlHeight = 48.dp
+    val studioSegmentedPillPadding = 4.dp
     // Full-screen glass icon button in the preview corner.
     val studioPreviewFullscreenIconSize = 20.dp
     // Studio settings group cards.

@@ -81,6 +81,7 @@
     <string name="settings_call_preview_ongoing">Ongoing</string>
     <string name="settings_call_preview_fullscreen">Full screen</string>
     <string name="settings_call_preview_close">Close preview</string>
+    <string name="settings_call_preview">Preview</string>
     <string name="settings_default_sim">Default calling SIM</string>
     <string name="settings_quick_decline">Quick decline messages</string>
     <string name="call_waiting_desc">Lets a second call come through while you are on a call. Managed by your carrier.</string>
