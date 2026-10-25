@@ -20,6 +20,12 @@ import io.github.elli0t0.phone.data.settings.SettingsRepository
 import io.github.elli0t0.phone.data.settings.SetupRepository
 import io.github.elli0t0.phone.data.settings.settingsDataStore
 import io.github.elli0t0.phone.data.settings.setupDataStore
+import kotlinx.coroutines.flow.MutableSharedFlow
+
+/** One external dial request (tap a number in another app). The id
+ * lets the collector ignore replays of an already-handled request
+ * (e.g. after rotation), since the flow keeps a replay value. */
+data class DialRequest(val number: String, val id: Long)
 
 interface AppContainer {
     val contactsRepository: ContactsRepository
@@ -28,6 +34,7 @@ interface AppContainer {
     val contactSimRepository: ContactSimRepository
     val settingsRepository: SettingsRepository
     val setupRepository: SetupRepository
+    val dialRequests: MutableSharedFlow<DialRequest>
 }
 
 class DefaultAppContainer(private val context: Context) : AppContainer {
@@ -57,6 +64,10 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
 
     override val setupRepository: SetupRepository by lazy {
         DataStoreSetupRepository(context.applicationContext.setupDataStore)
+    }
+
+    override val dialRequests: MutableSharedFlow<DialRequest> by lazy {
+        MutableSharedFlow(replay = 1, extraBufferCapacity = 1)
     }
 }
 

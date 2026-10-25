@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.34] - 2026-10-25
+
+- Open from other apps: tapping a phone number and choosing this app now fills the keypad with the number (cold start and already-running, via onCreate + onNewIntent reading the tel: intent, %2B/%23 decoded, +, * and # kept). No auto-call — you press the call button. A bare dial action just opens an empty keypad.
+
 ## [0.11.33] - 2026-10-23
 
 - Bottom bar shrink rewritten: it now reacts to post-scroll consumed deltas only, with a directional accumulator — shrink after ~48 dp of downward scroll, expand after ~12 dp upward, expand at the top of the list and after ~700 ms without scroll, and reset on every destination change. It never shrinks on the keypad, and labels follow the labels setting whenever the bar is expanded.

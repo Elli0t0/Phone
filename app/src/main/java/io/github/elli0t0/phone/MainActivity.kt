@@ -56,6 +56,7 @@ import kotlinx.coroutines.launch
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.PhoneTheme
@@ -74,6 +75,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         PhoneNavLog.log("MainActivity onCreate taskId=$taskId isFinishing=$isFinishing")
         handleExternalContactIntent(intent)
+        handleDialIntent(intent)
         enableEdgeToEdge()
         val app = application as PhoneApplication
         setContent {
@@ -103,6 +105,7 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
         PhoneNavLog.log("MainActivity onNewIntent taskId=$taskId isFinishing=$isFinishing")
         handleExternalContactIntent(intent)
+        handleDialIntent(intent)
     }
 
     override fun onStart() {
@@ -128,6 +131,27 @@ class MainActivity : ComponentActivity() {
      * an append request opening that contact's editor with the number
      * as a new phone row.
      */
+    /**
+     * External dial request (tap a number in another app, or a dial
+     * shortcut): a tel: URI fills the keypad with the number, a bare
+     * DIAL / CALL_BUTTON action just opens an empty keypad. Never
+     * auto-calls: the user presses the call button. The intent's data
+     * is consumed so a recreate / rotation does not re-apply it.
+     */
+    private fun handleDialIntent(intent: Intent?) {
+        val data = intent?.data
+        val action = intent?.action
+        val number = when {
+            data?.scheme == "tel" -> Uri.decode(data.schemeSpecificPart)
+                .filter { it.isDigit() || it in "+*#" }
+            action == Intent.ACTION_DIAL || action == Intent.ACTION_CALL_BUTTON -> ""
+            else -> return
+        }
+        val app = application as PhoneApplication
+        app.container.dialRequests.tryEmit(DialRequest(number, System.nanoTime()))
+        intent.data = null
+    }
+
     private fun handleExternalContactIntent(intent: Intent?) {
         val action = intent?.action ?: return
         if (action != Intent.ACTION_INSERT && action != Intent.ACTION_INSERT_OR_EDIT) return
@@ -215,6 +239,26 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
     } else {
         appSettings.defaultStartTab.route
     }
+    // External dial requests (tap a number in another app): navigate
+    // to the keypad tab and hand the number to the keypad once.
+    // Requests carry an id so a replayed value (rotation, recompose)
+    // is never applied twice.
+    var pendingDialNumber by remember { mutableStateOf<String?>(null) }
+    var lastHandledDialId by remember { mutableStateOf<Long?>(null) }
+    LaunchedEffect(navController) {
+        (context.applicationContext as PhoneApplication).container.dialRequests.collect { request ->
+            if (request.id == lastHandledDialId) return@collect
+            lastHandledDialId = request.id
+            navController.navigate(Screen.Dialpad.route) {
+                launchSingleTop = true
+                popUpTo(navController.graph.findStartDestination().id) {
+                    saveState = true
+                }
+            }
+            if (request.number.isNotEmpty()) pendingDialNumber = request.number
+        }
+    }
+
     // The Contacts tab manages its own sub-screens (list/detail/edit/groups)
     // while the top-level route stays "contacts": it reports whether the
     // list is showing, so the bar hides on detail/edit/groups.
@@ -315,6 +359,8 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
             defaultStartTabRoute = appSettings.defaultStartTab.route,
             animationOption = appSettings.animationOption,
             onContactsBarVisibilityChanged = { showContactsBar = it },
+            pendingDialNumber = pendingDialNumber,
+            onDialNumberConsumed = { pendingDialNumber = null },
             modifier = Modifier.fillMaxSize()
         )
         // The bar hides and shows with a slide + fade when entering or

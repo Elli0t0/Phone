@@ -155,6 +155,13 @@ class DialpadViewModel(
         }
     }
 
+    /** External dial request: replace the input with the number
+     * (same sanitize path as paste, so +, * and # survive). */
+    fun onExternalDialNumber(number: String) {
+        val sanitized = PhoneNumberFormatter.sanitize(number)
+        if (sanitized.isNotEmpty()) setRawNumber(sanitized)
+    }
+
     fun onContactSelected(contact: ContactSummary) {
         val numberToSet = contact.primaryNumberPreview ?: ""
         if (numberToSet.isNotEmpty()) {

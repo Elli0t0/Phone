@@ -109,6 +109,8 @@ fun DialpadScreen(
     onNavigateToSettings: () -> Unit = {},
     onCreateContact: (String) -> Unit = {},
     onAddToExistingContact: (String) -> Unit = {},
+    externalNumber: String? = null,
+    onExternalNumberConsumed: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -120,6 +122,14 @@ fun DialpadScreen(
             savedStateHandle = androidx.lifecycle.SavedStateHandle()
         )
     )
+
+    // External dial request: fill the keypad once, then consume.
+    LaunchedEffect(externalNumber) {
+        if (externalNumber != null) {
+            if (externalNumber.isNotEmpty()) viewModel.onExternalDialNumber(externalNumber)
+            onExternalNumberConsumed()
+        }
+    }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val spacing = LocalSpacing.current

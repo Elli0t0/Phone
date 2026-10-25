@@ -30,7 +30,9 @@ fun PhoneNavHost(
     startDestination: String = Screen.Recents.route,
     defaultStartTabRoute: String = Screen.Recents.route,
     animationOption: AnimationOption = AnimationOption.ON,
-    onContactsBarVisibilityChanged: (Boolean) -> Unit = {}
+    onContactsBarVisibilityChanged: (Boolean) -> Unit = {},
+    pendingDialNumber: String? = null,
+    onDialNumberConsumed: () -> Unit = {}
 ) {
     // Tab transitions: cross-fade + a subtle slide (5% width) through
     // Motion; REDUCED fades only, OFF is instant. The bottom bar lives
@@ -188,6 +190,8 @@ fun PhoneNavHost(
                 onNavigateToSettings = {
                     navController.navigate(Screen.Settings.route)
                 },
+                externalNumber = pendingDialNumber,
+                onExternalNumberConsumed = onDialNumberConsumed,
                 onAddToExistingContact = { number ->
                     pendingAddNumber = number
                     navController.navigate(Screen.Contacts.route) {
