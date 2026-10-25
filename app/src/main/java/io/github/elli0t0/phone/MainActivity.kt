@@ -57,8 +57,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.rememberHazeState
 import io.github.elli0t0.phone.core.design.LocalHazeState
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
@@ -348,7 +348,9 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
 
     // Real glass blur: one HazeState at the root; the navigation
     // content is the blur source, glass surfaces are the effects.
-    val hazeState = rememberHazeState()
+    // (1.5.3 has no rememberHazeState helper; the state is a plain
+    // @Stable class, so remember { HazeState() } is equivalent.)
+    val hazeState = remember { HazeState() }
 
     // The bottom bar is an overlay: content runs edge-to-edge behind it,
     // and each list keeps its own bottom clearance above the bar.
