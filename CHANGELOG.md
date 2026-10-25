@@ -164,6 +164,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.37] - 2026-10-25
+
+- Real glass blur: the bottom bar, header pill, details action bar and edit pill now blur what is behind them (Haze 1.5.3, verified hazeSource/hazeEffect API — the 2.x line's new API was deliberately not used). One blur state at the root, the navigation content as the source. Blur radius 20/28/36 dp by Glass intensity, tint dark #1C1C1E at 55% / light white at 60%, 1dp vertical rim (white 35% top to 5% bottom). API < 31 and Reduce transparency fall back to a 92% opaque fill, never just translucent. Note: the spec's outer-only soft shadow is omitted on purpose — a hardware shadow under a translucent fill shows through as a dark rectangle, and blur + tint now carry the separation.
+- Glass intensity still drives the tint/blur strength; Reduce transparency still forces the solid fallback.
+
 ## [0.11.36] - 2026-10-25
 
 - Answer style page rebuilt: tiles now render the real controls in a fixed 360x220 design frame scaled to the tile (no more empty or cropped previews), with the style name and animated selection ring. Try-it shows a sample caller (avatar, name, number) and a green/red Answered/Declined chip for 1200 ms, then resets the controls to idle so you can try again.

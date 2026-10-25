@@ -57,6 +57,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
+import io.github.elli0t0.phone.core.design.LocalHazeState
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.PhoneTheme
@@ -343,11 +346,18 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
     // One app-level snackbar host, provided to every screen.
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // Real glass blur: one HazeState at the root; the navigation
+    // content is the blur source, glass surfaces are the effects.
+    val hazeState = rememberHazeState()
+
     // The bottom bar is an overlay: content runs edge-to-edge behind it,
     // and each list keeps its own bottom clearance above the bar.
     // The root Box paints one opaque theme background so the window
     // background never shows through during a tab transition.
-    CompositionLocalProvider(LocalAppSnackbarHostState provides snackbarHostState) {
+    CompositionLocalProvider(
+        LocalAppSnackbarHostState provides snackbarHostState,
+        LocalHazeState provides hazeState
+    ) {
     Box(
         modifier = Modifier.fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
@@ -361,7 +371,7 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
             onContactsBarVisibilityChanged = { showContactsBar = it },
             pendingDialNumber = pendingDialNumber,
             onDialNumberConsumed = { pendingDialNumber = null },
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize().hazeSource(hazeState)
         )
         // The bar hides and shows with a slide + fade when entering or
         // leaving inner screens, and slides up on app start. Reduced

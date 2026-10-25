@@ -34,6 +34,12 @@ object PhoneDimens {
     // Bottom scrim: page color fades from 0% to this alpha over the
     // fade zone above the bar, then stays at this alpha under the bar.
     val bottomScrimMaxAlpha = 0.55f
+    // Real glass blur (Haze): radius and tint alpha by intensity.
+    val glassBlurRadiusSubtle = 20.dp
+    val glassBlurRadiusStandard = 28.dp
+    val glassBlurRadiusStrong = 36.dp
+    val glassBlurTintAlphaDark = 0.55f
+    val glassBlurTintAlphaLight = 0.60f
     // Overflow-menu (glass) popup surface.
     val menuCornerRadius = 28.dp
     val menuElevation = 16.dp

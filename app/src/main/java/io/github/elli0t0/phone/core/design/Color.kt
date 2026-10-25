@@ -42,6 +42,10 @@ val InCallGradientTop = Color(0xFF6E1B0C)
 val InCallGradientBottom = Color(0xFF000000)
 val CallDeclineRed = Color(0xFFE53935)
 val CallAnswerGreen = Color(0xFF43A047)
+// Real-blur tint overlay: dark glass over #1C1C1E, light glass over
+// white (alphas live in PhoneDimens, scaled by GlassIntensity).
+val GlassBlurTintDark = Color(0xFF1C1C1E)
+val GlassBlurTintLight = Color.White
 val CallRejectedOrange = Color(0xFFFB8C00)
 // Keypad call button green.
 val KeypadCallButtonGreenDark = Color(0xFF34A853)

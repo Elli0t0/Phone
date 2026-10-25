@@ -40,6 +40,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Outline
+import android.os.Build
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
@@ -48,6 +50,10 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.hazeEffect
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.GlassIntensity
 import kotlin.math.PI
@@ -59,6 +65,72 @@ import kotlin.math.sin
 
 // Liquid glass design tokens: frosted translucent surfaces, soft gradients,
 // and squircle shapes used on the in-call screen.
+
+/**
+ * The app's one blur source state, provided at the root (MainActivity).
+ * Null outside the main activity (e.g. the call activity), where glass
+ * falls back to the translucent treatment.
+ */
+val LocalHazeState = staticCompositionLocalOf<HazeState?> { null }
+
+/** True when a glass surface can actually blur (API 31+ RenderEffect). */
+private fun blurAvailable(hazeState: HazeState?, reduceTransparency: Boolean): Boolean =
+    hazeState != null &&
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+        !reduceTransparency
+
+/**
+ * The blur layer for one glass surface: the content behind it, blurred
+ * at the intensity's radius, under the spec tint (dark #1C1C1E at 55%,
+ * light white at 60%, scaled by GlassIntensity). Applied after clip so
+ * the blur stays inside the shape, before the fill/sheen/rim.
+ */
+@Composable
+private fun glassBlurModifier(dark: Boolean): Modifier {
+    val hazeState = LocalHazeState.current
+    val settings = LocalAppSettings.current
+    if (!blurAvailable(hazeState, settings.reduceTransparency)) return Modifier
+    val radius = when (settings.glassIntensity) {
+        GlassIntensity.SUBTLE -> PhoneDimens.glassBlurRadiusSubtle
+        GlassIntensity.STANDARD -> PhoneDimens.glassBlurRadiusStandard
+        GlassIntensity.STRONG -> PhoneDimens.glassBlurRadiusStrong
+    }
+    val scale = when (settings.glassIntensity) {
+        GlassIntensity.SUBTLE -> 0.6f
+        GlassIntensity.STANDARD -> 1.0f
+        GlassIntensity.STRONG -> 1.4f
+    }
+    val baseAlpha = if (dark) {
+        PhoneDimens.glassBlurTintAlphaDark
+    } else {
+        PhoneDimens.glassBlurTintAlphaLight
+    }
+    val tint = (if (dark) GlassBlurTintDark else GlassBlurTintLight)
+        .copy(alpha = (baseAlpha * scale).coerceIn(0f, 0.85f))
+    return Modifier.hazeEffect(
+        state = hazeState!!,
+        style = HazeStyle(
+            backgroundColor = Color.Transparent,
+            tint = HazeTint(tint),
+            blurRadius = radius
+        )
+    )
+}
+
+/**
+ * Near-opaque base for glass when blur is off: Reduce transparency
+ * (solid) and API < 31 both fall back to a fill at 92% alpha, so list
+ * text can never collide with bar labels.
+ */
+@Composable
+private fun glassSolidBaseModifier(dark: Boolean): Modifier {
+    val settings = LocalAppSettings.current
+    val solid = settings.reduceTransparency ||
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.S
+    if (!solid) return Modifier
+    val base = if (dark) GlassBlurTintDark else MaterialTheme.colorScheme.surface
+    return Modifier.background(base.copy(alpha = 0.92f))
+}
 
 val LiquidGlassBackgroundTop = Color(0xFF2B2A36)
 val LiquidGlassBackgroundBottom = Color(0xFF100F15)
@@ -180,10 +252,11 @@ val SquircleShape: Shape = GenericShape { size, _ ->
  * true for the surfaces that float above content (bottom bar, header
  * pill); cards and inline surfaces pass false.
  *
- * Real blur (Haze) was checked first: Haze 2.0.1 is the latest stable release,
- * but its new modular 2.x API is unverified against this project's Compose
- * version and cannot be compile-checked locally, so this version ships the
- * translucent fallback. No blur is faked: the surface is honestly translucent.
+ * Real blur: when a HazeState is provided at the root (Haze 1.5.3,
+ * verified hazeSource/hazeEffect API) and the device runs API 31+,
+ * the content behind the surface is really blurred under the spec
+ * tint; otherwise it falls back to a near-opaque fill (see
+ * [glassSolidBaseModifier]).
  */
 @Composable
 fun GlassSurface(
@@ -197,6 +270,8 @@ fun GlassSurface(
     Box(
         modifier = modifier
             .clip(shape)
+            .then(glassBlurModifier(dark))
+            .then(glassSolidBaseModifier(dark))
             .background(containerColor)
             .border(
                 width = 1.dp,
@@ -244,11 +319,8 @@ private class GlassSpec(
                 (alpha * scale * boost).coerceIn(0f, 1f)
             val topAlpha = scaled(if (dark) 0.24f else 0.78f)
             val bottomAlpha = scaled(if (dark) 0.12f else 0.52f)
-            val borderTopAlpha = scaled(if (dark) 0.48f else 0.92f)
-            val borderBottomAlpha = scaled(if (dark) 0.14f else 0.30f)
             val fillTopAlpha = scaled(if (isSelected) 0.22f else 0.08f, fillBoost)
             val fillBottomAlpha = scaled(if (isSelected) 0.14f else 0.04f, fillBoost)
-            val rimMidAlpha = scaled(if (isSelected) 0.45f else 0.15f)
             return GlassSpec(
                 fill = Brush.linearGradient(
                     colors = listOf(
@@ -266,14 +338,13 @@ private class GlassSpec(
                     start = Offset.Zero,
                     end = Offset.Infinite
                 ),
-                rim = Brush.linearGradient(
+                // 1dp rim: vertical white gradient, 35% at the top
+                // edge fading to 5% at the bottom edge.
+                rim = Brush.verticalGradient(
                     colors = listOf(
-                        Color.White.copy(alpha = borderTopAlpha),
-                        base.copy(alpha = rimMidAlpha),
-                        Color.White.copy(alpha = borderBottomAlpha)
-                    ),
-                    start = Offset.Zero,
-                    end = Offset.Infinite
+                        Color.White.copy(alpha = scaled(0.35f)),
+                        Color.White.copy(alpha = scaled(0.05f))
+                    )
                 )
             )
         }
@@ -283,12 +354,20 @@ private class GlassSpec(
 /**
  * True liquid glass: a refractive, tactile surface.
  *
+ * Blur: when a HazeState is provided at the root and the device runs
+ * API 31+, the content behind the surface is really blurred (radius
+ * by GlassIntensity) under the spec tint, so list text can no longer
+ * collide with bar labels. Without a HazeState, on API < 31, or with
+ * Reduce transparency on, the surface falls back to a near-opaque
+ * fill (92% alpha) — never just translucent.
+ *
  * Fill: a translucent tint gradient. Sheen: a bright specular highlight
  * at the top-left fading toward the bottom-right, drawn over the fill.
- * Rim: a 1.dp diagonal refractive border (bright white at the top-left,
- * subtle accent tint in the center, soft reflection at the bottom-right).
- * No shadow is drawn on glass — sheen + rim only. A hardware shadow
- * under a translucent fill shows through as a dark inset rectangle.
+ * Rim: a 1.dp vertical border (white 35% at the top edge to 5% at the
+ * bottom edge). No shadow is drawn on glass — sheen + rim only. A
+ * hardware shadow under a translucent fill shows through as a dark
+ * inset rectangle, so the spec's outer-only shadow is intentionally
+ * omitted: blur + tint carry the separation instead.
  *
  * Dark detection follows the app theme (ThemeMode), not the system theme,
  * so glass matches the app setting in both Light and Dark themes.
@@ -317,6 +396,8 @@ fun Modifier.liquidGlass(
     }
     return this
         .clip(shape)
+        .then(glassBlurModifier(dark))
+        .then(glassSolidBaseModifier(dark))
         .background(spec.fill)
         .background(spec.sheen)
         .border(1.dp, spec.rim, shape)
