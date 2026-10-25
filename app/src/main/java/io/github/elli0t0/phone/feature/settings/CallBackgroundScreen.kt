@@ -268,9 +268,10 @@ fun CallBackgroundScreen(
                 title = stringResource(id = R.string.settings_call_background),
                 backTestTag = "btn_call_background_back"
             )
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.weight(1f).testTag("call_background_list"),
+            Box(modifier = Modifier.weight(1f)) {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxSize().testTag("call_background_list"),
                 contentPadding = PaddingValues(
                     start = spacing.screenHorizontalPadding,
                     end = spacing.screenHorizontalPadding,
@@ -508,6 +509,7 @@ fun CallBackgroundScreen(
                         modifier = Modifier.padding(start = spacing.small)
                     )
                 }
+            }
             }
         }
     }

@@ -93,8 +93,9 @@ fun AnswerStyleScreen(
             LazyColumn(
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(
-                    horizontal = spacing.screenHorizontalPadding,
+                    start = spacing.screenHorizontalPadding,
                     top = spacing.small,
+                    end = spacing.screenHorizontalPadding,
                     bottom = spacing.small + innerPadding.calculateBottomPadding()
                 ),
             verticalArrangement = Arrangement.spacedBy(spacing.medium)
