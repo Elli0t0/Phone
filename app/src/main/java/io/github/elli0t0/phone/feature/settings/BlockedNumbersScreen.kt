@@ -26,7 +26,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,6 +44,7 @@ import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.telecom.rememberDefaultDialerState
+import io.github.elli0t0.phone.navigation.InnerTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -118,20 +118,6 @@ fun BlockedNumbersScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize().testTag("blocked_numbers_screen"),
-        topBar = {
-            TopAppBar(
-                modifier = Modifier.padding(top = spacing.small),
-                title = { Text(text = stringResource(id = R.string.blocked_numbers_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_arrow_back),
-                            contentDescription = stringResource(id = R.string.cd_back)
-                        )
-                    }
-                }
-            )
-        },
         floatingActionButton = {
             if (uiState.canBlock) {
                 FloatingActionButton(
@@ -149,9 +135,13 @@ fun BlockedNumbersScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
                 .padding(horizontal = spacing.screenHorizontalPadding)
+                .padding(bottom = innerPadding.calculateBottomPadding())
         ) {
+            InnerTopBar(
+                onBack = onNavigateBack,
+                title = stringResource(id = R.string.blocked_numbers_title)
+            )
             if (!uiState.canBlock) {
                 Card(
                     shape = MaterialTheme.shapes.extraLarge,

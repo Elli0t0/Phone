@@ -10,19 +10,15 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -42,8 +38,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -66,6 +62,7 @@ import io.github.elli0t0.phone.feature.call.ui.DualSimPickerDialog
 import kotlinx.coroutines.launch
 import io.github.elli0t0.phone.data.contacts.util.ContactPhotoUtil
 import io.github.elli0t0.phone.feature.contacts.ContactDetailUiState
+import io.github.elli0t0.phone.navigation.InnerTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -337,62 +334,37 @@ fun ContactDetailScreen(
                 val scrollState = rememberScrollState()
                 var headerHeightPx by remember { mutableStateOf(0) }
                 val density = LocalDensity.current
-                val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-                val topBarHeight = statusBarTop + PhoneDimens.detailTopBarHeight
                 val collapseThresholdPx = headerHeightPx + with(density) { spacing.medium.toPx() }
-                val showSolidBar = scrollState.value >= collapseThresholdPx
+                // The name appears in the top row once the header card
+                // has scrolled away; at rest the card itself shows it.
+                val showTitle = scrollState.value >= collapseThresholdPx
                 val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-                Box(modifier = Modifier.fillMaxSize()) {
-                    ContactDetailContent(
-                        contact = contact,
-                        displayName = displayName,
-                        phones = phones,
-                        uiState = uiState,
-                        simAccounts = simAccounts,
-                        scrollState = scrollState,
-                        navBarBottom = navBarBottom,
-                        contentTopPadding = statusBarTop + PhoneDimens.detailContentTopGap,
-                        simRowSource = simRowSource,
-                        onHeaderHeightMeasured = { headerHeightPx = it },
-                        onCall = ::placeCallWithSim,
-                        onPhonePickerAction = { phonePickerAction = it },
-                        onShowCallingSimDialog = { showCallingSimDialog = true },
-                        onRingtonePicker = ::launchRingtonePicker,
-                        onShowAllHistoryClick = onShowAllHistoryClick
+                // Normal top row above the card: back arrow in its own
+                // row, then the scrolling content below it.
+                Column(modifier = Modifier.fillMaxSize()) {
+                    InnerTopBar(
+                        onBack = onBackClick,
+                        title = if (showTitle) displayName else null,
+                        backTestTag = "btn_detail_back"
                     )
-
-                    // Overlay top bar: status-bar inset + 56dp, transparent at
-                    // the top, solid page color with the name once the header
-                    // card has scrolled away. Content scrolls underneath it.
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(topBarHeight)
-                            .background(
-                                if (showSolidBar) MaterialTheme.colorScheme.background
-                                else Color.Transparent
-                            )
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(top = statusBarTop),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            IconButton(onClick = onBackClick, modifier = Modifier.testTag("btn_detail_back")) {
-                                Icon(painter = painterResource(id = R.drawable.ic_arrow_back), contentDescription = stringResource(id = R.string.cd_back))
-                            }
-                            if (showSolidBar) {
-                                Text(
-                                    text = displayName,
-                                    style = MaterialTheme.typography.titleLarge,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                        }
+                    Box(modifier = Modifier.weight(1f)) {
+                        ContactDetailContent(
+                            contact = contact,
+                            displayName = displayName,
+                            phones = phones,
+                            uiState = uiState,
+                            simAccounts = simAccounts,
+                            scrollState = scrollState,
+                            navBarBottom = navBarBottom,
+                            contentTopPadding = 0.dp,
+                            simRowSource = simRowSource,
+                            onHeaderHeightMeasured = { headerHeightPx = it },
+                            onCall = ::placeCallWithSim,
+                            onPhonePickerAction = { phonePickerAction = it },
+                            onShowCallingSimDialog = { showCallingSimDialog = true },
+                            onRingtonePicker = ::launchRingtonePicker,
+                            onShowAllHistoryClick = onShowAllHistoryClick
+                        )
                     }
                 }
             }

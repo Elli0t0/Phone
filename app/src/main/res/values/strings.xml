@@ -252,6 +252,8 @@
     <string name="contact_details_history">History</string>
     <string name="contact_details_history_show_all">Show all</string>
     <string name="contact_details_history_empty">No calls with this contact yet</string>
+    <string name="history_day_today">Today</string>
+    <string name="history_day_yesterday">Yesterday</string>
     <string name="ringtone_default">Default ringtone</string>
     <string name="ringtone_silent">Silent</string>
     <string name="ringtone_custom">Custom ringtone</string>

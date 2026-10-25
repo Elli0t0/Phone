@@ -39,4 +39,6 @@
     <string name="dialpad_show_less">نمایش کمتر</string>
     <string name="settings_debug_log">گزارش اشکال‌زدایی</string>
     <string name="add_to_existing_contact">افزودن به مخاطب موجود</string>
+    <string name="history_day_today">امروز</string>
+    <string name="history_day_yesterday">دیروز</string>
 </resources>

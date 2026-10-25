@@ -28,7 +28,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -59,6 +58,7 @@ import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.data.settings.model.AnswerStyle
 import io.github.elli0t0.phone.feature.call.ui.AnswerControls
+import io.github.elli0t0.phone.navigation.InnerTopBar
 import io.github.elli0t0.phone.feature.contacts.ui.ContactAvatar
 import kotlinx.coroutines.delay
 
@@ -80,30 +80,23 @@ fun AnswerStyleScreen(
 ) {
     val spacing = LocalSpacing.current
     Scaffold(
-        modifier = modifier.fillMaxSize().testTag("answer_style_screen"),
-        topBar = {
-            TopAppBar(
-                title = { Text(text = stringResource(id = R.string.settings_answer_style)) },
-                navigationIcon = {
-                    IconButton(
-                        onClick = onNavigateBack,
-                        modifier = Modifier.testTag("btn_answer_style_back")
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_arrow_back),
-                            contentDescription = stringResource(id = R.string.cd_back)
-                        )
-                    }
-                }
-            )
-        }
+        modifier = modifier.fillMaxSize().testTag("answer_style_screen")
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(innerPadding),
-            contentPadding = PaddingValues(
-                horizontal = spacing.screenHorizontalPadding,
-                vertical = spacing.small
-            ),
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            InnerTopBar(
+                onBack = onNavigateBack,
+                title = stringResource(id = R.string.settings_answer_style),
+                backTestTag = "btn_answer_style_back"
+            )
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(
+                    horizontal = spacing.screenHorizontalPadding,
+                    top = spacing.small,
+                    bottom = spacing.small + innerPadding.calculateBottomPadding()
+                ),
             verticalArrangement = Arrangement.spacedBy(spacing.medium)
         ) {
             item {
@@ -152,8 +145,9 @@ fun AnswerStyleScreen(
                     )
                 }
             }
-            item {
-                AnswerStyleTryIt(style = selected)
+                item {
+                    AnswerStyleTryIt(style = selected)
+                }
             }
         }
     }

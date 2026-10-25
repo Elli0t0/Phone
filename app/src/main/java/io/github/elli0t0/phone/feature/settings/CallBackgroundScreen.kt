@@ -51,7 +51,6 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -81,6 +80,7 @@ import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.navigation.InnerTopBar
 import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.data.call.CallState
 import io.github.elli0t0.phone.data.call.OngoingCallModel
@@ -248,20 +248,7 @@ fun CallBackgroundScreen(
     }
 
     Scaffold(
-        modifier = modifier.fillMaxSize().testTag("call_background_screen"),
-        topBar = {
-            TopAppBar(
-                title = { Text(text = stringResource(id = R.string.settings_call_background)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack, modifier = Modifier.testTag("btn_call_background_back")) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_arrow_back),
-                            contentDescription = stringResource(id = R.string.cd_back)
-                        )
-                    }
-                }
-            )
-        }
+        modifier = modifier.fillMaxSize().testTag("call_background_screen")
     ) { innerPadding ->
         // One scrolling page: the preview is the first item and
         // scrolls away with the settings, instead of being pinned
@@ -275,15 +262,21 @@ fun CallBackgroundScreen(
             LocalConfiguration.current.screenHeightDp.dp * 0.6f,
             PhoneDimens.studioPreviewMaxHeight
         )
-        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            InnerTopBar(
+                onBack = onNavigateBack,
+                title = stringResource(id = R.string.settings_call_background),
+                backTestTag = "btn_call_background_back"
+            )
             LazyColumn(
                 state = listState,
-                modifier = Modifier.fillMaxSize().testTag("call_background_list"),
+                modifier = Modifier.weight(1f).testTag("call_background_list"),
                 contentPadding = PaddingValues(
                     start = spacing.screenHorizontalPadding,
                     end = spacing.screenHorizontalPadding,
                     top = spacing.small,
-                    bottom = PhoneDimens.studioPreviewPillClearance
+                    bottom = PhoneDimens.studioPreviewPillClearance +
+                        innerPadding.calculateBottomPadding()
                 ),
                 verticalArrangement = Arrangement.spacedBy(spacing.medium)
             ) {

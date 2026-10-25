@@ -164,6 +164,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.38] - 2026-10-25
+
+- One shared inner top row (status inset + 8dp, 48dp high, back arrow + title) replaces the detail overlay bar and the 64dp app bars on: contact details (back row above the card, name appears in the row once the header card scrolls away), History, Answer style, Call background, Blocked numbers, Duplicates, and Setup (title only, no back). The History gap is gone: Scaffold was adding the full status inset on top of its own row.
+- History: calls grouped by day (Today/Yesterday/date headers) in rounded cards, filter chips (All, Missed, Incoming, Outgoing), and each row's title is now the call type in its color (Incoming green, Outgoing accent, Missed red) with date/time + duration + SIM below. Paging is end-based so it keeps working under a filter and with grouped rows.
+- Detail History preview rows use the same new row style.
+
 ## [0.11.37] - 2026-10-25
 
 - Real glass blur: the bottom bar, header pill, details action bar and edit pill now blur what is behind them (Haze 1.5.3, verified hazeSource/hazeEffect API — the 2.x line's new API was deliberately not used). One blur state at the root, the navigation content as the source. Blur radius 20/28/36 dp by Glass intensity, tint dark #1C1C1E at 55% / light white at 60%, 1dp vertical rim (white 35% top to 5% bottom). API < 31 and Reduce transparency fall back to a 92% opaque fill, never just translucent. Note: the spec's outer-only soft shadow is omitted on purpose — a hardware shadow under a translucent fill shows through as a dark rectangle, and blur + tint now carry the separation.

@@ -50,6 +50,7 @@ import io.github.elli0t0.phone.core.permissions.SetupItemId
 import io.github.elli0t0.phone.core.permissions.SetupItemState
 import io.github.elli0t0.phone.core.permissions.SetupPermissions
 import io.github.elli0t0.phone.core.telecom.DefaultDialerHelper
+import io.github.elli0t0.phone.navigation.InnerTopBar
 import kotlinx.coroutines.launch
 
 @Composable
@@ -68,14 +69,14 @@ fun SetupScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
                 .padding(horizontal = spacing.screenHorizontalPadding)
+                .padding(bottom = innerPadding.calculateBottomPadding())
         ) {
-            Spacer(modifier = Modifier.height(spacing.large))
-            Text(
-                text = stringResource(id = R.string.setup_title),
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onBackground
+            // Same top row as the other inner screens (title only:
+            // setup is the start destination, so there is no back).
+            InnerTopBar(
+                onBack = null,
+                title = stringResource(id = R.string.setup_title)
             )
             Spacer(modifier = Modifier.height(spacing.small))
             Text(

@@ -323,8 +323,22 @@ fun CallHistoryRowItem(
         DateFormat.getMediumDateFormat(context).format(date) +
             " · " + DateFormat.getTimeFormat(context).format(date)
     }
+    // Title: the call type ("Incoming call") colored by type; the
+    // icon shares the same color. Unknown stays a plain "Call".
+    val typeColor = when (entry.type) {
+        CallType.Incoming -> CallAnswerGreen
+        CallType.Outgoing -> AccentBlue
+        CallType.Missed -> MaterialTheme.colorScheme.error
+        CallType.Rejected, CallType.Blocked -> CallRejectedOrange
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val titleText = if (entry.type == CallType.Unknown) {
+        stringResource(id = entry.type.titleRes)
+    } else {
+        stringResource(id = R.string.cd_call_type, stringResource(id = entry.type.titleRes))
+    }
     val subtitleParts = buildList {
-        add(context.getString(entry.type.titleRes))
+        add(dateText)
         if (!entry.isMissedOrRejected) {
             add(formatCallDuration(entry.durationSeconds))
         }
@@ -339,23 +353,15 @@ fun CallHistoryRowItem(
         Icon(
             painter = painterResource(id = entry.type.iconRes),
             contentDescription = stringResource(id = entry.type.titleRes),
-            // Icon color by call type, same as Recents: incoming green,
-            // outgoing accent blue, missed red, rejected/blocked orange.
-            tint = when (entry.type) {
-                CallType.Incoming -> CallAnswerGreen
-                CallType.Outgoing -> AccentBlue
-                CallType.Missed -> MaterialTheme.colorScheme.error
-                CallType.Rejected, CallType.Blocked -> CallRejectedOrange
-                else -> MaterialTheme.colorScheme.onSurfaceVariant
-            },
+            tint = typeColor,
             modifier = Modifier.size(PhoneDimens.detailRowIconSize)
         )
         Spacer(modifier = Modifier.width(spacing.medium))
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = dateText,
+                text = titleText,
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface
+                color = typeColor
             )
             Text(
                 text = subtitleParts.joinToString(" - "),

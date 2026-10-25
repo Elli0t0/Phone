@@ -1,5 +1,7 @@
 package io.github.elli0t0.phone.feature.contacts.ui
 
+import android.text.format.DateFormat
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,10 +11,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -25,16 +29,39 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.firstLoadReveal
+import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
+import io.github.elli0t0.phone.data.calllog.model.CallType
 import io.github.elli0t0.phone.feature.contacts.ContactHistoryViewModel
+import io.github.elli0t0.phone.navigation.InnerTopBar
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.util.Date
+
+private enum class HistoryFilter(val labelRes: Int) {
+    ALL(R.string.filter_all),
+    MISSED(R.string.filter_missed),
+    INCOMING(R.string.filter_incoming),
+    OUTGOING(R.string.filter_outgoing);
+
+    fun matches(entry: CallLogEntry): Boolean = when (this) {
+        ALL -> true
+        MISSED -> entry.type == CallType.Missed
+        INCOMING -> entry.type == CallType.Incoming
+        OUTGOING -> entry.type == CallType.Outgoing
+    }
+}
+
+private data class DayGroup(val label: String, val calls: List<CallLogEntry>)
 
 // Full call history for one contact, paged 50 at a time in a LazyColumn:
 // never rendered in a non-lazy Column, so long histories stay smooth.
@@ -45,20 +72,48 @@ fun ContactHistoryScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     val spacing = LocalSpacing.current
     val listState = rememberLazyListState()
     // First-load reveal, like Recents and Contacts: flips true when the
-    // first entries arrive, so the first 8 rows stagger in; later
-    // (paged) rows appear immediately.
+    // first entries arrive, so the first 8 groups stagger in; later
+    // (paged) groups appear immediately.
     var listRevealed by remember { mutableStateOf(false) }
     LaunchedEffect(uiState.entries.isNotEmpty()) {
         if (uiState.entries.isNotEmpty()) listRevealed = true
     }
+    var filter by remember { mutableStateOf(HistoryFilter.ALL) }
+    val filteredEntries = remember(filter, uiState.entries) {
+        uiState.entries.filter { filter.matches(it) }
+    }
+    // One group per day, newest day first, calls newest-first within
+    // each day (entries arrive sorted, and groupBy keeps order).
+    val dayGroups = remember(filteredEntries) {
+        val today = LocalDate.now()
+        val yesterday = today.minusDays(1)
+        filteredEntries
+            .groupBy {
+                Instant.ofEpochMilli(it.date).atZone(ZoneId.systemDefault()).toLocalDate()
+            }
+            .map { (day, calls) ->
+                val label = when (day) {
+                    today -> context.getString(R.string.history_day_today)
+                    yesterday -> context.getString(R.string.history_day_yesterday)
+                    else -> DateFormat.getMediumDateFormat(context).format(
+                        Date.from(day.atStartOfDay(ZoneId.systemDefault()).toInstant())
+                    )
+                }
+                DayGroup(label, calls)
+            }
+    }
 
-    LaunchedEffect(listState) {
+    // Paging is end-based: the grouped list has one item per day, so
+    // a raw entry index would be meaningless. Re-collect when the
+    // group count changes so the end test always uses fresh groups.
+    LaunchedEffect(listState, dayGroups.size) {
         snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
             .collect { index ->
-                if (index != null) viewModel.loadMoreIfNeeded(index)
+                viewModel.loadMoreIfAtEnd(index != null && index >= dayGroups.size - 1)
             }
     }
 
@@ -68,27 +123,26 @@ fun ContactHistoryScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
                 .padding(horizontal = spacing.screenHorizontalPadding)
+                .padding(bottom = innerPadding.calculateBottomPadding())
         ) {
+            InnerTopBar(
+                onBack = onBack,
+                title = uiState.contactName.ifBlank { stringResource(id = R.string.contact_details_history) },
+                backTestTag = "btn_history_back"
+            )
+
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(top = spacing.small)
+                horizontalArrangement = Arrangement.spacedBy(spacing.small),
+                modifier = Modifier.padding(bottom = spacing.small)
             ) {
-                IconButton(onClick = onBack, modifier = Modifier.testTag("btn_history_back")) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_arrow_back),
-                        contentDescription = stringResource(id = R.string.cd_back)
+                HistoryFilter.entries.forEach { option ->
+                    FilterChip(
+                        selected = filter == option,
+                        onClick = { filter = option },
+                        label = { Text(text = stringResource(id = option.labelRes)) }
                     )
                 }
-                Text(
-                    text = uiState.contactName.ifBlank { stringResource(id = R.string.contact_details_history) },
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
             }
 
             when {
@@ -101,7 +155,7 @@ fun ContactHistoryScreen(
                     }
                 }
 
-                uiState.entries.isEmpty() -> {
+                filteredEntries.isEmpty() -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -117,25 +171,52 @@ fun ContactHistoryScreen(
                 else -> {
                     LazyColumn(
                         state = listState,
-                        modifier = Modifier.fillMaxSize().testTag("contact_history_list")
+                        modifier = Modifier.fillMaxSize().testTag("contact_history_list"),
+                        verticalArrangement = Arrangement.spacedBy(spacing.small)
                     ) {
-                        itemsIndexed(uiState.entries, key = { _, entry -> entry.id }) { index, entry ->
+                        itemsIndexed(
+                            items = dayGroups,
+                            key = { _, group -> group.label }
+                        ) { dayIndex, group ->
                             Column(
                                 modifier = Modifier
                                     .animateItem()
-                                    .firstLoadReveal(index, listRevealed)
+                                    .firstLoadReveal(dayIndex, listRevealed)
                             ) {
-                                CallHistoryRowItem(entry = entry)
-                                if (index < uiState.entries.lastIndex) {
-                                    HorizontalDivider(
-                                        color = MaterialTheme.colorScheme.outlineVariant.copy(
-                                            alpha = PhoneDimens.recentsDividerAlpha
-                                        ),
-                                        modifier = Modifier.padding(
-                                            start = spacing.medium +
-                                                PhoneDimens.detailRowIconSize + spacing.medium
-                                        )
+                                Text(
+                                    text = group.label,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(
+                                        top = if (dayIndex == 0) 0.dp else spacing.small,
+                                        bottom = spacing.extraSmall
                                     )
+                                )
+                                Card(
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                                    ),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(horizontal = spacing.medium)
+                                    ) {
+                                        group.calls.forEachIndexed { callIndex, entry ->
+                                            CallHistoryRowItem(entry = entry)
+                                            if (callIndex < group.calls.lastIndex) {
+                                                HorizontalDivider(
+                                                    color = MaterialTheme.colorScheme.outlineVariant.copy(
+                                                        alpha = PhoneDimens.recentsDividerAlpha
+                                                    ),
+                                                    modifier = Modifier.padding(
+                                                        start = spacing.medium +
+                                                            PhoneDimens.detailRowIconSize + spacing.medium
+                                                    )
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }

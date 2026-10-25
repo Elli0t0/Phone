@@ -43,10 +43,16 @@ class ContactHistoryViewModel(
         }
     }
 
-    fun loadMoreIfNeeded(lastVisibleIndex: Int) {
+    /**
+     * End-based paging trigger for the day-grouped list: a raw entry
+     * index is meaningless once calls share one item per day (and the
+     * list shrinks under a filter), so the screen reports whether the
+     * last group is visible. Self-limiting: after a page loads, the
+     * end moves below the viewport and the trigger goes quiet.
+     */
+    fun loadMoreIfAtEnd(atEnd: Boolean) {
         val state = _uiState.value
-        if (state.isLoading || state.isLoadingMore || !state.hasMore || state.entries.isEmpty()) return
-        if (lastVisibleIndex < state.entries.size - LOAD_AHEAD) return
+        if (!atEnd || state.isLoading || state.isLoadingMore || !state.hasMore || state.entries.isEmpty()) return
         loadPage()
     }
 
@@ -71,7 +77,6 @@ class ContactHistoryViewModel(
 
     companion object {
         const val PAGE_SIZE = 50
-        private const val LOAD_AHEAD = 5
 
         fun provideFactory(
             contactsRepository: ContactsRepository,

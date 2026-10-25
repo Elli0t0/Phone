@@ -31,8 +31,6 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +48,7 @@ import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.data.contacts.model.DuplicateGroup
 import io.github.elli0t0.phone.data.contacts.model.DuplicateReason
 import io.github.elli0t0.phone.feature.contacts.ContactsUiState
+import io.github.elli0t0.phone.navigation.InnerTopBar
 
 /**
  * Lists duplicate contacts (same normalized number or same name). Merging a
@@ -70,32 +69,18 @@ fun DuplicatesScreen(
     val spacing = LocalSpacing.current
 
     Scaffold(
-        modifier = modifier.fillMaxSize().testTag("duplicates_screen"),
-        topBar = {
-            TopAppBar(
-                modifier = Modifier.padding(top = spacing.small),
-                title = { Text(text = stringResource(id = R.string.duplicates_title)) },
-                navigationIcon = {
-                    IconButton(
-                        onClick = onBack,
-                        modifier = Modifier.testTag("duplicates_back")
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_arrow_back),
-                            contentDescription = stringResource(id = R.string.cd_back)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
-            )
-        }
-    ) { innerPadding ->
+        modifier = modifier.fillMaxSize().testTag("duplicates_screen")
+    ) { _ ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
                 .padding(horizontal = spacing.screenHorizontalPadding)
         ) {
+            InnerTopBar(
+                onBack = onBack,
+                title = stringResource(id = R.string.duplicates_title),
+                backTestTag = "duplicates_back"
+            )
             Text(
                 text = stringResource(id = R.string.duplicates_description),
                 style = MaterialTheme.typography.bodyLarge,
