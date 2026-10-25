@@ -72,6 +72,8 @@
     <string name="settings_answer_style_try_it">Try it</string>
     <string name="answer_preview_answered">Answered</string>
     <string name="answer_preview_declined">Declined</string>
+    <string name="answer_preview_sample_name">Sample contact</string>
+    <string name="answer_preview_sample_number">+1 (555) 010-2030</string>
     <string name="settings_call_background_style">Background</string>
     <string name="settings_call_background_dim">Background dim</string>
     <string name="settings_call_background_dim_desc">Darken the call background with a black overlay</string>

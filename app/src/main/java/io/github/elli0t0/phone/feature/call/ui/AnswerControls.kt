@@ -89,6 +89,7 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 
 /**
  * Answer / decline controls for an incoming call, in the style chosen
@@ -525,6 +526,7 @@ private fun SwipeButtonColumn(
     anyCommitted: Boolean,
     onCommit: () -> Unit
 ) {
+    var dragging by remember { mutableStateOf(false) }
     val option = LocalAppSettings.current.animationOption
     val transition = rememberInfiniteTransition(label = "chevrons")
     val chevronAlphas = (0 until 3).map { index ->
@@ -541,8 +543,12 @@ private fun SwipeButtonColumn(
         alpha
     }
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        // Drag hint: three chevrons pulsing in sequence (900 ms loop).
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        // Drag hint: three chevrons pulsing in sequence (900 ms loop),
+        // hidden while the button is being dragged.
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.graphicsLayer { alpha = if (dragging) 0f else 1f }
+        ) {
             chevronAlphas.forEach { animatedAlpha ->
                 Icon(
                     painter = painterResource(id = R.drawable.ic_chevron_up),
@@ -555,7 +561,12 @@ private fun SwipeButtonColumn(
             }
         }
         Spacer(modifier = Modifier.height(LocalSpacing.current.small))
-        SwipeDragButton(isAnswer = isAnswer, anyCommitted = anyCommitted, onCommit = onCommit)
+        SwipeDragButton(
+            isAnswer = isAnswer,
+            anyCommitted = anyCommitted,
+            onCommit = onCommit,
+            onDraggingChange = { dragging = it }
+        )
         Spacer(modifier = Modifier.height(PhoneDimens.answerLabelGap))
         Text(
             text = stringResource(
@@ -571,7 +582,8 @@ private fun SwipeButtonColumn(
 private fun SwipeDragButton(
     isAnswer: Boolean,
     anyCommitted: Boolean,
-    onCommit: () -> Unit
+    onCommit: () -> Unit,
+    onDraggingChange: (Boolean) -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
     val option = LocalAppSettings.current.animationOption
@@ -583,6 +595,7 @@ private fun SwipeDragButton(
     val fade = remember { Animatable(1f) }
     var gone by remember { mutableStateOf(false) }
     var thresholdFired by remember { mutableStateOf(false) }
+    var springJob by remember { mutableStateOf<Job?>(null) }
     var lastSegmentTime by remember { mutableStateOf(0L) }
     var lastSegmentSpeedPx by remember { mutableStateOf(0f) }
     val commitPx = with(density) { PhoneDimens.swipeCommitDistance.toPx() }
@@ -634,12 +647,15 @@ private fun SwipeDragButton(
             .pointerInput(option) {
                 detectDragGestures(
                     onDragStart = {
+                        springJob?.cancel()
+                        onDraggingChange(true)
                         thresholdFired = false
                         lastSegmentSpeedPx = 0f
                         lastSegmentTime = 0L
                     },
                     onDragEnd = {
-                        scope.launch {
+                        onDraggingChange(false)
+                        springJob = scope.launch {
                             val speedDp = with(density) { lastSegmentSpeedPx.toDp().value }
                             val distance = dragOffset.getDistance()
                             if (distance >= commitPx || speedDp > 1200f) {
@@ -662,7 +678,8 @@ private fun SwipeDragButton(
                         }
                     },
                     onDragCancel = {
-                        scope.launch {
+                        onDraggingChange(false)
+                        springJob = scope.launch {
                             val from = dragOffset
                             Animatable(1f).animateTo(0f, backSpecFloat(option)) {
                                 dragOffset = from * value
@@ -720,6 +737,11 @@ private fun LiquidAnswerControls(
     val density = LocalDensity.current
     val knob = PhoneDimens.liquidKnobSize
     val half = with(density) { ((widthPx - knob.toPx()) / 2f).coerceAtLeast(1f) }
+    // Commit target: the track end minus a small padding, so the
+    // stretched knob never leaves the pill.
+    val travel = with(density) {
+        (half - PhoneDimens.liquidKnobEndPadding.toPx()).coerceAtLeast(1f)
+    }
     val idleTransition = rememberInfiniteTransition(label = "liquidIdle")
     val breathe by idleTransition.animateFloat(
         initialValue = 1f,
@@ -752,8 +774,9 @@ private fun LiquidAnswerControls(
                     Modifier.background(InCallControlBackgroundFlat, CircleShape)
                 }
             )
+            .clip(CircleShape)
             .drawBehind {
-                val p = (x.value / half).coerceIn(-1f, 1f)
+                val p = (x.value / travel).coerceIn(-1f, 1f)
                 val tint = if (p > 0) {
                     lerp(Color.Transparent, CallAnswerGreen, p)
                 } else {
@@ -773,11 +796,9 @@ private fun LiquidAnswerControls(
                 .align(Alignment.CenterStart)
                 .padding(start = spacing.medium)
                 .graphicsLayer {
-                    val p = (x.value / half).coerceIn(-1f, 1f)
-                    alpha = max(
-                        if (option == AnimationOption.ON) hintPulse else 0.6f,
-                        if (p < 0) -p else 0f
-                    )
+                    val p = (x.value / travel).coerceIn(-1f, 1f)
+                    val base = if (option == AnimationOption.ON) hintPulse else 0.6f
+                    alpha = if (p >= 0f) base * (1f - p) else max(base, -p)
                 }
         )
         Text(
@@ -790,11 +811,9 @@ private fun LiquidAnswerControls(
                 .align(Alignment.CenterEnd)
                 .padding(end = spacing.medium)
                 .graphicsLayer {
-                    val p = (x.value / half).coerceIn(-1f, 1f)
-                    alpha = max(
-                        if (option == AnimationOption.ON) hintPulse else 0.6f,
-                        if (p > 0) p else 0f
-                    )
+                    val p = (x.value / travel).coerceIn(-1f, 1f)
+                    val base = if (option == AnimationOption.ON) hintPulse else 0.6f
+                    alpha = if (p <= 0f) base * (1f + p) else max(base, p)
                 }
         )
         // Glass knob in the middle: drag right to answer, left to decline.
@@ -803,26 +822,26 @@ private fun LiquidAnswerControls(
                 .align(Alignment.Center)
                 .offset { IntOffset(x.value.roundToInt(), 0) }
                 .graphicsLayer {
-                    val p = (x.value / half).coerceIn(-1f, 1f)
+                    val p = (x.value / travel).coerceIn(-1f, 1f)
                     val idleScale = if (option == AnimationOption.ON && x.value == 0f) breathe else 1f
-                    scaleX = idleScale * (1f + 0.25f * abs(p))
+                    scaleX = idleScale * (1f + 0.10f * abs(p))
                     scaleY = idleScale * (1f - 0.08f * abs(p))
                 }
                 .size(knob)
                 .clip(CircleShape)
                 .background(Color.White)
-                .pointerInput(half, option) {
+                .pointerInput(travel, option) {
                     detectHorizontalDragGestures(
                         onDragEnd = {
                             scope.launch {
-                                val current = x.value / half
+                                val current = x.value / travel
                                 when {
                                     current >= 0.7f -> {
-                                        x.animateTo(half, tween(100))
+                                        x.animateTo(travel, tween(100))
                                         onAnswer()
                                     }
                                     current <= -0.7f -> {
-                                        x.animateTo(-half, tween(100))
+                                        x.animateTo(-travel, tween(100))
                                         onDecline()
                                     }
                                     else -> x.animateTo(0f, backSpecFloat(option, 0.55f, 380f))
@@ -834,7 +853,7 @@ private fun LiquidAnswerControls(
                         }
                     ) { change, dragAmount ->
                         change.consume()
-                        scope.launch { x.snapTo((x.value + dragAmount).coerceIn(-half, half)) }
+                        scope.launch { x.snapTo((x.value + dragAmount).coerceIn(-travel, travel)) }
                     }
                 },
             contentAlignment = Alignment.Center

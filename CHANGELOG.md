@@ -164,6 +164,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.36] - 2026-10-25
+
+- Answer style page rebuilt: tiles now render the real controls in a fixed 360x220 design frame scaled to the tile (no more empty or cropped previews), with the style name and animated selection ring. Try-it shows a sample caller (avatar, name, number) and a green/red Answered/Declined chip for 1200 ms, then resets the controls to idle so you can try again.
+- Liquid: knob stretch clamped to 1.1x, knob clipped to the track, commit lands at the track end minus padding, and the opposite hint fades out as its side tints (no Decline label over a green track).
+- Swipe buttons: chevron hints hide while dragging, and a new drag cancels the previous spring-back so the button returns or flies away cleanly.
+
 ## [0.11.35] - 2026-10-25
 
 - Empty-keypad quick dial: when the input is empty, the keypad shows chips for the last 3 distinct recent numbers (name when known, else the number). One tap redials through the normal SIM-aware call path. Nothing shows when call-log permission is missing.
