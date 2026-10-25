@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.35] - 2026-10-25
+
+- Empty-keypad quick dial: when the input is empty, the keypad shows chips for the last 3 distinct recent numbers (name when known, else the number). One tap redials through the normal SIM-aware call path. Nothing shows when call-log permission is missing.
+
 ## [0.11.34] - 2026-10-25
 
 - Open from other apps: tapping a phone number and choosing this app now fills the keypad with the number (cold start and already-running, via onCreate + onNewIntent reading the tel: intent, %2B/%23 decoded, +, * and # kept). No auto-call — you press the call button. A bare dial action just opens an empty keypad.

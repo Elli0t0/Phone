@@ -119,7 +119,8 @@ fun DialpadScreen(
     val viewModel: DialpadViewModel = viewModel(
         factory = DialpadViewModel.provideFactory(
             repository = repository,
-            savedStateHandle = androidx.lifecycle.SavedStateHandle()
+            savedStateHandle = androidx.lifecycle.SavedStateHandle(),
+            callLogRepository = app.container.callLogRepository
         )
     )
 
@@ -365,6 +366,17 @@ fun DialpadScreen(
                     },
                     modifier = Modifier.fillMaxWidth(),
                     contactCounts = uiState.matchingContactCounts
+                )
+            } else if (uiState.rawNumber.isEmpty() && uiState.quickRedial.isNotEmpty()) {
+                // Empty keypad: one-tap redial for the last 3 recent
+                // numbers, sitting above the keypad.
+                QuickRedialChips(
+                    entries = uiState.quickRedial,
+                    onRedial = { entry ->
+                        lightHaptic()
+                        dialNumber(entry.number)
+                    },
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
             }

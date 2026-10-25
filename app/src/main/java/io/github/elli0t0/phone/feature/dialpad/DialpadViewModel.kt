@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
+import io.github.elli0t0.phone.data.calllog.CallLogRepository
 import io.github.elli0t0.phone.data.contacts.ContactsRepository
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 import kotlinx.coroutines.FlowPreview
@@ -22,7 +23,8 @@ import kotlinx.coroutines.launch
 class DialpadViewModel(
     private val contactsRepository: ContactsRepository,
     private val savedStateHandle: SavedStateHandle,
-    coroutineScope: kotlinx.coroutines.CoroutineScope? = null
+    coroutineScope: kotlinx.coroutines.CoroutineScope? = null,
+    private val callLogRepository: CallLogRepository? = null
 ) : ViewModel() {
 
     private val KEY_RAW_NUMBER = "dialpad_raw_number"
@@ -53,6 +55,30 @@ class DialpadViewModel(
             contactsRepository.getContactsFlow().collectLatest { contacts ->
                 allContactsCache = contacts
                 updateMatchingContacts(_rawNumber.value)
+            }
+        }
+
+        // Quick redial: the last 3 distinct recent numbers, newest
+        // first, for the empty-keypad chips. Empty when the call-log
+        // permission is missing (the repository emits an empty list).
+        if (callLogRepository != null) {
+            activeScope?.launch {
+                callLogRepository.getCallLogsFlow().collectLatest { entries ->
+                    val seen = mutableSetOf<String>()
+                    val recent = entries
+                        .filter { it.number.isNotBlank() }
+                        .filter { seen.add(PhoneNumberMatcher.normalize(it.number)) }
+                        .take(3)
+                        .map { entry ->
+                            QuickRedialEntry(
+                                number = entry.number,
+                                label = entry.contactName?.takeIf { it.isNotBlank() }
+                                    ?: entry.cachedName?.takeIf { it.isNotBlank() }
+                                    ?: entry.formattedNumber
+                            )
+                        }
+                    _uiState.value = _uiState.value.copy(quickRedial = recent)
+                }
             }
         }
 
@@ -197,11 +223,12 @@ class DialpadViewModel(
     companion object {
         fun provideFactory(
             repository: ContactsRepository,
-            savedStateHandle: SavedStateHandle
+            savedStateHandle: SavedStateHandle,
+            callLogRepository: CallLogRepository? = null
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return DialpadViewModel(repository, savedStateHandle) as T
+                return DialpadViewModel(repository, savedStateHandle, null, callLogRepository) as T
             }
         }
     }

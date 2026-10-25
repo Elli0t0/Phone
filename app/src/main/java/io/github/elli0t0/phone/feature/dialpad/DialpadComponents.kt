@@ -530,3 +530,71 @@ fun DialpadSearchRow(
         }
     }
 }
+
+/**
+ * Empty-keypad quick redial: up to 3 chips with the last recent
+ * numbers (name when known, else the formatted number). One tap
+ * redials through the keypad's normal SIM-aware dial path.
+ */
+@Composable
+fun QuickRedialChips(
+    entries: List<QuickRedialEntry>,
+    onRedial: (QuickRedialEntry) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        entries.forEachIndexed { index, entry ->
+            val chipModifier = Modifier.weight(1f).testTag("dialpad_quick_redial_$index")
+            if (LocalAppSettings.current.glassDialpad) {
+                val source = remember { MutableInteractionSource() }
+                LiquidGlassPill(
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = chipModifier
+                        .clip(LiquidGlassPillShape)
+                        .bouncyClick(source)
+                        .clickable(
+                            interactionSource = source,
+                            indication = ripple()
+                        ) { onRedial(entry) }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_phone),
+                            contentDescription = null
+                        )
+                        Spacer(modifier = Modifier.size(4.dp))
+                        Text(
+                            text = entry.label,
+                            style = MaterialTheme.typography.labelLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            } else {
+                FilledTonalButton(
+                    onClick = { onRedial(entry) },
+                    modifier = chipModifier
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_phone),
+                        contentDescription = null
+                    )
+                    Spacer(modifier = Modifier.size(4.dp))
+                    Text(
+                        text = entry.label,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+    }
+}

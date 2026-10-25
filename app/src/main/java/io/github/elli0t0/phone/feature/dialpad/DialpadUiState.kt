@@ -10,5 +10,12 @@ data class DialpadUiState(
     val nameSearchQuery: String = "",
     val nameSearchResults: List<ContactSummary> = emptyList(),
     val isSearching: Boolean = false,
-    val canCall: Boolean = false
+    val canCall: Boolean = false,
+    val quickRedial: List<QuickRedialEntry> = emptyList()
+)
+
+/** One recent number for the empty-keypad quick-dial chips. */
+data class QuickRedialEntry(
+    val number: String,
+    val label: String
 )
