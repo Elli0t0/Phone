@@ -262,16 +262,16 @@ fun CallBackgroundScreen(
             LocalConfiguration.current.screenHeightDp.dp * 0.6f,
             PhoneDimens.studioPreviewMaxHeight
         )
-        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            InnerTopBar(
+        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                InnerTopBar(
                 onBack = onNavigateBack,
                 title = stringResource(id = R.string.settings_call_background),
                 backTestTag = "btn_call_background_back"
             )
-            Box(modifier = Modifier.weight(1f)) {
                 LazyColumn(
                     state = listState,
-                    modifier = Modifier.fillMaxSize().testTag("call_background_list"),
+                    modifier = Modifier.weight(1f).testTag("call_background_list"),
                 contentPadding = PaddingValues(
                     start = spacing.screenHorizontalPadding,
                     end = spacing.screenHorizontalPadding,
@@ -465,6 +465,7 @@ fun CallBackgroundScreen(
                     )
                 }
             }
+            }
             // Floating Preview pill, shown when the preview scrolled
             // off-screen: a small live thumbnail + label. Tap scrolls
             // back to the preview.
@@ -509,7 +510,6 @@ fun CallBackgroundScreen(
                         modifier = Modifier.padding(start = spacing.small)
                     )
                 }
-            }
             }
         }
     }
