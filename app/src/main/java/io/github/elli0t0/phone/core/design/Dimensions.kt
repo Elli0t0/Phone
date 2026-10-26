@@ -56,6 +56,12 @@ object PhoneDimens {
     val keypadDigitSize = 40.sp
     val keypadLetterSize = 11.sp
     val keypadTouchSize = 64.dp
+    // Keypad no-match chips: vertical (icon on top, label below),
+    // two lines max, sized to fit at font scale 1.3 on 360 dp.
+    val noMatchChipHeight = 64.dp
+    val noMatchChipIconSize = 20.dp
+    val noMatchChipLabelSize = 12.sp
+    val noMatchChipLabelLineHeight = 14.sp
     val keypadNumberDisplaySize = 40.sp
     val keypadNumberDisplayMinSize = 20.sp
     val keypadNumberDisplayShrinkFactor = 0.92f
@@ -209,6 +215,7 @@ object PhoneDimens {
     // Contact edit: floating Cancel/Save pill and the form's bottom
     // padding beneath it (pill height + 24 dp).
     val editSavePillHeight = 60.dp
+    val editSavePillButtonHeight = 48.dp
     val editSavePillWidthFraction = 0.75f
     val editFormBottomPadding = 84.dp
     val detailPhotoBadgeSize = 36.dp

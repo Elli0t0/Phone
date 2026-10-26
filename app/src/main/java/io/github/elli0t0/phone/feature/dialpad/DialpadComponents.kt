@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
@@ -45,6 +46,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
@@ -335,8 +337,9 @@ private fun matchedNumberText(number: String, dialed: String): AnnotatedString {
 /**
  * Actions for a dialed number that matches no contact: create a new
  * contact prefilled with the number, add it to an existing contact,
- * or message the number. Three chips on a single line; labels
- * ellipsize instead of wrapping.
+ * or message the number. Three equal-width vertical chips (icon on
+ * top, label below, up to two lines) so no label truncates at font
+ * scale 1.3 on 360 dp or in Persian.
  */
 @Composable
 fun DialpadNoMatchActions(
@@ -356,17 +359,20 @@ fun DialpadNoMatchActions(
         )
         Spacer(modifier = Modifier.height(12.dp))
         if (LocalAppSettings.current.glassDialpad) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 NoMatchGlassChip(
                     iconRes = R.drawable.ic_add,
-                    labelRes = R.string.dialpad_create_contact,
+                    labelRes = R.string.dialpad_new_contact,
                     chipTestTag = "dialpad_no_match_create",
                     onClick = onCreateContact,
                     modifier = Modifier.weight(1f)
                 )
                 NoMatchGlassChip(
                     iconRes = R.drawable.ic_person,
-                    labelRes = R.string.add_to_existing_contact,
+                    labelRes = R.string.dialpad_add_to_contact,
                     chipTestTag = "dialpad_no_match_add",
                     onClick = onAddToContact,
                     modifier = Modifier.weight(1f)
@@ -380,50 +386,47 @@ fun DialpadNoMatchActions(
                 )
             }
         } else {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 FilledTonalButton(
                     onClick = onCreateContact,
-                    modifier = Modifier.weight(1f).testTag("dialpad_no_match_create")
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(PhoneDimens.noMatchChipHeight)
+                        .testTag("dialpad_no_match_create"),
+                    contentPadding = PaddingValues(0.dp)
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_add),
-                        contentDescription = null
-                    )
-                    Spacer(modifier = Modifier.size(4.dp))
-                    Text(
-                        text = stringResource(id = R.string.dialpad_create_contact),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                    NoMatchChipContent(
+                        iconRes = R.drawable.ic_add,
+                        labelRes = R.string.dialpad_new_contact
                     )
                 }
                 FilledTonalButton(
                     onClick = onAddToContact,
-                    modifier = Modifier.weight(1f).testTag("dialpad_no_match_add")
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(PhoneDimens.noMatchChipHeight)
+                        .testTag("dialpad_no_match_add"),
+                    contentPadding = PaddingValues(0.dp)
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_person),
-                        contentDescription = null
-                    )
-                    Spacer(modifier = Modifier.size(4.dp))
-                    Text(
-                        text = stringResource(id = R.string.add_to_existing_contact),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                    NoMatchChipContent(
+                        iconRes = R.drawable.ic_person,
+                        labelRes = R.string.dialpad_add_to_contact
                     )
                 }
                 FilledTonalButton(
                     onClick = onMessage,
-                    modifier = Modifier.weight(1f).testTag("dialpad_no_match_message")
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(PhoneDimens.noMatchChipHeight)
+                        .testTag("dialpad_no_match_message"),
+                    contentPadding = PaddingValues(0.dp)
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_message),
-                        contentDescription = null
-                    )
-                    Spacer(modifier = Modifier.size(4.dp))
-                    Text(
-                        text = stringResource(id = R.string.dialpad_message),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                    NoMatchChipContent(
+                        iconRes = R.drawable.ic_message,
+                        labelRes = R.string.dialpad_message
                     )
                 }
             }
@@ -443,6 +446,7 @@ private fun NoMatchGlassChip(
     LiquidGlassPill(
         tint = MaterialTheme.colorScheme.primary,
         modifier = modifier
+            .height(PhoneDimens.noMatchChipHeight)
             .clip(LiquidGlassPillShape)
             .bouncyClick(source)
             .clickable(
@@ -451,23 +455,41 @@ private fun NoMatchGlassChip(
             ) { onClick() }
             .testTag(chipTestTag)
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                painter = painterResource(id = iconRes),
-                contentDescription = null
-            )
-            Spacer(modifier = Modifier.size(4.dp))
-            Text(
-                text = stringResource(id = labelRes),
-                style = MaterialTheme.typography.labelLarge,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
+        NoMatchChipContent(iconRes = iconRes, labelRes = labelRes)
+    }
+}
+
+/**
+ * Vertical no-match chip content: icon on top, label below, up to
+ * two lines. Icon 20 dp + 4 dp gap + two 12 sp / 14 sp lines is
+ * 60.4 dp at font scale 1.3, inside the 64 dp chip.
+ */
+@Composable
+private fun NoMatchChipContent(
+    iconRes: Int,
+    labelRes: Int,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            painter = painterResource(id = iconRes),
+            contentDescription = null,
+            modifier = Modifier.size(PhoneDimens.noMatchChipIconSize)
+        )
+        Spacer(modifier = Modifier.size(4.dp))
+        Text(
+            text = stringResource(id = labelRes),
+            style = MaterialTheme.typography.labelMedium,
+            fontSize = PhoneDimens.noMatchChipLabelSize,
+            lineHeight = PhoneDimens.noMatchChipLabelLineHeight,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 @Composable

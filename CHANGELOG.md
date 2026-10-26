@@ -164,6 +164,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.39] - 2026-10-26
+
+- Keypad no-match actions are now three equal-width vertical chips (icon on top, label below, up to two lines, 64 dp high): New contact, Add to contact, Message. Nothing truncates at font scale 1.3 on 360 dp or in Persian.
+- Edit/new contact pill: Save is now a filled accent pill with onPrimary text, Cancel stays a plain text button; both 48 dp high and a third of the pill wide. Save still shows its inline progress while saving, and the pill still sits above the keyboard.
+
 ## [0.11.38] - 2026-10-25
 
 - One shared inner top row (status inset + 8dp, 48dp high, back arrow + title) replaces the detail overlay bar and the 64dp app bars on: contact details (back row above the card, name appears in the row once the header card scrolls away), History, Answer style, Call background, Blocked numbers, Duplicates, and Setup (title only, no back). The History gap is gone: Scaffold was adding the full status inset on top of its own row.

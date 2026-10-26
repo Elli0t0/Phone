@@ -32,6 +32,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -473,8 +474,10 @@ fun ContactEditScreen(
 
         // Floating Cancel / Save pill: glass, ~75% width, above the
         // IME and the navigation bar, with the standard press
-        // animation. Save shows an inline progress indicator while
-        // the contact is being written.
+        // animation. Cancel is a plain text button, Save a filled
+        // accent pill; both 48 dp high and a third of the pill wide.
+        // Save shows an inline progress indicator while the contact
+        // is being written.
         val cancelSource = remember { MutableInteractionSource() }
         val saveSource = remember { MutableInteractionSource() }
         Row(
@@ -494,6 +497,7 @@ fun ContactEditScreen(
                 interactionSource = cancelSource,
                 modifier = Modifier
                     .weight(1f)
+                    .height(PhoneDimens.editSavePillButtonHeight)
                     .pressScale(cancelSource)
                     .testTag("btn_edit_cancel")
             ) {
@@ -506,17 +510,21 @@ fun ContactEditScreen(
                 if (uiState.isLoading) {
                     CircularProgressIndicator(modifier = Modifier.size(PhoneDimens.editLoadingSize))
                 } else {
-                    TextButton(
+                    Button(
                         onClick = onSaveClick,
                         interactionSource = saveSource,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        shape = RoundedCornerShape(50),
                         modifier = Modifier
+                            .fillMaxWidth()
+                            .height(PhoneDimens.editSavePillButtonHeight)
                             .pressScale(saveSource)
                             .testTag("btn_edit_save")
                     ) {
-                        Text(
-                            text = stringResource(id = R.string.action_save),
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        Text(text = stringResource(id = R.string.action_save))
                     }
                 }
             }

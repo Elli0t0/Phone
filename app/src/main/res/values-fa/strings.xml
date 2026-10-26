@@ -37,6 +37,9 @@
     <string name="dialpad_more_matches">%1$d مورد دیگر…</string>
     <string name="dialpad_contacts_count">%1$d مخاطب</string>
     <string name="dialpad_show_less">نمایش کمتر</string>
+    <string name="dialpad_new_contact">مخاطب جدید</string>
+    <string name="dialpad_add_to_contact">افزودن به مخاطب</string>
+    <string name="dialpad_message">پیام</string>
     <string name="settings_debug_log">گزارش اشکال‌زدایی</string>
     <string name="add_to_existing_contact">افزودن به مخاطب موجود</string>
     <string name="history_day_today">امروز</string>
