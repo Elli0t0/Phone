@@ -51,7 +51,7 @@ class AndroidContactsRepository(
     private val contactsFlow: StateFlow<List<ContactSummary>> = callbackFlow {
         val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
             override fun onChange(selfChange: Boolean, uri: Uri?) {
-                trySend(queryContactsSummaries())
+                trySend(queryContactsSummaries(contentResolver))
             }
         }
 
@@ -66,7 +66,7 @@ class AndroidContactsRepository(
         }
 
         // Initial emission
-        trySend(queryContactsSummaries())
+        trySend(queryContactsSummaries(contentResolver))
 
         awaitClose {
             try {
@@ -81,7 +81,7 @@ class AndroidContactsRepository(
     override fun getContactDetail(lookupKey: String, contactId: Long): Flow<ContactDetail?> = callbackFlow {
         val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
             override fun onChange(selfChange: Boolean, uri: Uri?) {
-                trySend(queryContactDetail(contactId))
+                trySend(queryContactDetail(contentResolver, contactId))
             }
         }
 
@@ -90,7 +90,7 @@ class AndroidContactsRepository(
             contentResolver.registerContentObserver(contactUri, true, observer)
         } catch (_: SecurityException) {}
 
-        trySend(queryContactDetail(contactId))
+        trySend(queryContactDetail(contentResolver, contactId))
 
         awaitClose {
             try {
@@ -98,211 +98,6 @@ class AndroidContactsRepository(
             } catch (_: Exception) {}
         }
     }.flowOn(Dispatchers.IO)
-
-    private fun queryContactsSummaries(): List<ContactSummary> {
-        return try {
-            val primaryPhones = queryPrimaryPhones()
-            val list = mutableListOf<ContactSummary>()
-
-            val projection = arrayOf(
-                Contacts._ID,
-                Contacts.LOOKUP_KEY,
-                Contacts.DISPLAY_NAME_PRIMARY,
-                Contacts.PHOTO_URI
-            )
-
-            val cursor: Cursor? = contentResolver.query(
-                Contacts.CONTENT_URI,
-                projection,
-                null,
-                null,
-                "${Contacts.DISPLAY_NAME_PRIMARY} COLLATE LOCALIZED ASC"
-            )
-
-            cursor?.use {
-                val idIdx = it.getColumnIndex(Contacts._ID)
-                val lookupIdx = it.getColumnIndex(Contacts.LOOKUP_KEY)
-                val nameIdx = it.getColumnIndex(Contacts.DISPLAY_NAME_PRIMARY)
-                val photoIdx = it.getColumnIndex(Contacts.PHOTO_URI)
-
-                while (it.moveToNext()) {
-                    val id = it.getLong(idIdx)
-                    val lookupKey = it.getString(lookupIdx) ?: ""
-                    val rawName = it.getString(nameIdx)
-                    val photoUri = it.getString(photoIdx)
-                    val phonePreview = primaryPhones[id]
-
-                    val displayName = rawName?.takeIf { n -> n.isNotBlank() }
-                        ?: phonePreview
-                        ?: ""
-
-                    list.add(
-                        ContactSummary(
-                            id = id,
-                            lookupKey = lookupKey,
-                            displayName = displayName,
-                            photoUri = photoUri,
-                            primaryNumberPreview = phonePreview
-                        )
-                    )
-                }
-            }
-            list
-        } catch (_: SecurityException) {
-            emptyList()
-        } catch (_: Exception) {
-            emptyList()
-        }
-    }
-
-    private fun queryPrimaryPhones(): Map<Long, String> {
-        val map = mutableMapOf<Long, String>()
-        val projection = arrayOf(
-            Phone.CONTACT_ID,
-            Phone.NUMBER,
-            Phone.IS_PRIMARY
-        )
-
-        val cursor = contentResolver.query(
-            Phone.CONTENT_URI,
-            projection,
-            null,
-            null,
-            "${Phone.IS_PRIMARY} DESC"
-        )
-
-        cursor?.use {
-            val contactIdIdx = it.getColumnIndex(Phone.CONTACT_ID)
-            val numberIdx = it.getColumnIndex(Phone.NUMBER)
-
-            while (it.moveToNext()) {
-                val contactId = it.getLong(contactIdIdx)
-                val number = it.getString(numberIdx) ?: ""
-                if (!map.containsKey(contactId) && number.isNotBlank()) {
-                    map[contactId] = number
-                }
-            }
-        }
-        return map
-    }
-
-    private fun queryContactDetail(contactId: Long): ContactDetail? {
-        return try {
-            var displayName = ""
-            var lookupKey = ""
-            var photoUri: String? = null
-            var organization: String? = null
-            var customRingtone: String? = null
-            val phones = mutableListOf<ContactPhone>()
-            val emails = mutableListOf<ContactEmail>()
-
-            val projection = arrayOf(
-                Data._ID,
-                Data.MIMETYPE,
-                Data.LOOKUP_KEY,
-                StructuredName.DISPLAY_NAME,
-                Phone.NUMBER,
-                Phone.TYPE,
-                Phone.LABEL,
-                Email.ADDRESS,
-                Email.TYPE,
-                Email.LABEL,
-                Organization.COMPANY
-            )
-
-            val cursor = contentResolver.query(
-                Data.CONTENT_URI,
-                projection,
-                "${Data.CONTACT_ID} = ?",
-                arrayOf(contactId.toString()),
-                null
-            )
-
-            cursor?.use {
-                val dataIdIdx = it.getColumnIndex(Data._ID)
-                val mimeIdx = it.getColumnIndex(Data.MIMETYPE)
-                val lookupIdx = it.getColumnIndex(Data.LOOKUP_KEY)
-                val nameIdx = it.getColumnIndex(StructuredName.DISPLAY_NAME)
-                val phoneNumIdx = it.getColumnIndex(Phone.NUMBER)
-                val phoneTypeIdx = it.getColumnIndex(Phone.TYPE)
-                val phoneLabelIdx = it.getColumnIndex(Phone.LABEL)
-                val emailAddrIdx = it.getColumnIndex(Email.ADDRESS)
-                val emailTypeIdx = it.getColumnIndex(Email.TYPE)
-                val emailLabelIdx = it.getColumnIndex(Email.LABEL)
-                val companyIdx = it.getColumnIndex(Organization.COMPANY)
-
-                while (it.moveToNext()) {
-                    val dataId = it.getLong(dataIdIdx)
-                    val mime = it.getString(mimeIdx) ?: ""
-                    if (lookupKey.isEmpty()) {
-                        lookupKey = it.getString(lookupIdx) ?: ""
-                    }
-
-                    when (mime) {
-                        StructuredName.CONTENT_ITEM_TYPE -> {
-                            val name = it.getString(nameIdx)
-                            if (!name.isNullOrBlank()) displayName = name
-                        }
-                        Phone.CONTENT_ITEM_TYPE -> {
-                            val number = it.getString(phoneNumIdx) ?: ""
-                            val type = it.getInt(phoneTypeIdx)
-                            val label = it.getString(phoneLabelIdx)
-                            if (number.isNotBlank()) {
-                                phones.add(ContactPhone(id = dataId, number = number, type = type, label = label))
-                            }
-                        }
-                        Email.CONTENT_ITEM_TYPE -> {
-                            val address = it.getString(emailAddrIdx) ?: ""
-                            val type = it.getInt(emailTypeIdx)
-                            val label = it.getString(emailLabelIdx)
-                            if (address.isNotBlank()) {
-                                emails.add(ContactEmail(id = dataId, address = address, type = type, label = label))
-                            }
-                        }
-                        Organization.CONTENT_ITEM_TYPE -> {
-                            val company = it.getString(companyIdx)
-                            if (!company.isNullOrBlank()) organization = company
-                        }
-                    }
-                }
-            }
-
-            // Also retrieve photo URI from Contacts table
-            val contactCursor = contentResolver.query(
-                ContentUris.withAppendedId(Contacts.CONTENT_URI, contactId),
-                arrayOf(Contacts.PHOTO_URI, Contacts.DISPLAY_NAME_PRIMARY, Contacts.CUSTOM_RINGTONE),
-                null,
-                null,
-                null
-            )
-            contactCursor?.use {
-                if (it.moveToFirst()) {
-                    photoUri = it.getString(it.getColumnIndexOrThrow(Contacts.PHOTO_URI))
-                    val primaryName = it.getString(it.getColumnIndexOrThrow(Contacts.DISPLAY_NAME_PRIMARY))
-                    if (displayName.isBlank() && !primaryName.isNullOrBlank()) {
-                        displayName = primaryName
-                    }
-                    val ringtoneIdx = it.getColumnIndex(Contacts.CUSTOM_RINGTONE)
-                    if (ringtoneIdx >= 0) {
-                        customRingtone = it.getString(ringtoneIdx)
-                    }
-                }
-            }
-
-            ContactDetail(
-                id = contactId,
-                lookupKey = lookupKey,
-                displayName = displayName.ifBlank { phones.firstOrNull()?.number ?: "" },
-                photoUri = photoUri,
-                phones = phones,
-                emails = emails,
-                organization = organization,
-                customRingtone = customRingtone
-            )
-        } catch (_: Exception) {
-            null
-        }
-    }
 
     override suspend fun createContact(input: ContactInput): Result<Long> = withContext(Dispatchers.IO) {
         runCatching {
@@ -373,7 +168,7 @@ class AndroidContactsRepository(
             val rawContactId = ContentUris.parseId(rawContactUri)
 
             // Find aggregated Contact ID from raw contact ID
-            queryContactIdFromRawContact(rawContactId) ?: rawContactId
+            queryContactIdFromRawContact(contentResolver, rawContactId) ?: rawContactId
         }
     }
 
@@ -383,13 +178,13 @@ class AndroidContactsRepository(
         updated: ContactInput
     ): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
-            val rawContactId = findWritableRawContactId(contactId)
+            val rawContactId = findWritableRawContactId(contentResolver, contactId)
                 ?: error("No writable raw contact found for contact $contactId")
 
             val ops = ArrayList<ContentProviderOperation>()
 
             // 1. StructuredName update/insert
-            val existingNameRowId = findDataRowId(contactId, StructuredName.CONTENT_ITEM_TYPE)
+            val existingNameRowId = findDataRowId(contentResolver, contactId, StructuredName.CONTENT_ITEM_TYPE)
             val cleanNewName = updated.displayName.trim()
             if (existingNameRowId != null) {
                 if (cleanNewName != original.displayName.trim()) {
@@ -489,7 +284,7 @@ class AndroidContactsRepository(
             }
 
             // 4. Organization update
-            val existingOrgRowId = findDataRowId(contactId, Organization.CONTENT_ITEM_TYPE)
+            val existingOrgRowId = findDataRowId(contentResolver, contactId, Organization.CONTENT_ITEM_TYPE)
             val cleanOrg = updated.organization?.trim().orEmpty()
             val originalOrg = original.organization?.trim().orEmpty()
 
@@ -650,7 +445,7 @@ class AndroidContactsRepository(
             if (memberIds.isEmpty()) {
                 return@withContext emptyList()
             }
-            val primaryPhones = queryPrimaryPhones()
+            val primaryPhones = queryPrimaryPhones(contentResolver)
             val summaries = mutableListOf<ContactSummary>()
             val selection = "${Contacts._ID} IN (${memberIds.joinToString(",") { "?" }})"
             contentResolver.query(
@@ -730,14 +525,14 @@ class AndroidContactsRepository(
             // try/catch, not runCatching: updateContact/deleteContact are suspend
             // functions and cannot be called inside runCatching's non-suspend block.
             try {
-                val keptDetail = queryContactDetail(keepContactId)
+                val keptDetail = queryContactDetail(contentResolver, keepContactId)
                     ?: error("Kept contact not found")
                 val mergedPhones = keptDetail.phones.toMutableList()
                 val mergedEmails = keptDetail.emails.toMutableList()
                 val targets = mergeContactIds.filter { it != keepContactId }.distinct()
 
                 for (targetId in targets) {
-                    val detail = queryContactDetail(targetId) ?: continue
+                    val detail = queryContactDetail(contentResolver, targetId) ?: continue
                     for (phone in detail.phones) {
                         if (mergedPhones.none { PhoneNumberMatcher.matches(it.number, phone.number) }) {
                             mergedPhones.add(
@@ -767,7 +562,7 @@ class AndroidContactsRepository(
                 ).getOrThrow()
 
                 for (targetId in targets) {
-                    val detail = queryContactDetail(targetId) ?: continue
+                    val detail = queryContactDetail(contentResolver, targetId) ?: continue
                     deleteContact(targetId, detail.lookupKey).getOrThrow()
                 }
                 Result.success(Unit)
@@ -778,7 +573,7 @@ class AndroidContactsRepository(
 
     override suspend fun saveContactPhoto(contactId: Long, photoBytes: ByteArray): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
-            val existingPhotoRowId = findDataRowId(contactId, Photo.CONTENT_ITEM_TYPE)
+            val existingPhotoRowId = findDataRowId(contentResolver, contactId, Photo.CONTENT_ITEM_TYPE)
             if (existingPhotoRowId != null) {
                 val values = ContentValues().apply {
                     put(Photo.PHOTO, photoBytes)
@@ -790,7 +585,7 @@ class AndroidContactsRepository(
                     arrayOf(existingPhotoRowId.toString())
                 )
             } else {
-                val rawContactId = findWritableRawContactId(contactId)
+                val rawContactId = findWritableRawContactId(contentResolver, contactId)
                     ?: error("No writable raw contact found for contact $contactId")
                 val values = ContentValues().apply {
                     put(Data.RAW_CONTACT_ID, rawContactId)
@@ -829,52 +624,4 @@ class AndroidContactsRepository(
         }
     }
 
-
-    private fun findWritableRawContactId(contactId: Long): Long? {
-        val cursor = contentResolver.query(
-            RawContacts.CONTENT_URI,
-            arrayOf(RawContacts._ID, RawContacts.ACCOUNT_TYPE),
-            "${RawContacts.CONTACT_ID} = ? AND ${RawContacts.DELETED} = 0",
-            arrayOf(contactId.toString()),
-            null
-        )
-        cursor?.use {
-            if (it.moveToFirst()) {
-                return it.getLong(it.getColumnIndexOrThrow(RawContacts._ID))
-            }
-        }
-        return null
-    }
-
-    private fun findDataRowId(contactId: Long, mimeType: String): Long? {
-        val cursor = contentResolver.query(
-            Data.CONTENT_URI,
-            arrayOf(Data._ID),
-            "${Data.CONTACT_ID} = ? AND ${Data.MIMETYPE} = ?",
-            arrayOf(contactId.toString(), mimeType),
-            null
-        )
-        cursor?.use {
-            if (it.moveToFirst()) {
-                return it.getLong(it.getColumnIndexOrThrow(Data._ID))
-            }
-        }
-        return null
-    }
-
-    private fun queryContactIdFromRawContact(rawContactId: Long): Long? {
-        val cursor = contentResolver.query(
-            RawContacts.CONTENT_URI,
-            arrayOf(RawContacts.CONTACT_ID),
-            "${RawContacts._ID} = ?",
-            arrayOf(rawContactId.toString()),
-            null
-        )
-        cursor?.use {
-            if (it.moveToFirst()) {
-                return it.getLong(it.getColumnIndexOrThrow(RawContacts.CONTACT_ID))
-            }
-        }
-        return null
-    }
 }

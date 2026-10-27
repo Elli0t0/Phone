@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.45] - 2026-10-27
+
+- File splits, no behavior changes: AndroidContactsRepository's read queries moved to AndroidContactsQueries and its row lookups to AndroidContactsLookup (same package, internal helpers taking the ContentResolver), and DialpadScreen's sections moved to DialpadSuggestionsArea (search rows, suggestion chips, quick redial, no-match actions), DialpadNumberDisplay (measuring text, auto-shrink, middle truncation, backspace), and DialpadKeypadSections (key grid + call button row). Every moved piece kept its code verbatim; only private became internal and section state became parameters.
+
 ## [0.11.44] - 2026-10-27
 
 - File splits, no behavior changes: AnswerControls is now AnswerControls + Classic/Slider/Swipe/Liquid answer files, and CallBackgroundScreen is now the screen + CallStudioComponents (shared cards/switches) + CallPreviewComponents (preview pieces). Every moved piece kept its code verbatim; only private became internal across files.
