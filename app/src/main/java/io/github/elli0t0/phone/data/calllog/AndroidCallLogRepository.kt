@@ -14,6 +14,7 @@ import android.provider.CallLog
 import android.util.Log
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
+import io.github.elli0t0.phone.core.telecom.SimAccountInfo
 import io.github.elli0t0.phone.data.calllog.model.CallHistoryPage
 import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import io.github.elli0t0.phone.data.calllog.model.CallType
@@ -34,6 +35,7 @@ import java.io.File
 class AndroidCallLogRepository(
     private val contentResolver: ContentResolver,
     private val cacheDir: File,
+    private val simAccountsProvider: () -> List<SimAccountInfo> = { emptyList() },
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 ) : CallLogRepository {
 
@@ -142,7 +144,7 @@ class AndroidCallLogRepository(
         val cursor: Cursor? = try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 val queryArgs = Bundle().apply {
-                    putInt(ContentResolver.QUERY_ARG_LIMIT, 500)
+                    putInt(ContentResolver.QUERY_ARG_LIMIT, STREAMING_LIMIT)
                     putStringArray(
                         ContentResolver.QUERY_ARG_SORT_COLUMNS,
                         arrayOf(CallLog.Calls.DATE)
@@ -154,12 +156,14 @@ class AndroidCallLogRepository(
                 }
                 contentResolver.query(CallLog.Calls.CONTENT_URI, projection, queryArgs, null)
             } else {
+                // API 29 and below: the provider rejects LIMIT in
+                // sortOrder, so query without it and cap in the loop.
                 contentResolver.query(
                     CallLog.Calls.CONTENT_URI,
                     projection,
                     null,
                     null,
-                    "${CallLog.Calls.DATE} DESC LIMIT 500"
+                    legacyCallLogSortOrder()
                 )
             }
         } catch (e: Exception) {
@@ -172,6 +176,10 @@ class AndroidCallLogRepository(
             _isLoadingFlow.value = false
             return@withContext
         }
+
+        // Resolve SIM badges once per query, not per row: the active
+        // accounts list comes from TelecomHelper via the provider.
+        val simBadges = simAccountsProvider().map { SimBadge(it.iccId, it.label) }
 
         val entries = mutableListOf<CallLogEntry>()
         var emittedFirst50 = false
@@ -188,7 +196,7 @@ class AndroidCallLogRepository(
             var count = 0
             while (c.moveToNext()) {
                 entries.add(
-                    mapRow(c, idIdx, numberIdx, cachedNameIdx, typeIdx, dateIdx, durationIdx, accountIdIdx)
+                    mapRow(c, idIdx, numberIdx, cachedNameIdx, typeIdx, dateIdx, durationIdx, accountIdIdx, simBadges)
                 )
 
                 count++
@@ -199,6 +207,10 @@ class AndroidCallLogRepository(
                     _isLoadingFlow.value = false
                     logFirstEmit()
                 }
+                // The 500-row cap, enforced here instead of in the query:
+                // it also guards OEMs that ignore the QUERY_ARG_LIMIT
+                // bundle on newer APIs.
+                if (count >= STREAMING_LIMIT) break
             }
         }
 
@@ -292,7 +304,8 @@ class AndroidCallLogRepository(
         typeIdx: Int,
         dateIdx: Int,
         durationIdx: Int,
-        accountIdIdx: Int
+        accountIdIdx: Int,
+        sims: List<SimBadge>
     ): CallLogEntry {
         val rawNumber = if (numberIdx >= 0) c.getString(numberIdx) ?: "" else ""
         val cachedName = if (cachedNameIdx >= 0) c.getString(cachedNameIdx) else null
@@ -311,7 +324,7 @@ class AndroidCallLogRepository(
             type = mapCallType(if (typeIdx >= 0) c.getInt(typeIdx) else 0),
             date = if (dateIdx >= 0) c.getLong(dateIdx) else 0L,
             durationSeconds = if (durationIdx >= 0) c.getLong(durationIdx) else 0L,
-            simInfo = phoneAccountId?.let { "SIM ${it.take(2)}" }
+            simInfo = resolveSimBadge(phoneAccountId, sims)
         )
     }
 
@@ -370,6 +383,8 @@ class AndroidCallLogRepository(
         var skipped = 0
         var rawOffset = 0
         var exhausted = false
+        // Same once-per-query badge list as the streaming query.
+        val simBadges = simAccountsProvider().map { SimBadge(it.iccId, it.label) }
         while (collected.size <= limit && !exhausted) {
             // Growing LIMIT, no OFFSET: the call-log provider does not
             // honor QUERY_ARG_OFFSET on all devices, and a dropped
@@ -395,12 +410,15 @@ class AndroidCallLogRepository(
                     }
                     contentResolver.query(CallLog.Calls.CONTENT_URI, projection, queryArgs, null)
                 } else {
+                    // API 29 and below: no LIMIT in sortOrder (the
+                    // provider rejects it). The loop below already stops
+                    // at the window end, so no extra cap is needed here.
                     contentResolver.query(
                         CallLog.Calls.CONTENT_URI,
                         projection,
                         null,
                         null,
-                        "${CallLog.Calls.DATE} DESC LIMIT $queryLimit"
+                        legacyCallLogSortOrder()
                     )
                 }
             } catch (e: SecurityException) {
@@ -438,7 +456,7 @@ class AndroidCallLogRepository(
                         continue
                     }
                     collected.add(
-                        mapRow(c, idIdx, numberIdx, cachedNameIdx, typeIdx, dateIdx, durationIdx, accountIdIdx)
+                        mapRow(c, idIdx, numberIdx, cachedNameIdx, typeIdx, dateIdx, durationIdx, accountIdIdx, simBadges)
                     )
                     if (collected.size > limit) break
                 }
@@ -458,5 +476,9 @@ class AndroidCallLogRepository(
 
     companion object {
         private const val HISTORY_CHUNK_SIZE = 100
+        internal const val STREAMING_LIMIT = 500
+
+        /** Pre-Android-11 sort order: no LIMIT clause (the provider rejects it). */
+        internal fun legacyCallLogSortOrder(): String = "${CallLog.Calls.DATE} DESC"
     }
 }

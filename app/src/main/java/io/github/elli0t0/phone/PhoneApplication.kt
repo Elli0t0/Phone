@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import io.github.elli0t0.phone.data.calllog.AndroidCallLogRepository
 import io.github.elli0t0.phone.data.calllog.CallLogRepository
+import io.github.elli0t0.phone.core.telecom.TelecomHelper
 import io.github.elli0t0.phone.data.contacts.AndroidContactsRepository
 import io.github.elli0t0.phone.data.contacts.ContactNameIndex
 import io.github.elli0t0.phone.data.contacts.ContactsRepository
@@ -47,7 +48,11 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
     }
 
     override val callLogRepository: CallLogRepository by lazy {
-        AndroidCallLogRepository(context.contentResolver, context.cacheDir)
+        AndroidCallLogRepository(
+            context.contentResolver,
+            context.cacheDir,
+            simAccountsProvider = { TelecomHelper.getCallCapablePhoneAccounts(context) }
+        )
     }
 
     override val favoritesRepository: FavoritesRepository by lazy {

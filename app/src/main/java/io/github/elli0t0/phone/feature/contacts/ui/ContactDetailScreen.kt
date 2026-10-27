@@ -55,6 +55,7 @@ import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.core.telecom.CallManager
+import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.core.telecom.SimCallHelper
 import io.github.elli0t0.phone.core.telecom.SimCallResolution
 import io.github.elli0t0.phone.core.telecom.TelecomHelper
@@ -109,7 +110,7 @@ fun ContactDetailScreen(
     val lightHaptic = rememberLightHaptic()
 
     fun placeCallWithSim(number: String) {
-        if (PhoneNumberUtils.isEmergencyNumber(number)) {
+        if (PhoneNumberUtils.isEmergencyNumber(PhoneNumberFormatter.normalizeDigits(number))) {
             // Emergency: skip the SIM picker and saved-SIM lookup
             // entirely; placeCall hands emergency numbers to the
             // system dialer.

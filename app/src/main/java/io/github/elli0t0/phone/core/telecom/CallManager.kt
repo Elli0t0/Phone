@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import android.telecom.TelecomManager
 import android.telephony.PhoneNumberUtils
+import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import androidx.core.content.ContextCompat
 
 /**
@@ -37,7 +38,7 @@ object CallManager {
         rawNumber: String,
         phoneAccountHandle: android.telecom.PhoneAccountHandle? = null
     ) {
-        val trimmed = rawNumber.trim()
+        val trimmed = PhoneNumberFormatter.normalizeDigits(rawNumber.trim())
         if (trimmed.isEmpty()) return
 
         val encodedUri = Uri.parse("tel:" + Uri.encode(trimmed))

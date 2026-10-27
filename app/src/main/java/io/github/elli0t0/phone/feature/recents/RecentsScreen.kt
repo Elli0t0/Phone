@@ -75,6 +75,7 @@ import io.github.elli0t0.phone.core.design.dialogEnter
 import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.permissions.CallLogPermissionStatus
 import io.github.elli0t0.phone.core.permissions.rememberCallLogPermissionState
+import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.core.telecom.CallManager
 import io.github.elli0t0.phone.feature.contacts.ui.ContactSearchBar
 import io.github.elli0t0.phone.feature.contacts.ui.PermissionCard
@@ -145,7 +146,7 @@ fun RecentsScreen(
     val recentsScope = androidx.compose.runtime.rememberCoroutineScope()
 
     fun initiateCall(number: String, lookupKey: String? = null) {
-        if (PhoneNumberUtils.isEmergencyNumber(number)) {
+        if (PhoneNumberUtils.isEmergencyNumber(PhoneNumberFormatter.normalizeDigits(number))) {
             // Emergency: skip the SIM picker and saved-SIM lookup
             // entirely; placeCall hands emergency numbers to the
             // system dialer.

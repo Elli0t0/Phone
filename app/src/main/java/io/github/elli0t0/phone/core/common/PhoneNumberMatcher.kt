@@ -147,7 +147,7 @@ object PhoneNumberMatcher {
      * can be derived from the trunk prefix and the device region.
      */
     fun normalize(number: String, regionIso: String = deviceRegionIso()): String {
-        val trimmed = number.trim()
+        val trimmed = PhoneNumberFormatter.normalizeDigits(number.trim())
         if (trimmed.isEmpty()) return ""
         val hadPlus = trimmed.startsWith("+")
         val hadDoubleZero = trimmed.startsWith("00")
@@ -186,7 +186,7 @@ object PhoneNumberMatcher {
      * ignoring leading zeros (covers trunk-prefix input when the region is unknown).
      */
     fun matchesQuery(phone: String, query: String, regionIso: String = deviceRegionIso()): Boolean {
-        val queryDigits = query.filter { it.isDigit() }
+        val queryDigits = PhoneNumberFormatter.normalizeDigits(query).filter { it.isDigit() }
         if (queryDigits.isEmpty()) return false
         if (matches(phone, query, regionIso)) return true
         val phoneNormalized = normalize(phone, regionIso)
@@ -211,7 +211,7 @@ object PhoneNumberMatcher {
      * they already start with it.
      */
     fun toE164(number: String, regionIso: String = deviceRegionIso()): String {
-        val trimmed = number.trim()
+        val trimmed = PhoneNumberFormatter.normalizeDigits(number.trim())
         if (trimmed.isEmpty()) return ""
         val digits = trimmed.filter { it.isDigit() }
         if (digits.isEmpty()) return ""

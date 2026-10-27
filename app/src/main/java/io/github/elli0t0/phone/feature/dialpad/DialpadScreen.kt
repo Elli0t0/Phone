@@ -57,6 +57,7 @@ import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
+import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.core.telecom.CallManager
 import io.github.elli0t0.phone.data.settings.model.ThemeMode
 import io.github.elli0t0.phone.feature.contacts.ui.ContactSearchBar
@@ -113,7 +114,7 @@ fun DialpadScreen(
     var menuExpanded by remember { androidx.compose.runtime.mutableStateOf(false) }
 
     fun dialNumber(number: String, lookupKey: String? = null) {
-        if (PhoneNumberUtils.isEmergencyNumber(number)) {
+        if (PhoneNumberUtils.isEmergencyNumber(PhoneNumberFormatter.normalizeDigits(number))) {
             // Emergency: skip the SIM picker and saved-SIM lookup
             // entirely; placeCall hands emergency numbers to the
             // system dialer.

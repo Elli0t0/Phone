@@ -11,6 +11,9 @@ import android.telephony.PhoneNumberUtils
 object PhoneNumberFormatter {
 
     fun format(rawNumber: String, defaultCountryIso: String = PhoneNumberMatcher.deviceRegionIso()): String {
+        // Normalize first: Persian/Arabic digits become ASCII before any
+        // check below, so every return path yields the dialable form.
+        val rawNumber = normalizeDigits(rawNumber)
         if (rawNumber.isBlank()) return ""
         if (rawNumber.contains('*') || rawNumber.contains('#')) return rawNumber
         val trimmed = rawNumber.trim()
@@ -51,6 +54,8 @@ object PhoneNumberFormatter {
      * The raw digits stay the source of truth; this only affects display.
      */
     fun formatPartial(rawNumber: String, defaultCountryIso: String = PhoneNumberMatcher.deviceRegionIso()): String {
+        // Normalize first: see format().
+        val rawNumber = normalizeDigits(rawNumber)
         if (rawNumber.isBlank()) return ""
         if (rawNumber.contains('*') || rawNumber.contains('#')) return rawNumber
         val trimmed = rawNumber.trim()
@@ -140,6 +145,26 @@ object PhoneNumberFormatter {
     }
 
     /**
+     * Map Persian (۰-۹, U+06F0–U+06F9) and Eastern Arabic (٠-٩, U+0660–U+0669)
+     * digits to ASCII 0-9. sanitize() keeps these (Char.isDigit is
+     * Unicode-aware), so without this they survive into matchers and
+     * tel: URIs that cellular basebands reject. Every other character
+     * passes through untouched.
+     */
+    fun normalizeDigits(input: String): String {
+        if (input.none { it in '۰'..'۹' || it in '٠'..'٩' }) return input
+        return buildString(input.length) {
+            for (c in input) {
+                when (c) {
+                    in '۰'..'۹' -> append('0' + (c - '۰'))
+                    in '٠'..'٩' -> append('0' + (c - '٠'))
+                    else -> append(c)
+                }
+            }
+        }
+    }
+
+    /**
      * Sanitizes pasted text or imported input by retaining only characters valid on a telephone keypad:
      * digits 0-9, '*', '#', and leading '+'.
      */
@@ -148,7 +173,7 @@ object PhoneNumberFormatter {
         var hasSeenLeadingPlus = false
 
         // Strip non-dialpad characters, preserving '+' only if it appears before any digits/dial chars
-        for (char in input) {
+        for (char in normalizeDigits(input)) {
             if (char == '+' && sb.isEmpty() && !hasSeenLeadingPlus) {
                 sb.append(char)
                 hasSeenLeadingPlus = true

@@ -7,6 +7,7 @@ import android.os.Looper
 import android.os.SystemClock
 import android.provider.ContactsContract
 import android.util.Log
+import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -56,8 +57,9 @@ object ContactNameIndex {
 
     private var rebuildJob: Job? = null
 
-    /** Normalized key: digits only, last 10 digits. */
-    fun key(number: String): String = number.filter { it.isDigit() }.takeLast(10)
+    /** Normalized key: ASCII digits only, last 10 digits. */
+    fun key(number: String): String =
+        PhoneNumberFormatter.normalizeDigits(number).filter { it.isDigit() }.takeLast(10)
 
     /** Resolve a number to its contact entry, or null if unknown / index not ready. */
     fun resolve(number: String): Entry? {
@@ -69,7 +71,6 @@ object ContactNameIndex {
     @Synchronized
     fun ensureStarted(resolver: ContentResolver) {
         if (started) return
-        started = true
         contentResolver = resolver
         try {
             val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
@@ -82,6 +83,11 @@ object ContactNameIndex {
                 true,
                 observer
             )
+            // Only mark started once registration actually succeeded: the
+            // flag used to be set first, so a call before READ_CONTACTS
+            // was granted left the cache permanently stale — later calls
+            // returned early without ever registering the observer.
+            started = true
         } catch (e: SecurityException) {
             Log.w("PhoneBoot", "Cannot observe contacts without permission")
         } catch (e: Exception) {
