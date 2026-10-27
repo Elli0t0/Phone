@@ -49,4 +49,6 @@
     <string name="add_to_existing_contact">افزودن به مخاطب موجود</string>
     <string name="history_day_today">امروز</string>
     <string name="history_day_yesterday">دیروز</string>
+    <string name="section_favorites">علاقه‌مندی‌ها</string>
+    <string name="dialpad_clipboard">کلیپ‌بورد</string>
 </resources>

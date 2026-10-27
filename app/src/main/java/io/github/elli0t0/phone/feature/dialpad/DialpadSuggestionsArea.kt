@@ -10,6 +10,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -42,6 +43,9 @@ fun ColumnScope.DialpadSuggestionsArea(
     onSearchRowCallClick: (ContactSummary) -> Unit,
     onSuggestionSelect: (ContactSummary) -> Unit,
     onRedial: (QuickRedialEntry) -> Unit,
+    onFavoriteClick: (ContactSummary) -> Unit,
+    clipboardNumber: String?,
+    onClipboardPaste: () -> Unit,
     onCreateContactAction: () -> Unit,
     onAddToExistingContactAction: () -> Unit,
     onMessageAction: () -> Unit
@@ -68,13 +72,18 @@ fun ColumnScope.DialpadSuggestionsArea(
         uiState.matchingContacts.isNotEmpty()
     val showNoMatchActions = uiState.rawNumber.isNotEmpty() &&
         !showSearchRows && !showChips
+    // Empty keypad: favorites, clipboard, and recents share the area,
+    // centered with breathing room instead of squished above the keys
+    // under a tall blank. Every other state stays pinned to the bottom,
+    // so lists grow upward from the keypad.
+    val isEmptyState = uiState.rawNumber.isEmpty() && !showSearchRows && !showChips
     // T9 Matching contacts list above the keypad
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .weight(1f)
             .padding(top = spacing.small),
-        contentAlignment = Alignment.BottomCenter
+        contentAlignment = if (isEmptyState) Alignment.Center else Alignment.BottomCenter
     ) {
     if (showSearchRows) {
         // Name search: full rows.
@@ -106,16 +115,37 @@ fun ColumnScope.DialpadSuggestionsArea(
             modifier = Modifier.fillMaxWidth(),
             contactCounts = uiState.matchingContactCounts
         )
-    } else if (uiState.rawNumber.isEmpty() && uiState.quickRedial.isNotEmpty()) {
-        // Empty keypad: one-tap redial for the last 3 recent
-        // numbers, sitting above the keypad.
-        QuickRedialChips(
-            entries = uiState.quickRedial,
-            onRedial = { entry ->
-                onRedial(entry)
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
+    } else if (isEmptyState) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(spacing.medium)
+        ) {
+            if (uiState.favorites.isNotEmpty()) {
+                FavoritesStrip(
+                    favorites = uiState.favorites,
+                    onFavoriteClick = onFavoriteClick,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            if (clipboardNumber != null) {
+                ClipboardChip(
+                    number = clipboardNumber,
+                    onPaste = onClipboardPaste,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            if (uiState.quickRedial.isNotEmpty()) {
+                // Empty keypad: one-tap redial for the last 3 recent
+                // numbers.
+                QuickRedialChips(
+                    entries = uiState.quickRedial,
+                    onRedial = { entry ->
+                        onRedial(entry)
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
     }
     }
     // No-match actions animate in/out below the list area

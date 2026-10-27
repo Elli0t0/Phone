@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -643,5 +644,121 @@ fun QuickRedialChips(
             }
         }
     }
+    }
+}
+
+/**
+ * Empty-keypad favorites strip: favorite contacts as a horizontal
+ * row of avatars + names. Tap dials that contact (same one-tap
+ * behavior as the quick-redial chips below it).
+ */
+@Composable
+fun FavoritesStrip(
+    favorites: List<ContactSummary>,
+    onFavoriteClick: (ContactSummary) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val spacing = LocalSpacing.current
+    Column(modifier = modifier) {
+        Text(
+            text = stringResource(id = R.string.section_favorites),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = spacing.small)
+        )
+        LazyRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(spacing.small)
+        ) {
+            items(favorites, key = { it.id }) { contact ->
+                Column(
+                    modifier = Modifier
+                        .width(72.dp)
+                        .clip(MaterialTheme.shapes.medium)
+                        .clickable { onFavoriteClick(contact) }
+                        .padding(vertical = spacing.extraSmall)
+                        .testTag("dialpad_favorite_${contact.id}"),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    ContactAvatar(
+                        photoUri = contact.photoUri,
+                        displayName = contact.displayName,
+                        size = 48.dp
+                    )
+                    Spacer(modifier = Modifier.size(4.dp))
+                    Text(
+                        text = contact.displayName,
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Empty-keypad clipboard chip: the number currently on the clipboard,
+ * under its own label like the sections around it. Tap pastes it into
+ * the keypad (the chip then hides, since the keypad is no longer empty).
+ */
+@Composable
+fun ClipboardChip(
+    number: String,
+    onPaste: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val spacing = LocalSpacing.current
+    Column(modifier = modifier) {
+        Text(
+            text = stringResource(id = R.string.dialpad_clipboard),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = spacing.small)
+        )
+        if (LocalAppSettings.current.glassDialpad) {
+            val source = remember { MutableInteractionSource() }
+            LiquidGlassPill(
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(LiquidGlassPillShape)
+                    .bouncyClick(source)
+                    .clickable(
+                        interactionSource = source,
+                        indication = ripple()
+                    ) { onPaste() }
+                    .testTag("dialpad_clipboard_chip")
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = bidiWrap(number),
+                        style = MaterialTheme.typography.labelLarge.copy(textDirection = TextDirection.Content),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        } else {
+            FilledTonalButton(
+                onClick = onPaste,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("dialpad_clipboard_chip")
+            ) {
+                Text(
+                    text = bidiWrap(number),
+                    style = MaterialTheme.typography.labelLarge.copy(textDirection = TextDirection.Content),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
     }
 }

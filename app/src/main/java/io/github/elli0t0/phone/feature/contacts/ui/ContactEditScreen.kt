@@ -226,7 +226,13 @@ fun ContactEditScreen(
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = spacing.screenHorizontalPadding)
-                    .padding(top = spacing.medium, bottom = PhoneDimens.editFormBottomPadding),
+                    .padding(top = spacing.medium, bottom = PhoneDimens.editFormBottomPadding)
+                    // Lift the scrollable form with the keyboard: without
+                    // this, the pill (which has its own imePadding) rose
+                    // over the last fields, which could no longer scroll
+                    // above it. 84dp already clears the 60dp pill + 16dp
+                    // margin when the keyboard is closed.
+                    .imePadding(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
             // Validation Error Alert

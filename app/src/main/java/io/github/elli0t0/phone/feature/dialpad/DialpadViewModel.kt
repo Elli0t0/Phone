@@ -9,6 +9,7 @@ import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
 import io.github.elli0t0.phone.data.calllog.CallLogRepository
 import io.github.elli0t0.phone.data.contacts.ContactsRepository
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
+import io.github.elli0t0.phone.data.favorites.FavoritesRepository
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +25,8 @@ class DialpadViewModel(
     private val contactsRepository: ContactsRepository,
     private val savedStateHandle: SavedStateHandle,
     coroutineScope: kotlinx.coroutines.CoroutineScope? = null,
-    private val callLogRepository: CallLogRepository? = null
+    private val callLogRepository: CallLogRepository? = null,
+    private val favoritesRepository: FavoritesRepository? = null
 ) : ViewModel() {
 
     private val KEY_RAW_NUMBER = "dialpad_raw_number"
@@ -79,6 +81,20 @@ class DialpadViewModel(
                         }
                     _uiState.value = _uiState.value.copy(quickRedial = recent)
                 }
+            }
+        }
+
+        // Favorites strip: favorite contacts with a number to dial.
+        // Undialable favorites (no number) are hidden, not shown as
+        // dead entries.
+        if (favoritesRepository != null) {
+            activeScope?.launch {
+                favoritesRepository.getFavoritesFlow(contactsRepository.getContactsFlow())
+                    .collectLatest { favorites ->
+                        _uiState.value = _uiState.value.copy(
+                            favorites = favorites.filter { !it.primaryNumberPreview.isNullOrBlank() }
+                        )
+                    }
             }
         }
 
@@ -173,6 +189,19 @@ class DialpadViewModel(
         setRawNumber("")
     }
 
+    /**
+     * Clipboard chip: the clipboard's number, refreshed when the
+     * dialpad resumes. Only dialable content counts (at least 3 digits
+     * after sanitize); anything else clears the chip.
+     */
+    fun refreshClipboardNumber(clipboardText: String?) {
+        val sanitized = clipboardText?.let { PhoneNumberFormatter.sanitize(it) } ?: ""
+        val digits = sanitized.filter { it.isDigit() }
+        _uiState.value = _uiState.value.copy(
+            clipboardNumber = sanitized.takeIf { it.isNotEmpty() && digits.length >= 3 }
+        )
+    }
+
     fun onNumberPasted(pastedText: String) {
         val sanitized = PhoneNumberFormatter.sanitize(pastedText)
         if (sanitized.isNotEmpty()) {
@@ -224,11 +253,14 @@ class DialpadViewModel(
         fun provideFactory(
             repository: ContactsRepository,
             savedStateHandle: SavedStateHandle,
-            callLogRepository: CallLogRepository? = null
+            callLogRepository: CallLogRepository? = null,
+            favoritesRepository: FavoritesRepository? = null
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return DialpadViewModel(repository, savedStateHandle, null, callLogRepository) as T
+                return DialpadViewModel(
+                    repository, savedStateHandle, null, callLogRepository, favoritesRepository
+                ) as T
             }
         }
     }

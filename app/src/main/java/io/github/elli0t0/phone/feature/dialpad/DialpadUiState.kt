@@ -11,7 +11,11 @@ data class DialpadUiState(
     val nameSearchResults: List<ContactSummary> = emptyList(),
     val isSearching: Boolean = false,
     val canCall: Boolean = false,
-    val quickRedial: List<QuickRedialEntry> = emptyList()
+    val quickRedial: List<QuickRedialEntry> = emptyList(),
+    // Empty-keypad extras: favorite contacts (dialable ones only) and
+    // the clipboard's number, when it holds one.
+    val favorites: List<ContactSummary> = emptyList(),
+    val clipboardNumber: String? = null
 )
 
 /** One recent number for the empty-keypad quick-dial chips. */

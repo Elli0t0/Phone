@@ -58,7 +58,6 @@ import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 import io.github.elli0t0.phone.data.contacts.model.DuplicateGroup
 import io.github.elli0t0.phone.feature.contacts.ContactsUiState
 import io.github.elli0t0.phone.navigation.FloatingActionsPill
-import io.github.elli0t0.phone.navigation.BottomListScrim
 import io.github.elli0t0.phone.navigation.PageHeaderItem
 
 @Composable
@@ -282,8 +281,8 @@ private fun ContactsContent(
         }
 
         Box(modifier = Modifier.fillMaxSize()) {
-        // Bottom scrim behind the list (never over the cards).
-        BottomListScrim(modifier = Modifier.align(Alignment.BottomCenter))
+        // No per-screen scrim here: MainActivity already fades the
+        // bottom behind the bar, and a second gradient double-dimmed it.
         if (uiState.allContacts.isEmpty() && !uiState.isLoading) {
             EmptyContactsState(onAddContactClick = onAddContactClick)
         } else if (uiState.filteredContacts.isEmpty() && uiState.searchQuery.isNotEmpty()) {
@@ -455,8 +454,10 @@ private fun ContactsContent(
                 .padding(top = 8.dp),
             actions = topBarPills,
             // Top bar now lives inside the header item (index 0):
-            // fade the pill in as the header scrolls off.
-            revealAfterIndex = 0
+            // the pill appears once the header scrolls off. The
+            // actions are already pills themselves, so no outer wrap.
+            revealAfterIndex = 0,
+            wrapInPill = false
         )
         }
     }

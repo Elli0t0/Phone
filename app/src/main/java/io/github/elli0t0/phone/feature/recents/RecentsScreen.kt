@@ -84,7 +84,6 @@ import io.github.elli0t0.phone.feature.recents.ui.CallLogRow
 import io.github.elli0t0.phone.feature.recents.ui.DaySectionCard
 import io.github.elli0t0.phone.feature.recents.ui.RecentsEmptyState
 import io.github.elli0t0.phone.navigation.FloatingActionsPill
-import io.github.elli0t0.phone.navigation.BottomListScrim
 import io.github.elli0t0.phone.navigation.PageHeaderItem
 import java.time.Instant
 import java.time.LocalDate
@@ -435,8 +434,8 @@ fun RecentsScreen(
             }
 
             Box(modifier = Modifier.fillMaxSize()) {
-            // Bottom scrim behind the list (never over the cards).
-            BottomListScrim(modifier = Modifier.align(Alignment.BottomCenter))
+            // No per-screen scrim here: MainActivity already fades the
+            // bottom behind the bar, and a second gradient double-dimmed it.
             when (val status = permissionState.status) {
                 is CallLogPermissionStatus.Granted -> {
                     LazyColumn(

@@ -164,6 +164,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.48] - 2026-10-27
+
+- Visual balance fixes: the floating actions pill now appears only once the header item has scrolled off completely, instead of fading in on any scroll offset over the still-visible header; Contacts' pill no longer wraps its top-bar pills in a second pill container (Recents' plain icon actions keep the outer wrap); the per-screen bottom scrims are gone — MainActivity's fade behind the bar is now the single owner, ending the double-dimming on Recents and Contacts; the empty keypad centers its content with breathing room instead of squishing it above the keys under a tall blank; the Liquid answer control now vibrates at its 0.7 commit threshold like Slider and Swipe; the contact edit form lifts with the keyboard, so the floating Cancel/Save pill no longer covers the last fields.
+- Empty keypad extras: a Favorites strip (favorite contacts with numbers, tap to call) and a Clipboard chip (the clipboard's number, refreshed on resume, tap to paste) sit above the recent chips when the keypad is empty.
+
 ## [0.11.47] - 2026-10-27
 
 - Data layer and multi-SIM fixes: call-log SIM badges now resolve through the active accounts list (matching phoneAccountId against the account handle id) instead of slicing the id, so 20-digit ICCIDs no longer produce broken labels like "SIM 89" — unmatched accounts show no badge rather than a wrong one; the contacts index no longer marks itself started when observer registration fails, so it retries once READ_CONTACTS is granted instead of staying stale forever; the call-log queries no longer put LIMIT in sortOrder on Android 10 and below (the provider rejects it) — the 500-row cap is enforced in the cursor loop, and the paged query's loop already stops at its window end; pasted or received Persian/Arabic digits are normalized to ASCII before sanitizing, matching, formatting, or dialing, so they no longer break matchers or produce malformed tel: URIs (this also closes the emergency-number check for Persian-digit input).

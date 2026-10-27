@@ -36,9 +36,11 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -62,6 +64,7 @@ internal fun LiquidAnswerControls(
     onDecline: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val haptic = LocalHapticFeedback.current
     val option = LocalAppSettings.current.animationOption
     val glass = LocalAppSettings.current.glassCallScreens
     val spacing = LocalSpacing.current
@@ -170,10 +173,13 @@ internal fun LiquidAnswerControls(
                                 val current = x.value / travel
                                 when {
                                     current >= 0.7f -> {
+                                        // Commit haptic, like Slider/Swipe.
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                         x.animateTo(travel, tween(100))
                                         onAnswer()
                                     }
                                     current <= -0.7f -> {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                         x.animateTo(-travel, tween(100))
                                         onDecline()
                                     }
