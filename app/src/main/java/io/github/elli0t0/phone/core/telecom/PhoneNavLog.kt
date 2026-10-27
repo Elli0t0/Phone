@@ -1,8 +1,8 @@
 package io.github.elli0t0.phone.core.telecom
 
 import android.util.Log
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
@@ -14,12 +14,12 @@ import java.util.Locale
 object PhoneNavLog {
     private const val MAX_ENTRIES = 200
     private val entries = mutableListOf<String>()
-    private val timeFormat = SimpleDateFormat("HH:mm:ss.SSS", Locale.US)
+    private val timeFormat = DateTimeFormatter.ofPattern("HH:mm:ss.SSS", Locale.US)
 
     @Synchronized
     fun log(message: String) {
         Log.d("PhoneNav", message)
-        entries.add("${timeFormat.format(Date())} $message")
+        entries.add("${timeFormat.format(LocalTime.now())} $message")
         while (entries.size > MAX_ENTRIES) entries.removeAt(0)
     }
 

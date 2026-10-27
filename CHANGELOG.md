@@ -164,6 +164,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.41] - 2026-10-27
+
+- Removed the system contact-insert intents: other apps can no longer open the app with INSERT / INSERT_OR_EDIT — the in-app New Contact and Add-to-contact flows already cover both cases with the number prefilled, so the handler and its routing are gone too.
+- Names and numbers now wrap correctly in right-to-left layouts everywhere: Recents, Contacts, details (including organization), history and inner-screen titles, the SIM picker number, and keypad search results and quick-dial labels — bidi wrap plus content text direction on every displayed name and number.
+- Added manifest queries for the intents the app resolves (SMS, ringtone picker, web links, tel:); the call-settings row already guards its resolveActivity call against failure.
+- Debug-log timestamps now use java.time instead of SimpleDateFormat.
+- Glass surfaces thin their fill when real blur is active, so the bottom bar finally reads as blurred glass instead of flat gray; the near-opaque fill stays as the fallback below API 31 and when transparency is reduced.
+
 ## [0.11.40] - 2026-10-27
 
 - In-call keypad (IVR menus) fixed: digits now go through one serialized DTMF queue — each tone plays ~150 ms, stops, then an ~80 ms gap — so fast taps all land instead of only the first digit. Tones only play while the call is ACTIVE; the queue drains and the tone stops when the call ends, goes on hold, the keypad hides, or the call screen stops.

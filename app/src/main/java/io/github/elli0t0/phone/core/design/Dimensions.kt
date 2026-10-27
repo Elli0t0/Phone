@@ -40,6 +40,9 @@ object PhoneDimens {
     val glassBlurRadiusStrong = 36.dp
     val glassBlurTintAlphaDark = 0.55f
     val glassBlurTintAlphaLight = 0.60f
+    // Container fill over a live blur: thin enough that the blurred
+    // content shows through (the haze tint carries the dimming).
+    val glassBlurContainerAlpha = 0.30f
     // Overflow-menu (glass) popup surface.
     val menuCornerRadius = 28.dp
     val menuElevation = 16.dp

@@ -17,9 +17,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.common.bidiWrap
 
 /**
  * The shared inner-screen top row: status-bar inset + 8dp, 48dp
@@ -59,8 +61,8 @@ fun InnerTopBar(
         }
         if (title != null) {
             Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
+                text = bidiWrap(title),
+                style = MaterialTheme.typography.titleLarge.copy(textDirection = TextDirection.Content),
                 color = MaterialTheme.colorScheme.onBackground,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

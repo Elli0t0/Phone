@@ -47,9 +47,11 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.common.bidiWrap
 import io.github.elli0t0.phone.core.design.LiquidGlassChip
 import io.github.elli0t0.phone.core.design.LiquidGlassPill
 import io.github.elli0t0.phone.core.design.LiquidGlassPillShape
@@ -266,8 +268,8 @@ private fun DialpadSuggestionRow(
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = contact.displayName,
-                    style = MaterialTheme.typography.bodyLarge,
+                    text = bidiWrap(contact.displayName),
+                    style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Content),
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -287,7 +289,7 @@ private fun DialpadSuggestionRow(
             if (!number.isNullOrBlank()) {
                 Text(
                     text = matchedNumberText(number, dialedDigits),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -524,14 +526,14 @@ fun DialpadSearchRow(
             Spacer(modifier = Modifier.size(spacing.medium))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = contact.displayName,
-                    style = MaterialTheme.typography.bodyLarge,
+                    text = bidiWrap(contact.displayName),
+                    style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Content),
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 if (!contact.primaryNumberPreview.isNullOrBlank()) {
                     Text(
-                        text = contact.primaryNumberPreview,
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = bidiWrap(contact.primaryNumberPreview),
+                        style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -593,8 +595,8 @@ fun QuickRedialChips(
                         )
                         Spacer(modifier = Modifier.size(4.dp))
                         Text(
-                            text = entry.label,
-                            style = MaterialTheme.typography.labelLarge,
+                            text = bidiWrap(entry.label),
+                            style = MaterialTheme.typography.labelLarge.copy(textDirection = TextDirection.Content),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -611,7 +613,8 @@ fun QuickRedialChips(
                     )
                     Spacer(modifier = Modifier.size(4.dp))
                     Text(
-                        text = entry.label,
+                        text = bidiWrap(entry.label),
+                        style = MaterialTheme.typography.labelLarge.copy(textDirection = TextDirection.Content),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )

@@ -31,7 +31,6 @@ import io.github.elli0t0.phone.feature.contacts.ui.ContactHistoryScreen
 import io.github.elli0t0.phone.feature.contacts.ui.ContactListScreen
 import io.github.elli0t0.phone.feature.contacts.ui.GroupsScreen
 import io.github.elli0t0.phone.feature.contacts.ui.ContactPickerScreen
-import io.github.elli0t0.phone.navigation.AppendPhoneRequest
 import io.github.elli0t0.phone.navigation.CreateContactRequest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -74,8 +73,6 @@ fun ContactsScreen(
     onPendingCreateRequestConsumed: () -> Unit = {},
     pendingAddNumber: String? = null,
     onPendingAddNumberConsumed: () -> Unit = {},
-    pendingAppendRequest: AppendPhoneRequest? = null,
-    onPendingAppendRequestConsumed: () -> Unit = {},
     pendingOpenContactId: Long? = null,
     onPendingOpenContactIdConsumed: () -> Unit = {}
 ) {
@@ -103,7 +100,7 @@ fun ContactsScreen(
     val snackbarHostState = LocalAppSnackbarHostState.current
     val coroutineScope = rememberCoroutineScope()
 
-    // A create request (keypad / Recents / system insert intent) opens
+    // A create request (keypad / Recents) opens
     // the editor prefilled with the number (and name/email when the
     // source provided them), then clears the pending value.
     LaunchedEffect(pendingCreateRequest) {
@@ -123,23 +120,6 @@ fun ContactsScreen(
             listViewModel.clearSearchQuery()
             currentDestination = ContactsNavDestination.PickContact(pendingAddNumber)
             onPendingAddNumberConsumed()
-        }
-    }
-
-    // A system insert-or-edit intent targeting an existing contact
-    // opens its editor with the number appended as a new phone row.
-    LaunchedEffect(pendingAppendRequest) {
-        if (pendingAppendRequest != null) {
-            val request = pendingAppendRequest
-            onPendingAppendRequestConsumed()
-            val detail = repository.getContactDetail(request.lookupKey, request.contactId).first()
-            if (detail != null) {
-                currentDestination = ContactsNavDestination.Edit(
-                    detail,
-                    appendPhone = request.phone,
-                    returnToList = true
-                )
-            }
         }
     }
 

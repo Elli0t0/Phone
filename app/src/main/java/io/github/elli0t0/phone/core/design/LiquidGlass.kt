@@ -256,7 +256,11 @@ val SquircleShape: Shape = GenericShape { size, _ ->
  * verified hazeSource/hazeEffect API) and the device runs API 31+,
  * the content behind the surface is really blurred under the spec
  * tint; otherwise it falls back to a near-opaque fill (see
- * [glassSolidBaseModifier]).
+ * [glassSolidBaseModifier]). When blur is active the container fill
+ * thins to [PhoneDimens.glassBlurContainerAlpha]: the previous 0.88
+ * fill sat on top of the effect and hid the blur entirely, which
+ * made the bar read as flat dark gray. Without blur the opaque
+ * fill stays, for legibility and the API < 31 fallback.
  */
 @Composable
 fun GlassSurface(
@@ -267,12 +271,16 @@ fun GlassSurface(
     floating: Boolean = true,
     content: @Composable BoxScope.() -> Unit
 ) {
+    val settings = LocalAppSettings.current
+    val blurOn = blurAvailable(LocalHazeState.current, settings.reduceTransparency)
+    val effectiveContainer =
+        if (blurOn) containerColor.copy(alpha = PhoneDimens.glassBlurContainerAlpha) else containerColor
     Box(
         modifier = modifier
             .clip(shape)
             .then(glassBlurModifier(dark))
             .then(glassSolidBaseModifier(dark))
-            .background(containerColor)
+            .background(effectiveContainer)
             .border(
                 width = 1.dp,
                 brush = Brush.verticalGradient(

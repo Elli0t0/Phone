@@ -63,9 +63,3 @@ data class CreateContactRequest(
     val email: String = ""
 )
 
-/** In-app "append this number as a new phone row on that contact" request. */
-data class AppendPhoneRequest(
-    val contactId: Long,
-    val lookupKey: String,
-    val phone: String
-)

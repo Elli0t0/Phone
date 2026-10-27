@@ -1,10 +1,8 @@
 package io.github.elli0t0.phone
 
-import android.content.ContentUris
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.provider.ContactsContract
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -70,14 +68,11 @@ import io.github.elli0t0.phone.navigation.PhoneBottomBar
 import io.github.elli0t0.phone.navigation.PhoneNavHost
 import io.github.elli0t0.phone.navigation.Screen
 import io.github.elli0t0.phone.core.telecom.PhoneNavLog
-import io.github.elli0t0.phone.navigation.ExternalContactRequest
-import io.github.elli0t0.phone.navigation.ExternalContactRequests
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         PhoneNavLog.log("MainActivity onCreate taskId=$taskId isFinishing=$isFinishing")
-        handleExternalContactIntent(intent)
         handleDialIntent(intent)
         enableEdgeToEdge()
         val app = application as PhoneApplication
@@ -107,7 +102,6 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         PhoneNavLog.log("MainActivity onNewIntent taskId=$taskId isFinishing=$isFinishing")
-        handleExternalContactIntent(intent)
         handleDialIntent(intent)
     }
 
@@ -126,14 +120,6 @@ class MainActivity : ComponentActivity() {
         PhoneNavLog.log("MainActivity onDestroy taskId=$taskId isFinishing=$isFinishing")
     }
 
-    /**
-     * System contact intents (INSERT / INSERT_OR_EDIT, see the manifest
-     * filters) are served by the app's own screens: a create request
-     * with the intent's name/phone/email prefilled, or — when the
-     * intent targets an existing contact and carries a phone number —
-     * an append request opening that contact's editor with the number
-     * as a new phone row.
-     */
     /**
      * External dial request (tap a number in another app, or a dial
      * shortcut): a tel: URI fills the keypad with the number, a bare
@@ -155,71 +141,7 @@ class MainActivity : ComponentActivity() {
         intent.data = null
     }
 
-    private fun handleExternalContactIntent(intent: Intent?) {
-        val action = intent?.action ?: return
-        if (action != Intent.ACTION_INSERT && action != Intent.ACTION_INSERT_OR_EDIT) return
-        val name = intent.getStringExtra(ContactsContract.Intents.Insert.NAME).orEmpty()
-        val phone = intent.getStringExtra(ContactsContract.Intents.Insert.PHONE).orEmpty()
-        val email = intent.getStringExtra(ContactsContract.Intents.Insert.EMAIL).orEmpty()
-        var appended = false
-        val data = intent.data
-        if (action == Intent.ACTION_INSERT_OR_EDIT && data != null && phone.isNotBlank()) {
-            val resolved = resolveContact(data)
-            if (resolved != null) {
-                ExternalContactRequests.post(
-                    ExternalContactRequest.Append(resolved.first, resolved.second, phone)
-                )
-                appended = true
-            }
-        }
-        if (!appended) {
-            ExternalContactRequests.post(ExternalContactRequest.Create(name, phone, email))
-        }
-        PhoneNavLog.log("MainActivity external contact intent action=$action append=$appended")
-    }
 
-    /** Resolves a contact or raw-contact URI to (contact id, lookup key). */
-    private fun resolveContact(uri: Uri): Pair<Long, String>? = runCatching {
-        val segments = uri.pathSegments
-        when {
-            segments.contains("raw_contacts") -> {
-                val rawId = ContentUris.parseId(uri)
-                contentResolver.query(
-                    ContactsContract.RawContacts.CONTENT_URI,
-                    arrayOf(ContactsContract.RawContacts.CONTACT_ID),
-                    "${ContactsContract.RawContacts._ID} = ?",
-                    arrayOf(rawId.toString()),
-                    null
-                )?.use { cursor ->
-                    if (cursor.moveToFirst()) {
-                        val contactId = cursor.getLong(0)
-                        contactId to lookupKeyFor(contactId)
-                    } else {
-                        null
-                    }
-                }
-            }
-            segments.contains("contacts") -> {
-                val contactId = ContentUris.parseId(uri)
-                contactId to lookupKeyFor(contactId)
-            }
-            else -> null
-        }
-    }.getOrNull()
-
-    private fun lookupKeyFor(contactId: Long): String {
-        val uri = ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, contactId)
-        contentResolver.query(
-            uri,
-            arrayOf(ContactsContract.Contacts.LOOKUP_KEY),
-            null,
-            null,
-            null
-        )?.use { cursor ->
-            if (cursor.moveToFirst()) return cursor.getString(0) ?: ""
-        }
-        return ""
-    }
 }
 
 /**

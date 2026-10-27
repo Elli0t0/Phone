@@ -26,10 +26,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.common.bidiWrap
 import io.github.elli0t0.phone.core.design.LiquidGlassPopupSurface
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
@@ -66,8 +68,8 @@ fun DualSimPickerDialog(
                     modifier = Modifier.padding(bottom = spacing.medium)
                 )
                 Text(
-                    text = targetNumber,
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = bidiWrap(targetNumber),
+                    style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = spacing.medium)
                 )

@@ -128,8 +128,8 @@ DetailGlassCard(
                 if (!contact.organization.isNullOrBlank()) {
                     Spacer(modifier = Modifier.height(spacing.extraSmall))
                     Text(
-                        text = contact.organization,
-                        style = MaterialTheme.typography.bodyLarge,
+                        text = bidiWrap(contact.organization),
+                        style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Content),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
