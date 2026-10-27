@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
  * call is not ACTIVE is dropped. [drain] stops the tone playing
  * right now and drops everything still queued.
  */
-fun interface DtmfTonePlayer {
+interface DtmfTonePlayer {
     fun play(digit: Char)
     fun stop()
 }
