@@ -6,21 +6,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.core.AnimationSpec
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.snap
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -28,28 +18,22 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -62,13 +46,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -78,24 +60,17 @@ import io.github.elli0t0.phone.core.design.LiquidGlassIconButton
 import io.github.elli0t0.phone.core.design.LiquidGlassPill
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
-import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.navigation.InnerTopBar
 import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.data.call.CallState
 import io.github.elli0t0.phone.data.call.OngoingCallModel
-import io.github.elli0t0.phone.data.settings.model.AnimationOption
-import io.github.elli0t0.phone.data.settings.model.AnswerGesture
-import io.github.elli0t0.phone.data.settings.model.AnswerStyle
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.ControlButtonSize
 import io.github.elli0t0.phone.data.settings.model.DtmfKeySize
 import io.github.elli0t0.phone.data.settings.model.IncomingAvatarShape
 import io.github.elli0t0.phone.data.settings.model.IncomingAvatarSize
-import io.github.elli0t0.phone.feature.call.ui.IncomingCallScreen
-import io.github.elli0t0.phone.feature.call.ui.OngoingCallScreen
 import kotlinx.coroutines.launch
-
 /**
  * Call background studio as a full page: the top half is a live
  * full-screen preview of the real call screen (incoming or ongoing)
@@ -527,244 +502,5 @@ fun CallBackgroundScreen(
                 }
             }
         }
-    }
-}
-
-/**
- * One settings group as a solid card: an optional title plus the
- * group's controls. Groups in the Call Studio are card items in
- * the page. Shared with CallStudioSections (same package).
- */
-@Composable
-fun StudioGroupCard(
-    title: String?,
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
-        ),
-        shape = RoundedCornerShape(PhoneDimens.studioGroupCardCornerRadius),
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(LocalSpacing.current.medium),
-            verticalArrangement = Arrangement.spacedBy(LocalSpacing.current.small)
-        ) {
-            if (title != null) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            content()
-        }
-    }
-}
-
-/**
- * Custom switch: wide 52x28dp track with a large white round thumb,
- * matching the main Settings switch (white thumb on accent track).
- * Shared with SettingsScreen's SettingsSwitch; moves to core/design
- * when SettingsScreen is split.
- */
-@Composable
-fun AppSwitch(
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    // Thumb slide respects the Animations setting: ON keeps the
-    // default spring, REDUCED shortens to a fade-speed tween,
-    // OFF snaps instantly.
-    val animationOption = LocalAppSettings.current.animationOption
-    val thumbSpec: AnimationSpec<Dp> = when (animationOption) {
-        AnimationOption.ON -> spring(stiffness = Spring.StiffnessMediumLow)
-        AnimationOption.REDUCED -> tween(
-            durationMillis = Motion.scaledDurationMs(200, animationOption),
-            easing = Motion.Easings.Standard
-        )
-        AnimationOption.OFF -> snap()
-    }
-    val thumbOffset by animateDpAsState(
-        targetValue = if (checked) {
-            PhoneDimens.settingsSwitchWidth - PhoneDimens.settingsSwitchThumbSize -
-                PhoneDimens.settingsSwitchThumbPadding * 2
-        } else {
-            PhoneDimens.settingsSwitchThumbPadding
-        },
-        animationSpec = thumbSpec
-    )
-    Box(
-        modifier = modifier
-            .size(
-                width = PhoneDimens.settingsSwitchWidth,
-                height = PhoneDimens.settingsSwitchHeight
-            )
-            .clip(RoundedCornerShape(PhoneDimens.settingsSwitchCornerPercent))
-            .background(
-                if (checked) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.surfaceVariant
-            )
-            .toggleable(
-                value = checked,
-                role = Role.Switch,
-                onValueChange = onCheckedChange
-            ),
-        contentAlignment = Alignment.CenterStart
-    ) {
-        Box(
-            modifier = Modifier
-                .offset(x = thumbOffset)
-                .size(PhoneDimens.settingsSwitchThumbSize)
-                .clip(CircleShape)
-                .background(Color.White)
-        )
-    }
-}
-
-/**
- * Glass segmented control: a rounded glass track with one sliding
- * selection pill (filled accent, onPrimary label). The pill's slide
- * honours the Animations setting. No square edges anywhere.
- */
-@Composable
-private fun GlassSegmentedControl(
-    options: List<String>,
-    selectedIndex: Int,
-    onSelect: (Int) -> Unit,
-    optionTestTags: List<String>,
-    modifier: Modifier = Modifier
-) {
-    val animationOption = LocalAppSettings.current.animationOption
-    val trackShape = RoundedCornerShape(50)
-    BoxWithConstraints(
-        modifier = modifier
-            .height(PhoneDimens.studioSegmentedControlHeight)
-            .liquidGlass(shape = trackShape)
-    ) {
-        val segmentWidth = maxWidth / options.size
-        val pillSpec: AnimationSpec<Dp> = when (animationOption) {
-            AnimationOption.ON -> spring(dampingRatio = 0.8f, stiffness = 380f)
-            AnimationOption.REDUCED -> tween(durationMillis = Motion.Durations.Short)
-            AnimationOption.OFF -> snap()
-        }
-        val pillOffset by animateDpAsState(
-            targetValue = segmentWidth * selectedIndex,
-            animationSpec = pillSpec,
-            label = "segmentedPill"
-        )
-        // Sliding selection pill under the labels.
-        Box(
-            modifier = Modifier
-                .offset(x = pillOffset)
-                .width(segmentWidth)
-                .fillMaxHeight()
-                .padding(PhoneDimens.studioSegmentedPillPadding)
-                .clip(trackShape)
-                .background(MaterialTheme.colorScheme.primary)
-        )
-        Row(modifier = Modifier.fillMaxSize()) {
-            options.forEachIndexed { index, label ->
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .clickable { onSelect(index) }
-                        .testTag(optionTestTags.getOrElse(index) { "segmented_$index" }),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = if (index == selectedIndex) {
-                            MaterialTheme.colorScheme.onPrimary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
- * The studio preview: the call screen is laid out at a reference
- * phone size, then scaled proportionally to fit the preview box,
- * so the caller header and call buttons are always visible.
- */
-@Composable
-private fun ScaledCallPreview(
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
-) {
-    BoxWithConstraints(
-        modifier = modifier,
-        contentAlignment = Alignment.Center
-    ) {
-        val scale = minOf(
-            maxWidth / PhoneDimens.studioPreviewReferenceWidth,
-            maxHeight / PhoneDimens.studioPreviewReferenceHeight
-        )
-        Box(
-            modifier = Modifier
-                .size(
-                    PhoneDimens.studioPreviewReferenceWidth,
-                    PhoneDimens.studioPreviewReferenceHeight
-                )
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                }
-        ) {
-            content()
-        }
-    }
-}
-
-/**
- * The live call preview: the real incoming or ongoing call screen
- * with a sample caller. Preview buttons are inert.
- */
-@Composable
-private fun CallPreviewContent(
-    previewOngoing: Boolean,
-    mockCall: OngoingCallModel,
-    selected: CallBackground,
-    backgroundColor: Long,
-    dimDraft: Float,
-    showNumber: Boolean,
-    answerStyle: AnswerStyle,
-    quickReplies: List<String>
-) {
-    if (previewOngoing) {
-        OngoingCallScreen(
-            callModel = mockCall,
-            onMuteToggle = {},
-            onAudioRouteSelect = {},
-            onHoldToggle = {},
-            onDtmfDigit = {},
-            onEndCall = {},
-            callBackground = selected,
-            accentColor = backgroundColor,
-            dim = dimDraft,
-            showNumber = showNumber
-        )
-    } else {
-        IncomingCallScreen(
-            callModel = mockCall,
-            onAnswer = {},
-            onDecline = {},
-            onDeclineWithMessage = {},
-            quickDeclineMessages = quickReplies,
-            callBackground = selected,
-            accentColor = backgroundColor,
-            dim = dimDraft,
-            showNumber = showNumber,
-            answerStyle = answerStyle
-        )
     }
 }

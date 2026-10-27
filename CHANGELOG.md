@@ -164,6 +164,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.44] - 2026-10-27
+
+- File splits, no behavior changes: AnswerControls is now AnswerControls + Classic/Slider/Swipe/Liquid answer files, and CallBackgroundScreen is now the screen + CallStudioComponents (shared cards/switches) + CallPreviewComponents (preview pieces). Every moved piece kept its code verbatim; only private became internal across files.
+- New unit tests: DTMF queue ordering, stop-after-every-tone, tone duration, gap timing, drain-and-restart, and inactive-call drops (virtual time); number formatting for Iranian national/international/partial grouping, USSD passthrough, and sanitize. Bidi wrap itself is a one-line Android framework delegate, so it has no JVM unit test.
+
 ## [0.11.43] - 2026-10-27
 
 - Keypad number display: the number now centers in the area left of a reserved 56 dp backspace slot instead of sliding under the backspace, shrinks down to 24 sp, and falls back to a middle-ellipsized line when it still overflows at minimum size.
