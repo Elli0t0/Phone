@@ -2,6 +2,7 @@ package io.github.elli0t0.phone.data.contacts
 
 import android.content.ContentResolver
 import android.database.ContentObserver
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -67,6 +68,24 @@ object ContactNameIndex {
         return index[key(number)]
     }
 
+    /**
+     * Observer registration, extracted so unit tests can simulate a
+     * SecurityException: ContentResolver.registerContentObserver is final
+     * and cannot be overridden by a fake resolver on the JVM.
+     */
+    internal fun defaultRegisterObserver(
+        resolver: ContentResolver,
+        uri: Uri,
+        notifyForDescendants: Boolean,
+        observer: ContentObserver
+    ) {
+        resolver.registerContentObserver(uri, notifyForDescendants, observer)
+    }
+
+    internal var registerObserver: (
+        ContentResolver, Uri, Boolean, ContentObserver
+    ) -> Unit = ::defaultRegisterObserver
+
     /** Start the index (register observer + first build). Idempotent. */
     @Synchronized
     fun ensureStarted(resolver: ContentResolver) {
@@ -78,7 +97,8 @@ object ContactNameIndex {
                     rebuildDebounced()
                 }
             }
-            resolver.registerContentObserver(
+            registerObserver(
+                resolver,
                 ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
                 true,
                 observer

@@ -1,8 +1,6 @@
 package io.github.elli0t0.phone
 
 import android.content.ContentResolver
-import android.database.ContentObserver
-import android.net.Uri
 import io.github.elli0t0.phone.data.contacts.ContactNameIndex
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -15,27 +13,18 @@ import org.junit.Test
  * set started=true despite the SecurityException, so later calls
  * returned early and the observer was never registered.
  *
- * ContactNameIndex is a process-wide object, so each test resets its
- * started flag (and ready state) via reflection first and restores a
- * clean state after, keeping this file independent of test order.
+ * The failure is injected through ContactNameIndex's registerObserver
+ * seam: ContentResolver.registerContentObserver is final and cannot be
+ * overridden by a fake resolver on the JVM. ContactNameIndex is a
+ * process-wide object, so each test resets its started flag (and ready
+ * state) via reflection first and restores a clean state after, keeping
+ * this file independent of test order.
  */
 class ContactNameIndexRetryTest {
 
-    private class FlakyResolver : ContentResolver(null) {
-        var registerAttempts = 0
-        var throwOnRegister = true
-
-        override fun registerContentObserver(
-            uri: Uri,
-            notifyForDescendants: Boolean,
-            observer: ContentObserver
-        ) {
-            registerAttempts++
-            if (throwOnRegister) throw SecurityException("no permission yet")
-        }
-        // query() is final in ContentResolver, so it is not overridden:
-        // the stub returns null, which build() already handles.
-    }
+    // ContentResolver is abstract: a bare subclass with no overrides
+    // instantiates it (its methods are stubs on the JVM test runtime).
+    private class DummyResolver : ContentResolver(null)
 
     private fun setField(name: String, value: Any?) {
         val field = ContactNameIndex.javaClass.getDeclaredField(name)
@@ -67,21 +56,27 @@ class ContactNameIndexRetryTest {
 
     @After
     fun tearDown() {
+        ContactNameIndex.registerObserver = ContactNameIndex::defaultRegisterObserver
         resetIndex()
     }
 
     @Test
     fun registrationRetriesAfterPermissionGrant() {
-        val resolver = FlakyResolver()
+        var attempts = 0
+        var throwOnRegister = true
+        ContactNameIndex.registerObserver = { _, _, _, _ ->
+            attempts++
+            if (throwOnRegister) throw SecurityException("no permission yet")
+        }
         // Permission denied: registration attempted, flag stays unset.
-        ContactNameIndex.ensureStarted(resolver)
-        assertEquals(1, resolver.registerAttempts)
+        ContactNameIndex.ensureStarted(DummyResolver())
+        assertEquals(1, attempts)
         // Permission granted: the next call retries and succeeds.
-        resolver.throwOnRegister = false
-        ContactNameIndex.ensureStarted(resolver)
-        assertEquals(2, resolver.registerAttempts)
+        throwOnRegister = false
+        ContactNameIndex.ensureStarted(DummyResolver())
+        assertEquals(2, attempts)
         // Started: further calls do not re-register.
-        ContactNameIndex.ensureStarted(resolver)
-        assertEquals(2, resolver.registerAttempts)
+        ContactNameIndex.ensureStarted(DummyResolver())
+        assertEquals(2, attempts)
     }
 }
