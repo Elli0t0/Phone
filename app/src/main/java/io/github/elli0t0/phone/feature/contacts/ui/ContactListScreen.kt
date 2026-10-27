@@ -307,28 +307,19 @@ private fun ContactsContent(
             // first 8 rows stagger in on first load.
             var revealIndex = 0
             // Large header as the first list item: scrolls away naturally.
+            // Split glass top bar lives inside the header bottom
+            // (Groups pill left, actions pill right), so the header
+            // block caps at its height fraction instead of stacking
+            // a second row below it. It reveals with the header.
             item(key = "contacts_header") {
                 PageHeaderItem(
                     title = stringResource(id = R.string.tab_contacts),
                     subtitle = countText,
                     modifier = Modifier
                         .animateItem()
-                        .firstLoadReveal(revealIndex++, listRevealed)
+                        .firstLoadReveal(revealIndex++, listRevealed),
+                    bottomContent = topBarPills
                 )
-            }
-            // Split glass top bar: Groups pill left, actions pill right.
-            item(key = "contacts_top_bar") {
-                Row(
-                    modifier = Modifier
-                        .animateItem()
-                        .firstLoadReveal(revealIndex++, listRevealed)
-                        .fillMaxWidth()
-                        .padding(bottom = spacing.small),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    topBarPills()
-                }
             }
             if (uiState.showDuplicatesCard && uiState.searchQuery.isEmpty()) {
                 item(key = "duplicates_card") {
@@ -463,8 +454,9 @@ private fun ContactsContent(
                 .align(Alignment.TopEnd)
                 .padding(top = 8.dp),
             actions = topBarPills,
-            // In-list top bar is item 1: reveal only once it scrolls off.
-            revealAfterIndex = 1
+            // Top bar now lives inside the header item (index 0):
+            // fade the pill in as the header scrolls off.
+            revealAfterIndex = 0
         )
         }
     }

@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -81,6 +80,7 @@ import io.github.elli0t0.phone.data.contacts.model.ContactEmail
 import io.github.elli0t0.phone.data.contacts.model.ContactPhone
 import io.github.elli0t0.phone.data.contacts.util.ContactPhotoUtil
 import io.github.elli0t0.phone.feature.contacts.ContactEditUiState
+import io.github.elli0t0.phone.navigation.InnerTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -209,30 +209,26 @@ fun ContactEditScreen(
             .background(MaterialTheme.colorScheme.background)
             .testTag("contact_edit_screen")
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .statusBarsPadding()
-                .padding(horizontal = spacing.screenHorizontalPadding)
-                .padding(top = spacing.medium, bottom = PhoneDimens.editFormBottomPadding),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Scrolling page heading (no top bar): the title scrolls
-            // away with the form; Cancel / Save live in the floating
-            // pill at the bottom.
-            Text(
-                text = if (uiState.isNewContact) {
+        // Fixed inner top bar like every other inner screen: back
+        // cancels, and the title no longer scrolls away with the form
+        // (Cancel / Save still live in the floating pill at the bottom).
+        Column(modifier = Modifier.fillMaxSize()) {
+            InnerTopBar(
+                onBack = onCancelClick,
+                title = if (uiState.isNewContact) {
                     stringResource(id = R.string.contact_create_title)
                 } else {
                     stringResource(id = R.string.contact_edit_title)
-                },
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = spacing.medium)
+                }
             )
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = spacing.screenHorizontalPadding)
+                    .padding(top = spacing.medium, bottom = PhoneDimens.editFormBottomPadding),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
             // Validation Error Alert
             if (uiState.validationErrorRes != null) {
                 Card(
@@ -470,6 +466,7 @@ fun ContactEditScreen(
                 }
             }
 
+        }
         }
 
         // Floating Cancel / Save pill: glass, ~75% width, above the

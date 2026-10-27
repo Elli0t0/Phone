@@ -388,6 +388,12 @@ private class GlassSpec(
  * source compatibility while call sites migrate to [floating].
  */
 @Composable
+/**
+ * [blur] skips the live-blur stack (haze effect + its opaque fallback)
+ * for surfaces that already have their own opaque background: the haze
+ * tint would otherwise wash that background out (e.g. the green call
+ * button under a white light-theme tint). Fill, sheen and rim stay.
+ */
 fun Modifier.liquidGlass(
     shape: Shape = RoundedCornerShape(24.dp),
     tint: Color = Color.Unspecified,
@@ -395,6 +401,7 @@ fun Modifier.liquidGlass(
     forceDarkGlass: Boolean = false,
     floating: Boolean = false,
     elevation: Dp = 8.dp,
+    blur: Boolean = true,
 ): Modifier {
     val dark = isDarkGlassTheme() || forceDarkGlass
     val base = if (tint != Color.Unspecified) tint else MaterialTheme.colorScheme.primary
@@ -404,8 +411,8 @@ fun Modifier.liquidGlass(
     }
     return this
         .clip(shape)
-        .then(glassBlurModifier(dark))
-        .then(glassSolidBaseModifier(dark))
+        .then(if (blur) glassBlurModifier(dark) else Modifier)
+        .then(if (blur) glassSolidBaseModifier(dark) else Modifier)
         .background(spec.fill)
         .background(spec.sheen)
         .border(1.dp, spec.rim, shape)

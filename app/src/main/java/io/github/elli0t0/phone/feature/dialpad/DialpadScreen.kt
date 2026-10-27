@@ -684,7 +684,9 @@ fun DialpadScreen(
                     }
                     // Solid green under the glass: the glass fill alone
                     // (22% alpha) washes out to near-white in light
-                    // theme, so the button was nearly invisible.
+                    // theme, so the button was nearly invisible. The
+                    // haze tint is skipped too: a white blur tint over
+                    // the green washed it out in light theme.
                     .background(
                         color = if (darkTheme) KeypadCallButtonGreenDark else KeypadCallButtonGreenLight,
                         shape = CircleShape
@@ -693,7 +695,8 @@ fun DialpadScreen(
                         shape = CircleShape,
                         tint = if (darkTheme) KeypadCallButtonGreenDark else KeypadCallButtonGreenLight,
                         elevation = 10.dp,
-                        isSelected = true
+                        isSelected = true,
+                        blur = false
                     )
                     .testTag("btn_call"),
                 contentAlignment = Alignment.Center

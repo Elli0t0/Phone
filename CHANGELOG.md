@@ -164,6 +164,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.42] - 2026-10-27
+
+- Headers capped at their height fraction: Contacts' split top bar (Groups pill + actions) now lives inside the header bottom instead of stacking a second row below it, and the header title centers at 40% of the header height (was 42%). The 22/30/38% size ladder is unchanged, and the floating pill now fades in as the header scrolls off.
+- Edit contact now has the same fixed inner top bar as every other inner screen (back cancels, title fixed); the scrolling heading is gone. Call Background no longer double-counts the status inset — its content now pads only the bottom inset like History does. The other converted screens were already single-inset.
+- Keypad call button stays vivid green in both themes: the glass layer no longer puts a white blur tint over the solid green. Light keypad keys get a slightly darker fill and a 1 dp 12% black rim so they read as keys on a light background.
+
 ## [0.11.41] - 2026-10-27
 
 - Removed the system contact-insert intents: other apps can no longer open the app with INSERT / INSERT_OR_EDIT — the in-app New Contact and Add-to-contact flows already cover both cases with the number prefilled, so the handler and its routing are gone too.

@@ -2,6 +2,7 @@ package io.github.elli0t0.phone.feature.dialpad
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -54,10 +55,13 @@ import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.bidiWrap
 import io.github.elli0t0.phone.core.design.LiquidGlassChip
 import io.github.elli0t0.phone.core.design.LiquidGlassPill
+import io.github.elli0t0.phone.core.design.KeypadKeyLightRim
 import io.github.elli0t0.phone.core.design.LiquidGlassPillShape
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.LiquidGlassSurfaceLight
+import io.github.elli0t0.phone.core.design.isDarkGlassTheme
 import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.design.bouncyClick
 import io.github.elli0t0.phone.core.design.glassPress
@@ -132,10 +136,16 @@ fun DialKeyView(
         }
     }
     if (glassDialpad) {
+        // Light keys: the glass fill alone is near-invisible on a
+        // light background, so light keys get a slightly darker fill
+        // and a 1dp 12% black rim to read as keys.
+        val lightKey = !isDarkGlassTheme()
         Box(
             modifier = modifier
                 .size(PhoneDimens.keypadTouchSize)
+                .then(if (lightKey) Modifier.background(LiquidGlassSurfaceLight, CircleShape) else Modifier)
                 .liquidGlass(shape = CircleShape)
+                .then(if (lightKey) Modifier.border(1.dp, KeypadKeyLightRim, CircleShape) else Modifier)
                 .glassPress(keySource)
                 .combinedClickable(
                     interactionSource = keySource,

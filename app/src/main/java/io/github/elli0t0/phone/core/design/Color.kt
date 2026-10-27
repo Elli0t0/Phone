@@ -50,6 +50,7 @@ val CallRejectedOrange = Color(0xFFFB8C00)
 // Keypad call button green.
 val KeypadCallButtonGreenDark = Color(0xFF34A853)
 val KeypadCallButtonGreenLight = Color(0xFF34A853)
+val KeypadKeyLightRim = Color.Black.copy(alpha = 0.12f)
 val FavoriteHintOrange = Color(0xFFFFA726)
 // Contact avatar fallback: soft two-tone pastel gradients,
 // picked deterministically from the contact name.

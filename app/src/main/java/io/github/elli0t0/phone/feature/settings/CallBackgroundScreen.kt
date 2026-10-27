@@ -262,7 +262,7 @@ fun CallBackgroundScreen(
             LocalConfiguration.current.screenHeightDp.dp * 0.6f,
             PhoneDimens.studioPreviewMaxHeight
         )
-        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+        Box(modifier = Modifier.fillMaxSize().padding(bottom = innerPadding.calculateBottomPadding())) {
             Column(modifier = Modifier.fillMaxSize()) {
                 InnerTopBar(
                 onBack = onNavigateBack,

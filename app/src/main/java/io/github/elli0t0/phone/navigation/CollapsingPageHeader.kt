@@ -1,6 +1,7 @@
 package io.github.elli0t0.phone.navigation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -59,8 +60,12 @@ fun pageHeaderHeight(): Dp {
 
 /**
  * Large page header (Recents, Contacts) as the first LazyColumn item.
- * Title centered at ~42% of the header height, subtitle under it, action
+ * Title centered at ~40% of the header height, subtitle under it, action
  * row right-aligned at the bottom, 12dp above the first list item.
+ * [bottomContent] is an optional full-width row pinned to the header
+ * bottom (e.g. Contacts' split top bar): it lives inside the header
+ * block, so the header still caps at its height fraction. Pass either
+ * [actions] or [bottomContent], not both — they would overlap.
  * Scrolls away naturally: no snapping, no height animation.
  */
 @Composable
@@ -68,7 +73,8 @@ fun PageHeaderItem(
     title: String,
     subtitle: String?,
     modifier: Modifier = Modifier,
-    actions: @Composable RowScope.() -> Unit = {}
+    actions: @Composable RowScope.() -> Unit = {},
+    bottomContent: (@Composable RowScope.() -> Unit)? = null
 ) {
     val spacing = LocalSpacing.current
     val headerHeight = pageHeaderHeight()
@@ -79,8 +85,8 @@ fun PageHeaderItem(
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
-        // Title block centered at ~42% of the header height: centered in
-        // the box, then shifted up by the 50% - 42% difference.
+        // Title block centered at ~40% of the header height: centered in
+        // the box, then shifted up by the 50% - 40% difference.
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -118,6 +124,19 @@ fun PageHeaderItem(
             verticalAlignment = Alignment.CenterVertically,
             content = actions
         )
+        // Full-width bottom row (Contacts' split top bar): pinned to
+        // the header bottom so the block stays one fraction tall.
+        if (bottomContent != null) {
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(bottom = spacing.small),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                content = bottomContent
+            )
+        }
     }
 }
 
