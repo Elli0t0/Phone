@@ -80,7 +80,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -450,13 +449,18 @@ fun DialpadScreen(
         // auto-shrinks on overflow; the backspace owns a reserved
         // 56dp slot at the right, so the number never runs under it.
         // At the minimum size a still-overflowing number falls back
-        // to a single middle-ellipsized line.
+        // to a single line truncated in the middle ("…" keeps the
+        // leading and trailing digits visible). MiddleEllipsis does
+        // not exist in this Compose version, so the truncation is
+        // computed from the measured line width (see below).
         val displayText = uiState.formattedNumber.ifBlank { uiState.rawNumber }
         var displayFontSize by remember { mutableStateOf(PhoneDimens.keypadNumberDisplaySize) }
         var overflowAtMin by remember { mutableStateOf(false) }
+        var middleTruncated by remember { mutableStateOf<String?>(null) }
         LaunchedEffect(displayText) {
             displayFontSize = PhoneDimens.keypadNumberDisplaySize
             overflowAtMin = false
+            middleTruncated = null
         }
             Box(
                 modifier = Modifier
@@ -494,6 +498,18 @@ fun DialpadScreen(
                     onTextLayout = { layoutResult ->
                         if (layoutResult.hasVisualOverflow) {
                             if (displayFontSize <= PhoneDimens.keypadNumberDisplayMinSize) {
+                                // One-shot middle truncation: the fraction
+                                // of the line that fits the number area,
+                                // minus a 2-char margin for the ellipsis
+                                // and non-tabular glyphs, split across
+                                // both ends so head and tail stay visible.
+                                val lineWidth = layoutResult.getLineRight(0) - layoutResult.getLineLeft(0)
+                                if (lineWidth > 0) {
+                                    val fit = ((displayText.length * (layoutResult.size.width / lineWidth)).toInt() - 2)
+                                        .coerceAtLeast(2)
+                                    val first = (fit + 1) / 2
+                                    middleTruncated = displayText.take(first) + "…" + displayText.takeLast(fit - first)
+                                }
                                 overflowAtMin = true
                             } else {
                                 val shrunk = displayFontSize * PhoneDimens.keypadNumberDisplayShrinkFactor
@@ -507,11 +523,11 @@ fun DialpadScreen(
                     },
                     modifier = Modifier.fillMaxWidth().padding(end = 56.dp).graphicsLayer { alpha = 0f }.clearAndSetSemantics { }
                 )
-                // Over-long number at minimum size: one
-                // middle-ellipsized line instead of the per-digit row.
-                if (overflowAtMin) {
+                // Over-long number at minimum size: the
+                // middle-truncated line instead of the per-digit row.
+                if (overflowAtMin && middleTruncated != null) {
                     Text(
-                        text = displayText,
+                        text = middleTruncated!!,
                         style = MaterialTheme.typography.displayLarge.copy(
                             fontSize = displayFontSize,
                             fontWeight = FontWeight.Normal
@@ -520,7 +536,6 @@ fun DialpadScreen(
                         textAlign = TextAlign.Center,
                         maxLines = 1,
                         softWrap = false,
-                        overflow = TextOverflow.MiddleEllipsis,
                         modifier = Modifier.fillMaxWidth().padding(end = 56.dp)
                             .semantics { contentDescription = displayText }
                     )
