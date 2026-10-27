@@ -5,10 +5,8 @@ import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -17,9 +15,11 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -31,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,9 +46,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.GlassSurface
+import io.github.elli0t0.phone.core.design.LocalHazeState
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneTheme
 import io.github.elli0t0.phone.core.telecom.PhoneInCallService
@@ -152,69 +156,83 @@ class CallActivity : ComponentActivity() {
                 }
 
                 val currentModel = ongoingCall
+                // Real glass blur, mirroring MainActivity: without a root
+                // HazeState the call screens' glass falls back to flat
+                // opaque. The provider + source wrap only the call
+                // screens, so the post-dial dialog keeps its current look.
+                val hazeState = remember { HazeState() }
                 if (currentModel != null) {
-                    // Incoming entrance, incoming -> ongoing, and the
-                    // end-call exit all run through Motion (On / Reduced
-                    // / Off). The exit fade plays while the effect above
-                    // waits out the same duration.
-                    AnimatedVisibility(
-                        visible = currentModel.state != CallState.DISCONNECTED,
-                        enter = EnterTransition.None,
-                        exit = Motion.innerContentTransform(
-                            settings.animationOption, 1
-                        ).initialContentExit,
-                        label = "call_end"
-                    ) {
-                        AnimatedContent(
-                            targetState = currentModel.state == CallState.RINGING,
-                            transitionSpec = {
-                                Motion.innerContentTransform(settings.animationOption, 1)
-                            },
-                            label = "call_state"
-                        ) { ringing ->
-                            if (ringing) {
-                                IncomingCallScreen(
-                                    callModel = currentModel,
-                                    onAnswer = { CallRepository.answerCall() },
-                                    onDecline = { CallRepository.rejectCall() },
-                                    onDeclineWithMessage = { CallRepository.rejectCallWithMessage(it) },
-                                    quickDeclineMessages = quickDeclineMessages,
-                                    callBackground = settings.callBackground,
-                                    accentColor = if (settings.callBackground == CallBackground.CUSTOM) {
-                                        settings.callBackgroundCustomColor
+                    CompositionLocalProvider(LocalHazeState provides hazeState) {
+                        Box(
+                            modifier = Modifier.fillMaxSize().hazeSource(hazeState)
+                        ) {
+                            // Incoming entrance, incoming -> ongoing, and the
+                            // end-call exit all run through Motion (On / Reduced
+                            // / Off). The exit fade plays while the effect above
+                            // waits out the same duration.
+                            AnimatedVisibility(
+                                visible = currentModel.state != CallState.DISCONNECTED,
+                                enter = EnterTransition.None,
+                                exit = Motion.innerContentTransform(
+                                    settings.animationOption, 1
+                                ).initialContentExit,
+                                label = "call_end"
+                            ) {
+                                AnimatedContent(
+                                    targetState = currentModel.state == CallState.RINGING,
+                                    transitionSpec = {
+                                        Motion.innerContentTransform(settings.animationOption, 1)
+                                    },
+                                    label = "call_state"
+                                ) { ringing ->
+                                    if (ringing) {
+                                        IncomingCallScreen(
+                                            callModel = currentModel,
+                                            onAnswer = {
+                                                CallRepository.answerCall()
+                                                dismissKeyguardAfterAnswer()
+                                            },
+                                            onDecline = { CallRepository.rejectCall() },
+                                            onDeclineWithMessage = { CallRepository.rejectCallWithMessage(it) },
+                                            quickDeclineMessages = quickDeclineMessages,
+                                            callBackground = settings.callBackground,
+                                            accentColor = if (settings.callBackground == CallBackground.CUSTOM) {
+                                                settings.callBackgroundCustomColor
+                                            } else {
+                                                settings.accentColor
+                                            },
+                                            dim = settings.callBackgroundDim,
+                                            showNumber = settings.showNumberOnCallScreen,
+                                            answerStyle = settings.answerStyle
+                                        )
                                     } else {
-                                        settings.accentColor
-                                    },
-                                    dim = settings.callBackgroundDim,
-                                    showNumber = settings.showNumberOnCallScreen,
-                                    answerStyle = settings.answerStyle
-                                )
-                            } else {
-                                OngoingCallScreen(
-                                    callModel = currentModel,
-                                    onMuteToggle = { muted -> PhoneInCallService.setMuted(muted) },
-                                    onAudioRouteSelect = { route -> PhoneInCallService.setAudioRoute(route) },
-                                    onHoldToggle = { hold ->
-                                        if (hold) CallRepository.holdCall() else CallRepository.unholdCall()
-                                    },
-                                    onDtmfDigit = { digit -> CallRepository.sendDtmf(digit) },
-                                    dtmfDigits = dtmfDigits,
-                                    onClearDtmfDigits = { CallRepository.clearDtmfDigits() },
-                                    onKeypadHidden = { CallRepository.drainDtmf() },
-                                    onEndCall = { CallRepository.disconnectCall() },
-                                    onRequestBluetoothPermission = {
-                                        bluetoothPermissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
-                                    },
-                                    hasBluetoothPermission = hasBluetoothPermission,
-                                    callBackground = settings.callBackground,
-                                    accentColor = if (settings.callBackground == CallBackground.CUSTOM) {
-                                        settings.callBackgroundCustomColor
-                                    } else {
-                                        settings.accentColor
-                                    },
-                                    dim = settings.callBackgroundDim,
-                                    showNumber = settings.showNumberOnCallScreen
-                                )
+                                        OngoingCallScreen(
+                                            callModel = currentModel,
+                                            onMuteToggle = { muted -> PhoneInCallService.setMuted(muted) },
+                                            onAudioRouteSelect = { route -> PhoneInCallService.setAudioRoute(route) },
+                                            onHoldToggle = { hold ->
+                                                if (hold) CallRepository.holdCall() else CallRepository.unholdCall()
+                                            },
+                                            onDtmfDigit = { digit -> CallRepository.sendDtmf(digit) },
+                                            dtmfDigits = dtmfDigits,
+                                            onClearDtmfDigits = { CallRepository.clearDtmfDigits() },
+                                            onKeypadHidden = { CallRepository.drainDtmf() },
+                                            onEndCall = { CallRepository.disconnectCall() },
+                                            onRequestBluetoothPermission = {
+                                                bluetoothPermissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
+                                            },
+                                            hasBluetoothPermission = hasBluetoothPermission,
+                                            callBackground = settings.callBackground,
+                                            accentColor = if (settings.callBackground == CallBackground.CUSTOM) {
+                                                settings.callBackgroundCustomColor
+                                            } else {
+                                                settings.accentColor
+                                            },
+                                            dim = settings.callBackgroundDim,
+                                            showNumber = settings.showNumberOnCallScreen
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -224,20 +242,19 @@ class CallActivity : ComponentActivity() {
     }
 
     private fun turnScreenOnAndShowOverLockScreen() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-            setShowWhenLocked(true)
-            setTurnScreenOn(true)
-            val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager
-            keyguardManager?.requestDismissKeyguard(this, null)
-        } else {
-            @Suppress("DEPRECATION")
-            window.addFlags(
-                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                    WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
-                    WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD or
-                    WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-            )
-        }
+        // Show over the lock screen and turn it on, but do NOT dismiss
+        // the keyguard here: that would unlock the phone while a call
+        // is still ringing in the user's pocket. Dismissal happens only
+        // after the user explicitly answers (see below). The pre-O_MR1
+        // branch is gone: minSdk is 29, so it could never run.
+        setShowWhenLocked(true)
+        setTurnScreenOn(true)
+    }
+
+    // Dismiss the keyguard only once the user has committed to answering.
+    private fun dismissKeyguardAfterAnswer() {
+        val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager
+        keyguardManager?.requestDismissKeyguard(this, null)
     }
 
     override fun onResume() {
@@ -283,6 +300,7 @@ class CallActivity : ComponentActivity() {
     private fun handleIntent(intent: Intent?) {
         if (intent?.action == PhoneInCallService.ACTION_ANSWER_CALL) {
             CallRepository.answerCall()
+            dismissKeyguardAfterAnswer()
             PhoneInCallService.cancelIncomingNotification(this)
             PhoneInCallService.onCallActivityResumed(this)
         }

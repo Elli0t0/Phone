@@ -45,7 +45,7 @@ class DtmfToneQueue(
 
     fun drain() {
         worker?.cancel()
-        player.stop()
+        runCatching { player.stop() }
         while (channel.tryReceive().isSuccess) {
         }
         startWorker()
@@ -55,11 +55,13 @@ class DtmfToneQueue(
         worker = scope.launch {
             for (digit in channel) {
                 if (!isCallActive()) continue
+                // A platform player throwing mid-tone (call dropped
+                // under it) must never kill the worker: guard both calls.
                 try {
-                    player.play(digit)
+                    runCatching { player.play(digit) }
                     delay(TONE_MS)
                 } finally {
-                    player.stop()
+                    runCatching { player.stop() }
                 }
                 delay(GAP_MS)
             }

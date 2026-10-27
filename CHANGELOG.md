@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.46] - 2026-10-27
+
+- In-call and telecom lifecycle fixes: the InCallService scope now cancels only its children on destroy (cancelling the scope itself poisoned its root Job across rebinds); the keyguard is no longer dismissed when a call starts ringing — it is dismissed only after the user explicitly answers, from the answer button or the notification action (the dead pre-O_MR1 branch is gone, minSdk is 29); DTMF player calls are guarded so a platform player throwing mid-tone can never kill the tone worker; emergency numbers bypass the SIM picker, saved-SIM lookup, and this app's InCall routing entirely and go straight to the system dialer; CallActivity now provides a root HazeState like MainActivity, so call-screen glass actually blurs on API 31+ instead of falling back to flat opaque.
+
 ## [0.11.45] - 2026-10-27
 
 - File splits, no behavior changes: AndroidContactsRepository's read queries moved to AndroidContactsQueries and its row lookups to AndroidContactsLookup (same package, internal helpers taking the ContentResolver), and DialpadScreen's sections moved to DialpadSuggestionsArea (search rows, suggestion chips, quick redial, no-match actions), DialpadNumberDisplay (measuring text, auto-shrink, middle truncation, backspace), and DialpadKeypadSections (key grid + call button row). Every moved piece kept its code verbatim; only private became internal and section state became parameters.

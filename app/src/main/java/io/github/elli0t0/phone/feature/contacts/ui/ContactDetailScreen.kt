@@ -5,6 +5,7 @@ import android.content.Intent
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
+import android.telephony.PhoneNumberUtils
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -108,6 +109,13 @@ fun ContactDetailScreen(
     val lightHaptic = rememberLightHaptic()
 
     fun placeCallWithSim(number: String) {
+        if (PhoneNumberUtils.isEmergencyNumber(number)) {
+            // Emergency: skip the SIM picker and saved-SIM lookup
+            // entirely; placeCall hands emergency numbers to the
+            // system dialer.
+            CallManager.placeCall(context, number)
+            return
+        }
         if (simAccounts.size <= 1) {
             CallManager.placeCall(context, number)
             return

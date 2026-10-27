@@ -3,6 +3,7 @@ package io.github.elli0t0.phone.feature.recents
 import android.content.Intent
 import android.net.Uri
 import android.provider.ContactsContract
+import android.telephony.PhoneNumberUtils
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeOut
@@ -144,6 +145,13 @@ fun RecentsScreen(
     val recentsScope = androidx.compose.runtime.rememberCoroutineScope()
 
     fun initiateCall(number: String, lookupKey: String? = null) {
+        if (PhoneNumberUtils.isEmergencyNumber(number)) {
+            // Emergency: skip the SIM picker and saved-SIM lookup
+            // entirely; placeCall hands emergency numbers to the
+            // system dialer.
+            CallManager.placeCall(context, number)
+            return
+        }
         if (simAccounts.size <= 1) {
             CallManager.placeCall(context, number)
             return

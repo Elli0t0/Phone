@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.telephony.PhoneNumberUtils
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -112,6 +113,13 @@ fun DialpadScreen(
     var menuExpanded by remember { androidx.compose.runtime.mutableStateOf(false) }
 
     fun dialNumber(number: String, lookupKey: String? = null) {
+        if (PhoneNumberUtils.isEmergencyNumber(number)) {
+            // Emergency: skip the SIM picker and saved-SIM lookup
+            // entirely; placeCall hands emergency numbers to the
+            // system dialer.
+            CallManager.placeCall(context, number)
+            return
+        }
         if (simAccounts.size <= 1) {
             CallManager.placeCall(context, number)
             return

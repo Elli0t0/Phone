@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.telecom.TelecomManager
+import android.telephony.PhoneNumberUtils
 import androidx.core.content.ContextCompat
 
 /**
@@ -40,6 +41,21 @@ object CallManager {
         if (trimmed.isEmpty()) return
 
         val encodedUri = Uri.parse("tel:" + Uri.encode(trimmed))
+
+        // Emergency numbers never go through this app's InCall routing,
+        // a SIM picker, or a saved-SIM lookup: hand them straight to
+        // the system dialer.
+        if (PhoneNumberUtils.isEmergencyNumber(trimmed)) {
+            try {
+                val dialIntent = Intent(Intent.ACTION_DIAL, encodedUri).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(dialIntent)
+            } catch (_: Exception) {
+                // ActivityNotFound or restricted device
+            }
+            return
+        }
         val hasCallPhonePermission = ContextCompat.checkSelfPermission(
             context,
             Manifest.permission.CALL_PHONE
