@@ -446,11 +446,16 @@ fun DialpadScreen(
         // Formatted Number Display (supports long click to paste).
         // Always rendered: a fixed slot, so typing the first digit
         // never shifts the layout. Number centered, regular weight,
-        // auto-shrinks on overflow; backspace sits at its right.
+        // auto-shrinks on overflow; the backspace owns a reserved
+        // 56dp slot at the right, so the number never runs under it.
+        // At the minimum size a still-overflowing number falls back
+        // to a single middle-ellipsized line.
         val displayText = uiState.formattedNumber.ifBlank { uiState.rawNumber }
         var displayFontSize by remember { mutableStateOf(PhoneDimens.keypadNumberDisplaySize) }
+        var overflowAtMin by remember { mutableStateOf(false) }
         LaunchedEffect(displayText) {
             displayFontSize = PhoneDimens.keypadNumberDisplaySize
+            overflowAtMin = false
         }
             Box(
                 modifier = Modifier
@@ -471,7 +476,10 @@ fun DialpadScreen(
                 contentAlignment = Alignment.Center
             ) {
                 // Hidden full-string Text: measures overflow and drives
-                // the auto-shrink, exactly as the single Text did.
+                // the auto-shrink, exactly as the single Text did. It
+                // spans the number area (full width minus the reserved
+                // backspace slot), so it overflows at the same point
+                // the visible number would.
                 Text(
                     text = displayText,
                     style = MaterialTheme.typography.displayLarge.copy(
@@ -484,22 +492,46 @@ fun DialpadScreen(
                     softWrap = false,
                     onTextLayout = { layoutResult ->
                         if (layoutResult.hasVisualOverflow) {
-                            val shrunk = displayFontSize * PhoneDimens.keypadNumberDisplayShrinkFactor
-                            displayFontSize = if (shrunk.value < PhoneDimens.keypadNumberDisplayMinSize.value) {
-                                PhoneDimens.keypadNumberDisplayMinSize
+                            if (displayFontSize <= PhoneDimens.keypadNumberDisplayMinSize) {
+                                overflowAtMin = true
                             } else {
-                                shrunk
+                                val shrunk = displayFontSize * PhoneDimens.keypadNumberDisplayShrinkFactor
+                                displayFontSize = if (shrunk.value < PhoneDimens.keypadNumberDisplayMinSize.value) {
+                                    PhoneDimens.keypadNumberDisplayMinSize
+                                } else {
+                                    shrunk
+                                }
                             }
                         }
                     },
-                    modifier = Modifier.graphicsLayer { alpha = 0f }.clearAndSetSemantics { }
+                    modifier = Modifier.fillMaxWidth().padding(end = 56.dp).graphicsLayer { alpha = 0f }.clearAndSetSemantics { }
                 )
+                // Over-long number at minimum size: one
+                // middle-ellipsized line instead of the per-digit row.
+                if (overflowAtMin) {
+                    Text(
+                        text = displayText,
+                        style = MaterialTheme.typography.displayLarge.copy(
+                            fontSize = displayFontSize,
+                            fontWeight = FontWeight.Normal
+                        ),
+                        color = MaterialTheme.colorScheme.onBackground,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.MiddleEllipsis,
+                        modifier = Modifier.fillMaxWidth().padding(end = 56.dp)
+                            .semantics { contentDescription = displayText }
+                    )
+                } else
                 // Visible per-character number: each digit pops in
                 // (scale + fade on ON, fade only on REDUCED, instant
                 // on OFF) as it is typed; the row grows/shrinks
-                // smoothly as digits are added or deleted.
+                // smoothly as digits are added or deleted. The end
+                // padding reserves the backspace slot, so the row
+                // centers in the number area, clear of the backspace.
                 Row(
-                    modifier = Modifier.animateContentSize(
+                    modifier = Modifier.padding(end = 56.dp).animateContentSize(
                         animationSpec = if (animationOption == AnimationOption.OFF) {
                             snap()
                         } else if (animationOption == AnimationOption.REDUCED) {

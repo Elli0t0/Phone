@@ -215,7 +215,8 @@ fun OngoingCallScreen(
                     displayName = titleText,
                     modifier = Modifier.clip(avatarShape),
                     size = PhoneDimens.ongoingAvatarSize * avatarScale,
-                    textStyle = MaterialTheme.typography.displaySmall
+                    textStyle = MaterialTheme.typography.displaySmall,
+                    showPersonIcon = !hasName
                 )
                 Spacer(modifier = Modifier.height(spacing.medium))
                 Text(

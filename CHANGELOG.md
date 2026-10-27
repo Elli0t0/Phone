@@ -164,6 +164,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.43] - 2026-10-27
+
+- Keypad number display: the number now centers in the area left of a reserved 56 dp backspace slot instead of sliding under the backspace, shrinks down to 24 sp, and falls back to a middle-ellipsized line when it still overflows at minimum size.
+- Unknown callers now show a person icon instead of "+" (incoming avatar and the ongoing/dialing avatar); the incoming number title caps at 40 sp and shrinks instead of overflowing.
+- Slide-to-answer: the Decline circle and label are now centered above the track instead of sitting at the left.
+- Edit pill: 6 dp inner padding, and Cancel is now onSurface at 80% instead of accent. History filter chips now use the accent fill with onPrimary text when selected.
+- Recents search now hides the "Phone" title header while search is open, so results get the screen. Quick-dial chips now sit under a "Recent" label, wrap names/numbers to two lines, and use the accent phone icon.
+
 ## [0.11.42] - 2026-10-27
 
 - Headers capped at their height fraction: Contacts' split top bar (Groups pill + actions) now lives inside the header bottom instead of stacking a second row below it, and the header title centers at 40% of the header height (was 42%). The 22/30/38% size ladder is unchanged, and the floating pill now fades in as the header scrolls off.

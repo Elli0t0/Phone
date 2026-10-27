@@ -576,9 +576,18 @@ fun QuickRedialChips(
     onRedial: (QuickRedialEntry) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val spacing = LocalSpacing.current
+    Column(modifier = modifier) {
+        Text(
+            text = stringResource(id = R.string.quick_redial_recent),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = spacing.small)
+        )
     Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         entries.forEachIndexed { index, entry ->
             val chipModifier = Modifier.weight(1f).testTag("dialpad_quick_redial_$index")
@@ -601,13 +610,14 @@ fun QuickRedialChips(
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_phone),
-                            contentDescription = null
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.size(4.dp))
                         Text(
                             text = bidiWrap(entry.label),
                             style = MaterialTheme.typography.labelLarge.copy(textDirection = TextDirection.Content),
-                            maxLines = 1,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
@@ -619,17 +629,19 @@ fun QuickRedialChips(
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_phone),
-                        contentDescription = null
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.size(4.dp))
                     Text(
                         text = bidiWrap(entry.label),
                         style = MaterialTheme.typography.labelLarge.copy(textDirection = TextDirection.Content),
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
             }
         }
+    }
     }
 }

@@ -35,6 +35,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -85,6 +86,7 @@ import io.github.elli0t0.phone.data.settings.model.CallBackground
 import kotlin.math.roundToInt
 import io.github.elli0t0.phone.core.common.bidiWrap
 import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.text.style.TextOverflow
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -167,6 +169,10 @@ fun IncomingCallScreen(
             val formattedNumber = PhoneNumberFormatter.format(callModel.number)
             val titleText = if (hasName) callModel.displayName!! else formattedNumber
             val initial = titleText.trim().take(1).uppercase().ifBlank { "?" }
+            // Unknown caller: the number title caps at 40sp and shrinks
+            // instead of overflowing; names keep wrapping as before.
+            var titleFontSize by remember { mutableStateOf(PhoneDimens.incomingTitleSize) }
+            LaunchedEffect(titleText) { titleFontSize = PhoneDimens.incomingTitleSize }
 
             // Avatar size and shape from the settings.
             val glassCallScreens = LocalAppSettings.current.glassCallScreens
@@ -185,14 +191,23 @@ fun IncomingCallScreen(
                         .background(if (glassCallScreens) InCallControlBackground else InCallControlBackgroundFlat),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = initial,
-                        style = MaterialTheme.typography.displayLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = MaterialTheme.typography.displayLarge.fontSize * avatarScale
-                        ),
-                        color = Color.White
-                    )
+                    if (!hasName) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_person),
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(PhoneDimens.incomingAvatarSize * avatarScale * 0.6f)
+                        )
+                    } else {
+                        Text(
+                            text = initial,
+                            style = MaterialTheme.typography.displayLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = MaterialTheme.typography.displayLarge.fontSize * avatarScale
+                            ),
+                            color = Color.White
+                        )
+                    }
                 }
             }
 
@@ -202,11 +217,25 @@ fun IncomingCallScreen(
                 text = bidiWrap(titleText),
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = PhoneDimens.incomingTitleSize,
+                    fontSize = if (hasName) PhoneDimens.incomingTitleSize else titleFontSize,
                     textDirection = TextDirection.Content
                 ),
                 color = Color.White,
                 textAlign = TextAlign.Center,
+                maxLines = if (hasName) Int.MAX_VALUE else 1,
+                overflow = TextOverflow.Ellipsis,
+                onTextLayout = { layoutResult ->
+                    if (!hasName && layoutResult.hasVisualOverflow &&
+                        titleFontSize > PhoneDimens.incomingTitleMinSize
+                    ) {
+                        val shrunk = titleFontSize * 0.92f
+                        titleFontSize = if (shrunk.value < PhoneDimens.incomingTitleMinSize.value) {
+                            PhoneDimens.incomingTitleMinSize
+                        } else {
+                            shrunk
+                        }
+                    }
+                },
                 modifier = Modifier.padding(bottom = spacing.extraSmall)
             )
 

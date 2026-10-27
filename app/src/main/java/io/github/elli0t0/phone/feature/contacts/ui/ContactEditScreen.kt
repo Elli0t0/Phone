@@ -486,6 +486,7 @@ fun ContactEditScreen(
                 .fillMaxWidth(PhoneDimens.editSavePillWidthFraction)
                 .height(PhoneDimens.editSavePillHeight)
                 .liquidGlass(shape = RoundedCornerShape(50), floating = true)
+                .padding(horizontal = PhoneDimens.editSavePillInnerPadding)
                 .testTag("edit_save_pill"),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -498,7 +499,10 @@ fun ContactEditScreen(
                     .pressScale(cancelSource)
                     .testTag("btn_edit_cancel")
             ) {
-                Text(text = stringResource(id = R.string.action_cancel))
+                Text(
+                    text = stringResource(id = R.string.action_cancel),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                )
             }
             Box(
                 modifier = Modifier.weight(1f),

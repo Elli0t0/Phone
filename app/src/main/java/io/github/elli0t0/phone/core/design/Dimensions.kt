@@ -66,13 +66,14 @@ object PhoneDimens {
     val noMatchChipLabelSize = 12.sp
     val noMatchChipLabelLineHeight = 14.sp
     val keypadNumberDisplaySize = 40.sp
-    val keypadNumberDisplayMinSize = 20.sp
+    val keypadNumberDisplayMinSize = 24.sp
     val keypadNumberDisplayShrinkFactor = 0.92f
     val callButtonSize = 70.dp
     // Incoming call screen: avatar, title, answer/decline buttons.
     val incomingHeaderTopPadding = 48.dp
     val incomingAvatarSize = 120.dp
     val incomingTitleSize = 40.sp
+    val incomingTitleMinSize = 24.sp
     val incomingChipSpacing = 8.dp
     val incomingActionsBottomPadding = 48.dp
     val incomingActionButtonSize = 76.dp
@@ -225,6 +226,7 @@ object PhoneDimens {
     // Contact edit: floating Cancel/Save pill and the form's bottom
     // padding beneath it (pill height + 24 dp).
     val editSavePillHeight = 60.dp
+    val editSavePillInnerPadding = 6.dp
     val editSavePillButtonHeight = 48.dp
     val editSavePillWidthFraction = 0.75f
     val editFormBottomPadding = 84.dp

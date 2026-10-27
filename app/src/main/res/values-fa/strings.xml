@@ -42,6 +42,7 @@
     <string name="dialpad_contacts_count">%1$d مخاطب</string>
     <string name="dialpad_show_less">نمایش کمتر</string>
     <string name="dialpad_new_contact">مخاطب جدید</string>
+    <string name="quick_redial_recent">اخیر</string>
     <string name="dialpad_add_to_contact">افزودن به مخاطب</string>
     <string name="dialpad_message">پیام</string>
     <string name="settings_debug_log">گزارش اشکال‌زدایی</string>

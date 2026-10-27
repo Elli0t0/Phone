@@ -142,6 +142,7 @@
     <string name="dialpad_empty_search">No matching contacts</string>
     <string name="dialpad_create_contact">Create new contact</string>
     <string name="dialpad_new_contact">New contact</string>
+    <string name="quick_redial_recent">Recent</string>
     <string name="dialpad_add_to_contact">Add to contact</string>
     <string name="dialpad_more_matches">%1$d more…</string>
     <string name="dialpad_contacts_count">%1$d contacts</string>

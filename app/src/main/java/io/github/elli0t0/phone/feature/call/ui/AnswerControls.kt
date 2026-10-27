@@ -327,8 +327,11 @@ private fun SliderAnswerControls(
     val spacing = LocalSpacing.current
     val source = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
-    Column(modifier = Modifier.fillMaxWidth()) {
-        // Decline: red circle at the left, above the track.
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Decline: red circle centered above the track.
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Box(
                 modifier = Modifier

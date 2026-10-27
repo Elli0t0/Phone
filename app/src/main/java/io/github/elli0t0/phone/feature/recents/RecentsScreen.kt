@@ -444,14 +444,19 @@ fun RecentsScreen(
                         )
                     ) {
                         // Large header as the first list item: scrolls away naturally.
-                        item(key = "recents_header") {
-                            PageHeaderItem(
-                                title = stringResource(id = R.string.app_name),
-                                subtitle = null,
-                                modifier = Modifier
-                                    .animateItem(),
-                                actions = headerActions
-                            )
+                        // Hidden while search is open: the search bar
+                        // below replaces it, so the title does not eat
+                        // a third of the screen above the results.
+                        if (!searchVisible) {
+                            item(key = "recents_header") {
+                                PageHeaderItem(
+                                    title = stringResource(id = R.string.app_name),
+                                    subtitle = null,
+                                    modifier = Modifier
+                                        .animateItem(),
+                                    actions = headerActions
+                                )
+                            }
                         }
                         // Error State
                         if (uiState.errorMessage != null) {
