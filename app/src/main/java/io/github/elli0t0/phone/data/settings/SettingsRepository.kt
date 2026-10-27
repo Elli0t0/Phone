@@ -86,6 +86,7 @@ interface SettingsRepository {
     suspend fun setQuickRepliesBelowButtons(below: Boolean)
     suspend fun setControlButtonSize(size: ControlButtonSize)
     suspend fun setDtmfKeySize(size: DtmfKeySize)
+    suspend fun setDialpadTones(enabled: Boolean)
     suspend fun setIncomingAvatarSize(size: IncomingAvatarSize)
     suspend fun setIncomingAvatarShape(shape: IncomingAvatarShape)
     suspend fun setOngoingCallButtons(buttons: List<OngoingCallButton>)
@@ -142,6 +143,7 @@ class DataStoreSettingsRepository(
         val QUICK_REPLIES_BELOW_BUTTONS = booleanPreferencesKey("quick_replies_below_buttons")
         val CONTROL_BUTTON_SIZE = stringPreferencesKey("control_button_size")
         val DTMF_KEY_SIZE = stringPreferencesKey("dtmf_key_size")
+        val DIALPAD_TONES = booleanPreferencesKey("dialpad_tones")
         val INCOMING_AVATAR_SIZE = stringPreferencesKey("incoming_avatar_size")
         val INCOMING_AVATAR_SHAPE = stringPreferencesKey("incoming_avatar_shape")
         val ONGOING_CALL_BUTTONS = stringPreferencesKey("ongoing_call_buttons")
@@ -265,6 +267,8 @@ class DataStoreSettingsRepository(
         val dtmfKeySize = dtmfKeySizeStr?.let { runCatching { DtmfKeySize.valueOf(it) }.getOrNull() }
             ?: DtmfKeySize.MEDIUM
 
+        val dialpadTones = prefs[Keys.DIALPAD_TONES] ?: false
+
         val incomingAvatarSizeStr = prefs[Keys.INCOMING_AVATAR_SIZE]
         val incomingAvatarSize = incomingAvatarSizeStr?.let { runCatching { IncomingAvatarSize.valueOf(it) }.getOrNull() }
             ?: IncomingAvatarSize.MEDIUM
@@ -332,6 +336,7 @@ class DataStoreSettingsRepository(
             quickRepliesBelowButtons = quickRepliesBelowButtons,
             controlButtonSize = controlButtonSize,
             dtmfKeySize = dtmfKeySize,
+            dialpadTones = dialpadTones,
             incomingAvatarSize = incomingAvatarSize,
             incomingAvatarShape = incomingAvatarShape,
             ongoingCallButtons = ongoingCallButtons,
@@ -586,6 +591,12 @@ class DataStoreSettingsRepository(
     override suspend fun setDtmfKeySize(size: DtmfKeySize) {
         dataStore.edit { prefs ->
             prefs[Keys.DTMF_KEY_SIZE] = size.name
+        }
+    }
+
+    override suspend fun setDialpadTones(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.DIALPAD_TONES] = enabled
         }
     }
 

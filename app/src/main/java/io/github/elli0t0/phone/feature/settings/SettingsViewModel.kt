@@ -293,6 +293,12 @@ class SettingsViewModel(
         }
     }
 
+    fun onDialpadTonesChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setDialpadTones(enabled)
+        }
+    }
+
     fun onIncomingAvatarSizeChanged(size: IncomingAvatarSize) {
         viewModelScope.launch {
             settingsRepository.setIncomingAvatarSize(size)

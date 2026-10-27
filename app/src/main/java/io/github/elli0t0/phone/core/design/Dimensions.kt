@@ -108,6 +108,13 @@ object PhoneDimens {
     val ongoingDtmfDigitSize = 26.sp
     val ongoingDtmfLettersSize = 10.sp
     val ongoingKeypadBottomRowGap = 8.dp
+    // In-call keypad: gap between the timer and the keypad block,
+    // and the typed-digits display above the keys.
+    val ongoingKeypadTopGap = 12.dp
+    val ongoingTypedDigitsSize = 28.sp
+    val ongoingTypedDigitsMinSize = 16.sp
+    val ongoingTypedDigitsRowHeight = 48.dp
+    val ongoingTypedDigitsClearWidth = 64.dp
     val inCallEqualizerBarWidth = 3.dp
     val inCallEqualizerBarMaxHeight = 14.dp
     val inCallEqualizerBarSpacing = 2.dp

@@ -16,6 +16,20 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,10 +37,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.design.GlassSurface
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneTheme
 import io.github.elli0t0.phone.core.telecom.PhoneInCallService
@@ -92,6 +113,19 @@ class CallActivity : ComponentActivity() {
 
             PhoneTheme(appSettings = settings) {
                 val ongoingCall by CallRepository.ongoingCallModel.collectAsStateWithLifecycle()
+                val dtmfDigits by CallRepository.typedDtmfDigits.collectAsStateWithLifecycle()
+                val postDialRemaining by CallRepository.postDialRemaining.collectAsStateWithLifecycle()
+
+                // Post-dial wait (";" only; "," pauses continue on
+                // their own): a glass dialog asking whether to send
+                // the remaining tones. Dismissing counts as Cancel.
+                if (postDialRemaining != null) {
+                    PostDialDialog(
+                        remaining = postDialRemaining!!,
+                        onSend = { CallRepository.postDialContinue(true) },
+                        onCancel = { CallRepository.postDialContinue(false) }
+                    )
+                }
 
                 // Timer loop when active
                 LaunchedEffect(ongoingCall?.state) {
@@ -163,7 +197,10 @@ class CallActivity : ComponentActivity() {
                                     onHoldToggle = { hold ->
                                         if (hold) CallRepository.holdCall() else CallRepository.unholdCall()
                                     },
-                                    onDtmfDigit = { digit -> CallRepository.playDtmfTone(digit) },
+                                    onDtmfDigit = { digit -> CallRepository.sendDtmf(digit) },
+                                    dtmfDigits = dtmfDigits,
+                                    onClearDtmfDigits = { CallRepository.clearDtmfDigits() },
+                                    onKeypadHidden = { CallRepository.drainDtmf() },
                                     onEndCall = { CallRepository.disconnectCall() },
                                     onRequestBluetoothPermission = {
                                         bluetoothPermissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
@@ -224,6 +261,7 @@ class CallActivity : ComponentActivity() {
     override fun onStop() {
         super.onStop()
         PhoneNavLog.log("CallActivity onStop taskId=$taskId isFinishing=$isFinishing")
+        CallRepository.drainDtmf()
     }
 
     override fun onDestroy() {
@@ -247,6 +285,63 @@ class CallActivity : ComponentActivity() {
             CallRepository.answerCall()
             PhoneInCallService.cancelIncomingNotification(this)
             PhoneInCallService.onCallActivityResumed(this)
+        }
+    }
+}
+
+/**
+ * Glass post-dial dialog: the call hit a ";" wait and is asking
+ * whether to send the remaining tones.
+ */
+@Composable
+private fun PostDialDialog(
+    remaining: String,
+    onSend: () -> Unit,
+    onCancel: () -> Unit
+) {
+    Dialog(onDismissRequest = onCancel) {
+        GlassSurface(
+            shape = RoundedCornerShape(20.dp),
+            dark = true,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = stringResource(id = R.string.post_dial_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = remaining,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color.White.copy(alpha = 0.8f)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onCancel) {
+                        Text(text = stringResource(id = R.string.action_cancel))
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = onSend,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    ) {
+                        Text(text = stringResource(id = R.string.post_dial_send))
+                    }
+                }
+            }
         }
     }
 }

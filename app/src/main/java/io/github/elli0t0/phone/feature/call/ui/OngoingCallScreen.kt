@@ -1,5 +1,7 @@
 package io.github.elli0t0.phone.feature.call.ui
 
+import android.media.AudioManager
+import android.media.ToneGenerator
 import android.telecom.CallAudioState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.InfiniteTransition
@@ -27,10 +29,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -83,6 +88,9 @@ fun OngoingCallScreen(
     onAudioRouteSelect: (Int) -> Unit,
     onHoldToggle: (Boolean) -> Unit,
     onDtmfDigit: (Char) -> Unit,
+    dtmfDigits: String = "",
+    onClearDtmfDigits: () -> Unit = {},
+    onKeypadHidden: () -> Unit = {},
     onEndCall: () -> Unit,
     onRequestBluetoothPermission: () -> Unit = {},
     hasBluetoothPermission: Boolean = true,
@@ -249,13 +257,16 @@ fun OngoingCallScreen(
             // Center: in-call DTMF keypad when open; the controls stay
             // in the lower third via the weight spacer below.
             if (showKeypad) {
+                Spacer(modifier = Modifier.height(PhoneDimens.ongoingKeypadTopGap))
                 InCallKeypadGrid(
                     isMuted = callModel.isMuted,
                     isSpeaker = isSpeaker,
                     onMuteToggle = { onMuteToggle(!callModel.isMuted) },
                     onSpeakerToggle = onSpeakerToggle,
                     onDigit = onDtmfDigit,
-                    onClose = { showKeypad = false }
+                    typedDigits = dtmfDigits,
+                    onClearDigits = onClearDtmfDigits,
+                    onClose = { showKeypad = false; onKeypadHidden() }
                 )
             }
             Spacer(modifier = Modifier.weight(1f))
@@ -450,6 +461,8 @@ private fun InCallKeypadGrid(
     onMuteToggle: () -> Unit,
     onSpeakerToggle: () -> Unit,
     onDigit: (Char) -> Unit,
+    typedDigits: String,
+    onClearDigits: () -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -463,12 +476,76 @@ private fun InCallKeypadGrid(
     // Keypad key size scales the key circles and the digit/letters text.
     val glassCallScreens = LocalAppSettings.current.glassCallScreens
     val keyScale = LocalAppSettings.current.dtmfKeySize.scale
+    // Local key tones (optional setting, default off): a quiet
+    // ToneGenerator that only the local user hears. Released when
+    // the keypad leaves composition or the setting turns off.
+    val dialpadTones = LocalAppSettings.current.dialpadTones
+    val toneGenerator = remember(dialpadTones) {
+        if (dialpadTones) {
+            runCatching { ToneGenerator(AudioManager.STREAM_DTMF, 30) }.getOrNull()
+        } else {
+            null
+        }
+    }
+    DisposableEffect(toneGenerator) {
+        onDispose { toneGenerator?.release() }
+    }
 
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(PhoneDimens.ongoingKeypadRowSpacing)
     ) {
+        // Digits typed in this call, auto-shrinking, with a
+        // backspace-free Clear button. Fixed row height so the keys
+        // never shift as digits are added or cleared.
+        var digitsFontSize by remember { mutableStateOf(PhoneDimens.ongoingTypedDigitsSize) }
+        LaunchedEffect(typedDigits) { digitsFontSize = PhoneDimens.ongoingTypedDigitsSize }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(PhoneDimens.ongoingTypedDigitsRowHeight),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = typedDigits,
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontSize = digitsFontSize,
+                    fontWeight = FontWeight.Bold
+                ),
+                color = Color.White,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                softWrap = false,
+                onTextLayout = { layoutResult ->
+                    if (layoutResult.hasVisualOverflow) {
+                        val shrunk = digitsFontSize * PhoneDimens.keypadNumberDisplayShrinkFactor
+                        digitsFontSize = if (shrunk.value < PhoneDimens.ongoingTypedDigitsMinSize.value) {
+                            PhoneDimens.ongoingTypedDigitsMinSize
+                        } else {
+                            shrunk
+                        }
+                    }
+                },
+                modifier = Modifier.weight(1f)
+            )
+            Box(
+                modifier = Modifier.width(PhoneDimens.ongoingTypedDigitsClearWidth),
+                contentAlignment = Alignment.Center
+            ) {
+                if (typedDigits.isNotEmpty()) {
+                    TextButton(
+                        onClick = onClearDigits,
+                        modifier = Modifier.testTag("dtmf_clear_button")
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.dtmf_clear),
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
+                    }
+                }
+            }
+        }
         keys.forEach { row ->
             Row(
                 horizontalArrangement = Arrangement.spacedBy(PhoneDimens.ongoingKeypadColumnSpacing)
@@ -484,7 +561,11 @@ private fun InCallKeypadGrid(
                             .clickable(
                                 interactionSource = keySource,
                                 indication = ripple()
-                            ) { lightHaptic(); onDigit(digit) }
+                            ) {
+                                lightHaptic()
+                                toneGenerator?.startTone(dtmfToneFor(digit), 150)
+                                onDigit(digit)
+                            }
                             .testTag("dtmf_key_$digit"),
                         contentAlignment = Alignment.Center
                     ) {
@@ -541,4 +622,21 @@ private fun InCallKeypadGrid(
             )
         }
     }
+}
+
+/** Local key tone for one in-call keypad digit. */
+private fun dtmfToneFor(digit: Char): Int = when (digit) {
+    '1' -> ToneGenerator.TONE_DTMF_1
+    '2' -> ToneGenerator.TONE_DTMF_2
+    '3' -> ToneGenerator.TONE_DTMF_3
+    '4' -> ToneGenerator.TONE_DTMF_4
+    '5' -> ToneGenerator.TONE_DTMF_5
+    '6' -> ToneGenerator.TONE_DTMF_6
+    '7' -> ToneGenerator.TONE_DTMF_7
+    '8' -> ToneGenerator.TONE_DTMF_8
+    '9' -> ToneGenerator.TONE_DTMF_9
+    '0' -> ToneGenerator.TONE_DTMF_0
+    '*' -> ToneGenerator.TONE_DTMF_S
+    '#' -> ToneGenerator.TONE_DTMF_P
+    else -> ToneGenerator.TONE_DTMF_0
 }

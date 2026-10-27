@@ -164,6 +164,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.40] - 2026-10-27
+
+- In-call keypad (IVR menus) fixed: digits now go through one serialized DTMF queue — each tone plays ~150 ms, stops, then an ~80 ms gap — so fast taps all land instead of only the first digit. Tones only play while the call is ACTIVE; the queue drains and the tone stops when the call ends, goes on hold, the keypad hides, or the call screen stops.
+- The digits typed in a call now show above the in-call keys (auto-shrinking, with a Clear button), and the keypad block sits 12 dp below the timer.
+- New Call Studio setting: Dialpad tones (default off) plays quiet local key tones during a call.
+- Post-dial: numbers with ';' now ask with a glass dialog ("Send these tones? <remaining>", Send/Cancel); ',' pauses still continue automatically.
+
 ## [0.11.39] - 2026-10-26
 
 - Keypad no-match actions are now three equal-width vertical chips (icon on top, label below, up to two lines, 64 dp high): New contact, Add to contact, Message. Nothing truncates at font scale 1.3 on 360 dp or in Persian.

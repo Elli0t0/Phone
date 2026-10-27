@@ -392,6 +392,21 @@ fun CallBackgroundScreen(
                     }
                 }
 
+                // Dialpad tones: quiet local key tones during a call,
+                // off by default. The tones the other side hears come
+                // from the DTMF queue, not from this switch.
+                item {
+                    StudioGroupCard(title = null) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(text = stringResource(id = R.string.settings_dialpad_tones), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+                            AppSwitch(checked = settings.dialpadTones, onCheckedChange = { settingsViewModel.onDialpadTonesChanged(it) }, modifier = Modifier.testTag("dialpad_tones_switch"))
+                        }
+                    }
+                }
+
                 // Avatar size: how big the caller avatar is on
                 // the incoming call screen.
                 item {

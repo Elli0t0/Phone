@@ -415,6 +415,10 @@
     <string name="studio_preset_swipe">Swipe</string>
     <string name="call_bg_control_button_size">Control button size</string>
     <string name="call_bg_keypad_key_size">Keypad key size</string>
+    <string name="settings_dialpad_tones">Dialpad tones</string>
+    <string name="dtmf_clear">Clear</string>
+    <string name="post_dial_title">Send these tones?</string>
+    <string name="post_dial_send">Send</string>
     <string name="call_bg_avatar_size">Avatar size</string>
     <string name="call_bg_avatar_shape">Avatar shape</string>
     <string name="call_bg_quick_replies_below">Quick replies below buttons</string>

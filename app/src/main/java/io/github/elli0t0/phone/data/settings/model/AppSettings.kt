@@ -222,6 +222,7 @@ data class AppSettings(
     val quickRepliesBelowButtons: Boolean = false,
     val controlButtonSize: ControlButtonSize = ControlButtonSize.MEDIUM,
     val dtmfKeySize: DtmfKeySize = DtmfKeySize.MEDIUM,
+    val dialpadTones: Boolean = false,
     val incomingAvatarSize: IncomingAvatarSize = IncomingAvatarSize.MEDIUM,
     val incomingAvatarShape: IncomingAvatarShape = IncomingAvatarShape.CIRCLE,
     val ongoingCallButtons: List<OngoingCallButton> = OngoingCallButton.entries,

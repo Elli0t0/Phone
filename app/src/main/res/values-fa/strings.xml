@@ -15,6 +15,10 @@
     <string name="studio_preset_swipe">کشویی</string>
     <string name="call_bg_control_button_size">اندازه دکمه کنترل</string>
     <string name="call_bg_keypad_key_size">اندازه کلید صفحه‌کلید</string>
+    <string name="settings_dialpad_tones">صدای دکمه‌ها</string>
+    <string name="dtmf_clear">پاک کردن</string>
+    <string name="post_dial_title">این بوق‌ها ارسال شوند؟</string>
+    <string name="post_dial_send">ارسال</string>
     <string name="call_bg_avatar_size">اندازه آواتار</string>
     <string name="call_bg_avatar_shape">شکل آواتار</string>
     <string name="call_bg_quick_replies_below">پاسخ‌های سریع زیر دکمه‌ها</string>

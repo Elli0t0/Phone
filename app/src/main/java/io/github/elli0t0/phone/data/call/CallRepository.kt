@@ -22,13 +22,48 @@ object CallRepository {
         _isCallActivityVisible.value = visible
     }
 
+    // Serialized DTMF tones: without the queue, tones were played on
+    // click and never stopped, so Android ignored every tone after
+    // the first. Only ACTIVE calls play tones; anything queued while
+    // the call is not ACTIVE is dropped by the queue itself.
+    private val dtmfQueue = DtmfToneQueue(
+        player = object : DtmfTonePlayer {
+            override fun play(digit: Char) {
+                _currentCall.value?.playDtmfTone(digit)
+            }
+
+            override fun stop() {
+                _currentCall.value?.stopDtmfTone()
+            }
+        },
+        isCallActive = { _currentCall.value?.state == Call.STATE_ACTIVE }
+    )
+
+    // Digits typed in this call, shown above the in-call keys.
+    private val _typedDtmfDigits = MutableStateFlow("")
+    val typedDtmfDigits: StateFlow<String> = _typedDtmfDigits.asStateFlow()
+
+    // Remaining post-dial wait string (";" waits only; "," pauses
+    // continue automatically). Null when no wait is pending.
+    private val _postDialRemaining = MutableStateFlow<String?>(null)
+    val postDialRemaining: StateFlow<String?> = _postDialRemaining.asStateFlow()
+
     private val callCallback = object : Call.Callback() {
         override fun onStateChanged(call: Call?, state: Int) {
+            if (state == Call.STATE_HOLDING || state == Call.STATE_DISCONNECTED) {
+                dtmfQueue.drain()
+            }
             updateCallModel()
         }
 
         override fun onDetailsChanged(call: Call?, details: Call.Details?) {
             updateCallModel()
+        }
+
+        override fun onPostDialWait(call: Call?, remaining: String?) {
+            if (remaining != null) {
+                _postDialRemaining.value = remaining
+            }
         }
     }
 
@@ -43,6 +78,9 @@ object CallRepository {
             call.unregisterCallback(callCallback)
             _currentCall.value = null
             _ongoingCallModel.value = null
+            dtmfQueue.drain()
+            _typedDtmfDigits.value = ""
+            _postDialRemaining.value = null
         }
     }
 
@@ -172,11 +210,27 @@ object CallRepository {
         _currentCall.value?.unhold()
     }
 
-    fun playDtmfTone(digit: Char) {
-        _currentCall.value?.playDtmfTone(digit)
+    /** Queues one DTMF tone and appends it to this call's typed digits. */
+    fun sendDtmf(digit: Char) {
+        if (_currentCall.value?.state != Call.STATE_ACTIVE) return
+        _typedDtmfDigits.value += digit
+        dtmfQueue.send(digit)
     }
 
-    fun stopDtmfTone() {
-        _currentCall.value?.stopDtmfTone()
+    /** Clears the typed-digits display and drops any tones still queued. */
+    fun clearDtmfDigits() {
+        _typedDtmfDigits.value = ""
+        dtmfQueue.drain()
+    }
+
+    /** Drops queued tones and stops the tone playing right now. */
+    fun drainDtmf() {
+        dtmfQueue.drain()
+    }
+
+    /** Continues (true) or cancels (false) a post-dial wait. */
+    fun postDialContinue(continueAfter: Boolean) {
+        _currentCall.value?.postDialContinue(continueAfter)
+        _postDialRemaining.value = null
     }
 }
