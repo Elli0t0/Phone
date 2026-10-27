@@ -13,9 +13,11 @@ import org.junit.Test
  * set started=true despite the SecurityException, so later calls
  * returned early and the observer was never registered.
  *
- * The failure is injected through ContactNameIndex's registerObserver
- * seam: ContentResolver.registerContentObserver is final and cannot be
- * overridden by a fake resolver on the JVM. ContactNameIndex is a
+ * The failure is injected through ContactNameIndex's
+ * registerContactsObserver seam: ContentResolver.registerContentObserver
+ * is final and cannot be overridden by a fake resolver, and
+ * Handler/ContentObserver construction itself throws on JVM stubs, so
+ * the seam covers the whole registration step. ContactNameIndex is a
  * process-wide object, so each test resets its started flag (and ready
  * state) via reflection first and restores a clean state after, keeping
  * this file independent of test order.
@@ -56,7 +58,7 @@ class ContactNameIndexRetryTest {
 
     @After
     fun tearDown() {
-        ContactNameIndex.registerObserver = ContactNameIndex::defaultRegisterObserver
+        ContactNameIndex.registerContactsObserver = ContactNameIndex::defaultRegisterContactsObserver
         resetIndex()
     }
 
@@ -64,7 +66,7 @@ class ContactNameIndexRetryTest {
     fun registrationRetriesAfterPermissionGrant() {
         var attempts = 0
         var throwOnRegister = true
-        ContactNameIndex.registerObserver = { _, _, _, _ ->
+        ContactNameIndex.registerContactsObserver = { _ ->
             attempts++
             if (throwOnRegister) throw SecurityException("no permission yet")
         }

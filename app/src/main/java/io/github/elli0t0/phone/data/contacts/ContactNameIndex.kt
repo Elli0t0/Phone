@@ -2,7 +2,6 @@ package io.github.elli0t0.phone.data.contacts
 
 import android.content.ContentResolver
 import android.database.ContentObserver
-import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -69,22 +68,31 @@ object ContactNameIndex {
     }
 
     /**
-     * Observer registration, extracted so unit tests can simulate a
-     * SecurityException: ContentResolver.registerContentObserver is final
-     * and cannot be overridden by a fake resolver on the JVM.
+     * The whole observer-registration step, extracted so unit tests can
+     * simulate a SecurityException: ContentResolver.registerContentObserver
+     * is final and cannot be overridden by a fake resolver, and
+     * Handler/ContentObserver construction itself throws on JVM stubs —
+     * so the seam must cover observer creation too, not just the
+     * register call. Production behavior is unchanged.
      */
-    internal fun defaultRegisterObserver(
+    internal fun defaultRegisterContactsObserver(
         resolver: ContentResolver,
-        uri: Uri,
-        notifyForDescendants: Boolean,
-        observer: ContentObserver
+        onChange: () -> Unit
     ) {
-        resolver.registerContentObserver(uri, notifyForDescendants, observer)
+        val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
+            override fun onChange(selfChange: Boolean) {
+                onChange()
+            }
+        }
+        resolver.registerContentObserver(
+            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+            true,
+            observer
+        )
     }
 
-    internal var registerObserver: (
-        ContentResolver, Uri, Boolean, ContentObserver
-    ) -> Unit = ::defaultRegisterObserver
+    internal var registerContactsObserver: (ContentResolver, () -> Unit) -> Unit =
+        ::defaultRegisterContactsObserver
 
     /** Start the index (register observer + first build). Idempotent. */
     @Synchronized
@@ -92,17 +100,7 @@ object ContactNameIndex {
         if (started) return
         contentResolver = resolver
         try {
-            val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
-                override fun onChange(selfChange: Boolean) {
-                    rebuildDebounced()
-                }
-            }
-            registerObserver(
-                resolver,
-                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                true,
-                observer
-            )
+            registerContactsObserver(resolver) { rebuildDebounced() }
             // Only mark started once registration actually succeeded: the
             // flag used to be set first, so a call before READ_CONTACTS
             // was granted left the cache permanently stale — later calls
