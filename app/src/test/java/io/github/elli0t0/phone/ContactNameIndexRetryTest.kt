@@ -66,7 +66,7 @@ class ContactNameIndexRetryTest {
     fun registrationRetriesAfterPermissionGrant() {
         var attempts = 0
         var throwOnRegister = true
-        ContactNameIndex.registerContactsObserver = { _ ->
+        ContactNameIndex.registerContactsObserver = { _, _ ->
             attempts++
             if (throwOnRegister) throw SecurityException("no permission yet")
         }
