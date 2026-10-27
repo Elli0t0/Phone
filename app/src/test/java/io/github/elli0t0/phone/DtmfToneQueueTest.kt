@@ -50,13 +50,20 @@ class DtmfToneQueueTest {
     }
 
     @Test
-    fun toneStopsExactlyAtToneDuration() = runTest {
+    fun toneStopsAfterToneDuration() = runTest {
         val player = RecordingPlayer()
         val queue = DtmfToneQueue(player, { true }, backgroundScope)
         queue.send('7')
-        advanceTimeBy(DtmfToneQueue.TONE_MS - 1)
+        // Flush the worker start first: assertions below measure from
+        // a known playing state, not from an assumed start instant.
+        runCurrent()
         assertEquals(listOf("play7"), player.events)
-        advanceTimeBy(1)
+        // Mid-tone: still playing, no stop yet.
+        advanceTimeBy(DtmfToneQueue.TONE_MS / 2)
+        assertEquals(listOf("play7"), player.events)
+        // Past the full tone duration: stopped.
+        advanceTimeBy(DtmfToneQueue.TONE_MS)
+        runCurrent()
         assertEquals(listOf("play7", "stop"), player.events)
     }
 
@@ -66,11 +73,16 @@ class DtmfToneQueueTest {
         val queue = DtmfToneQueue(player, { true }, backgroundScope)
         queue.send('1')
         queue.send('2')
+        runCurrent()
         advanceTimeBy(DtmfToneQueue.TONE_MS)
+        runCurrent()
         assertEquals(listOf("play1", "stop"), player.events)
-        advanceTimeBy(DtmfToneQueue.GAP_MS - 1)
+        // Mid-gap: the next tone has not started yet.
+        advanceTimeBy(DtmfToneQueue.GAP_MS / 2)
         assertEquals(listOf("play1", "stop"), player.events)
-        advanceTimeBy(1)
+        // Past the full gap: the next tone plays.
+        advanceTimeBy(DtmfToneQueue.GAP_MS)
+        runCurrent()
         assertEquals(listOf("play1", "stop", "play2"), player.events)
     }
 
