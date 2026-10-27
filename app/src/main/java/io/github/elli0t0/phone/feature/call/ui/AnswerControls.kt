@@ -82,7 +82,7 @@ fun AnswerControls(
 
 /** Spring-back spec gated by the Animations setting (no springs unless On). */
 
-private fun backSpecFloat(
+internal fun backSpecFloat(
     option: AnimationOption,
     damping: Float = 0.6f,
     stiffness: Float = 400f
