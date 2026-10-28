@@ -65,11 +65,8 @@ class RecordingSettingsViewModel(
     fun startPairing() {
         viewModelScope.launch {
             postPairNotification(appContext)
+            openWirelessDebugging(appContext)
         }
-    }
-
-    fun openDevSettings() {
-        openWirelessDebugging(appContext)
     }
 
     fun requestPermission() {

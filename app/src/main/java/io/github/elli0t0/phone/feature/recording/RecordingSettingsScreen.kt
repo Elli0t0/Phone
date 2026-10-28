@@ -1,7 +1,13 @@
 package io.github.elli0t0.phone.feature.recording
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -34,6 +40,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.PhoneApplication
@@ -74,6 +81,33 @@ fun RecordingSettingsScreen(
     val recordings by viewModel.recordings.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     val testOutcome by viewModel.testOutcome.collectAsStateWithLifecycle()
+
+    // The pairing code is entered into Phone's own notification, so Pair
+    // must ensure notifications are allowed first: on API 33+ a plain
+    // notification is silently dropped without POST_NOTIFICATIONS. If the
+    // request is denied for good, fall back to the app's notification
+    // settings instead of dead-ending.
+    val pairPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            viewModel.startPairing()
+        } else {
+            openNotificationSettings(context)
+        }
+    }
+    val onPairClick = {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            viewModel.startPairing()
+        } else {
+            pairPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
     val playError by viewModel.playError.collectAsStateWithLifecycle()
     val playingId by viewModel.playingId.collectAsStateWithLifecycle()
     val positionMs by viewModel.positionMs.collectAsStateWithLifecycle()
@@ -184,19 +218,18 @@ fun RecordingSettingsScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (backendKind == RecordingBackendKind.ADB) {
-                                when (status) {
-                                    BackendStatus.NOT_PAIRED -> Button(
-                                        onClick = { viewModel.startPairing() },
+                                // Pair is available in every non-ready state, not
+                                // only once pairing is already possible: from
+                                // NOT_RUNNING it posts the notification and opens
+                                // Developer options, so the user is never stuck
+                                // with no way to reach the code entry.
+                                if (status != BackendStatus.READY) {
+                                    Button(
+                                        onClick = onPairClick,
                                         enabled = !busy
                                     ) {
                                         Text(text = stringResource(id = R.string.recording_action_pair))
                                     }
-                                    BackendStatus.NOT_RUNNING -> Button(
-                                        onClick = { viewModel.openDevSettings() }
-                                    ) {
-                                        Text(text = stringResource(id = R.string.recording_action_wireless_debugging))
-                                    }
-                                    else -> Unit
                                 }
                             } else {
                                 when (status) {
@@ -447,6 +480,13 @@ private fun openShizuku(context: android.content.Context) {
     } else {
         openUrl(context, SHIZUKU_DOWNLOAD_URL)
     }
+}
+
+private fun openNotificationSettings(context: android.content.Context) {
+    val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+        putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+    }
+    runCatching { context.startActivity(intent) }
 }
 
 private const val SHIZUKU_PACKAGE = "moe.shizuku.privileged.api"

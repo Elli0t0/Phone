@@ -164,6 +164,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.15.2]
+
+- Fixes the built-in ADB pairing flow: the Pair button only appeared once the phone was already pairable, so from the "wireless debugging is off" state there was no way to reach the code entry at all. Pair is now available in every non-ready state, and tapping it posts the notification and opens Developer options in one step.
+- Pairing also ensures the notification can actually appear: on Android 13+ a plain notification is silently dropped without the notification permission, so tapping Pair now requests it first, and falls back to the app's notification settings if it was denied for good.
+
 ## [0.15.1]
 
 - Fixes the 0.15.0 build: Kadb's SPAKE2 dependency (com.github.Flyfish233:spake2-java) is published only on JitPack, not on Maven Central, so dependency resolution failed. The build now includes the JitPack repository, scoped to that one group. Kadb's library also requires compiling against Android API 36+, so compileSdk moves 35 → 36 (targetSdk stays 35, minSdk stays 29 — no runtime behavior change). No app code changes.
