@@ -7,7 +7,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -42,6 +41,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.WrappingRow
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
@@ -172,9 +172,9 @@ if (dialogs.showAccentDialog) {
         title = { Text(text = stringResource(id = R.string.settings_accent_color)) },
         text = {
             Column {
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(PhoneDimens.settingsAccentSwatchSpacing),
-                    verticalArrangement = Arrangement.spacedBy(PhoneDimens.settingsAccentSwatchSpacing),
+                WrappingRow(
+                    horizontalSpacing = PhoneDimens.settingsAccentSwatchSpacing,
+                    verticalSpacing = PhoneDimens.settingsAccentSwatchSpacing,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     AccentPreset.entries.forEach { preset ->

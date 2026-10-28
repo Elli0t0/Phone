@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -77,6 +76,7 @@ import io.github.elli0t0.phone.core.design.LiquidGlassChip
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.WrappingRow
 import io.github.elli0t0.phone.core.design.PulseRings
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
@@ -300,9 +300,10 @@ private fun QuickRepliesSection(
             color = Color.White.copy(alpha = 0.8f),
             modifier = Modifier.padding(bottom = spacing.small)
         )
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(PhoneDimens.incomingChipSpacing, Alignment.CenterHorizontally),
-            verticalArrangement = Arrangement.spacedBy(PhoneDimens.incomingChipSpacing),
+        WrappingRow(
+            horizontalSpacing = PhoneDimens.incomingChipSpacing,
+            verticalSpacing = PhoneDimens.incomingChipSpacing,
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.fillMaxWidth()
         ) {
             quickDeclineMessages.forEachIndexed { index, message ->

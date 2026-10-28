@@ -166,7 +166,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.15.8]
 
-- Fixed the crash when opening Call background (the same crash would hit a real incoming call): the quick-reply FlowRow was compiled against a newer foundation-layout than the one shipped in the APK, whose FlowRow overload changed between versions. foundation-layout is now pinned to the BOM's 1.7.0, aligning compile time with the shipped runtime; no runtime behavior changes.
+- Fixed the crash when opening Call background (the same crash would hit a real incoming call): the quick-reply chips used FlowRow, whose overload changed between foundation-layout versions, while the app was compiled against a newer layout than the one shipped in the APK. All three FlowRow call sites now use a small WrappingRow built on the stable Layout API, so the app no longer depends on the version-sensitive overload.
 
 ## [0.15.7]
 

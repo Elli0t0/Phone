@@ -94,18 +94,6 @@ base {
 
 dependencies {
   implementation(platform(libs.androidx.compose.bom))
-  // foundation-layout is pinned to the BOM's version: a transitive dependency
-  // resolved a newer layout at compile time while the shipped APK carries the
-  // BOM version, and FlowRow's overload changed between them, so the call
-  // screen crashed with NoSuchMethodError. The pin aligns compile time with
-  // the shipped runtime; it changes no runtime behavior.
-  constraints {
-    implementation("androidx.compose.foundation:foundation-layout") {
-      version {
-        strictly("1.7.0")
-      }
-    }
-  }
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.lifecycle.runtime.ktx)

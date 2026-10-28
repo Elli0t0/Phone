@@ -8,7 +8,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,6 +35,7 @@ import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.WrappingRow
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AnswerStyle
@@ -101,9 +101,10 @@ private fun AnswerQuickReplies(
     onReply: (String) -> Unit
 ) {
     val glass = LocalAppSettings.current.glassCallScreens
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(PhoneDimens.incomingChipSpacing, Alignment.CenterHorizontally),
-        verticalArrangement = Arrangement.spacedBy(PhoneDimens.incomingChipSpacing),
+    WrappingRow(
+        horizontalSpacing = PhoneDimens.incomingChipSpacing,
+        verticalSpacing = PhoneDimens.incomingChipSpacing,
+        horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxWidth()
     ) {
         messages.forEachIndexed { index, message ->
