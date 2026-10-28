@@ -47,6 +47,8 @@ import io.github.elli0t0.phone.core.design.LiquidGlassChip
 import io.github.elli0t0.phone.core.design.LiquidGlassPill
 import io.github.elli0t0.phone.core.design.LiquidGlassPillShape
 import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.LocalHazeState
+import dev.chrisbanes.haze.hazeSource
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.dialogEnter
@@ -169,6 +171,7 @@ private fun ContactsContent(
         if (uiState.allContacts.isNotEmpty()) listRevealed = true
     }
     val listState = rememberLazyListState()
+    val hazeState = LocalHazeState.current
     val contactCount = uiState.allContacts.size
     val countText = if (contactCount == 1) {
         stringResource(id = R.string.contacts_count_single, contactCount)
@@ -306,6 +309,13 @@ private fun ContactsContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = spacing.screenHorizontalPadding)
+                // This list is its own haze source: the sticky bar
+                // is a sibling after it, so the bar blurs the list
+                // itself (the proven sibling pattern, same as the
+                // bottom bar over the MainActivity source).
+                .then(
+                    hazeState?.let { Modifier.hazeSource(it) } ?: Modifier
+                )
                 .testTag("contacts_lazy_column"),
             // Clearance above the overlaid bottom bar:
             // bar height + nav-bar inset + 16dp gap.

@@ -78,6 +78,8 @@ import io.github.elli0t0.phone.LocalAppSnackbarHostState
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.LocalHazeState
+import dev.chrisbanes.haze.hazeSource
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.LiquidGlassPopupSurface
 import io.github.elli0t0.phone.core.design.Motion
@@ -158,6 +160,7 @@ fun RecentsScreen(
     var filterMenuExpanded by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
+    val hazeState = LocalHazeState.current
     val simAccounts = remember(context) { io.github.elli0t0.phone.core.telecom.TelecomHelper.getCallCapablePhoneAccounts(context) }
     val recentsScope = androidx.compose.runtime.rememberCoroutineScope()
 
@@ -516,6 +519,15 @@ fun RecentsScreen(
                         state = listState,
                         modifier = Modifier
                             .fillMaxSize()
+                            // This list is its own haze source: the
+                            // sticky bar is a sibling after it, so the
+                            // bar blurs the list itself (the proven
+                            // sibling pattern, same as the bottom bar
+                            // over the MainActivity source).
+                            .then(
+                                hazeState?.let { Modifier.hazeSource(it) }
+                                    ?: Modifier
+                            )
                             .testTag("recents_call_list"),
                         // Clearance above the overlaid bottom bar:
                         // bar height + nav-bar inset + 16dp gap.

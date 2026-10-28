@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -211,9 +210,16 @@ fun FloatingActionsPill(
 
 /**
  * Sticky glass top bar for a tab list (Recents, Contacts): an overlay
- * drawn after the list (a sibling of it, never a list item), covering
- * the status-bar inset plus a compact 56dp title row, with the
+ * drawn after the list (a sibling of it, never a list item), pinned
+ * to the top of a container already inset below the status bar
+ * (Scaffold innerPadding) plus a compact 56dp title row, with the
  * collapsed title centered and the header's action icons reachable.
+ * The bar adds no status inset itself: it used to, which double-
+ * inset it below the Scaffold padding so it floated mid-list over
+ * sharp rows. The body also paints the theme background under the
+ * blur: if the haze effect draws nothing for this bar, the
+ * background still hides the list so the title stays legible
+ * (when the blur works it draws opaquely over this fill).
  * Invisible while the large header is fully visible; fades in as the
  * header scrolls away, driven by the list state against the header
  * height. The bar blurs the scrolling content under it with the
@@ -261,9 +267,11 @@ fun StickyGlassTopBar(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .background(
+                    MaterialTheme.colorScheme.background.copy(alpha = 0.92f)
+                )
                 .then(glassBlurModifier(dark))
                 .then(glassSolidBaseModifier(dark))
-                .statusBarsPadding()
         ) {
             Row(
                 modifier = Modifier

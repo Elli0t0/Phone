@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.13.2]
+- Sticky glass top bar fixed: it was double-inset (Scaffold innerPadding plus its own status-bar padding), so it floated mid-list with list rows visible above it and sharp list text colliding with the title. The bar is pinned to the top of its container now, and its body paints the theme background under the blur — if the haze effect draws nothing, the background still hides the list so the title stays legible (when the blur works it draws opaquely over this fill). Each tab list is also its own haze source now, so the bar blurs the list itself as a sibling overlay (the same pattern the bottom bar uses over the MainActivity source).
+- No other changes.
+
 ## [0.13.1]
 - Sticky glass top bar on Recents and Contacts: an overlay above the list (never a list item) covering the status-bar inset plus a 56dp title row, with the collapsed title centered and the header's action icons reachable. Invisible while the large header is fully visible, fading in as it scrolls away; content scrolling under it blurs through the shared glass style plus a 16dp fade band below the bar (uniform blur fading into the background). The top scroll fade is gone on these screens, and the old floating actions pill is replaced by the bar (its content is only composed once scrolling starts, so no menus can open from an invisible bar). Reduce transparency / API < 31 fall back to the solid treatment.
 - Header size now defaults to Compact, and Compact is ~16% of screen height (min 160dp) so the first list item starts higher; the other sizes are unchanged. Action icons sit on the title row now, not far below it.
