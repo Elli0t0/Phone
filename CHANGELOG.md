@@ -164,6 +164,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.12.5] - 2026-10-28
+
+- In-call screen with the dialpad open: the end-call button now stacks directly under the keypad's Speaker/Hide/Mute row with proper spacing and keeps its full circular size (the keypad-open stack scrolls on short screens instead of squeezing the button off the bottom edge).
+- Recents rows: RTL names (e.g. Persian) now start-align with content direction in the same name + subtitle column as LTR rows, and the time sits in its own fixed-width slot, so names can no longer collide with the time.
+- Recents overflow menu: replaced the plain dropdown with a glass popup anchored under the three-dots button with a small gap, scaling in from the top-right with a spring and drawn above the list.
+
 ## [0.12.4] - 2026-10-28
 
 - Fixed drag navigation intermittently refusing one tab: the bar's pointerInput block is created once and keeps the values it captured, so its navigate check compared against a stale route and skipped navigation back to whichever tab was active when the bar first composed. The gesture now reads the current route and animation option through rememberUpdatedState, so it always sees the latest values.

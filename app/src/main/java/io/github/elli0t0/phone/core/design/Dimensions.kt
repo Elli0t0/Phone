@@ -170,6 +170,7 @@ object PhoneDimens {
     val recentsRowHeight = 64.dp
     val recentsDividerAlpha = 0.08f
     val recentsRowIconSize = 20.dp
+    val recentsTimeSlotWidth = 64.dp
     val recentsRowVerticalPadding = 3.dp
     val recentsSwipeRevealIconSize = 24.dp
     // Contacts list: name-only rows, gradient avatars, pill cards.

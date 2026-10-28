@@ -26,6 +26,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -111,6 +113,7 @@ fun OngoingCallScreen(
     val spacing = LocalSpacing.current
     var showKeypad by remember { mutableStateOf(false) }
     val endCallSource = remember { MutableInteractionSource() }
+    val keypadScrollState = rememberScrollState()
     val lightHaptic = rememberLightHaptic()
     // One tilt listener for all call controls (Dynamic highlights).
     val tilt = rememberTilt()
@@ -195,7 +198,12 @@ fun OngoingCallScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = spacing.screenHorizontalPadding, vertical = spacing.large),
+                .padding(horizontal = spacing.screenHorizontalPadding, vertical = spacing.large)
+                // With the keypad open the identity + keys + end-call
+                // button can exceed the screen (large fonts/sizes);
+                // let that stack scroll instead of squeezing the
+                // end-call button off the bottom edge.
+                .then(if (showKeypad) Modifier.verticalScroll(keypadScrollState) else Modifier),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Caller info position: top (default), or centered at
@@ -285,22 +293,36 @@ fun OngoingCallScreen(
                     tilt = tilt
                 )
             }
-            Spacer(modifier = Modifier.weight(1f))
-
-            // Bottom: control grid + red circular end-call button.
-            // The end-call button aligns per the setting; the grid is
-            // full-width so it is unaffected.
+            // Bottom: with the keypad open the end-call button stacks
+            // directly under the keypad's Speaker/Hide/Mute row with
+            // proper spacing, so it always keeps its full circular
+            // size; otherwise the control grid + button sit at the
+            // bottom via the weight spacer. The end-call button
+            // aligns per the setting; the grid is full-width so it
+            // is unaffected.
             val endCallAlignment = when (LocalAppSettings.current.endCallAlignment) {
                 EndCallAlignment.LEFT -> Alignment.Start
                 EndCallAlignment.CENTER -> Alignment.CenterHorizontally
                 EndCallAlignment.RIGHT -> Alignment.End
             }
-            Column(
-                horizontalAlignment = endCallAlignment,
-                verticalArrangement = Arrangement.spacedBy(PhoneDimens.ongoingControlGridSpacing),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if (!showKeypad) {
+            if (showKeypad) {
+                Spacer(modifier = Modifier.height(PhoneDimens.ongoingControlGridSpacing))
+                Column(
+                    horizontalAlignment = endCallAlignment,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    EndCallButton(
+                        interactionSource = endCallSource,
+                        onEndCall = onEndCall
+                    )
+                }
+            } else {
+                Spacer(modifier = Modifier.weight(1f))
+                Column(
+                    horizontalAlignment = endCallAlignment,
+                    verticalArrangement = Arrangement.spacedBy(PhoneDimens.ongoingControlGridSpacing),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(PhoneDimens.ongoingControlGridSpacing),
                         modifier = Modifier.fillMaxWidth()
@@ -387,33 +409,45 @@ fun OngoingCallScreen(
                             }
                         }
                     }
-                }
-
-                // End call: red circle button, scaled by the size setting.
-                val endCallScale = LocalAppSettings.current.endCallButtonSize.scale
-                Box(
-                    modifier = Modifier
-                        .padding(bottom = PhoneDimens.ongoingEndCallBottomPadding)
-                        .size(PhoneDimens.ongoingEndCallButtonSize * endCallScale)
-                        .clip(CircleShape)
-                        .background(LiquidGlassEndCall)
-                        .pressScale(endCallSource)
-                        .clickable(
-                            interactionSource = endCallSource,
-                            indication = ripple()
-                        ) { lightHaptic(); onEndCall() }
-                        .testTag("end_call_button"),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_call_end),
-                        contentDescription = stringResource(id = R.string.call_action_end),
-                        tint = Color.White,
-                        modifier = Modifier.size(PhoneDimens.ongoingEndCallIconSize * endCallScale)
+                    EndCallButton(
+                        interactionSource = endCallSource,
+                        onEndCall = onEndCall
                     )
                 }
             }
         }
+    }
+}
+
+/** Red circular end-call button, scaled by the size setting. */
+@Composable
+private fun EndCallButton(
+    interactionSource: MutableInteractionSource,
+    onEndCall: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val lightHaptic = rememberLightHaptic()
+    val endCallScale = LocalAppSettings.current.endCallButtonSize.scale
+    Box(
+        modifier = modifier
+            .padding(bottom = PhoneDimens.ongoingEndCallBottomPadding)
+            .size(PhoneDimens.ongoingEndCallButtonSize * endCallScale)
+            .clip(CircleShape)
+            .background(LiquidGlassEndCall)
+            .pressScale(interactionSource)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = ripple()
+            ) { lightHaptic(); onEndCall() }
+            .testTag("end_call_button"),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_call_end),
+            contentDescription = stringResource(id = R.string.call_action_end),
+            tint = Color.White,
+            modifier = Modifier.size(PhoneDimens.ongoingEndCallIconSize * endCallScale)
+        )
     }
 }
 

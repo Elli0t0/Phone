@@ -82,7 +82,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import io.github.elli0t0.phone.core.common.bidiWrap
-import io.github.elli0t0.phone.core.common.textAlignFor
 import androidx.compose.ui.text.style.TextDirection
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -241,23 +240,22 @@ fun CallLogRow(
 
                 Spacer(modifier = Modifier.width(spacing.medium))
 
-                // Title + Subtitle. An RTL name right-aligns the whole
-                // title row (name + count stay glued together); LTR
-                // keeps the existing start alignment.
-                Column(modifier = Modifier.weight(1f)) {
+                // Title + Subtitle. Name and subtitle share one
+                // column; both start-align with content direction, so
+                // an RTL name (e.g. Persian) starts at the row's
+                // leading edge instead of sliding toward the time.
+                // Row height and padding are unchanged from LTR rows.
+                Column(modifier = Modifier.weight(1f).fillMaxWidth()) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = if (textAlignFor(group.displayTitle) == TextAlign.End) {
-                            Arrangement.End
-                        } else {
-                            Arrangement.Start
-                        },
+                        horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             text = bidiWrap(group.displayTitle),
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium, textDirection = TextDirection.Content),
                             color = nameColor,
+                            textAlign = TextAlign.Start,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -282,20 +280,30 @@ fun CallLogRow(
                         text = bidiWrap(subtitleParts.joinToString(" · ")),
                         style = MaterialTheme.typography.bodySmall.copy(textDirection = TextDirection.Content),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Start,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
 
-                // Time on the right, replacing the call-back button.
-                // Call-back stays reachable via swipe right, long-press
-                // menu, and the expanded details.
-                Text(
-                    text = formattedTime,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1
-                )
+                // Time in its own fixed-width slot at the row's
+                // trailing edge, separated from the name column so a
+                // long RTL name can never collide with it. Call-back
+                // stays reachable via swipe right, long-press menu,
+                // and the expanded details.
+                Spacer(modifier = Modifier.width(spacing.medium))
+                Box(
+                    modifier = Modifier.width(PhoneDimens.recentsTimeSlotWidth),
+                    contentAlignment = Alignment.CenterEnd
+                ) {
+                    Text(
+                        text = formattedTime,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
 
                 // Long press context menu
                 DropdownMenu(

@@ -6,6 +6,9 @@ import android.provider.ContactsContract
 import android.telephony.PhoneNumberUtils
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -48,6 +51,9 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,11 +63,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.LocalAppSnackbarHostState
@@ -69,7 +79,9 @@ import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.LiquidGlassPopupSurface
 import io.github.elli0t0.phone.core.design.Motion
+import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.dialogEnter
 import io.github.elli0t0.phone.core.design.liquidGlass
@@ -341,7 +353,16 @@ fun RecentsScreen(
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    Box {
+                    // Overflow menu: a glass popup anchored under the
+                    // three-dots button with a small gap, scaling in
+                    // from the top-right with a spring. A Popup draws
+                    // above the list, so it never overlaps the first
+                    // row or the header.
+                    var menuAnchorHeightPx by remember { mutableStateOf(0) }
+                    val menuDensity = LocalDensity.current
+                    Box(
+                        modifier = Modifier.onGloballyPositioned { menuAnchorHeightPx = it.size.height }
+                    ) {
                         androidx.compose.material3.IconButton(
                             onClick = { menuExpanded = true },
                             modifier = Modifier.testTag("button_recents_menu")
@@ -352,15 +373,60 @@ fun RecentsScreen(
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        DropdownMenu(
-                            expanded = menuExpanded,
-                            onDismissRequest = { menuExpanded = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text(text = stringResource(id = R.string.settings_title)) },
-                                onClick = { menuExpanded = false; onNavigateToSettings() },
-                                modifier = Modifier.testTag("settings_button")
-                            )
+                        if (menuExpanded) {
+                            Popup(
+                                onDismissRequest = { menuExpanded = false },
+                                alignment = Alignment.TopEnd,
+                                offset = IntOffset(
+                                    0,
+                                    menuAnchorHeightPx + with(menuDensity) { spacing.small.roundToPx() }
+                                ),
+                                properties = PopupProperties(focusable = true)
+                            ) {
+                                val animationOption = LocalAppSettings.current.animationOption
+                                var entered by remember { mutableStateOf(false) }
+                                LaunchedEffect(Unit) { entered = true }
+                                val enterProgress by animateFloatAsState(
+                                    targetValue = if (entered) 1f else 0f,
+                                    animationSpec = when (animationOption) {
+                                        AnimationOption.ON -> spring(dampingRatio = 0.5f, stiffness = 400f)
+                                        AnimationOption.REDUCED -> tween(durationMillis = 150)
+                                        AnimationOption.OFF -> tween(durationMillis = 0)
+                                    },
+                                    label = "recentsMenuEnter"
+                                )
+                                LiquidGlassPopupSurface(
+                                    shape = RoundedCornerShape(PhoneDimens.menuCornerRadius),
+                                    modifier = Modifier.graphicsLayer {
+                                        val scale = if (animationOption == AnimationOption.ON) {
+                                            0.85f + 0.15f * enterProgress
+                                        } else {
+                                            1f
+                                        }
+                                        scaleX = scale
+                                        scaleY = scale
+                                        transformOrigin = TransformOrigin(1f, 0f)
+                                        alpha = if (animationOption == AnimationOption.OFF) {
+                                            1f
+                                        } else {
+                                            enterProgress.coerceIn(0f, 1f)
+                                        }
+                                    }
+                                ) {
+                                    Text(
+                                        text = stringResource(id = R.string.settings_title),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier
+                                            .clickable { menuExpanded = false; onNavigateToSettings() }
+                                            .padding(
+                                                horizontal = spacing.medium,
+                                                vertical = spacing.small + spacing.extraSmall
+                                            )
+                                            .testTag("settings_button")
+                                    )
+                                }
+                            }
                         }
                     }
                 }
