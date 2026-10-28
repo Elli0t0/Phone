@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.12.4] - 2026-10-28
+
+- Fixed drag navigation intermittently refusing one tab: the bar's pointerInput block is created once and keeps the values it captured, so its navigate check compared against a stale route and skipped navigation back to whichever tab was active when the bar first composed. The gesture now reads the current route and animation option through rememberUpdatedState, so it always sees the latest values.
+
 ## [0.12.3] - 2026-10-28
 
 - Bottom bar is now draggable: press and drag across the bar and the droplet follows the finger, lifts and magnifies (12%), stretches with drag speed (up to 25%), ticks a light haptic on each tab crossing, and springs to the nearest tab on release. A tap navigates to the tab under the finger. The programmatic pill flight, icon pop, labels, shrink, Glass/Solid style, size, testTags and RTL are all kept; item clicks moved to semantics (Role.Tab) since the gesture now owns touches.

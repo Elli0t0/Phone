@@ -39,6 +39,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -160,8 +161,17 @@ fun PhoneBottomBar(
     // it. The popped tabs stay popped — only their saved state is
     // restored on return, so no popped destination (e.g. Settings)
     // comes back.
+    // The gesture block below is created once (its keys are only the
+    // tab count and layout direction), so anything it captures must
+    // stay fresh across compositions: the route and animation option
+    // are read through rememberUpdatedState. Reading the plain
+    // parameters there froze the first composition's values, and
+    // navigation back to that tab was then skipped by the guard —
+    // a different tab each time the bar re-entered composition.
+    val currentRouteState = rememberUpdatedState(currentRoute)
+    val animationOptionState = rememberUpdatedState(animationOption)
     fun navigateTo(screen: Screen) {
-        if (currentRoute != screen.route) {
+        if (currentRouteState.value != screen.route) {
             lightHaptic()
             navController.navigate(screen.route) {
                 popUpTo(navController.graph.findStartDestination().id) {
@@ -427,7 +437,7 @@ fun PhoneBottomBar(
                             try {
                                 press = PressInteraction.Press(down.position)
                                 itemSources[last].tryEmit(press)
-                                if (animationOption == AnimationOption.ON) {
+                                if (animationOptionState.value == AnimationOption.ON) {
                                     scope.launch {
                                         lift.animateTo(
                                             1f,
@@ -443,7 +453,7 @@ fun PhoneBottomBar(
                                     val c = ev.changes.first()
                                     val x = c.position.x.coerceIn(0f, w)
                                     scope.launch { dragX.snapTo(x) }
-                                    if (animationOption == AnimationOption.ON) {
+                                    if (animationOptionState.value == AnimationOption.ON) {
                                         val dtMs = (c.uptimeMillis - lastT).coerceAtLeast(1L)
                                         val rate = abs(x - lastX) / (dtMs / 1000f)
                                         smoothSpeed += (rate - smoothSpeed) * 0.25f
@@ -484,7 +494,7 @@ fun PhoneBottomBar(
                                 }
                                 pillFromIndex = pillToIndex
                                 pillToIndex = last
-                                if (animationOption == AnimationOption.ON) {
+                                if (animationOptionState.value == AnimationOption.ON) {
                                     releaseSpringActive = true
                                     scope.launch {
                                         lift.animateTo(
