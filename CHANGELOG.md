@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.12.6] - 2026-10-28
+
+- New Glass Studio page, opened from the Liquid glass section of Settings: a live preview card (glass pill + glass key over the real backdrop) plus blur amount (0.5–1.5x), glass tint (0–1), edge light (Off/Soft/Bright), dynamic highlights, color richness (1.0–2.2x), droplet stretch (Off/Normal/Extra), glass haptics (Off/Light/Medium), backdrop (Off/Subtle/Vivid, reusing the existing setting) and a reset-to-defaults button. All defaults reproduce the current behavior; Reduce transparency and Animations Off are respected as before.
+
 ## [0.12.5] - 2026-10-28
 
 - In-call screen with the dialpad open: the end-call button now stacks directly under the keypad's Speaker/Hide/Mute row with proper spacing and keeps its full circular size (the keypad-open stack scrolls on short screens instead of squeezing the button off the bottom edge).

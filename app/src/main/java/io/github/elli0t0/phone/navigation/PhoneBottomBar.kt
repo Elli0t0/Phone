@@ -87,7 +87,7 @@ import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.bottomBarSizeSpec
 import io.github.elli0t0.phone.core.design.glassPress
-import io.github.elli0t0.phone.core.design.rememberLightHaptic
+import io.github.elli0t0.phone.core.design.rememberGlassHaptic
 import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
 import io.github.elli0t0.phone.data.settings.model.ThemeMode
 import kotlin.math.PI
@@ -148,7 +148,7 @@ fun PhoneBottomBar(
     val barColor = if (darkTheme) BottomBarDark else BottomBarLight
     val sizeSpec = bottomBarSizeSpec(LocalAppSettings.current.bottomBarSize)
     val pillShape = RoundedCornerShape(PhoneDimens.bottomBarCornerPercent)
-    val lightHaptic = rememberLightHaptic()
+    val lightHaptic = rememberGlassHaptic()
     val animationOption = LocalAppSettings.current.animationOption
     val glassBottomBar = LocalAppSettings.current.glassBottomBar
     val selectedIndex = Screen.bottomNavItems
@@ -281,7 +281,10 @@ fun PhoneBottomBar(
         val pillWidth = barWidth / Screen.bottomNavItems.size -
             PhoneDimens.bottomBarItemInset * 2
         val pillWidthPx = with(density) { pillWidth.toPx() }
-        val stretchPx = with(density) { PhoneDimens.bottomBarPillStretch.toPx() }
+        // Studio droplet stretch scales the bar's stretch (Normal =
+        // current behavior, Off removes it, Extra stretches further).
+        val stretchPx = with(density) { PhoneDimens.bottomBarPillStretch.toPx() } *
+            LocalAppSettings.current.dropletStretch.factor
         // A tab change from outside the bar (back navigation, deep
         // link) snaps the drag position to that tab's center. Skipped
         // while dragging or during the release spring, so it cannot
@@ -723,10 +726,16 @@ fun PhoneBottomBar(
                 // highlights, and no drop shadow under the glass.
                 containerAlpha = 0.20f,
                 blurRadius = 36.dp,
+                // Studio edge light scales the bar's rim (Soft =
+                // current behavior).
                 rim = Brush.verticalGradient(
                     listOf(
-                        Color.White.copy(alpha = 0.38f),
-                        Color.White.copy(alpha = 0.06f)
+                        Color.White.copy(
+                            alpha = (0.38f * LocalAppSettings.current.edgeLight.factor).coerceIn(0f, 1f)
+                        ),
+                        Color.White.copy(
+                            alpha = (0.06f * LocalAppSettings.current.edgeLight.factor).coerceIn(0f, 1f)
+                        )
                     )
                 ),
                 edgeHighlightAlpha = 0.10f

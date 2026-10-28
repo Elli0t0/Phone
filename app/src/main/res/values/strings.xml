@@ -308,6 +308,16 @@
     <string name="settings_dynamic_highlights">Dynamic highlights</string>
     <string name="settings_backdrop">Backdrop</string>
     <string name="settings_dynamic_highlights_desc">Glass highlights shift with device tilt</string>
+    <string name="settings_glass_studio">Glass Studio</string>
+    <string name="settings_glass_studio_desc">Fine-tune blur, tint, edges and more</string>
+    <string name="settings_glass_blur_amount">Blur amount</string>
+    <string name="settings_glass_tint">Glass tint</string>
+    <string name="settings_edge_light">Edge light</string>
+    <string name="settings_glass_richness">Color richness</string>
+    <string name="settings_droplet_stretch">Droplet stretch</string>
+    <string name="settings_glass_haptic">Haptic feedback</string>
+    <string name="settings_glass_preview">Live preview</string>
+    <string name="settings_glass_reset">Reset glass to defaults</string>
 
     <string name="settings_cat_layout">Layout &amp; Density</string>
     <string name="settings_list_density">List density</string>

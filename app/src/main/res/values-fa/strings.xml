@@ -62,4 +62,14 @@
     <string name="settings_dynamic_highlights">هایلایت‌های پویا</string>
     <string name="settings_backdrop">پس‌زمینه</string>
     <string name="settings_dynamic_highlights_desc">هایلایت شیشه با شیب دستگاه جابه‌جا می‌شود</string>
+    <string name="settings_glass_studio">استودیو شیشه</string>
+    <string name="settings_glass_studio_desc">تنظیم دقیق تاری، رنگ، لبه‌ها و بیشتر</string>
+    <string name="settings_glass_blur_amount">میزان تاری</string>
+    <string name="settings_glass_tint">رنگ شیشه</string>
+    <string name="settings_edge_light">نور لبه</string>
+    <string name="settings_glass_richness">اشباع رنگ</string>
+    <string name="settings_droplet_stretch">کشش قطره</string>
+    <string name="settings_glass_haptic">بازخورد لمسی</string>
+    <string name="settings_glass_preview">پیش‌نمایش زنده</string>
+    <string name="settings_glass_reset">بازنشانی شیشه به پیش‌فرض‌ها</string>
 </resources>

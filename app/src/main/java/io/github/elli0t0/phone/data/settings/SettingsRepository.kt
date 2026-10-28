@@ -27,6 +27,9 @@ import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
 import io.github.elli0t0.phone.data.settings.model.Backdrop
+import io.github.elli0t0.phone.data.settings.model.DropletStretch
+import io.github.elli0t0.phone.data.settings.model.EdgeLight
+import io.github.elli0t0.phone.data.settings.model.GlassHapticFeedback
 import io.github.elli0t0.phone.data.settings.model.GlassIntensity
 import io.github.elli0t0.phone.data.settings.model.HeaderSize
 import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
@@ -65,6 +68,12 @@ interface SettingsRepository {
     suspend fun setGlassContactDetail(enabled: Boolean)
     suspend fun setGlassCallScreens(enabled: Boolean)
     suspend fun setGlassIntensity(intensity: GlassIntensity)
+    suspend fun setGlassBlurAmount(amount: Float)
+    suspend fun setGlassTintAmount(amount: Float)
+    suspend fun setEdgeLight(edgeLight: EdgeLight)
+    suspend fun setGlassColorRichness(richness: Float)
+    suspend fun setDropletStretch(stretch: DropletStretch)
+    suspend fun setGlassHapticFeedback(feedback: GlassHapticFeedback)
     suspend fun setReduceTransparency(enabled: Boolean)
     suspend fun setGlassCards(enabled: Boolean)
     suspend fun setDynamicHighlights(enabled: Boolean)
@@ -126,6 +135,12 @@ class DataStoreSettingsRepository(
         val GLASS_CONTACT_DETAIL = booleanPreferencesKey("glass_contact_detail")
         val GLASS_CALL_SCREENS = booleanPreferencesKey("glass_call_screens")
         val GLASS_INTENSITY = stringPreferencesKey("glass_intensity")
+        val GLASS_BLUR_AMOUNT = floatPreferencesKey("glass_blur_amount")
+        val GLASS_TINT_AMOUNT = floatPreferencesKey("glass_tint_amount")
+        val EDGE_LIGHT = stringPreferencesKey("edge_light")
+        val GLASS_COLOR_RICHNESS = floatPreferencesKey("glass_color_richness")
+        val DROPLET_STRETCH = stringPreferencesKey("droplet_stretch")
+        val GLASS_HAPTIC_FEEDBACK = stringPreferencesKey("glass_haptic_feedback")
         val REDUCE_TRANSPARENCY = booleanPreferencesKey("reduce_transparency")
         val GLASS_CARDS = booleanPreferencesKey("glass_cards")
         val DYNAMIC_HIGHLIGHTS = booleanPreferencesKey("dynamic_highlights")
@@ -201,6 +216,16 @@ class DataStoreSettingsRepository(
 
         val intensityStr = prefs[Keys.GLASS_INTENSITY]
         val glassIntensity = intensityStr?.let { runCatching { GlassIntensity.valueOf(it) }.getOrNull() } ?: GlassIntensity.STANDARD
+
+        val glassBlurAmount = prefs[Keys.GLASS_BLUR_AMOUNT] ?: 1.0f
+        val glassTintAmount = prefs[Keys.GLASS_TINT_AMOUNT] ?: 1.0f
+        val edgeLightStr = prefs[Keys.EDGE_LIGHT]
+        val edgeLight = edgeLightStr?.let { runCatching { EdgeLight.valueOf(it) }.getOrNull() } ?: EdgeLight.SOFT
+        val glassColorRichness = prefs[Keys.GLASS_COLOR_RICHNESS] ?: 1.7f
+        val dropletStretchStr = prefs[Keys.DROPLET_STRETCH]
+        val dropletStretch = dropletStretchStr?.let { runCatching { DropletStretch.valueOf(it) }.getOrNull() } ?: DropletStretch.NORMAL
+        val glassHapticStr = prefs[Keys.GLASS_HAPTIC_FEEDBACK]
+        val glassHapticFeedback = glassHapticStr?.let { runCatching { GlassHapticFeedback.valueOf(it) }.getOrNull() } ?: GlassHapticFeedback.LIGHT
 
         val reduceTransparency = prefs[Keys.REDUCE_TRANSPARENCY] ?: false
         val glassCards = prefs[Keys.GLASS_CARDS] ?: false
@@ -343,6 +368,12 @@ class DataStoreSettingsRepository(
             glassContactDetail = glassContactDetail,
             glassCallScreens = glassCallScreens,
             glassIntensity = glassIntensity,
+            glassBlurAmount = glassBlurAmount,
+            glassTintAmount = glassTintAmount,
+            edgeLight = edgeLight,
+            glassColorRichness = glassColorRichness,
+            dropletStretch = dropletStretch,
+            glassHapticFeedback = glassHapticFeedback,
             reduceTransparency = reduceTransparency,
             glassCards = glassCards,
             dynamicHighlights = dynamicHighlights,
@@ -492,6 +523,42 @@ class DataStoreSettingsRepository(
     override suspend fun setGlassIntensity(intensity: GlassIntensity) {
         dataStore.edit { prefs ->
             prefs[Keys.GLASS_INTENSITY] = intensity.name
+        }
+    }
+
+    override suspend fun setGlassBlurAmount(amount: Float) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLASS_BLUR_AMOUNT] = amount
+        }
+    }
+
+    override suspend fun setGlassTintAmount(amount: Float) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLASS_TINT_AMOUNT] = amount
+        }
+    }
+
+    override suspend fun setEdgeLight(edgeLight: EdgeLight) {
+        dataStore.edit { prefs ->
+            prefs[Keys.EDGE_LIGHT] = edgeLight.name
+        }
+    }
+
+    override suspend fun setGlassColorRichness(richness: Float) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLASS_COLOR_RICHNESS] = richness
+        }
+    }
+
+    override suspend fun setDropletStretch(stretch: DropletStretch) {
+        dataStore.edit { prefs ->
+            prefs[Keys.DROPLET_STRETCH] = stretch.name
+        }
+    }
+
+    override suspend fun setGlassHapticFeedback(feedback: GlassHapticFeedback) {
+        dataStore.edit { prefs ->
+            prefs[Keys.GLASS_HAPTIC_FEEDBACK] = feedback.name
         }
     }
 

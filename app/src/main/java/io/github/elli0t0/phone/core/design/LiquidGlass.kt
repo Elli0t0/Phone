@@ -100,12 +100,13 @@ private fun glassBlurModifier(dark: Boolean, blurRadius: Dp? = null): Modifier {
     val settings = LocalAppSettings.current
     if (!blurAvailable(hazeState, settings.reduceTransparency)) return Modifier
     // An explicit radius wins (the bottom bar wants ~36dp); otherwise
-    // the radius follows GlassIntensity.
-    val radius = blurRadius ?: when (settings.glassIntensity) {
+    // the radius follows GlassIntensity. The Studio blur amount
+    // multiplies the final radius (default 1x = current behavior).
+    val radius = (blurRadius ?: when (settings.glassIntensity) {
         GlassIntensity.SUBTLE -> PhoneDimens.glassBlurRadiusSubtle
         GlassIntensity.STANDARD -> PhoneDimens.glassBlurRadiusStandard
         GlassIntensity.STRONG -> PhoneDimens.glassBlurRadiusStrong
-    }
+    }) * settings.glassBlurAmount
     val scale = when (settings.glassIntensity) {
         GlassIntensity.SUBTLE -> 0.6f
         GlassIntensity.STANDARD -> 1.0f
@@ -116,8 +117,10 @@ private fun glassBlurModifier(dark: Boolean, blurRadius: Dp? = null): Modifier {
     } else {
         PhoneDimens.glassBlurTintAlphaLight
     }
+    // The Studio tint amount multiplies the tint alpha (default 1x
+    // = current behavior; 0x leaves the blur untinted).
     val tint = (if (dark) GlassBlurTintDark else GlassBlurTintLight)
-        .copy(alpha = (baseAlpha * scale).coerceIn(0f, 0.85f))
+        .copy(alpha = (baseAlpha * scale * settings.glassTintAmount).coerceIn(0f, 0.85f))
     return Modifier.hazeEffect(
         state = hazeState!!,
         style = HazeStyle(
@@ -295,6 +298,10 @@ fun GlassSurface(
 ) {
     val settings = LocalAppSettings.current
     val blurOn = blurAvailable(LocalHazeState.current, settings.reduceTransparency)
+    // Studio edge light scales the rim and end highlights (Soft =
+    // current behavior); an explicit rim is scaled at its call site.
+    val edgeLightFactor = settings.edgeLight.factor
+    val effectiveEdgeHighlightAlpha = (edgeHighlightAlpha * edgeLightFactor).coerceIn(0f, 1f)
     val effectiveContainer =
         if (blurOn) containerColor.copy(alpha = containerAlpha) else containerColor
     Box(
@@ -304,13 +311,13 @@ fun GlassSurface(
             .then(glassSolidBaseModifier(dark))
             .background(effectiveContainer)
             .then(
-                if (edgeHighlightAlpha > 0f) {
+                if (effectiveEdgeHighlightAlpha > 0f) {
                     Modifier.drawBehind {
                         val fadeWidth = size.width * 0.12f
                         drawRect(
                             brush = Brush.horizontalGradient(
                                 listOf(
-                                    Color.White.copy(alpha = edgeHighlightAlpha),
+                                    Color.White.copy(alpha = effectiveEdgeHighlightAlpha),
                                     Color.Transparent
                                 ),
                                 startX = 0f,
@@ -321,7 +328,7 @@ fun GlassSurface(
                             brush = Brush.horizontalGradient(
                                 listOf(
                                     Color.Transparent,
-                                    Color.White.copy(alpha = edgeHighlightAlpha)
+                                    Color.White.copy(alpha = effectiveEdgeHighlightAlpha)
                                 ),
                                 startX = size.width - fadeWidth,
                                 endX = size.width
@@ -336,8 +343,8 @@ fun GlassSurface(
                 width = 1.dp,
                 brush = rim ?: Brush.verticalGradient(
                     listOf(
-                        Color.White.copy(alpha = 0.35f),
-                        Color.White.copy(alpha = 0.05f)
+                        Color.White.copy(alpha = (0.35f * edgeLightFactor).coerceIn(0f, 1f)),
+                        Color.White.copy(alpha = (0.05f * edgeLightFactor).coerceIn(0f, 1f))
                     )
                 ),
                 shape = shape
@@ -362,7 +369,8 @@ private class GlassSpec(
             base: Color,
             isSelected: Boolean,
             intensity: GlassIntensity = GlassIntensity.STANDARD,
-            reduceTransparency: Boolean = false
+            reduceTransparency: Boolean = false,
+            edgeLightFactor: Float = 1f
         ): GlassSpec {
             // Glass intensity scales every glass alpha: Subtle softens the
             // effect, Strong deepens it. Reduce transparency makes the
@@ -398,11 +406,12 @@ private class GlassSpec(
                     end = Offset.Infinite
                 ),
                 // 1dp rim: vertical white gradient, 35% at the top
-                // edge fading to 5% at the bottom edge.
+                // edge fading to 5% at the bottom edge, scaled by
+                // the Studio edge light (Soft = current behavior).
                 rim = Brush.verticalGradient(
                     colors = listOf(
-                        Color.White.copy(alpha = scaled(0.35f)),
-                        Color.White.copy(alpha = scaled(0.05f))
+                        Color.White.copy(alpha = (scaled(0.35f) * edgeLightFactor).coerceIn(0f, 1f)),
+                        Color.White.copy(alpha = (scaled(0.05f) * edgeLightFactor).coerceIn(0f, 1f))
                     )
                 )
             )
@@ -469,16 +478,19 @@ fun Modifier.liquidGlass(
     val dark = isDarkGlassTheme() || forceDarkGlass
     val base = if (tint != Color.Unspecified) tint else MaterialTheme.colorScheme.primary
     val settings = LocalAppSettings.current
-    val spec = remember(dark, base, isSelected, settings.glassIntensity, settings.reduceTransparency) {
-        GlassSpec.create(dark, base, isSelected, settings.glassIntensity, settings.reduceTransparency)
+    val edgeLightFactor = settings.edgeLight.factor
+    val spec = remember(dark, base, isSelected, settings.glassIntensity, settings.reduceTransparency, edgeLightFactor) {
+        GlassSpec.create(dark, base, isSelected, settings.glassIntensity, settings.reduceTransparency, edgeLightFactor)
     }
     val blurOn = blur && blurAvailable(LocalHazeState.current, settings.reduceTransparency)
-    val saturationEffect = remember(premium, blurOn) {
+    val saturationEffect = remember(premium, blurOn, settings.glassColorRichness) {
         if (!premium || !blurOn || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
             null
         } else {
             runCatching {
-                val matrix = ColorMatrix().apply { setSaturation(1.7f) }
+                // Studio color richness: the saturation boost on the
+                // blurred backdrop (default 1.7x = current behavior).
+                val matrix = ColorMatrix().apply { setSaturation(settings.glassColorRichness) }
                 RenderEffect.createColorFilterEffect(ColorMatrixColorFilter(matrix))
                     .asComposeRenderEffect()
             }.getOrNull()
@@ -515,10 +527,12 @@ fun Modifier.liquidGlass(
                     // version, so the outline is drawn by subclass:
                     // rect, round rect, or generic path.
                     val strokePx = 1.dp.toPx()
+                    // Diagonal specular border, scaled by the Studio
+                    // edge light (Soft = current behavior).
                     val borderBrush = Brush.linearGradient(
                         colors = listOf(
-                            Color.White.copy(alpha = 0.55f),
-                            Color.White.copy(alpha = 0.08f)
+                            Color.White.copy(alpha = (0.55f * edgeLightFactor).coerceIn(0f, 1f)),
+                            Color.White.copy(alpha = (0.08f * edgeLightFactor).coerceIn(0f, 1f))
                         ),
                         start = Offset(shiftX, shiftY),
                         end = Offset(size.width + shiftX, size.height + shiftY)
@@ -552,7 +566,7 @@ fun Modifier.liquidGlass(
                     drawRect(
                         brush = Brush.linearGradient(
                             colors = listOf(
-                                Color.White.copy(alpha = 0.14f),
+                                Color.White.copy(alpha = (0.14f * edgeLightFactor).coerceIn(0f, 1f)),
                                 Color.Transparent
                             ),
                             start = Offset(0f, 0f),

@@ -276,6 +276,7 @@ fun SettingsScreen(
     // closes the open page instead of leaving Settings.
     BackHandler(enabled = dialogs.showCallBackgroundPage) { dialogs.showCallBackgroundPage = false }
     BackHandler(enabled = dialogs.showAnswerStylePage) { dialogs.showAnswerStylePage = false }
+    BackHandler(enabled = dialogs.showGlassStudioPage) { dialogs.showGlassStudioPage = false }
     BackHandler(enabled = dialogs.showBlockedNumbers) { dialogs.showBlockedNumbers = false }
 
     if (dialogs.showAnswerStylePage) {
@@ -285,6 +286,14 @@ fun SettingsScreen(
             onSelect = { viewModel.onAnswerStyleChanged(it) },
             onSliderOnlyWhenLockedChange = { viewModel.onSliderOnlyWhenLockedChanged(it) },
             onNavigateBack = { dialogs.showAnswerStylePage = false }
+        )
+    }
+
+    if (dialogs.showGlassStudioPage) {
+        GlassStudioScreen(
+            settings = settings,
+            viewModel = viewModel,
+            onNavigateBack = { dialogs.showGlassStudioPage = false }
         )
     }
 

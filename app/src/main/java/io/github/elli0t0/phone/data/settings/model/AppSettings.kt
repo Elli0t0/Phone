@@ -178,6 +178,30 @@ enum class GlassIntensity(val label: String) {
 }
 
 /**
+ * Glass edge light: scales every glass rim alpha. Soft reproduces the
+ * current rims; Off removes them; Bright strengthens them.
+ */
+enum class EdgeLight(val label: String, val factor: Float) {
+    OFF("Off", 0f),
+    SOFT("Soft", 1f),
+    BRIGHT("Bright", 1.6f)
+}
+
+/** Bottom-bar droplet stretch: scales the bar's stretchPx. */
+enum class DropletStretch(val label: String, val factor: Float) {
+    OFF("Off", 0f),
+    NORMAL("Normal", 1f),
+    EXTRA("Extra", 1.5f)
+}
+
+/** Haptic intensity for glass interactions (bottom-bar tabs). */
+enum class GlassHapticFeedback(val label: String) {
+    OFF("Off"),
+    LIGHT("Light"),
+    MEDIUM("Medium")
+}
+
+/**
  * Ambient backdrop behind the tab content: three large soft
  * accent-hue blobs drifting slowly, giving glass something to
  * blur. Strength is the blob center alpha.
@@ -213,6 +237,15 @@ data class AppSettings(
     val glassIntensity: GlassIntensity = GlassIntensity.STANDARD,
     val reduceTransparency: Boolean = false,
     val glassCards: Boolean = false,
+    // Glass Studio fine-tuning. Defaults reproduce the current
+    // behavior exactly: full blur radius and tint, soft rims,
+    // 1.7x color richness, normal droplet stretch, light haptics.
+    val glassBlurAmount: Float = 1.0f,
+    val glassTintAmount: Float = 1.0f,
+    val edgeLight: EdgeLight = EdgeLight.SOFT,
+    val glassColorRichness: Float = 1.7f,
+    val dropletStretch: DropletStretch = DropletStretch.NORMAL,
+    val glassHapticFeedback: GlassHapticFeedback = GlassHapticFeedback.LIGHT,
     // Dynamic highlights: the premium glass specular border shifts
     // with device tilt. Default on; off when Animations is Off.
     val dynamicHighlights: Boolean = true,

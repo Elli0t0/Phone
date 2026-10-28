@@ -47,6 +47,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
+import io.github.elli0t0.phone.data.settings.model.GlassHapticFeedback
 
 /**
  * Central motion behavior for the Animations setting. Every animation
@@ -396,6 +397,41 @@ fun rememberLightHaptic(): () -> Unit {
             }
             if (enabled) {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            }
+        }
+    }
+}
+
+/**
+ * Haptic feedback for glass interactions (bottom-bar tabs), following
+ * the Studio haptic setting: Off silences them, Light is the existing
+ * light tick, Medium is a firmer long-press tick. The system haptic
+ * toggle still gates all of them.
+ */
+@Composable
+fun rememberGlassHaptic(): () -> Unit {
+    val lightHaptic = rememberLightHaptic()
+    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
+    val option = LocalAppSettings.current.glassHapticFeedback
+    return remember(haptic, context, option) {
+        {
+            val enabled = try {
+                Settings.System.getInt(
+                    context.contentResolver,
+                    Settings.System.HAPTIC_FEEDBACK_ENABLED,
+                    1
+                ) == 1
+            } catch (e: Settings.SettingNotFoundException) {
+                true
+            }
+            if (enabled) {
+                when (option) {
+                    GlassHapticFeedback.OFF -> Unit
+                    GlassHapticFeedback.LIGHT -> lightHaptic()
+                    GlassHapticFeedback.MEDIUM ->
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                }
             }
         }
     }

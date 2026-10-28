@@ -401,6 +401,16 @@ item {
                 },
                 onClick = { dialogs.showBackdropDialog = true }
             )
+
+            Spacer(modifier = Modifier.height(spacing.small))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            Spacer(modifier = Modifier.height(spacing.small))
+
+            SettingsRow(
+                title = stringResource(id = R.string.settings_glass_studio),
+                subtitle = stringResource(id = R.string.settings_glass_studio_desc),
+                onClick = { dialogs.showGlassStudioPage = true }
+            )
         }
     }
 }

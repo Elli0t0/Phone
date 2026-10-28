@@ -171,6 +171,10 @@ object PhoneDimens {
     val recentsDividerAlpha = 0.08f
     val recentsRowIconSize = 20.dp
     val recentsTimeSlotWidth = 64.dp
+    // Glass Studio live-preview card.
+    val glassStudioPreviewHeight = 180.dp
+    val glassStudioPreviewPillWidth = 120.dp
+    val glassStudioPreviewPillHeight = 48.dp
     val recentsRowVerticalPadding = 3.dp
     val recentsSwipeRevealIconSize = 24.dp
     // Contacts list: name-only rows, gradient avatars, pill cards.

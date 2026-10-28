@@ -21,6 +21,9 @@ import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
 import io.github.elli0t0.phone.data.settings.model.Backdrop
+import io.github.elli0t0.phone.data.settings.model.DropletStretch
+import io.github.elli0t0.phone.data.settings.model.EdgeLight
+import io.github.elli0t0.phone.data.settings.model.GlassHapticFeedback
 import io.github.elli0t0.phone.data.settings.model.GlassIntensity
 import io.github.elli0t0.phone.data.settings.model.HeaderSize
 import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
@@ -161,6 +164,54 @@ class SettingsViewModel(
         viewModelScope.launch {
             settingsRepository.setGlassIntensity(intensity)
         }
+    }
+
+    fun onGlassBlurAmountChanged(amount: Float) {
+        viewModelScope.launch {
+            settingsRepository.setGlassBlurAmount(amount)
+        }
+    }
+
+    fun onGlassTintAmountChanged(amount: Float) {
+        viewModelScope.launch {
+            settingsRepository.setGlassTintAmount(amount)
+        }
+    }
+
+    fun onEdgeLightChanged(edgeLight: EdgeLight) {
+        viewModelScope.launch {
+            settingsRepository.setEdgeLight(edgeLight)
+        }
+    }
+
+    fun onGlassColorRichnessChanged(richness: Float) {
+        viewModelScope.launch {
+            settingsRepository.setGlassColorRichness(richness)
+        }
+    }
+
+    fun onDropletStretchChanged(stretch: DropletStretch) {
+        viewModelScope.launch {
+            settingsRepository.setDropletStretch(stretch)
+        }
+    }
+
+    fun onGlassHapticFeedbackChanged(feedback: GlassHapticFeedback) {
+        viewModelScope.launch {
+            settingsRepository.setGlassHapticFeedback(feedback)
+        }
+    }
+
+    /** Glass Studio reset: every Studio setting back to its default. */
+    fun onResetGlassDefaults() {
+        onGlassBlurAmountChanged(1.0f)
+        onGlassTintAmountChanged(1.0f)
+        onEdgeLightChanged(EdgeLight.SOFT)
+        onDynamicHighlightsChanged(true)
+        onGlassColorRichnessChanged(1.7f)
+        onDropletStretchChanged(DropletStretch.NORMAL)
+        onGlassHapticFeedbackChanged(GlassHapticFeedback.LIGHT)
+        onBackdropChanged(Backdrop.SUBTLE)
     }
 
     fun onReduceTransparencyChanged(enabled: Boolean) {
