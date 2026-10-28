@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.15.6]
+
+- Quick redial chips: labels are now single-line with ellipsis in both the glass and button variants, so all three chips measure the same height (a two-line label was making its chip taller). RTL names keep bidiWrap plus TextDirection.Content, so parentheses stay on the correct side; the Recents row title already had the same wrap and is unchanged.
+
 ## [0.15.5]
 
 - Lens-glass bottom bar (Backdrop 2.0.0, pinned): on API 33+ with the new Glass Studio "Lens bar" switch on (default) and Reduce transparency off, the bar becomes a real lens — blurred, tinted, refractive surface with a gradient rim, and the selected droplet is a pure sharp lens with chromatic aberration that grows with finger lift. Otherwise the current Haze bar is completely unchanged, and nothing new loads below API 33 (separate file, SDK-gated).

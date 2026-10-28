@@ -641,7 +641,7 @@ fun QuickRedialChips(
                         Text(
                             text = bidiWrap(entry.label),
                             style = MaterialTheme.typography.labelLarge.copy(textDirection = TextDirection.Content),
-                            maxLines = 2,
+                            maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
@@ -660,7 +660,7 @@ fun QuickRedialChips(
                     Text(
                         text = bidiWrap(entry.label),
                         style = MaterialTheme.typography.labelLarge.copy(textDirection = TextDirection.Content),
-                        maxLines = 2,
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
