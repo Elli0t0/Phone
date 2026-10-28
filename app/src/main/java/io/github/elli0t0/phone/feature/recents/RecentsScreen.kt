@@ -540,6 +540,12 @@ fun RecentsScreen(
             // bottom behind the bar, and a second gradient double-dimmed it.
             when (val status = permissionState.status) {
                 is CallLogPermissionStatus.Granted -> {
+                    // Items use the list's own haze state: an item effect on the
+                    // shared state would draw the shared area while the shared
+                    // source is recording it, which crashes (Haze 1.5.3). With the
+                    // list state, the list area is filtered out for its own items,
+                    // so item glass renders tint + fill only.
+                    CompositionLocalProvider(LocalHazeState provides listHaze) {
                     LazyColumn(
                         state = listState,
                         modifier = Modifier
@@ -666,6 +672,7 @@ fun RecentsScreen(
                                 }
                             }
                         }
+                    }
                     }
                 }
                 is CallLogPermissionStatus.NotAsked,

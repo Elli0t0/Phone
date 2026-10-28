@@ -382,6 +382,12 @@ private fun ContactsContent(
         } else if (uiState.filteredContacts.isEmpty() && uiState.searchQuery.isNotEmpty()) {
             SearchEmptyState(query = uiState.searchQuery)
         } else {
+        // Items use the list's own haze state: an item effect on the
+        // shared state would draw the shared area while the shared
+        // source is recording it, which crashes (Haze 1.5.3). With the
+        // list state, the list area is filtered out for its own items,
+        // so item glass renders tint + fill only.
+        CompositionLocalProvider(LocalHazeState provides listHaze) {
         LazyColumn(
             state = listState,
             modifier = Modifier
@@ -543,6 +549,7 @@ private fun ContactsContent(
                     )
                 }
             }
+        }
         }
         }
         // Sticky glass top bar at the top of the list area once the
