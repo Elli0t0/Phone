@@ -164,6 +164,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.15.3]
+
+- Fixes built-in ADB pairing not sticking: Kadb's identity defaulted to an in-memory key, so pairing authorized a key that vanished when the app process died — the next status check then reported Not paired even though pairing had succeeded. The private key is now persisted in app-private storage, so one pairing survives restarts and updates.
+- Pairing now registers as "Phone" in the system's Paired devices list instead of Kadb's default OS-build user@host name.
+- Note: pairings made with 0.15.2 cannot be reused — their key was never saved. Pair once more after updating; the old cryptic entry can be forgotten in wireless debugging settings.
+
 ## [0.15.2]
 
 - Fixes the built-in ADB pairing flow: the Pair button only appeared once the phone was already pairable, so from the "wireless debugging is off" state there was no way to reach the code entry at all. Pair is now available in every non-ready state, and tapping it posts the notification and opens Developer options in one step.

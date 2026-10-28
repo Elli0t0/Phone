@@ -30,6 +30,10 @@ class AdbRecordingBackend(private val context: Context) : RecordingBackend {
 
     override val kind = RecordingBackendKind.ADB
 
+    init {
+        ensureKadbIdentity(context)
+    }
+
     private val _status = MutableStateFlow(BackendStatus.NOT_RUNNING)
     override val status: StateFlow<BackendStatus> = _status.asStateFlow()
 
@@ -49,7 +53,9 @@ class AdbRecordingBackend(private val context: Context) : RecordingBackend {
 
     override suspend fun pair(code: String): Result<Unit> = runCatching {
         val endpoint = AdbDiscovery.discoverPairing(context).getOrThrow()
-        Kadb.pair(endpoint.first, endpoint.second, code)
+        // Pair as "Phone": Kadb's default name is the OS build's
+        // user@host, which shows up as a cryptic entry in Paired devices.
+        Kadb.pair(endpoint.first, endpoint.second, code, "Phone")
         refreshStatus()
         Unit
     }
