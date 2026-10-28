@@ -1,6 +1,5 @@
 package io.github.elli0t0.phone.core.design
 
-import androidx.compose.animation.core.DampingRatioMediumBouncy
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -470,27 +469,42 @@ fun Modifier.liquidGlass(
                     // Inset by half the stroke: the stroke is centered
                     // on the outline, and the clip above would cut its
                     // outer half, leaving a half-width border.
+                    // DrawScope has no drawOutline in this Compose
+                    // version, so the outline is drawn by subclass:
+                    // rect, round rect, or generic path.
                     val strokePx = 1.dp.toPx()
+                    val borderBrush = Brush.linearGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.55f),
+                            Color.White.copy(alpha = 0.08f)
+                        ),
+                        start = Offset(shiftX, shiftY),
+                        end = Offset(size.width + shiftX, size.height + shiftY)
+                    )
+                    val borderStroke = Stroke(width = strokePx)
+                    val borderSize = Size(size.width - strokePx, size.height - strokePx)
                     translate(strokePx / 2f, strokePx / 2f) {
-                        drawOutline(
-                            outline = shape.createOutline(
-                                Size(size.width - strokePx, size.height - strokePx),
-                                layoutDirection,
-                                this
-                            ),
-                            brush = Brush.linearGradient(
-                                colors = listOf(
-                                    Color.White.copy(alpha = 0.55f),
-                                    Color.White.copy(alpha = 0.08f)
-                                ),
-                                start = Offset(shiftX, shiftY),
-                                end = Offset(size.width + shiftX, size.height + shiftY)
-                            ),
-                            style = Stroke(width = strokePx)
-                        )
+                        when (val outline = shape.createOutline(borderSize, layoutDirection, this)) {
+                            is Outline.Rectangle -> drawRect(
+                                brush = borderBrush,
+                                size = borderSize,
+                                style = borderStroke
+                            )
+                            is Outline.Rounded -> drawRoundRect(
+                                brush = borderBrush,
+                                size = borderSize,
+                                cornerRadius = outline.roundRect.cornerRadius,
+                                style = borderStroke
+                            )
+                            is Outline.Generic -> drawPath(
+                                path = outline.path,
+                                brush = borderBrush,
+                                style = borderStroke
+                            )
+                        }
                     }
                     drawRect(
-                        brush = Brush.verticalGradient(
+                        brush = Brush.linearGradient(
                             colors = listOf(
                                 Color.White.copy(alpha = 0.14f),
                                 Color.Transparent
@@ -529,7 +543,9 @@ fun Modifier.glassPress(source: MutableInteractionSource): Modifier = composed {
         val pressed by source.collectIsPressedAsState()
         val scale by animateFloatAsState(
             targetValue = if (pressed) 0.96f else 1f,
-            animationSpec = spring(dampingRatio = DampingRatioMediumBouncy, stiffness = 400f),
+            // MediumBouncy is 0.5f; the named constant does not exist
+            // in this Compose version's animation-core.
+            animationSpec = spring(dampingRatio = 0.5f, stiffness = 400f),
             label = "glassPressScale"
         )
         val sheen by animateFloatAsState(

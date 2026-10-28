@@ -48,7 +48,7 @@ fun Modifier.scrollEdgeFade(
         }
         if (topProgress > 0f) {
             drawRect(
-                brush = Brush.verticalGradient(
+                brush = Brush.linearGradient(
                     colors = listOf(
                         background.copy(alpha = topProgress),
                         background.copy(alpha = 0f)
@@ -69,7 +69,7 @@ fun Modifier.scrollEdgeFade(
         if (bottomProgress > 0f) {
             val bottomHeight = minOf(fadePx, size.height)
             drawRect(
-                brush = Brush.verticalGradient(
+                brush = Brush.linearGradient(
                     colors = listOf(
                         background.copy(alpha = 0f),
                         background.copy(alpha = bottomProgress)
@@ -97,7 +97,7 @@ fun Modifier.scrollEdgeFade(
         val topProgress = (scrollState.value / fadePx).coerceIn(0f, 1f)
         if (topProgress > 0f) {
             drawRect(
-                brush = Brush.verticalGradient(
+                brush = Brush.linearGradient(
                     colors = listOf(
                         background.copy(alpha = topProgress),
                         background.copy(alpha = 0f)
@@ -113,7 +113,7 @@ fun Modifier.scrollEdgeFade(
         if (bottomProgress > 0f) {
             val bottomHeight = minOf(fadePx, size.height)
             drawRect(
-                brush = Brush.verticalGradient(
+                brush = Brush.linearGradient(
                     colors = listOf(
                         background.copy(alpha = 0f),
                         background.copy(alpha = bottomProgress)

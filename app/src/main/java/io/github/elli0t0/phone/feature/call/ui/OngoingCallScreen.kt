@@ -343,7 +343,7 @@ fun OngoingCallScreen(
                                             },
                                             isActive = callModel.isMuted,
                                             onClick = { onMuteToggle(!callModel.isMuted) },
-                                            testTag = "mute_button"
+                                            testTag = "mute_button",
                                             tilt = tilt,
                                         )
                                         OngoingCallButton.SPEAKER -> InCallControlButton(
@@ -351,7 +351,7 @@ fun OngoingCallScreen(
                                             label = stringResource(id = R.string.call_action_speaker),
                                             isActive = isSpeaker,
                                             onClick = onSpeakerToggle,
-                                            testTag = "speaker_button"
+                                            testTag = "speaker_button",
                                             tilt = tilt,
                                         )
                                         OngoingCallButton.BLUETOOTH -> InCallControlButton(
@@ -359,7 +359,7 @@ fun OngoingCallScreen(
                                             label = stringResource(id = R.string.call_action_bluetooth),
                                             isActive = isBluetooth,
                                             onClick = onBluetoothToggle,
-                                            testTag = "bluetooth_button"
+                                            testTag = "bluetooth_button",
                                             tilt = tilt,
                                         )
                                         OngoingCallButton.KEYPAD -> InCallControlButton(
@@ -367,7 +367,7 @@ fun OngoingCallScreen(
                                             label = stringResource(id = R.string.call_action_keypad),
                                             isActive = false,
                                             onClick = { showKeypad = true },
-                                            testTag = "keypad_button"
+                                            testTag = "keypad_button",
                                             tilt = tilt,
                                         )
                                         OngoingCallButton.HOLD -> InCallControlButton(
@@ -379,7 +379,7 @@ fun OngoingCallScreen(
                                             },
                                             isActive = isHolding,
                                             onClick = { onHoldToggle(!isHolding) },
-                                            testTag = "hold_button"
+                                            testTag = "hold_button",
                                             tilt = tilt,
                                         )
                                     }
@@ -643,7 +643,7 @@ private fun InCallKeypadGrid(
                 label = stringResource(id = R.string.call_action_speaker),
                 isActive = isSpeaker,
                 onClick = onSpeakerToggle,
-                testTag = "keypad_speaker_button"
+                testTag = "keypad_speaker_button",
                 tilt = tilt,
             )
             InCallControlButton(
@@ -651,7 +651,7 @@ private fun InCallKeypadGrid(
                 label = stringResource(id = R.string.call_action_hide),
                 isActive = false,
                 onClick = onClose,
-                testTag = "keypad_hide_button"
+                testTag = "keypad_hide_button",
                 tilt = tilt,
             )
             InCallControlButton(
@@ -663,7 +663,7 @@ private fun InCallKeypadGrid(
                 },
                 isActive = isMuted,
                 onClick = onMuteToggle,
-                testTag = "keypad_mute_button"
+                testTag = "keypad_mute_button",
                 tilt = tilt,
             )
         }
