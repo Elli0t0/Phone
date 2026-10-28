@@ -166,9 +166,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.15.5]
 
-- Lens-glass bottom bar (Backdrop 2.0.1, pinned): on API 33+ with the new Glass Studio "Lens bar" switch on (default) and Reduce transparency off, the bar becomes a real lens — blurred, tinted, refractive surface with a gradient rim, and the selected droplet is a pure sharp lens with chromatic aberration that grows with finger lift. Otherwise the current Haze bar is completely unchanged, and nothing new loads below API 33 (separate file, SDK-gated).
+- Lens-glass bottom bar (Backdrop 2.0.0, pinned): on API 33+ with the new Glass Studio "Lens bar" switch on (default) and Reduce transparency off, the bar becomes a real lens — blurred, tinted, refractive surface with a gradient rim, and the selected droplet is a pure sharp lens with chromatic aberration that grows with finger lift. Otherwise the current Haze bar is completely unchanged, and nothing new loads below API 33 (separate file, SDK-gated).
 - Bar sizing for the lens bar: 78% of the screen capped at 380dp, 64dp tall, 4dp droplet inset; drag, haptics, spring settle, RTL, labels, semantics, testTags, Glass Studio blur/tint sliders and animation settings all carry over.
 - The library's AAR requires compileSdk 37, so compileSdk moved 36 → 37 (targetSdk stays 35, minSdk stays 29). Other screens' Haze pills are untouched.
+- 2.0.0, not 2.0.1: 2.0.1 was compiled with Kotlin 2.4, whose metadata the project's Kotlin 2.2 compiler cannot read; 2.0.0 was built with Kotlin 2.3 and its library source is identical to 2.0.1's.
 
 ## [0.15.4]
 
