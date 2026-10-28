@@ -1,6 +1,7 @@
 package io.github.elli0t0.phone.data.calllog
 
 import android.content.ContentResolver
+import android.database.Cursor
 import android.os.Build
 import android.os.Bundle
 import android.provider.CallLog
