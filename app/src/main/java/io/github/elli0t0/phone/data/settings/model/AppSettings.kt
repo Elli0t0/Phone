@@ -236,6 +236,10 @@ data class AppSettings(
     // Liquid glass per section: each area with glass surfaces can fall
     // back to its flat rendering. All default to glass on.
     val glassBottomBar: Boolean = true,
+    // Lens-glass bottom bar (Backdrop library): default on, but only
+    // active on API 33+ without Reduce transparency; otherwise the
+    // current Haze bar is used unchanged.
+    val lensBar: Boolean = true,
     val glassDialpad: Boolean = true,
     val glassHeaders: Boolean = true,
     val glassContactDetail: Boolean = true,

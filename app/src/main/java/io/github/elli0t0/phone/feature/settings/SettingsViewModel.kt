@@ -208,6 +208,12 @@ class SettingsViewModel(
         }
     }
 
+    fun onLensBarChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setLensBar(enabled)
+        }
+    }
+
     /** Glass Studio reset: every Studio setting back to its default. */
     fun onResetGlassDefaults() {
         onGlassBlurAmountChanged(1.0f)
@@ -218,6 +224,7 @@ class SettingsViewModel(
         onDropletStretchChanged(DropletStretch.NORMAL)
         onGlassHapticFeedbackChanged(GlassHapticFeedback.LIGHT)
         onEdgeRefractionChanged(true)
+        onLensBarChanged(true)
         onBackdropChanged(Backdrop.SUBTLE)
     }
 

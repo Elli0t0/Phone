@@ -73,6 +73,7 @@ import androidx.compose.ui.util.lerp
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import kotlinx.coroutines.launch
+import com.kyant.backdrop.backdrops.LayerBackdrop
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.core.design.BottomBarDark
 import io.github.elli0t0.phone.core.design.BottomBarDarkSelectedContent
@@ -134,7 +135,11 @@ fun PhoneBottomBar(
     modifier: Modifier = Modifier,
     // 0 = full height with labels, 1 = compact icons-only. Read only
     // in layout/draw lambdas, so shrinking never recomposes.
-    shrinkProgress: () -> Float = { 0f }
+    shrinkProgress: () -> Float = { 0f },
+    // Non-null only when the Lens bar gate passes (API 33+, Lens bar
+    // switch on, Reduce transparency off, Glass style on): the bar
+    // then samples this backdrop instead of using Haze.
+    lensBackdrop: LayerBackdrop? = null
 ) {
     val darkTheme = when (LocalAppSettings.current.themeMode) {
         ThemeMode.LIGHT -> false
@@ -273,8 +278,14 @@ fun PhoneBottomBar(
             .testTag("phone_bottom_bar"),
         contentAlignment = Alignment.Center
     ) {
-        val barWidth = (maxWidth * sizeSpec.widthFraction).let { rawWidth ->
-            sizeSpec.maxWidth?.let { cap -> minOf(rawWidth, cap) } ?: rawWidth
+        // Lens bar sizing (reference): 78% of the screen, capped at
+        // 380dp, 64dp tall. The Haze bar keeps the size setting.
+        val barWidth = if (lensBackdrop != null) {
+            minOf(maxWidth * 0.78f, 380.dp)
+        } else {
+            (maxWidth * sizeSpec.widthFraction).let { rawWidth ->
+                sizeSpec.maxWidth?.let { cap -> minOf(rawWidth, cap) } ?: rawWidth
+            }
         }
         val density = LocalDensity.current
         val barWidthPx = with(density) { barWidth.toPx() }
@@ -308,10 +319,11 @@ fun PhoneBottomBar(
         // Bar height: shrinks by bottomBarShrinkDelta as the shrink
         // progress goes 0 to 1. The progress is read only in this
         // layout lambda, so shrinking never recomposes.
+        val barHeight = if (lensBackdrop != null) 64.dp else sizeSpec.height
         val barHeightModifier = Modifier.layout { measurable, constraints ->
             val shrink = shrinkProgress().coerceIn(0f, 1f)
             val h = with(this) {
-                (sizeSpec.height - PhoneDimens.bottomBarShrinkDelta * shrink).roundToPx()
+                (barHeight - PhoneDimens.bottomBarShrinkDelta * shrink).roundToPx()
             }
             val placeable = measurable.measure(
                 constraints.copy(minHeight = h, maxHeight = h)
@@ -407,44 +419,18 @@ fun PhoneBottomBar(
                             )
                         }
                 )
-                // Lens: gradient fill, gradient rim, crescent top
-                // highlight.
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(pillShape)
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(
-                                    Color.White.copy(alpha = 0.30f),
-                                    Color.White.copy(alpha = 0.10f)
-                                )
-                            )
-                        )
-                        .border(
-                            1.dp,
-                            Brush.linearGradient(
-                                listOf(
-                                    Color.White.copy(alpha = 0.65f),
-                                    Color.White.copy(alpha = 0.10f),
-                                    Color.White.copy(alpha = 0.30f)
-                                )
-                            ),
-                            pillShape
-                        )
-                        .drawBehind {
-                            drawRoundRect(
-                                brush = Brush.verticalGradient(
-                                    listOf(
-                                        Color.White.copy(alpha = 0.35f),
-                                        Color.Transparent
-                                    ),
-                                    endY = size.height * 0.45f
-                                ),
-                                cornerRadius = CornerRadius(size.height / 2f, size.height / 2f)
-                            )
-                        }
-                )
+                if (lensBackdrop != null) {
+                    // Real lens: samples the backdrop sharp, no blur.
+                    // The accent glow above stays behind it.
+                    LensDropletSurface(
+                        backdrop = lensBackdrop,
+                        pillShape = pillShape,
+                        liftValue = { lift.value },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    HazeDropletLens(pillShape)
+                }
             }
             Row(
                 modifier = Modifier.fillMaxSize()
@@ -755,7 +741,27 @@ fun PhoneBottomBar(
             scaleX = s
             scaleY = s
         }
-        if (LocalAppSettings.current.bottomBarStyle == BottomBarStyle.GLASS && glassBottomBar) {
+        if (lensBackdrop != null) {
+            // Real lens-glass bar: the surface samples the backdrop
+            // behind the bar; the droplet and items draw on top of
+            // it, never through it.
+            Box(
+                modifier = Modifier
+                    .width(barWidth)
+                    .then(barHeightModifier)
+                    .then(barLiftModifier)
+                    .clip(pillShape)
+            ) {
+                LensBarSurface(
+                    backdrop = lensBackdrop,
+                    pillShape = pillShape,
+                    blurAmount = LocalAppSettings.current.glassBlurAmount,
+                    tintAmount = LocalAppSettings.current.glassTintAmount,
+                    modifier = Modifier.fillMaxSize()
+                )
+                barContent()
+            }
+        } else if (LocalAppSettings.current.bottomBarStyle == BottomBarStyle.GLASS && glassBottomBar) {
             GlassSurface(
                 shape = pillShape,
                 modifier = Modifier.width(barWidth).then(barHeightModifier).then(barLiftModifier),
@@ -817,4 +823,48 @@ fun PhoneBottomBar(
             }
         }
     }
+}
+
+/**
+ * The Haze droplet lens (gradient fill, gradient rim, crescent top
+ * highlight), kept for the Haze bar path.
+ */
+@Composable
+private fun HazeDropletLens(pillShape: RoundedCornerShape) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clip(pillShape)
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color.White.copy(alpha = 0.30f),
+                        Color.White.copy(alpha = 0.10f)
+                    )
+                )
+            )
+            .border(
+                1.dp,
+                Brush.linearGradient(
+                    listOf(
+                        Color.White.copy(alpha = 0.65f),
+                        Color.White.copy(alpha = 0.10f),
+                        Color.White.copy(alpha = 0.30f)
+                    )
+                ),
+                pillShape
+            )
+            .drawBehind {
+                drawRoundRect(
+                    brush = Brush.verticalGradient(
+                        listOf(
+                            Color.White.copy(alpha = 0.35f),
+                            Color.Transparent
+                        ),
+                        endY = size.height * 0.45f
+                    ),
+                    cornerRadius = CornerRadius(size.height / 2f, size.height / 2f)
+                )
+            }
+    )
 }

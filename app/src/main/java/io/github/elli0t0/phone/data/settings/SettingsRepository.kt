@@ -77,6 +77,7 @@ interface SettingsRepository {
     suspend fun setDropletStretch(stretch: DropletStretch)
     suspend fun setGlassHapticFeedback(feedback: GlassHapticFeedback)
     suspend fun setEdgeRefraction(enabled: Boolean)
+    suspend fun setLensBar(enabled: Boolean)
     suspend fun setReduceTransparency(enabled: Boolean)
     suspend fun setGlassCards(enabled: Boolean)
     suspend fun setDynamicHighlights(enabled: Boolean)
@@ -147,6 +148,7 @@ class DataStoreSettingsRepository(
         val DROPLET_STRETCH = stringPreferencesKey("droplet_stretch")
         val GLASS_HAPTIC_FEEDBACK = stringPreferencesKey("glass_haptic_feedback")
         val EDGE_REFRACTION = booleanPreferencesKey("edge_refraction")
+        val LENS_BAR = booleanPreferencesKey("lens_bar")
         val REDUCE_TRANSPARENCY = booleanPreferencesKey("reduce_transparency")
         val GLASS_CARDS = booleanPreferencesKey("glass_cards")
         val DYNAMIC_HIGHLIGHTS = booleanPreferencesKey("dynamic_highlights")
@@ -235,6 +237,7 @@ class DataStoreSettingsRepository(
         val glassHapticStr = prefs[Keys.GLASS_HAPTIC_FEEDBACK]
         val glassHapticFeedback = glassHapticStr?.let { runCatching { GlassHapticFeedback.valueOf(it) }.getOrNull() } ?: GlassHapticFeedback.LIGHT
         val edgeRefraction = prefs[Keys.EDGE_REFRACTION] ?: true
+        val lensBar = prefs[Keys.LENS_BAR] ?: true
 
         val reduceTransparency = prefs[Keys.REDUCE_TRANSPARENCY] ?: false
         val glassCards = prefs[Keys.GLASS_CARDS] ?: false
@@ -391,6 +394,7 @@ class DataStoreSettingsRepository(
             dropletStretch = dropletStretch,
             glassHapticFeedback = glassHapticFeedback,
             edgeRefraction = edgeRefraction,
+            lensBar = lensBar,
             reduceTransparency = reduceTransparency,
             glassCards = glassCards,
             dynamicHighlights = dynamicHighlights,
@@ -584,6 +588,12 @@ class DataStoreSettingsRepository(
     override suspend fun setEdgeRefraction(enabled: Boolean) {
         dataStore.edit { prefs ->
             prefs[Keys.EDGE_REFRACTION] = enabled
+        }
+    }
+
+    override suspend fun setLensBar(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.LENS_BAR] = enabled
         }
     }
 

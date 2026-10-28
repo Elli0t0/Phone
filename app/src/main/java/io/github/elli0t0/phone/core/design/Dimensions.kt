@@ -1,5 +1,6 @@
 package io.github.elli0t0.phone.core.design
 
+import android.os.Build
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBars
@@ -8,7 +9,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
+import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
 
 /** Bottom bar island and keypad dimensions. */
 object PhoneDimens {
@@ -298,14 +301,33 @@ fun bottomBarSizeSpec(size: BottomBarSize): BottomBarSizeSpec = when (size) {
 }
 
 /**
+ * Lens bar gate, shared by the bar and its clearance math: Backdrop's
+ * lens needs RuntimeShader (API 33+), the Lens bar switch on, Glass
+ * style on, and full transparency. A pure settings + SDK check, so it
+ * is safe to call on any API level.
+ */
+fun isLensBarActive(settings: AppSettings): Boolean =
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+        settings.lensBar &&
+        !settings.reduceTransparency &&
+        settings.bottomBarStyle == BottomBarStyle.GLASS &&
+        settings.glassBottomBar
+
+/**
  * Bottom clearance for a scrolling list under the floating bar,
  * from the bar-height state (never a hard-coded dp): the current
  * bar height + the navigation-bar inset + a 16dp gap, so the last
- * item scrolls fully above the bar at any bar size.
+ * item scrolls fully above the bar at any bar size. The lens bar
+ * has a fixed 64dp height, so it reports that when active.
  */
 @Composable
 fun bottomBarListBottomPadding(): Dp {
-    val barHeight = bottomBarSizeSpec(LocalAppSettings.current.bottomBarSize).height
+    val settings = LocalAppSettings.current
+    val barHeight = if (isLensBarActive(settings)) {
+        64.dp
+    } else {
+        bottomBarSizeSpec(settings.bottomBarSize).height
+    }
     return barHeight +
         WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() +
         16.dp

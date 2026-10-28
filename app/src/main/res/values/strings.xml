@@ -320,6 +320,8 @@
     <string name="settings_glass_preview">Live preview</string>
     <string name="settings_edge_refraction">Edge refraction</string>
     <string name="settings_edge_refraction_desc">Slightly magnify the bottom bar backdrop near its ends</string>
+    <string name="settings_lens_bar">Lens bar</string>
+    <string name="settings_lens_bar_desc">A real lens-glass bottom bar. Needs Android 13 or later; otherwise the current glass bar is used</string>
     <string name="settings_glass_reset">Reset glass to defaults</string>
 
     <string name="settings_cat_layout">Layout &amp; Density</string>

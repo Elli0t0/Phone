@@ -12,7 +12,7 @@ val appVersionCode = versionMajor * 10000 + versionMinor * 100 + versionPatch
 
 android {
   namespace = "io.github.elli0t0.phone"
-  compileSdk = 36
+  compileSdk = 37
 
   defaultConfig {
     applicationId = "io.github.elli0t0.phone"
@@ -104,6 +104,7 @@ dependencies {
   implementation(libs.androidx.compose.ui.graphics)
   implementation(libs.androidx.compose.material3)
   implementation(libs.haze)
+  implementation(libs.backdrop)
   implementation(libs.shizuku.api)
   implementation(libs.shizuku.provider)
   implementation(libs.kadb)

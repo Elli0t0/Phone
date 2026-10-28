@@ -69,6 +69,9 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import io.github.elli0t0.phone.core.design.LocalHazeState
+import io.github.elli0t0.phone.core.design.isLensBarActive
+import com.kyant.backdrop.backdrops.layerBackdrop
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.PhoneTheme
@@ -285,6 +288,13 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
     // @Stable class, so remember { HazeState() } is equivalent.)
     val hazeState = remember { HazeState() }
 
+    // Lens bar gate: Backdrop's lens needs RuntimeShader (API 33+).
+    // The backdrop is only remembered when the gate passes, so the
+    // library never loads on older systems; the Haze bar is used
+    // there, and when the switch is off or transparency is reduced.
+    val useLensBar = isLensBarActive(appSettings)
+    val lensBackdrop = if (useLensBar) rememberLayerBackdrop() else null
+
     // The bottom bar is an overlay: content runs edge-to-edge behind it,
     // and each list keeps its own bottom clearance above the bar.
     // The root Box paints one opaque theme background so the window
@@ -305,7 +315,9 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
         // over the backdrop. The bar stays a sibling drawn after
         // this source box, never a child of it.
         Box(
-            modifier = Modifier.fillMaxSize().hazeSource(hazeState)
+            modifier = Modifier.fillMaxSize()
+                .then(if (lensBackdrop != null) Modifier.layerBackdrop(lensBackdrop) else Modifier)
+                .hazeSource(hazeState)
         ) {
             AmbientBackdrop()
             PhoneNavHost(
@@ -408,7 +420,8 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
                 navController = navController,
                 currentRoute = currentRoute,
                 showLabels = appSettings.showBottomBarLabels,
-                shrinkProgress = { barShrinkProgress.value }
+                shrinkProgress = { barShrinkProgress.value },
+                lensBackdrop = lensBackdrop
             )
         }
         // One app-level snackbar host above the floating bar: nav
@@ -421,7 +434,7 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
                 .navigationBarsPadding()
                 .padding(
                     bottom = PhoneDimens.bottomBarBottomMargin +
-                        bottomBarSizeSpec(appSettings.bottomBarSize).height +
+                        (if (useLensBar) 64.dp else bottomBarSizeSpec(appSettings.bottomBarSize).height) +
                         LocalSpacing.current.small
                 )
         )

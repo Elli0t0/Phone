@@ -74,6 +74,8 @@
     <string name="settings_glass_preview">پیش‌نمایش زنده</string>
     <string name="settings_edge_refraction">شکست نور لبه‌ها</string>
     <string name="settings_edge_refraction_desc">بزرگ‌نمایی جزئی پس‌زمینه نوار پایین در نزدیکی دو انتهای آن</string>
+    <string name="settings_lens_bar">نوار لنزی</string>
+    <string name="settings_lens_bar_desc">نوار پایینی شیشه‌ای لنزی واقعی. به اندروید ۱۳ یا جدیدتر نیاز دارد؛ در غیر این صورت از نوار شیشه‌ای فعلی استفاده می‌شود</string>
     <string name="settings_glass_reset">بازنشانی شیشه به پیش‌فرض‌ها</string>
     <string name="crash_log_title">گزارش خرابی</string>
     <string name="crash_log_copy">کپی</string>

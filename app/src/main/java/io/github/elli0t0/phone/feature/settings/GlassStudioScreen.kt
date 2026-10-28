@@ -272,6 +272,19 @@ fun GlassStudioScreen(
                             )
                             Spacer(modifier = Modifier.height(spacing.small))
 
+                            SettingsSwitchRow(
+                                title = stringResource(id = R.string.settings_lens_bar),
+                                subtitle = stringResource(id = R.string.settings_lens_bar_desc),
+                                checked = settings.lensBar,
+                                onCheckedChange = { viewModel.onLensBarChanged(it) }
+                            )
+
+                            Spacer(modifier = Modifier.height(spacing.small))
+                            HorizontalDivider(
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                            )
+                            Spacer(modifier = Modifier.height(spacing.small))
+
                             SettingsRow(
                                 title = stringResource(id = R.string.settings_droplet_stretch),
                                 subtitle = settings.dropletStretch.label,
