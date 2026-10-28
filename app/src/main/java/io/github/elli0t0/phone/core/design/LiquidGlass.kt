@@ -695,9 +695,9 @@ fun Modifier.liquidGlass(
 /**
  * Glass press: a press effect for glass surfaces (keys, chips, icon
  * buttons, gem buttons, bar items). While pressed, the surface scales
- * down slightly (spring) and a white sheen brightens it. Only active
- * when the Animations setting is ON; REDUCED and OFF leave the
- * surface untouched.
+ * to 0.95 (spring), a white overlay at 0.12 brightens it, and a light
+ * haptic fires on press down. Only active when the Animations setting
+ * is ON; REDUCED and OFF leave the surface untouched.
  */
 fun Modifier.glassPress(source: MutableInteractionSource): Modifier = composed {
     val option = LocalAppSettings.current.animationOption
@@ -706,10 +706,8 @@ fun Modifier.glassPress(source: MutableInteractionSource): Modifier = composed {
     } else {
         val pressed by source.collectIsPressedAsState()
         val scale by animateFloatAsState(
-            targetValue = if (pressed) 0.96f else 1f,
-            // MediumBouncy is 0.5f; the named constant does not exist
-            // in this Compose version's animation-core.
-            animationSpec = spring(dampingRatio = 0.5f, stiffness = 400f),
+            targetValue = if (pressed) 0.95f else 1f,
+            animationSpec = spring(dampingRatio = 0.55f, stiffness = 500f),
             label = "glassPressScale"
         )
         val sheen by animateFloatAsState(
@@ -717,6 +715,12 @@ fun Modifier.glassPress(source: MutableInteractionSource): Modifier = composed {
             animationSpec = tween(durationMillis = 180),
             label = "glassPressSheen"
         )
+        // Light haptic the moment the press lands (Studio glass
+        // haptic setting; LIGHT by default).
+        val glassHaptic = rememberGlassHaptic()
+        LaunchedEffect(pressed) {
+            if (pressed) glassHaptic()
+        }
         this
             .graphicsLayer {
                 scaleX = scale
@@ -724,7 +728,7 @@ fun Modifier.glassPress(source: MutableInteractionSource): Modifier = composed {
             }
             .drawWithContent {
                 drawContent()
-                drawRect(Color.White.copy(alpha = 0.18f * sheen))
+                drawRect(Color.White.copy(alpha = 0.12f * sheen))
             }
     }
 }

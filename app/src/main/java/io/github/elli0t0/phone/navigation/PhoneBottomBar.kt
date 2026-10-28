@@ -3,11 +3,13 @@ package io.github.elli0t0.phone.navigation
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.input.pointer.pointerInput
@@ -32,6 +34,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,12 +49,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Outline
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -74,11 +74,9 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import kotlinx.coroutines.launch
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.core.design.BottomBarDark
-import io.github.elli0t0.phone.core.design.BottomBarDarkDroplet
 import io.github.elli0t0.phone.core.design.BottomBarDarkSelectedContent
 import io.github.elli0t0.phone.core.design.BottomBarDarkUnselected
 import io.github.elli0t0.phone.core.design.BottomBarLight
-import io.github.elli0t0.phone.core.design.BottomBarLightDroplet
 import io.github.elli0t0.phone.core.design.BottomBarLightSelectedContent
 import io.github.elli0t0.phone.core.design.BottomBarLightUnselected
 import io.github.elli0t0.phone.core.design.GlassSurface
@@ -143,7 +141,6 @@ fun PhoneBottomBar(
         ThemeMode.SYSTEM -> isSystemInDarkTheme()
     }
     val selectedContentColor = if (darkTheme) BottomBarDarkSelectedContent else BottomBarLightSelectedContent
-    val dropletColor = if (darkTheme) BottomBarDarkDroplet else BottomBarLightDroplet
     val unselectedContentColor = if (darkTheme) BottomBarDarkUnselected else BottomBarLightUnselected
     val barColor = if (darkTheme) BottomBarDark else BottomBarLight
     val sizeSpec = bottomBarSizeSpec(LocalAppSettings.current.bottomBarSize)
@@ -237,7 +234,7 @@ fun PhoneBottomBar(
                         Motion.Easings.Emphasized,
                         animationOption
                     )
-                    AnimationOption.ON -> Motion.bouncy()
+                    AnimationOption.ON -> spring(dampingRatio = 0.62f, stiffness = 380f)
                 }
             )
         }
@@ -321,14 +318,12 @@ fun PhoneBottomBar(
             layout(placeable.width, h) { placeable.place(0, 0) }
         }
         val barContent: @Composable BoxScope.() -> Unit = {
-            // The one shared droplet, behind the items: neutral
-            // translucent fill in both styles (no primary tint), with
-            // a 1dp white border drawn here so its alpha can follow
-            // the flight progress inside the draw lambda: ~22% at
-            // rest, rising to ~40% mid-flight. The border is inset
-            // by half the stroke, like the premium glass border, so
-            // the clip does not halve it. The border is drawn the
-            // same way in both styles; only the bar behind it differs.
+            // The one shared droplet, behind the items: a small
+            // glass lens, not a flat pill. A soft accent glow sits
+            // behind it (radial gradient, scaled up, no real blur);
+            // the lens layers a white vertical-gradient fill, a
+            // crescent top highlight and a 1dp gradient rim, all
+            // inside the pill clip.
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
@@ -386,41 +381,67 @@ fun PhoneBottomBar(
                     .width(pillWidth)
                     .fillMaxHeight()
                     .padding(vertical = PhoneDimens.bottomBarItemInset)
-                    .clip(pillShape)
-                    .background(dropletColor)
-                    .drawBehind {
-                        val p = pillProgress.value.coerceIn(0f, 1f)
-                        val borderAlpha = if (animationOption == AnimationOption.ON) {
-                            0.22f + 0.18f * sin(p * PI).toFloat()
-                        } else {
-                            0.22f
+            ) {
+                // Soft accent glow behind the lens.
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            scaleX = 1.35f
+                            scaleY = 1.35f
                         }
-                        val strokePx = 1.dp.toPx()
-                        val borderSize = Size(size.width - strokePx, size.height - strokePx)
-                        val borderStroke = Stroke(width = strokePx)
-                        val borderColor = Color.White.copy(alpha = borderAlpha)
-                        translate(strokePx / 2f, strokePx / 2f) {
-                            when (val outline = pillShape.createOutline(borderSize, layoutDirection, this)) {
-                                is Outline.Rectangle -> drawRect(
-                                    color = borderColor,
-                                    size = borderSize,
-                                    style = borderStroke
+                        .drawBehind {
+                            drawRect(
+                                brush = Brush.radialGradient(
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
+                                        Color.Transparent
+                                    ),
+                                    center = Offset(size.width / 2f, size.height / 2f),
+                                    radius = minOf(size.width, size.height) / 2f
                                 )
-                                is Outline.Rounded -> drawRoundRect(
-                                    color = borderColor,
-                                    size = borderSize,
-                                    cornerRadius = outline.roundRect.topLeftCornerRadius,
-                                    style = borderStroke
-                                )
-                                is Outline.Generic -> drawPath(
-                                    path = outline.path,
-                                    color = borderColor,
-                                    style = borderStroke
-                                )
-                            }
+                            )
                         }
-                    }
-            )
+                )
+                // Lens: gradient fill, gradient rim, crescent top
+                // highlight.
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(pillShape)
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color.White.copy(alpha = 0.30f),
+                                    Color.White.copy(alpha = 0.10f)
+                                )
+                            )
+                        )
+                        .border(
+                            1.dp,
+                            Brush.linearGradient(
+                                listOf(
+                                    Color.White.copy(alpha = 0.65f),
+                                    Color.White.copy(alpha = 0.10f),
+                                    Color.White.copy(alpha = 0.30f)
+                                )
+                            ),
+                            pillShape
+                        )
+                        .drawBehind {
+                            drawRoundRect(
+                                brush = Brush.verticalGradient(
+                                    listOf(
+                                        Color.White.copy(alpha = 0.35f),
+                                        Color.Transparent
+                                    ),
+                                    endY = size.height * 0.45f
+                                ),
+                                cornerRadius = CornerRadius(size.height / 2f, size.height / 2f)
+                            )
+                        }
+                )
+            }
             Row(
                 modifier = Modifier.fillMaxSize()
                     .pointerInput(n, layoutDirection) {
@@ -514,7 +535,7 @@ fun PhoneBottomBar(
                                     scope.launch {
                                         dragX.animateTo(
                                             centerOf(last, w),
-                                            spring(dampingRatio = 0.5f, stiffness = 300f)
+                                            spring(dampingRatio = 0.62f, stiffness = 380f)
                                         )
                                         releaseSpringActive = false
                                     }
@@ -544,7 +565,7 @@ fun PhoneBottomBar(
                     // semantics block below, `selected` would resolve
                     // to the receiver's own property, not this value.
                     val tabSelected = selected
-                    // Icon pop: 1 to 1.15 to 1 over 300ms when the tab
+                    // Icon pop: 1 to 1.18 to 1 over 300ms when the tab
                     // is newly selected. Skipped on first composition
                     // and when motion is Reduced/Off.
                     val iconScale = remember { Animatable(1f) }
@@ -557,12 +578,23 @@ fun PhoneBottomBar(
                                 targetValue = 1f,
                                 animationSpec = keyframes {
                                     durationMillis = 300
-                                    1.15f at 120
+                                    1.18f at 120
                                     1f at 300
                                 }
                             )
                         }
                     }
+                    // Selected icon lifts 1.5dp: animated when motion
+                    // is ON, instant when Reduced/Off.
+                    val iconLift by animateDpAsState(
+                        targetValue = if (selected) -1.5.dp else 0.dp,
+                        animationSpec = if (animationOption == AnimationOption.ON) {
+                            spring(dampingRatio = 0.7f, stiffness = 400f)
+                        } else {
+                            snap()
+                        },
+                        label = "tabIconLift"
+                    )
                     // Press source shared with the Row gesture: the
                     // gesture emits press/release into the item under
                     // the finger, so glassPress still scales + sheens
@@ -598,7 +630,7 @@ fun PhoneBottomBar(
                                 modifier = Modifier.graphicsLayer {
                                     scaleX = iconScale.value
                                     scaleY = iconScale.value
-                                }
+                                }.offset(y = iconLift)
                             ) {
                                 Crossfade(
                                     targetState = selected,
@@ -726,14 +758,16 @@ fun PhoneBottomBar(
                 // Thin fill so the blur and the backdrop show through,
                 // 36dp blur, vertical-gradient rim, faint end
                 // highlights, and no drop shadow under the glass.
-                containerAlpha = 0.20f,
+                // Dark fill thinned to 0.16 so the colored backdrop
+                // shows through; light keeps 0.20.
+                containerAlpha = if (darkTheme) 0.16f else 0.20f,
                 blurRadius = 36.dp,
                 // Studio edge light scales the bar's rim (Soft =
-                // current behavior).
+                // current behavior); the top is brighter now.
                 rim = Brush.verticalGradient(
                     listOf(
                         Color.White.copy(
-                            alpha = (0.38f * LocalAppSettings.current.edgeLight.factor).coerceIn(0f, 1f)
+                            alpha = (0.45f * LocalAppSettings.current.edgeLight.factor).coerceIn(0f, 1f)
                         ),
                         Color.White.copy(
                             alpha = (0.06f * LocalAppSettings.current.edgeLight.factor).coerceIn(0f, 1f)
@@ -743,6 +777,21 @@ fun PhoneBottomBar(
                 edgeHighlightAlpha = 0.10f,
                 edgeRefraction = LocalAppSettings.current.edgeRefraction
             ) {
+                // Very light white wash from the top for the thick
+                // glass look; under the droplet and the items.
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(pillShape)
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color.White.copy(alpha = 0.08f),
+                                    Color.Transparent
+                                )
+                            )
+                        )
+                )
                 barContent()
             }
         } else {

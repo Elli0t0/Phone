@@ -164,6 +164,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.12.10]
+- Bottom bar droplet is a glass lens now: white vertical-gradient fill, crescent top highlight, 1dp gradient rim (bright top-left, faint bottom-right), plus a soft accent-colored glow behind it (radial gradient, no real blur).
+- Bar surface: dark fill thinned to 0.16 so the colored backdrop shows through (light stays 0.20), rim brighter at the top (white 0.45 to 0.06, still scaled by the Studio edge-light setting), and a very light white wash from the top for the thick-glass look.
+- Motion: selected icon pops 1 to 1.18 to 1 over 300ms and lifts 1.5dp while selected (animated when motion is ON, instant when Reduced/Off); the droplet slides with spring(0.62, 380) on release and on programmatic tab changes.
+- Press feel (glassPress, used by glass keys, chips, icon/gem buttons and bar items): scale to 0.95 with spring(0.55, 500), white overlay at 0.12 while pressed, light haptic on press down (Studio glass haptic setting; LIGHT by default). Still ON-only; Reduced/Off leave surfaces untouched, and Reduce transparency still falls back to the solid bar.
+
 ## [0.12.9]
 - Root cause of flat glass fixed: the ambient backdrop used to sit outside the haze source (only the tab content had hazeSource), so glass could never blur it. Backdrop and tab content now share one haze source; the bottom bar stays a sibling drawn after it, never a child. The detail bottom bar and the Edit Contact save pill were checked too: both already sit as siblings after their content, so they pick up the backdrop blur as well.
 - Invisible text fixed centrally: LiquidGlassPill, LiquidGlassChip, LiquidGlassCard, GlassListCard and LiquidGlassPopupSurface now pin their content color to onSurface, so Text without an explicit color no longer falls back to black on dark glass. The Favorites name and the Paste label on the keypad also carry an explicit onSurface color.
