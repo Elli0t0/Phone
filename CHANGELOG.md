@@ -164,6 +164,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.15.0]
+
+- Call recording without Shizuku: Settings → Calls → Call recording now offers a Backend choice — Shizuku (as before) or Built-in ADB. Built-in ADB pairs the phone with itself over wireless debugging (one-time, six-digit code typed into a notification so the system pairing dialog stays open), then starts Phone's own shell-privileged recorder over that ADB connection. No second app needed; the Shizuku path is unchanged and still available.
+- How the ADB backend works: pairing and shell access come from the Kadb library (Apache 2.0, Maven Central); the recorder helper is Phone's own code, started as shell via app_process and detached, so it keeps running after wireless debugging is switched off. It records the same WAV (16 kHz mono) to the same Music/Phone files, with the same in-call Record button, test, playback, delete, and share. After a reboot the helper is gone until the phone is on Wi-Fi with wireless debugging on — the backend re-arms it on demand when you record or test, and says plainly when it cannot.
+- No other changes.
+
 ## [0.14.0]
 
 - Call recording (manual, via Shizuku): a Record button joins the in-call controls (last in the grid; add it from Call Studio if you customized your buttons), with a red recording indicator under the timer. Tapping it while Shizuku is missing, stopped, or ungranted opens a dialog with the one action that moves setup forward instead of dead-ending.

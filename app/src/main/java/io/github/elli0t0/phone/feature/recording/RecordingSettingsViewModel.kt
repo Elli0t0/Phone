@@ -10,6 +10,9 @@ import androidx.lifecycle.viewModelScope
 import io.github.elli0t0.phone.core.recording.BackendStatus
 import io.github.elli0t0.phone.core.recording.RecordingController
 import io.github.elli0t0.phone.core.recording.RecordingSession
+import io.github.elli0t0.phone.core.recording.adb.openWirelessDebugging
+import io.github.elli0t0.phone.core.recording.adb.postPairNotification
+import io.github.elli0t0.phone.data.settings.model.RecordingBackendKind
 import io.github.elli0t0.phone.data.recordings.RecordingEntity
 import io.github.elli0t0.phone.data.recordings.RecordingsRepository
 import kotlinx.coroutines.Job
@@ -30,6 +33,7 @@ class RecordingSettingsViewModel(
 ) : ViewModel() {
 
     val backendStatus: StateFlow<BackendStatus> = controller.backendStatus
+    val backendKind: StateFlow<RecordingBackendKind> = controller.activeBackendKind
     val session: StateFlow<RecordingSession> = controller.state
     val lastError: StateFlow<String?> = controller.lastError
     val recordings: StateFlow<List<RecordingEntity>> = recordingsRepository.recordings
@@ -51,6 +55,21 @@ class RecordingSettingsViewModel(
 
     fun refresh() {
         viewModelScope.launch { controller.refreshBackendStatus() }
+    }
+
+    fun setBackend(kind: RecordingBackendKind) {
+        viewModelScope.launch { controller.setBackend(kind) }
+    }
+
+    /** Posts the pairing notification and opens Developer options. */
+    fun startPairing() {
+        viewModelScope.launch {
+            postPairNotification(appContext)
+        }
+    }
+
+    fun openDevSettings() {
+        openWirelessDebugging(appContext)
     }
 
     fun requestPermission() {

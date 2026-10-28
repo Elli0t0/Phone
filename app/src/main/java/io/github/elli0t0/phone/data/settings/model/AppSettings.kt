@@ -149,6 +149,11 @@ enum class OngoingCallButton(val label: String) {
     RECORD("Record")
 }
 
+enum class RecordingBackendKind(val label: String) {
+    SHIZUKU("Shizuku"),
+    ADB("Built-in ADB")
+}
+
 enum class DefaultSim(val label: String) {
     ASK("Ask every time"),
     SIM_1("SIM 1"),
@@ -281,6 +286,7 @@ data class AppSettings(
     val incomingAvatarSize: IncomingAvatarSize = IncomingAvatarSize.MEDIUM,
     val incomingAvatarShape: IncomingAvatarShape = IncomingAvatarShape.CIRCLE,
     val ongoingCallButtons: List<OngoingCallButton> = OngoingCallButton.entries,
+    val recordingBackend: RecordingBackendKind = RecordingBackendKind.SHIZUKU,
     val showNumberOnCallScreen: Boolean = true,
     val defaultSim: DefaultSim = DefaultSim.ASK,
     // Quick-decline message overrides, one per reply chip. A blank entry

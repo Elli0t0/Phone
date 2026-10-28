@@ -106,6 +106,7 @@ dependencies {
   implementation(libs.haze)
   implementation(libs.shizuku.api)
   implementation(libs.shizuku.provider)
+  implementation(libs.kadb)
   implementation(libs.coil.compose)
   implementation(libs.androidx.datastore.preferences)
   // Installs the shipped baseline profile on first launch (via the

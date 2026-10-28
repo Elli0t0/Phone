@@ -11,13 +11,19 @@ import io.github.elli0t0.phone.data.call.CallRepository
 import io.github.elli0t0.phone.data.call.CallState
 import io.github.elli0t0.phone.data.recordings.RecordingEntity
 import io.github.elli0t0.phone.data.recordings.RecordingsRepository
+import io.github.elli0t0.phone.data.settings.SettingsRepository
+import io.github.elli0t0.phone.data.settings.model.RecordingBackendKind
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -45,7 +51,9 @@ sealed interface RecordingSession {
  */
 class RecordingController(
     private val context: Context,
-    private val backend: RecordingBackend,
+    private val shizukuBackend: RecordingBackend,
+    private val adbBackend: RecordingBackend,
+    private val settingsRepository: SettingsRepository,
     private val recordingsRepository: RecordingsRepository
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -53,7 +61,21 @@ class RecordingController(
 
     private val _state = MutableStateFlow<RecordingSession>(RecordingSession.Idle)
     val state: StateFlow<RecordingSession> = _state.asStateFlow()
-    val backendStatus: StateFlow<BackendStatus> = backend.status
+
+    /** The backend the user picked in Settings; Shizuku until they choose ADB. */
+    val activeBackendKind: StateFlow<RecordingBackendKind> = settingsRepository.settingsFlow
+        .map { it.recordingBackend }
+        .stateIn(scope, SharingStarted.Eagerly, RecordingBackendKind.SHIZUKU)
+
+    /** Status of whichever backend is currently selected. */
+    val backendStatus: StateFlow<BackendStatus> = activeBackendKind
+        .flatMapLatest { kind -> backendFor(kind).status }
+        .stateIn(scope, SharingStarted.Eagerly, BackendStatus.NOT_RUNNING)
+
+    private fun backendFor(kind: RecordingBackendKind): RecordingBackend =
+        if (kind == RecordingBackendKind.ADB) adbBackend else shizukuBackend
+
+    private fun activeBackend(): RecordingBackend = backendFor(activeBackendKind.value)
     private val _lastError = MutableStateFlow<String?>(null)
     val lastError: StateFlow<String?> = _lastError.asStateFlow()
 
@@ -81,18 +103,24 @@ class RecordingController(
         }
     }
 
-    suspend fun refreshBackendStatus() = backend.refreshStatus()
+    suspend fun refreshBackendStatus() = activeBackend().refreshStatus()
 
     suspend fun requestBackendPermission(): Boolean {
-        val granted = backend.requestPermission()
-        backend.refreshStatus()
+        val granted = activeBackend().requestPermission()
+        activeBackend().refreshStatus()
         return granted
     }
 
+    suspend fun setBackend(kind: RecordingBackendKind) {
+        settingsRepository.setRecordingBackend(kind)
+    }
+
+    suspend fun pairAdb(code: String): Result<Unit> = activeBackend().pair(code)
+
     suspend fun startCallRecording(number: String, displayName: String?): Result<Unit> {
-        if (backend.status.value != BackendStatus.READY) {
-            backend.refreshStatus()
-            if (backend.status.value != BackendStatus.READY) {
+        if (activeBackend().status.value != BackendStatus.READY) {
+            activeBackend().refreshStatus()
+            if (activeBackend().status.value != BackendStatus.READY) {
                 return Result.failure(IllegalStateException("Recorder is not ready"))
             }
         }
@@ -101,9 +129,9 @@ class RecordingController(
 
     /** 3-second pipeline check: proves bind + capture + file without a call. */
     suspend fun runPipelineTest(): Result<CaptureResult> {
-        if (backend.status.value != BackendStatus.READY) {
-            backend.refreshStatus()
-            if (backend.status.value != BackendStatus.READY) {
+        if (activeBackend().status.value != BackendStatus.READY) {
+            activeBackend().refreshStatus()
+            if (activeBackend().status.value != BackendStatus.READY) {
                 return Result.failure(IllegalStateException("Recorder is not ready"))
             }
         }
@@ -124,7 +152,7 @@ class RecordingController(
         runCatching {
             val startedAt = System.currentTimeMillis()
             val (uri, pfd) = createEntry(number, startedAt, isTest)
-            val capture = backend.startCapture(pfd)
+            val capture = activeBackend().startCapture(pfd)
             if (capture.isFailure) {
                 runCatching { pfd.close() }
                 runCatching { context.contentResolver.delete(uri, null, null) }
@@ -155,7 +183,7 @@ class RecordingController(
         )
         active = null
         _state.value = RecordingSession.Idle
-        val capture = backend.stopCapture()
+        val capture = activeBackend().stopCapture()
         runCatching { session.pfd.close() }
         runCatching {
             val pendingOff = ContentValues().apply {

@@ -23,6 +23,7 @@ import io.github.elli0t0.phone.data.settings.SetupRepository
 import io.github.elli0t0.phone.data.settings.settingsDataStore
 import io.github.elli0t0.phone.data.settings.setupDataStore
 import io.github.elli0t0.phone.core.recording.RecordingController
+import io.github.elli0t0.phone.core.recording.adb.AdbRecordingBackend
 import io.github.elli0t0.phone.core.recording.shizuku.ShizukuRecordingBackend
 import io.github.elli0t0.phone.data.recordings.DefaultRecordingsRepository
 import io.github.elli0t0.phone.data.recordings.RecordingsRepository
@@ -83,7 +84,13 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
     }
 
     override val recordingController: RecordingController by lazy {
-        RecordingController(context, ShizukuRecordingBackend(context), recordingsRepository)
+        RecordingController(
+            context,
+            ShizukuRecordingBackend(context),
+            AdbRecordingBackend(context),
+            settingsRepository,
+            recordingsRepository
+        )
     }
 
     override val dialRequests: MutableSharedFlow<DialRequest> by lazy {

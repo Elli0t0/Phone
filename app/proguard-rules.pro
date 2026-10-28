@@ -52,3 +52,8 @@
 # reflection, and its AIDL stub is reached across processes.
 -keep public class io.github.elli0t0.phone.core.recording.shizuku.RecordingUserService { *; }
 -keep public class io.github.elli0t0.phone.core.recording.shizuku.IRecordingService* { *; }
+# ADB backend: the recorder helper is started by name via app_process,
+# so R8 must not rename or strip it (it is never referenced from app code).
+-keep public class io.github.elli0t0.phone.core.recording.adb.RecordingHelperMainKt {
+    public static void main(java.lang.String[]);
+}

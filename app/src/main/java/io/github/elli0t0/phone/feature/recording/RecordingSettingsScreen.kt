@@ -2,6 +2,7 @@ package io.github.elli0t0.phone.feature.recording
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -39,15 +41,17 @@ import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.recording.BackendStatus
 import io.github.elli0t0.phone.core.recording.RecordingSession
 import io.github.elli0t0.phone.data.recordings.RecordingEntity
+import io.github.elli0t0.phone.data.settings.model.RecordingBackendKind
 import io.github.elli0t0.phone.navigation.InnerTopBar
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 /**
- * Call recording page: Shizuku backend status + setup actions, a
- * 3-second pipeline test, the active recording (if any), and the
- * recordings list with playback, delete, and share.
+ * Call recording page: backend choice (Shizuku or built-in ADB),
+ * backend status + setup actions, a 3-second pipeline test, the active
+ * recording (if any), and the recordings list with playback, delete,
+ * and share.
  */
 @Composable
 fun RecordingSettingsScreen(
@@ -64,6 +68,7 @@ fun RecordingSettingsScreen(
         )
     )
     val status by viewModel.backendStatus.collectAsStateWithLifecycle()
+    val backendKind by viewModel.backendKind.collectAsStateWithLifecycle()
     val session by viewModel.session.collectAsStateWithLifecycle()
     val lastError by viewModel.lastError.collectAsStateWithLifecycle()
     val recordings by viewModel.recordings.collectAsStateWithLifecycle()
@@ -74,6 +79,26 @@ fun RecordingSettingsScreen(
     val positionMs by viewModel.positionMs.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) { viewModel.refresh() }
+
+    val statusText = if (backendKind == RecordingBackendKind.ADB) {
+        when (status) {
+            BackendStatus.NOT_PAIRED -> stringResource(id = R.string.recording_status_not_paired)
+            BackendStatus.NOT_RUNNING -> stringResource(id = R.string.recording_status_adb_not_running)
+            BackendStatus.PERMISSION_NEEDED -> stringResource(id = R.string.recording_status_permission)
+            BackendStatus.NOT_INSTALLED -> stringResource(id = R.string.recording_status_not_installed)
+            BackendStatus.READY -> stringResource(id = R.string.recording_status_ready)
+            BackendStatus.ERROR -> stringResource(id = R.string.recording_status_adb_error)
+        }
+    } else {
+        when (status) {
+            BackendStatus.NOT_INSTALLED -> stringResource(id = R.string.recording_status_not_installed)
+            BackendStatus.NOT_RUNNING -> stringResource(id = R.string.recording_status_not_running)
+            BackendStatus.PERMISSION_NEEDED -> stringResource(id = R.string.recording_status_permission)
+            BackendStatus.READY -> stringResource(id = R.string.recording_status_ready)
+            BackendStatus.ERROR -> stringResource(id = R.string.recording_status_error)
+            BackendStatus.NOT_PAIRED -> stringResource(id = R.string.recording_status_not_paired)
+        }
+    }
 
     Scaffold(
         modifier = modifier,
@@ -100,28 +125,52 @@ fun RecordingSettingsScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
+                            text = stringResource(id = R.string.recording_backend_title),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        RecordingBackendKind.entries.forEach { kind ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { viewModel.setBackend(kind) },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = backendKind == kind,
+                                    onClick = { viewModel.setBackend(kind) }
+                                )
+                                Text(
+                                    text = stringResource(
+                                        id = if (kind == RecordingBackendKind.ADB) {
+                                            R.string.recording_backend_adb
+                                        } else {
+                                            R.string.recording_backend_shizuku
+                                        }
+                                    ),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
                             text = stringResource(id = R.string.recording_status_title),
                             style = MaterialTheme.typography.titleMedium
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = when (status) {
-                                BackendStatus.NOT_INSTALLED -> stringResource(
-                                    id = R.string.recording_status_not_installed
-                                )
-                                BackendStatus.NOT_RUNNING -> stringResource(
-                                    id = R.string.recording_status_not_running
-                                )
-                                BackendStatus.PERMISSION_NEEDED -> stringResource(
-                                    id = R.string.recording_status_permission
-                                )
-                                BackendStatus.READY -> stringResource(
-                                    id = R.string.recording_status_ready
-                                )
-                                BackendStatus.ERROR -> stringResource(
-                                    id = R.string.recording_status_error
-                                )
-                            },
+                            text = statusText,
                             style = MaterialTheme.typography.bodyMedium
                         )
                         if (lastError != null) {
@@ -134,29 +183,46 @@ fun RecordingSettingsScreen(
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            when (status) {
-                                BackendStatus.NOT_INSTALLED -> Button(
-                                    onClick = {
-                                        openUrl(
-                                            context,
-                                            SHIZUKU_DOWNLOAD_URL
-                                        )
+                            if (backendKind == RecordingBackendKind.ADB) {
+                                when (status) {
+                                    BackendStatus.NOT_PAIRED -> Button(
+                                        onClick = { viewModel.startPairing() },
+                                        enabled = !busy
+                                    ) {
+                                        Text(text = stringResource(id = R.string.recording_action_pair))
                                     }
-                                ) {
-                                    Text(text = stringResource(id = R.string.recording_action_get_shizuku))
+                                    BackendStatus.NOT_RUNNING -> Button(
+                                        onClick = { viewModel.openDevSettings() }
+                                    ) {
+                                        Text(text = stringResource(id = R.string.recording_action_wireless_debugging))
+                                    }
+                                    else -> Unit
                                 }
-                                BackendStatus.NOT_RUNNING -> Button(
-                                    onClick = { openShizuku(context) }
-                                ) {
-                                    Text(text = stringResource(id = R.string.recording_action_start_shizuku))
+                            } else {
+                                when (status) {
+                                    BackendStatus.NOT_INSTALLED -> Button(
+                                        onClick = {
+                                            openUrl(
+                                                context,
+                                                SHIZUKU_DOWNLOAD_URL
+                                            )
+                                        }
+                                    ) {
+                                        Text(text = stringResource(id = R.string.recording_action_get_shizuku))
+                                    }
+                                    BackendStatus.NOT_RUNNING -> Button(
+                                        onClick = { openShizuku(context) }
+                                    ) {
+                                        Text(text = stringResource(id = R.string.recording_action_start_shizuku))
+                                    }
+                                    BackendStatus.PERMISSION_NEEDED -> Button(
+                                        onClick = { viewModel.requestPermission() },
+                                        enabled = !busy
+                                    ) {
+                                        Text(text = stringResource(id = R.string.recording_action_grant))
+                                    }
+                                    else -> Unit
                                 }
-                                BackendStatus.PERMISSION_NEEDED -> Button(
-                                    onClick = { viewModel.requestPermission() },
-                                    enabled = !busy
-                                ) {
-                                    Text(text = stringResource(id = R.string.recording_action_grant))
-                                }
-                                else -> Unit
                             }
                             TextButton(
                                 onClick = { viewModel.refresh() },
@@ -164,6 +230,13 @@ fun RecordingSettingsScreen(
                             ) {
                                 Text(text = stringResource(id = R.string.recording_action_refresh))
                             }
+                        }
+                        if (backendKind == RecordingBackendKind.ADB) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = stringResource(id = R.string.recording_pair_hint),
+                                style = MaterialTheme.typography.bodySmall
+                            )
                         }
                     }
                 }

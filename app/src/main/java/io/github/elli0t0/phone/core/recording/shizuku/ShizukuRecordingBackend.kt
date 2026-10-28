@@ -10,6 +10,7 @@ import io.github.elli0t0.phone.core.recording.BackendStatus
 import io.github.elli0t0.phone.core.recording.CaptureResult
 import io.github.elli0t0.phone.core.recording.RecordingBackend
 import io.github.elli0t0.phone.core.recording.WavWriter
+import io.github.elli0t0.phone.data.settings.model.RecordingBackendKind
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,6 +36,8 @@ import kotlin.coroutines.resume
  * process idling anyway, so there is nothing to gain from it.
  */
 class ShizukuRecordingBackend(private val context: Context) : RecordingBackend {
+
+    override val kind = RecordingBackendKind.SHIZUKU
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val _status = MutableStateFlow(BackendStatus.NOT_RUNNING)

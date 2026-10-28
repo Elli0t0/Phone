@@ -114,6 +114,11 @@
                 <action android:name="io.github.elli0t0.phone.action.HANG_UP_CALL" />
             </intent-filter>
         </receiver>
+        <!-- Pairing-code replies for the built-in ADB backend: explicit
+             intents only, from Phone's own pairing notification. -->
+        <receiver
+            android:name=".core.recording.adb.PairCodeReceiver"
+            android:exported="false" />
 
         <!-- Shizuku binder provider (see the Shizuku-API setup guide):
              without it Phone cannot receive Shizuku's binder. -->

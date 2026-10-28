@@ -24,6 +24,7 @@ import io.github.elli0t0.phone.data.settings.model.IncomingAvatarSize
 import io.github.elli0t0.phone.data.settings.model.EndCallButtonSize
 import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
+import io.github.elli0t0.phone.data.settings.model.RecordingBackendKind
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
 import io.github.elli0t0.phone.data.settings.model.Backdrop
@@ -103,6 +104,7 @@ interface SettingsRepository {
     suspend fun setIncomingAvatarSize(size: IncomingAvatarSize)
     suspend fun setIncomingAvatarShape(shape: IncomingAvatarShape)
     suspend fun setOngoingCallButtons(buttons: List<OngoingCallButton>)
+    suspend fun setRecordingBackend(backend: RecordingBackendKind)
     suspend fun setShowNumberOnCallScreen(show: Boolean)
     suspend fun setDefaultSim(defaultSim: DefaultSim)
     suspend fun setQuickDeclineMessages(messages: List<String>)
@@ -171,6 +173,7 @@ class DataStoreSettingsRepository(
         val INCOMING_AVATAR_SIZE = stringPreferencesKey("incoming_avatar_size")
         val INCOMING_AVATAR_SHAPE = stringPreferencesKey("incoming_avatar_shape")
         val ONGOING_CALL_BUTTONS = stringPreferencesKey("ongoing_call_buttons")
+        val RECORDING_BACKEND = stringPreferencesKey("recording_backend")
         val SHOW_NUMBER_ON_CALL_SCREEN = booleanPreferencesKey("show_number_on_call_screen")
         val DEFAULT_SIM = stringPreferencesKey("default_sim")
         val QUICK_DECLINE_MESSAGES = stringPreferencesKey("quick_decline_messages")
@@ -324,6 +327,11 @@ class DataStoreSettingsRepository(
             ?.mapNotNull { runCatching { OngoingCallButton.valueOf(it) }.getOrNull() }
             ?: OngoingCallButton.entries
 
+        val recordingBackendStr = prefs[Keys.RECORDING_BACKEND]
+        val recordingBackend =
+            recordingBackendStr?.let { runCatching { RecordingBackendKind.valueOf(it) }.getOrNull() }
+                ?: RecordingBackendKind.SHIZUKU
+
         val showNumberOnCallScreen = prefs[Keys.SHOW_NUMBER_ON_CALL_SCREEN] ?: true
 
         val defaultSimStr = prefs[Keys.DEFAULT_SIM]
@@ -406,6 +414,7 @@ class DataStoreSettingsRepository(
             incomingAvatarSize = incomingAvatarSize,
             incomingAvatarShape = incomingAvatarShape,
             ongoingCallButtons = ongoingCallButtons,
+            recordingBackend = recordingBackend,
             showNumberOnCallScreen = showNumberOnCallScreen,
             defaultSim = defaultSim,
             quickDeclineOverrides = quickDeclineOverrides,
@@ -737,6 +746,12 @@ class DataStoreSettingsRepository(
     override suspend fun setOngoingCallButtons(buttons: List<OngoingCallButton>) {
         dataStore.edit { prefs ->
             prefs[Keys.ONGOING_CALL_BUTTONS] = buttons.joinToString(",") { it.name }
+        }
+    }
+
+    override suspend fun setRecordingBackend(backend: RecordingBackendKind) {
+        dataStore.edit { prefs ->
+            prefs[Keys.RECORDING_BACKEND] = backend.name
         }
     }
 
