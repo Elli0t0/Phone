@@ -531,6 +531,8 @@
     <string name="recording_advanced_title">Advanced</string>
     <string name="recording_connection_port">Connection port</string>
     <string name="recording_connection_port_hint">Shown on the Wireless debugging screen as IP address &amp; Port</string>
+    <string name="recording_action_detect_port">Detect port</string>
+    <string name="recording_error_port_not_found">Port not found. Turn Wireless debugging off and on, then tap Refresh, or type the port from the Wireless debugging screen.</string>
     <string name="recording_action_reset_pairing">Reset pairing</string>
     <string name="recording_reset_hint">Forget \'Phone\' in the system\'s Paired devices list before pairing again.</string>
     <string name="recording_adb_needs_wifi">Needs Wi-Fi. Keep Wireless debugging on. If recording stops after you turn it off, enable USB debugging (no cable needed): it keeps the recorder alive.</string>

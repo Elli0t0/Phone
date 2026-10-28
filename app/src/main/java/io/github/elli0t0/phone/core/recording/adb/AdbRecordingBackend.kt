@@ -25,6 +25,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.io.ByteArrayOutputStream
+import java.net.InetSocketAddress
+import java.net.Socket
 
 /**
  * Call recording without a second app. The phone pairs with itself over
@@ -73,6 +75,7 @@ class AdbRecordingBackend(
         when (val probe = probe()) {
             is Probe.Ok -> {
                 workingEndpoint = probe.host to probe.port
+                settingsRepository.setAdbLastKnownPort(probe.port)
                 if (ensureHelperAlive(probe.host, probe.port)) {
                     _status.value = BackendStatus.READY
                     _lastError.value = null
@@ -96,17 +99,23 @@ class AdbRecordingBackend(
 
     override suspend fun ensureBound(): Boolean {
         if (runCatching { helperCommand("STATUS") }.isSuccess) return true
-        val endpoint = workingEndpoint
-            ?: AdbDiscovery.discoverConnect(context, 10_000).getOrNull()
+        val stored = workingEndpoint
+        if (stored != null) {
+            // Reuse the verified endpoint; no second discovery while
+            // it still answers — a fresh discovery could return a
+            // different stale service.
+            val stillAnswers = withContext(Dispatchers.IO) {
+                reachable(stored.first, stored.second)
+            }
+            if (stillAnswers) return ensureHelperAlive(stored.first, stored.second)
+        }
+        // Stored endpoint missing or dead: one fresh selection.
+        val endpoint = withContext(Dispatchers.IO) { selectEndpoint() }.endpoint
             ?: return false
-        if (ensureHelperAlive(endpoint.first, endpoint.second)) return true
-        if (endpoint == workingEndpoint) {
-            // The probed endpoint went stale (wireless debugging was
-            // toggled); discover once more before giving up.
-            workingEndpoint = null
-            val fresh = AdbDiscovery.discoverConnect(context, 10_000).getOrNull()
-                ?: return false
-            return ensureHelperAlive(fresh.first, fresh.second)
+        workingEndpoint = endpoint
+        if (ensureHelperAlive(endpoint.first, endpoint.second)) {
+            settingsRepository.setAdbLastKnownPort(endpoint.second)
+            return true
         }
         return false
     }
@@ -149,10 +158,12 @@ class AdbRecordingBackend(
     }
 
     /**
-     * Checks, in order: Wi-Fi, the wireless-debugging setting, NSD
-     * discovery, then the ADB connect (loopback first, NSD host second).
-     * Only an auth failure maps to NOT_PAIRED; anything else keeps its
-     * own message so the real reason is visible.
+     * Checks, in order: Wi-Fi, the wireless-debugging setting, then
+     * endpoint selection (manual port, getprop port, NSD newest-first,
+     * last known port — every candidate TCP-checked), then the ADB
+     * connect on the ONE verified endpoint. Only an auth failure maps
+     * to NOT_PAIRED; anything else keeps its own message so the real
+     * reason is visible.
      */
     private suspend fun probe(): Probe = withContext(Dispatchers.IO) {
         if (!isWifi()) {
@@ -167,38 +178,36 @@ class AdbRecordingBackend(
                 context.getString(R.string.recording_error_wd_off)
             )
         }
-        val nsd = AdbDiscovery.discoverConnect(context, 10_000).getOrNull()
-        val port = nsd?.second
-            ?: settingsRepository.settingsFlow.first().adbManualPort
+        val selection = selectEndpoint()
+        val endpoint = selection.endpoint
             ?: return@withContext Probe.Fail(
-                BackendStatus.NOT_RUNNING,
-                context.getString(R.string.recording_error_service_not_found)
+                BackendStatus.ERROR,
+                portNotFoundMessage(selection.attempts)
             )
+        val (host, port) = endpoint
         var last: Throwable? = null
-        for (host in listOfNotNull("127.0.0.1", nsd?.first).distinct()) {
-            try {
-                val ok = withTimeout(10_000) {
-                    Kadb.create(host, port, connectTimeout = 10_000, socketTimeout = 10_000).use { kadb ->
-                        val response = kadb.shell("id")
-                        if (response.exitCode == 0) {
-                            if (!connectionTimeApplied) {
-                                runCatching { kadb.shell("settings put global adb_allowed_connection_time 0") }
-                                connectionTimeApplied = true
-                            }
-                            true
-                        } else {
-                            last = IllegalStateException(
-                                response.output.ifBlank { response.errorOutput }.ifBlank { "shell id failed" }
-                            )
-                            false
+        try {
+            val ok = withTimeout(10_000) {
+                Kadb.create(host, port, connectTimeout = 10_000, socketTimeout = 10_000).use { kadb ->
+                    val response = kadb.shell("id")
+                    if (response.exitCode == 0) {
+                        if (!connectionTimeApplied) {
+                            runCatching { kadb.shell("settings put global adb_allowed_connection_time 0") }
+                            connectionTimeApplied = true
                         }
+                        true
+                    } else {
+                        last = IllegalStateException(
+                            response.output.ifBlank { response.errorOutput }.ifBlank { "shell id failed" }
+                        )
+                        false
                     }
                 }
-                if (ok) return@withContext Probe.Ok(host, port)
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                last = e
             }
+            if (ok) return@withContext Probe.Ok(host, port)
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            last = e
         }
         val message = last?.message.orEmpty()
         val lower = message.lowercase()
@@ -213,6 +222,93 @@ class AdbRecordingBackend(
                 message.ifBlank { last?.toString().orEmpty() }
             )
         }
+    }
+
+    /** One verified endpoint, or null plus the full attempt list. */
+    private data class Selection(
+        val endpoint: Pair<String, Int>?,
+        val attempts: String
+    )
+
+    /** Quick TCP check: true when something actually listens on host:port. */
+    private fun reachable(host: String, port: Int): Boolean =
+        tcpOutcome(host, port) == null
+
+    /** Null when reachable, else a short reason (refused/timeout/failed). */
+    private fun tcpOutcome(host: String, port: Int): String? = runCatching {
+        Socket().use {
+            it.connect(InetSocketAddress(host, port), 1500)
+        }
+        null
+    }.getOrElse { e ->
+        when (e) {
+            is java.net.ConnectException -> "refused"
+            is java.net.SocketTimeoutException -> "timeout"
+            else -> "failed"
+        }
+    }
+
+    /** Wireless debugging's current TLS port, best-effort: 0/blank/absent means none. */
+    private fun getpropPort(): Int? = runCatching {
+        val process = ProcessBuilder("getprop", "service.adb.tls.port").start()
+        val text = process.inputStream.bufferedReader().readText().trim()
+        process.waitFor()
+        text.toIntOrNull()?.takeIf { it != 0 }
+    }.getOrNull()
+
+    /**
+     * Endpoint selection in priority order: manual port, the port
+     * wireless debugging reports via getprop, NSD services newest-first,
+     * then the last known working port. Every candidate is TCP-checked
+     * (loopback first, then NSD hosts) before Kadb ever sees it, so a
+     * stale port fails fast here instead of surfacing as a refused
+     * Kadb connection. The manual port always wins over NSD when it
+     * answers.
+     */
+    private suspend fun selectEndpoint(): Selection {
+        val settings = settingsRepository.settingsFlow.first()
+        val manual = settings.adbManualPort
+        val prop = getpropPort()
+        val nsdServices = AdbDiscovery.discoverConnectAll(context)
+        val nsdHosts = nsdServices.map { it.first }.asReversed().distinct()
+        val lastKnown = settings.adbLastKnownPort
+        val parts = mutableListOf<String>()
+        if (manual == null) parts.add("manual (not set)")
+        if (prop == null) parts.add("getprop (none)")
+        if (nsdServices.isEmpty()) parts.add("NSD (none found)")
+        if (lastKnown == null) parts.add("last-known (none)")
+
+        // Ordered unique ports; first occurrence wins (priority order).
+        val ports = mutableListOf<Pair<String, Int>>()
+        if (manual != null) ports.add("manual" to manual)
+        if (prop != null) ports.add("getprop" to prop)
+        for ((_, port) in nsdServices.asReversed()) ports.add("NSD" to port)
+        if (lastKnown != null) ports.add("last-known" to lastKnown)
+        for ((source, port) in ports.distinctBy { it.second }) {
+            val hostAttempts = mutableListOf<String>()
+            for (host in listOf("127.0.0.1") + nsdHosts) {
+                val outcome = tcpOutcome(host, port)
+                if (outcome == null) {
+                    return Selection(host to port, parts.joinToString(", "))
+                }
+                hostAttempts.add("@$host ($outcome)")
+            }
+            parts.add("$source $port ${hostAttempts.joinToString(", ")}")
+        }
+        return Selection(null, parts.joinToString(", "))
+    }
+
+    private fun portNotFoundMessage(attempts: String): String =
+        "tried: $attempts\n${context.getString(R.string.recording_error_port_not_found)}"
+
+    /**
+     * Runs endpoint selection only (no pairing, no Kadb): the port the
+     * Detect button fills into the manual-port field.
+     */
+    suspend fun detectPort(): Result<Int> = withContext(Dispatchers.IO) {
+        val selection = selectEndpoint()
+        selection.endpoint?.let { Result.success(it.second) }
+            ?: Result.failure(IllegalStateException(portNotFoundMessage(selection.attempts)))
     }
 
     private fun isWifi(): Boolean {

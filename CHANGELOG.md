@@ -164,6 +164,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.15.7]
+
+- ADB recorder endpoint selection reworked (stale-port refused connections): ports are now tried in order — manual port (always wins), getprop service.adb.tls.port, NSD services newest-first, last known working port (persisted after every success) — and every candidate is TCP-checked (loopback first, then NSD hosts) before Kadb sees it.
+- NSD now collects every _adb-tls-connect service for ~2.5 s instead of stopping at the first (stale) one.
+- One verified endpoint end to end: probe stores it, and ensureBound reuses it with no second discovery unless it stops answering.
+- Failures list every attempt under Recorder status (also in Copy details), e.g. which ports refused on which hosts; when nothing answers, it says to toggle Wireless debugging off/on and tap Refresh or type the port.
+- New "Detect port" button next to the Connection port field runs the same selection and fills the field with the working port. Pairing and the key store are untouched.
+
 ## [0.15.6]
 
 - Quick redial chips: labels are now single-line with ellipsis in both the glass and button variants, so all three chips measure the same height (a two-line label was making its chip taller). RTL names keep bidiWrap plus TextDirection.Content, so parentheses stay on the correct side; the Recents row title already had the same wrap and is unchanged.

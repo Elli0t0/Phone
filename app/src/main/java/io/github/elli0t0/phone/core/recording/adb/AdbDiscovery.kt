@@ -5,6 +5,7 @@ import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import android.os.Build
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -35,6 +36,72 @@ object AdbDiscovery {
         timeoutMs: Long = 8_000
     ): Result<Pair<String, Int>> =
         discover(context, CONNECT_SERVICE_TYPE, timeoutMs)
+
+    /**
+     * Collects every resolved _adb-tls-connect service for [collectMs]:
+     * wireless debugging picks a new port each time it is toggled, so
+     * older entries may be stale. Newest last; callers try newest-first
+     * and verify each candidate before use.
+     */
+    suspend fun discoverConnectAll(
+        context: Context,
+        collectMs: Long = 2_500
+    ): List<Pair<String, Int>> {
+        val nsd = context.getSystemService(Context.NSD_SERVICE) as? NsdManager
+            ?: return emptyList()
+        // NsdManager delivers callbacks on the main thread.
+        return withContext(Dispatchers.Main) {
+            val found = mutableListOf<Pair<String, Int>>()
+            val resolveListener = object : NsdManager.ResolveListener {
+                override fun onServiceResolved(info: NsdServiceInfo) {
+                    val host = info.host?.hostAddress
+                        ?: if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                            info.hostAddresses.firstOrNull()?.hostAddress
+                        } else {
+                            null
+                        }
+                    if (host != null && info.port > 0) {
+                        // Newest last, no duplicates.
+                        found.remove(host to info.port)
+                        found.add(host to info.port)
+                    }
+                }
+
+                override fun onResolveFailed(
+                    serviceInfo: NsdServiceInfo,
+                    errorCode: Int
+                ) = Unit
+            }
+            lateinit var discoveryListener: NsdManager.DiscoveryListener
+            discoveryListener = object : NsdManager.DiscoveryListener {
+                override fun onStartDiscoveryFailed(
+                    serviceType: String,
+                    errorCode: Int
+                ) = Unit
+
+                override fun onStopDiscoveryFailed(
+                    serviceType: String,
+                    errorCode: Int
+                ) = Unit
+
+                override fun onDiscoveryStarted(serviceType: String) = Unit
+                override fun onDiscoveryStopped(serviceType: String) = Unit
+
+                override fun onServiceFound(serviceInfo: NsdServiceInfo) {
+                    runCatching { nsd.resolveService(serviceInfo, resolveListener) }
+                }
+
+                override fun onServiceLost(serviceInfo: NsdServiceInfo) = Unit
+            }
+            nsd.discoverServices(CONNECT_SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, discoveryListener)
+            try {
+                delay(collectMs)
+            } finally {
+                runCatching { nsd.stopServiceDiscovery(discoveryListener) }
+            }
+            found
+        }
+    }
 
     private suspend fun discover(
         context: Context,

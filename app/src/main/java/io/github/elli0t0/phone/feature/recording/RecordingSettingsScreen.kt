@@ -125,6 +125,7 @@ fun RecordingSettingsScreen(
     val backendDiagnostic by viewModel.backendDiagnostic.collectAsStateWithLifecycle()
     val pairResult by viewModel.pairResult.collectAsStateWithLifecycle()
     val manualPort by viewModel.manualPort.collectAsStateWithLifecycle()
+    val detectResult by viewModel.detectResult.collectAsStateWithLifecycle()
     val clipboardManager = LocalClipboardManager.current
 
     LaunchedEffect(Unit) { viewModel.refresh() }
@@ -354,28 +355,47 @@ fun RecordingSettingsScreen(
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Spacer(modifier = Modifier.height(4.dp))
-                            OutlinedTextField(
-                                value = manualPort?.toString() ?: "",
-                                onValueChange = { text ->
-                                    val digits = text.filter { it.isDigit() }
-                                    if (digits.isEmpty()) {
-                                        viewModel.setManualPort(null)
-                                    } else {
-                                        val port = digits.toIntOrNull()
-                                        if (port != null && port in 1..65535) {
-                                            viewModel.setManualPort(port)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = manualPort?.toString() ?: "",
+                                    onValueChange = { text ->
+                                        val digits = text.filter { it.isDigit() }
+                                        if (digits.isEmpty()) {
+                                            viewModel.setManualPort(null)
+                                        } else {
+                                            val port = digits.toIntOrNull()
+                                            if (port != null && port in 1..65535) {
+                                                viewModel.setManualPort(port)
+                                            }
                                         }
-                                    }
-                                },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                                    },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    singleLine = true,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Button(
+                                    onClick = { viewModel.detectPort() },
+                                    enabled = !busy
+                                ) {
+                                    Text(text = stringResource(id = R.string.recording_action_detect_port))
+                                }
+                            }
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = stringResource(id = R.string.recording_connection_port_hint),
                                 style = MaterialTheme.typography.bodySmall
                             )
+                            if (detectResult != null) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = detectResult!!,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
                             Spacer(modifier = Modifier.height(8.dp))
                             Button(
                                 onClick = { viewModel.resetPairing() },

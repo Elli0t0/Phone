@@ -291,8 +291,10 @@ data class AppSettings(
     val incomingAvatarShape: IncomingAvatarShape = IncomingAvatarShape.CIRCLE,
     val ongoingCallButtons: List<OngoingCallButton> = OngoingCallButton.entries,
     val recordingBackend: RecordingBackendKind = RecordingBackendKind.SHIZUKU,
-    /** Manual ADB connect port, used only when NSD discovery finds nothing. */
+    /** Manual ADB connect port: always tried before NSD discovery. */
     val adbManualPort: Int? = null,
+    /** Last ADB connect port that worked; tried after NSD results. */
+    val adbLastKnownPort: Int? = null,
     val showNumberOnCallScreen: Boolean = true,
     val defaultSim: DefaultSim = DefaultSim.ASK,
     // Quick-decline message overrides, one per reply chip. A blank entry

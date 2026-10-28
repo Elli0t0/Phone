@@ -142,6 +142,8 @@
     <string name="recording_advanced_title">پیشرفته</string>
     <string name="recording_connection_port">درگاه اتصال</string>
     <string name="recording_connection_port_hint">در صفحه‌ی اشکال‌زدایی بی‌سیم به‌صورت «نشانی IP و درگاه» نمایش داده می‌شود</string>
+    <string name="recording_action_detect_port">تشخیص درگاه</string>
+    <string name="recording_error_port_not_found">درگاهی پیدا نشد. اشکال‌زدایی بی‌سیم را خاموش و دوباره روشن کنید، بعد «به‌روزرسانی» را بزنید یا درگاه را از صفحه‌ی اشکال‌زدایی بی‌سیم وارد کنید.</string>
     <string name="recording_action_reset_pairing">بازنشانی جفت کردن</string>
     <string name="recording_reset_hint">پیش از جفت کردن دوباره، «Phone» را در فهرست دستگاه‌های جفت‌شده‌ی سامانه فراموش کنید.</string>
     <string name="recording_adb_needs_wifi">به Wi-Fi نیاز دارد. اشکال‌زدایی بی‌سیم را روشن نگه دارید. اگر پس از خاموش کردن آن ضبط متوقف شد، اشکال‌زدایی USB را فعال کنید (به کابل نیاز نیست): ضبط‌کننده را زنده نگه می‌دارد.</string>

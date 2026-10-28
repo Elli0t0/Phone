@@ -46,6 +46,7 @@ class RecordingSettingsViewModel(
     val backendDiagnostic: StateFlow<String?> = controller.backendDiagnostic
     val pairResult: StateFlow<PairResult?> = controller.pairResult
     val manualPort: StateFlow<Int?> = controller.manualPort
+    val detectResult: StateFlow<String?> = controller.detectResult
     val session: StateFlow<RecordingSession> = controller.state
     val lastError: StateFlow<String?> = controller.lastError
     val recordings: StateFlow<List<RecordingEntity>> = recordingsRepository.recordings
@@ -117,6 +118,14 @@ class RecordingSettingsViewModel(
 
     fun setManualPort(port: Int?) {
         viewModelScope.launch { controller.setManualPort(port) }
+    }
+
+    fun detectPort() {
+        viewModelScope.launch {
+            _busy.value = true
+            controller.detectPort()
+            _busy.value = false
+        }
     }
 
     fun resetPairing() {

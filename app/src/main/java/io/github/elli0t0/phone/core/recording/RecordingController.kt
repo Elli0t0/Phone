@@ -90,10 +90,26 @@ class RecordingController(
         _pairResult.value = result
     }
 
-    /** Optional manual ADB port from Settings; used only when NSD discovery fails. */
+    /** Optional manual ADB port from Settings; it always wins over NSD discovery. */
     val manualPort: StateFlow<Int?> = settingsRepository.settingsFlow
         .map { it.adbManualPort }
         .stateIn(scope, SharingStarted.Eagerly, null)
+
+    /** Latest Detect-port attempt: the attempt list when nothing answered, null on success. */
+    private val _detectResult = MutableStateFlow<String?>(null)
+    val detectResult: StateFlow<String?> = _detectResult.asStateFlow()
+
+    /** Runs endpoint selection and, on success, fills the manual-port field and re-probes. */
+    suspend fun detectPort() {
+        val result = adbBackend.detectPort()
+        if (result.isSuccess) {
+            _detectResult.value = null
+            setManualPort(result.getOrThrow())
+            refreshBackendStatus()
+        } else {
+            _detectResult.value = result.exceptionOrNull()?.message
+        }
+    }
 
     suspend fun setManualPort(port: Int?) {
         settingsRepository.setAdbManualPort(port)

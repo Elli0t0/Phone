@@ -108,6 +108,7 @@ interface SettingsRepository {
     suspend fun setOngoingCallButtons(buttons: List<OngoingCallButton>)
     suspend fun setRecordingBackend(backend: RecordingBackendKind)
     suspend fun setAdbManualPort(port: Int?)
+    suspend fun setAdbLastKnownPort(port: Int?)
     suspend fun setShowNumberOnCallScreen(show: Boolean)
     suspend fun setDefaultSim(defaultSim: DefaultSim)
     suspend fun setQuickDeclineMessages(messages: List<String>)
@@ -179,6 +180,7 @@ class DataStoreSettingsRepository(
         val ONGOING_CALL_BUTTONS = stringPreferencesKey("ongoing_call_buttons")
         val RECORDING_BACKEND = stringPreferencesKey("recording_backend")
         val ADB_MANUAL_PORT = intPreferencesKey("adb_manual_port")
+        val ADB_LAST_KNOWN_PORT = intPreferencesKey("adb_last_known_port")
         val SHOW_NUMBER_ON_CALL_SCREEN = booleanPreferencesKey("show_number_on_call_screen")
         val DEFAULT_SIM = stringPreferencesKey("default_sim")
         val QUICK_DECLINE_MESSAGES = stringPreferencesKey("quick_decline_messages")
@@ -339,6 +341,7 @@ class DataStoreSettingsRepository(
                 ?: RecordingBackendKind.SHIZUKU
 
         val adbManualPort = prefs[Keys.ADB_MANUAL_PORT]?.takeIf { it in 1..65535 }
+        val adbLastKnownPort = prefs[Keys.ADB_LAST_KNOWN_PORT]?.takeIf { it in 1..65535 }
 
         val showNumberOnCallScreen = prefs[Keys.SHOW_NUMBER_ON_CALL_SCREEN] ?: true
 
@@ -425,6 +428,7 @@ class DataStoreSettingsRepository(
             ongoingCallButtons = ongoingCallButtons,
             recordingBackend = recordingBackend,
             adbManualPort = adbManualPort,
+            adbLastKnownPort = adbLastKnownPort,
             showNumberOnCallScreen = showNumberOnCallScreen,
             defaultSim = defaultSim,
             quickDeclineOverrides = quickDeclineOverrides,
@@ -777,6 +781,16 @@ class DataStoreSettingsRepository(
                 prefs.remove(Keys.ADB_MANUAL_PORT)
             } else {
                 prefs[Keys.ADB_MANUAL_PORT] = port
+            }
+        }
+    }
+
+    override suspend fun setAdbLastKnownPort(port: Int?) {
+        dataStore.edit { prefs ->
+            if (port == null) {
+                prefs.remove(Keys.ADB_LAST_KNOWN_PORT)
+            } else {
+                prefs[Keys.ADB_LAST_KNOWN_PORT] = port
             }
         }
     }
