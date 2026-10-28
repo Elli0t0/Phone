@@ -100,6 +100,7 @@ import io.github.elli0t0.phone.feature.recents.ui.CallLogRow
 import io.github.elli0t0.phone.feature.recents.ui.DaySectionCard
 import io.github.elli0t0.phone.feature.recents.ui.RecentsEmptyState
 
+import io.github.elli0t0.phone.navigation.FloatingActionsPill
 import io.github.elli0t0.phone.navigation.PageHeaderItem
 import java.time.Instant
 import java.time.LocalDate
@@ -680,6 +681,17 @@ fun RecentsScreen(
             }
             }
         }
+        // Floating actions pill: the header's buttons, overlaid at
+        // the top-right once the header has scrolled off. No title,
+        // no full-width band — just the buttons.
+        FloatingActionsPill(
+            listState = listState,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .statusBarsPadding()
+                .padding(end = 16.dp, top = 8.dp),
+            actions = headerActions
+        )
         }
     }
 }

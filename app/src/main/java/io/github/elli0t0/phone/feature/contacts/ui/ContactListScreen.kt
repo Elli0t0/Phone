@@ -62,6 +62,7 @@ import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 import io.github.elli0t0.phone.data.contacts.model.DuplicateGroup
 import io.github.elli0t0.phone.feature.contacts.ContactsUiState
 
+import io.github.elli0t0.phone.navigation.FloatingActionsPill
 import io.github.elli0t0.phone.navigation.PageHeaderItem
 
 @Composable
@@ -295,6 +296,58 @@ private fun ContactsContent(
                 }
             }
         }
+        // Floating-pill buttons: plain icon buttons, no pills. Same
+        // handlers, tags and icons as the header's pill versions.
+        val groupsIconButton: @Composable RowScope.() -> Unit = {
+            IconButton(
+                onClick = onGroupsClick,
+                modifier = Modifier.testTag("button_groups_pill")
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_group),
+                    contentDescription = stringResource(id = R.string.groups_title),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        val compactContactsActions: @Composable RowScope.() -> Unit = {
+            IconButton(
+                onClick = onAddContactClick,
+                modifier = Modifier.testTag("button_add_contact")
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_add),
+                    contentDescription = stringResource(id = R.string.cd_add_contact),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            IconButton(
+                onClick = {
+                    if (searchVisible) onClearSearch()
+                    searchVisible = !searchVisible
+                },
+                modifier = Modifier.testTag("button_search_contacts")
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_search),
+                    contentDescription = stringResource(id = R.string.cd_search),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Box {
+                IconButton(
+                    onClick = { menuExpanded = true },
+                    modifier = Modifier.testTag("button_contacts_menu")
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_more_vert),
+                        contentDescription = stringResource(id = R.string.cd_more_options),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                contactsMenu()
+            }
+        }
         val topBarPills: @Composable RowScope.() -> Unit = {
             groupsPill()
             Spacer(modifier = Modifier.width(PhoneDimens.contactsTopBarPillGap))
@@ -483,6 +536,20 @@ private fun ContactsContent(
             }
         }
         }
+        // Floating actions pill: Groups + header buttons, overlaid
+        // at the top-right once the header has scrolled off. No
+        // title, no full-width band — just the buttons.
+        FloatingActionsPill(
+            listState = listState,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .statusBarsPadding()
+                .padding(end = 16.dp, top = 8.dp),
+            actions = {
+                groupsIconButton()
+                compactContactsActions()
+            }
+        )
         }
     }
 }

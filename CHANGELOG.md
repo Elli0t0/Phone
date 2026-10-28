@@ -164,6 +164,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.13.7]
+
+- Floating actions pill: once the header has scrolled off, a small pill with the header's buttons floats at the top-right — Recents: filter, search, menu; Contacts: Groups, add, search, menu. No title, no full-width band. The pill is a sibling of the list (never a list item), so it cannot hit the 0.13.3 haze crash.
+- No other changes.
+
 ## [0.13.6]
 
 - Sticky top bar removed: Recents and Contacts go back to the header-only look — the large header with title and pills scrolls away with the list, no floating bar. The per-list haze states and the list-item haze providers go away with it (they only existed for the bar), along with the bar-only compact buttons and the header-height measurement.
