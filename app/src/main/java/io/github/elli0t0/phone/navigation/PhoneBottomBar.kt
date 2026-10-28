@@ -5,10 +5,14 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitPointerEvent
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,16 +52,23 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import kotlinx.coroutines.launch
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.core.design.BottomBarDark
 import io.github.elli0t0.phone.core.design.BottomBarDarkDroplet
@@ -77,6 +88,7 @@ import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
 import io.github.elli0t0.phone.data.settings.model.ThemeMode
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
@@ -103,6 +115,14 @@ import kotlin.math.sin
  * floats above the gesture handle: navigation-bar inset + 12dp gap.
  * Style (Glass/Solid) and size (S/M/L) come from Settings;
  * shrinkProgress compacts the bar to icons only as it goes 0 to 1.
+ * Drag: one pointerInput on the item Row owns all touches (the items
+ * have no clickable; accessibility goes through semantics Role.Tab).
+ * While dragging, the droplet follows the finger with lift (12%) and
+ * speed stretch; on release it springs to the nearest tab and that
+ * tab is selected. A tap selects the tab under the finger. All
+ * animated values are read only inside layout/draw/graphicsLayer
+ * lambdas. With Animations Off/Reduced there is no lift or stretch:
+ * the droplet just snaps to the tab.
  */
 @Composable
 fun PhoneBottomBar(
@@ -131,6 +151,55 @@ fun PhoneBottomBar(
     val selectedIndex = Screen.bottomNavItems
         .indexOfFirst { it.route == currentRoute }
         .coerceAtLeast(0)
+
+    // Navigation shared by taps (semantics), drag release, and the
+    // Row gesture: saveState/restoreState keeps each tab's saved
+    // state (including list scroll position) instead of recreating
+    // it. The popped tabs stay popped — only their saved state is
+    // restored on return, so no popped destination (e.g. Settings)
+    // comes back.
+    fun navigateTo(screen: Screen) {
+        if (currentRoute != screen.route) {
+            lightHaptic()
+            navController.navigate(screen.route) {
+                popUpTo(navController.graph.findStartDestination().id) {
+                    saveState = true
+                }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
+    }
+
+    // Drag state. dragX is the droplet center in px (physical, from
+    // the bar's left edge); lift is 0 resting, 1 finger down.
+    // releaseSpringActive covers the release spring so the
+    // external-change snap below cannot cut it short.
+    val dragX = remember { Animatable(0f) }
+    val lift = remember { Animatable(0f) }
+    val dragSpeed = remember { Animatable(0f) }
+    var dragging by remember { mutableStateOf(false) }
+    var releaseSpringActive by remember { mutableStateOf(false) }
+    // One press source per item, hoisted so the Row gesture can emit
+    // press/release into the item under the finger and glassPress
+    // keeps working without a clickable.
+    val itemSources = remember {
+        Screen.bottomNavItems.map { MutableInteractionSource() }
+    }
+    val n = Screen.bottomNavItems.size
+    val layoutDirection = LocalLayoutDirection.current
+    val rtl = layoutDirection == LayoutDirection.Rtl
+    // Physical tab index under x, and physical center of a logical
+    // tab index, for a bar w px wide. RTL mirrors both: logical
+    // tab 0 sits at the physical right.
+    fun indexAt(x: Float, w: Float): Int {
+        val raw = (x / (w / n)).toInt().coerceIn(0, n - 1)
+        return if (rtl) n - 1 - raw else raw
+    }
+    fun centerOf(i: Int, w: Float): Float {
+        val idx = if (rtl) n - 1 - i else i
+        return (w / n) * idx + w / (2f * n)
+    }
 
     // Liquid pill flight: from the previously selected item to the new
     // one, progress 0 to 1. Reduced animates a plain tween with no
@@ -192,14 +261,20 @@ fun PhoneBottomBar(
     ) {
         val barWidth = maxWidth * sizeSpec.widthFraction
         val density = LocalDensity.current
-        val itemWidthPx = with(density) {
-            (barWidth / Screen.bottomNavItems.size).toPx()
-        }
+        val barWidthPx = with(density) { barWidth.toPx() }
         val pillWidth = barWidth / Screen.bottomNavItems.size -
             PhoneDimens.bottomBarItemInset * 2
         val pillWidthPx = with(density) { pillWidth.toPx() }
         val stretchPx = with(density) { PhoneDimens.bottomBarPillStretch.toPx() }
-        val insetPx = with(density) { PhoneDimens.bottomBarItemInset.toPx() }
+        // A tab change from outside the bar (back navigation, deep
+        // link) snaps the drag position to that tab's center. Skipped
+        // while dragging or during the release spring, so it cannot
+        // cut the spring short; the droplet follows the flight then.
+        LaunchedEffect(selectedIndex) {
+            if (!dragging && !releaseSpringActive) {
+                dragX.snapTo(centerOf(selectedIndex, barWidthPx))
+            }
+        }
         // Crossfade spec: a plain tween, so it is a FiniteAnimationSpec
         // (Motion.tweenSpec returns AnimationSpec, which Crossfade
         // rejects). Duration is scaled by the Animations setting.
@@ -238,17 +313,35 @@ fun PhoneBottomBar(
                     .align(Alignment.CenterStart)
                     .offset {
                         val p = pillProgress.value.coerceIn(0f, 1f)
-                        val fromX = pillFromIndex * itemWidthPx + insetPx
-                        val toX = pillToIndex * itemWidthPx + insetPx
                         // Sine bulge: 0 at both ends, max mid-flight.
-                        // The offset shifts left by half the bulge so
-                        // the pill stays centered on its path.
                         val bulge = if (animationOption == AnimationOption.ON) {
                             sin(p * PI).toFloat() * stretchPx
                         } else {
                             0f
                         }
-                        IntOffset((lerp(fromX, toX, p) - bulge / 2f).roundToInt(), 0)
+                        // Desired left edge, physical px from the
+                        // bar's left edge. While dragging, or while
+                        // the release spring is still running, the
+                        // droplet follows the finger; otherwise it
+                        // follows the flight between tab centers.
+                        // Centers are physical via centerOf, so the
+                        // flight path is identical to the old lerp
+                        // in LTR and correct in RTL.
+                        val targetLeft = if (dragging || dragX.isRunning || releaseSpringActive) {
+                            (dragX.value - pillWidthPx / 2f).coerceIn(0f, barWidthPx - pillWidthPx)
+                        } else {
+                            lerp(
+                                centerOf(pillFromIndex, barWidthPx),
+                                centerOf(pillToIndex, barWidthPx),
+                                p
+                            ) - pillWidthPx / 2f - bulge / 2f
+                        }
+                        // The droplet is aligned to CenterStart: the
+                        // bar's left edge in LTR, its right edge in
+                        // RTL. Convert the desired left edge to an
+                        // offset from that placement.
+                        val baseLeft = if (rtl) barWidthPx - pillWidthPx else 0f
+                        IntOffset((targetLeft - baseLeft).roundToInt(), 0)
                     }
                     .graphicsLayer {
                         val p = pillProgress.value.coerceIn(0f, 1f)
@@ -257,7 +350,17 @@ fun PhoneBottomBar(
                         } else {
                             0f
                         }
-                        scaleX = 1f + bulge / pillWidthPx
+                        // Speed stretch: low-passed drag speed, capped
+                        // at 25%. Lift magnifies the droplet 12%.
+                        // Both are 0 when Animations is Off/Reduced.
+                        val speedStretch = if (animationOption == AnimationOption.ON) {
+                            minOf(abs(dragSpeed.value) / 4000f, 0.25f)
+                        } else {
+                            0f
+                        }
+                        val liftScale = 1f + 0.12f * lift.value
+                        scaleX = (1f + bulge / pillWidthPx) * liftScale * (1f + speedStretch)
+                        scaleY = liftScale
                     }
                     .width(pillWidth)
                     .fillMaxHeight()
@@ -298,12 +401,124 @@ fun PhoneBottomBar(
                     }
             )
             Row(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize()
+                    .pointerInput(n, layoutDirection) {
+                        awaitEachGesture {
+                            val down = awaitFirstDown(requireUnconsumed = false)
+                            val w = size.width.toFloat()
+                            if (w <= 0f) return@awaitEachGesture
+                            dragging = true
+                            releaseSpringActive = false
+                            dragX.stop()
+                            lift.stop()
+                            dragSpeed.stop()
+                            dragSpeed.snapTo(0f)
+                            var press: PressInteraction.Press? = null
+                            var last = indexAt(down.position.x, w)
+                            try {
+                                press = PressInteraction.Press(down.position)
+                                itemSources[last].tryEmit(press)
+                                dragX.snapTo(down.position.x.coerceIn(0f, w))
+                                if (animationOption == AnimationOption.ON) {
+                                    launch {
+                                        lift.animateTo(
+                                            1f,
+                                            spring(dampingRatio = 0.6f, stiffness = 400f)
+                                        )
+                                    }
+                                }
+                                var lastX = down.position.x
+                                var lastT = down.uptimeMillis
+                                var smoothSpeed = 0f
+                                while (true) {
+                                    val ev = awaitPointerEvent()
+                                    val c = ev.changes.first()
+                                    val x = c.position.x.coerceIn(0f, w)
+                                    dragX.snapTo(x)
+                                    if (animationOption == AnimationOption.ON) {
+                                        val dtMs = (c.uptimeMillis - lastT).coerceAtLeast(1L)
+                                        val rate = abs(x - lastX) / (dtMs / 1000f)
+                                        smoothSpeed += (rate - smoothSpeed) * 0.25f
+                                        dragSpeed.snapTo(smoothSpeed)
+                                    }
+                                    lastX = x
+                                    lastT = c.uptimeMillis
+                                    val i = indexAt(x, w)
+                                    if (i != last) {
+                                        press?.let {
+                                            itemSources[last].tryEmit(PressInteraction.Release(it))
+                                        }
+                                        last = i
+                                        lightHaptic()
+                                        press = PressInteraction.Press(c.position)
+                                        itemSources[last].tryEmit(press)
+                                    }
+                                    c.consume()
+                                    if (!c.pressed) break
+                                }
+                                // Release: lift down, spring to the
+                                // nearest tab's center, select it. The
+                                // flight is suppressed for this change
+                                // (from/to preset, progress snapped to
+                                // 1) so the release spring owns the
+                                // motion with no jump when it lands.
+                                // Off/Reduced: no lift or spring, the
+                                // droplet just snaps to the tab.
+                                press?.let {
+                                    itemSources[last].tryEmit(PressInteraction.Release(it))
+                                }
+                                press = null
+                                dragging = false
+                                dragSpeed.snapTo(0f)
+                                pillProgress.stop()
+                                pillFromIndex = pillToIndex
+                                pillToIndex = last
+                                pillProgress.snapTo(1f)
+                                if (animationOption == AnimationOption.ON) {
+                                    releaseSpringActive = true
+                                    launch {
+                                        lift.animateTo(
+                                            0f,
+                                            // MediumBouncy is 0.5f; the
+                                            // named constant does not
+                                            // exist in this Compose
+                                            // version's animation-core.
+                                            spring(dampingRatio = 0.5f, stiffness = 300f)
+                                        )
+                                    }
+                                    launch {
+                                        dragX.animateTo(
+                                            centerOf(last, w),
+                                            spring(dampingRatio = 0.5f, stiffness = 300f)
+                                        )
+                                        releaseSpringActive = false
+                                    }
+                                } else {
+                                    dragX.snapTo(centerOf(last, w))
+                                }
+                                navigateTo(Screen.bottomNavItems[last])
+                            } finally {
+                                // Cancelled mid-drag: release the press
+                                // and clear the flags so nothing sticks.
+                                press?.let {
+                                    itemSources[last].tryEmit(PressInteraction.Release(it))
+                                }
+                                if (dragging) {
+                                    dragging = false
+                                    releaseSpringActive = false
+                                }
+                            }
+                        }
+                    },
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Screen.bottomNavItems.forEach { screen ->
+                Screen.bottomNavItems.forEachIndexed { index, screen ->
                     val selected = currentRoute == screen.route
+                    // Captured under a different name: inside the
+                    // semantics block below, `selected` would resolve
+                    // to the receiver's own property, not this value.
+                    val tabSelected = selected
                     // Icon pop: 1 to 1.15 to 1 over 300ms when the tab
                     // is newly selected. Skipped on first composition
                     // and when motion is Reduced/Off.
@@ -323,10 +538,12 @@ fun PhoneBottomBar(
                             )
                         }
                     }
-                    // Shared press interaction source: glassPress and
-                    // the clickable observe the same press state, so
-                    // the item scales + sheens while pressed, and haptics.
-                    val itemSource = remember { MutableInteractionSource() }
+                    // Press source shared with the Row gesture: the
+                    // gesture emits press/release into the item under
+                    // the finger, so glassPress still scales + sheens
+                    // while pressed. No clickable: the gesture owns
+                    // touches, and activation goes through semantics.
+                    val itemSource = itemSources[index]
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -334,26 +551,12 @@ fun PhoneBottomBar(
                             .padding(PhoneDimens.bottomBarItemInset)
                             .clip(pillShape)
                             .glassPress(itemSource)
-                            .clickable(
-                                interactionSource = itemSource,
-                                indication = null
-                            ) {
-                                if (currentRoute != screen.route) {
-                                    lightHaptic()
-                                    // saveState/restoreState: switching tabs keeps
-                                    // each tab's saved state (including list
-                                    // scroll position) instead of recreating it.
-                                    // The popped tabs stay popped — only their
-                                    // saved state is restored on return, so no
-                                    // popped destination (e.g. Settings) comes
-                                    // back.
-                                    navController.navigate(screen.route) {
-                                        popUpTo(navController.graph.findStartDestination().id) {
-                                            saveState = true
-                                        }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
+                            .semantics {
+                                role = Role.Tab
+                                selected = tabSelected
+                                onClick {
+                                    navigateTo(screen)
+                                    true
                                 }
                             }
                             .testTag("tab_${screen.route}"),
@@ -481,10 +684,17 @@ fun PhoneBottomBar(
                     }
             )
         }
+        // The bar itself lifts slightly with the finger (3%).
+        // The lift value is read only in this graphicsLayer lambda.
+        val barLiftModifier = Modifier.graphicsLayer {
+            val s = 1f + 0.03f * lift.value
+            scaleX = s
+            scaleY = s
+        }
         if (LocalAppSettings.current.bottomBarStyle == BottomBarStyle.GLASS && glassBottomBar) {
             GlassSurface(
                 shape = pillShape,
-                modifier = Modifier.width(barWidth).then(barHeightModifier),
+                modifier = Modifier.width(barWidth).then(barHeightModifier).then(barLiftModifier),
                 // Thin fill so the blur and the backdrop show through,
                 // 36dp blur, vertical-gradient rim, faint end
                 // highlights, and no drop shadow under the glass.
@@ -505,6 +715,7 @@ fun PhoneBottomBar(
                 modifier = Modifier
                     .width(barWidth)
                     .then(barHeightModifier)
+                    .then(barLiftModifier)
                     .shadow(
                         PhoneDimens.bottomBarElevation,
                         pillShape,
