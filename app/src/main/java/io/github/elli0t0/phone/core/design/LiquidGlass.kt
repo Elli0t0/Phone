@@ -493,7 +493,11 @@ fun Modifier.liquidGlass(
                             is Outline.Rounded -> drawRoundRect(
                                 brush = borderBrush,
                                 size = borderSize,
-                                cornerRadius = outline.roundRect.cornerRadius,
+                                // RoundRect has no single radius, only
+                                // per-corner radii; premium shapes use
+                                // uniform corners, so top-left stands
+                                // for all four.
+                                cornerRadius = outline.roundRect.topLeftCornerRadius,
                                 style = borderStroke
                             )
                             is Outline.Generic -> drawPath(
