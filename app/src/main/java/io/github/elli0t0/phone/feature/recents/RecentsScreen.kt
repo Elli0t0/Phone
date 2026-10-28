@@ -225,12 +225,15 @@ fun RecentsScreen(
     }
 
     Scaffold(
-        modifier = modifier.fillMaxSize().testTag("recents_screen")
+        modifier = modifier.fillMaxSize().testTag("recents_screen"),
+        // Transparent so the ambient backdrop shows through the
+        // gaps; only the list cards stay opaque.
+        containerColor = Color.Transparent
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
+                .background(Color.Transparent)
                 .padding(innerPadding)
                 .padding(horizontal = spacing.screenHorizontalPadding)
         ) {

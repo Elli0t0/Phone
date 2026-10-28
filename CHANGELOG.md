@@ -164,6 +164,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.12.1] - 2026-10-28
+
+- Glass now has something to blur: a soft ambient backdrop (three large accent-hue radial blobs drifting on a 28s loop) drawn at the root behind the tab content, with a new Backdrop setting (Off / Subtle / Vivid, default Subtle; forced Off by Pure black dark mode).
+- Glass tints thinned so the blur reads: dark tint 0.55 → 0.22, light tint 0.60 → 0.30.
+- Contacts/Recents no longer paint an opaque layer over the backdrop in gaps and header areas (Scaffold and root containers transparent, header background transparent); list cards stay opaque.
+
 ## [0.12.0] - 2026-10-28
 
 - Premium glass polish: one shared premium glass treatment (diagonal specular border, soft inner top highlight, diffuse shadow, backdrop saturation boost) applied to dialpad keys, in-call controls, popup sheets and the contact detail bar.

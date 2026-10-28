@@ -177,6 +177,17 @@ enum class GlassIntensity(val label: String) {
     STRONG("Strong")
 }
 
+/**
+ * Ambient backdrop behind the tab content: three large soft
+ * accent-hue blobs drifting slowly, giving glass something to
+ * blur. Strength is the blob center alpha.
+ */
+enum class Backdrop(val label: String, val strength: Float) {
+    OFF("Off", 0f),
+    SUBTLE("Subtle", 0.20f),
+    VIVID("Vivid", 0.40f)
+}
+
 data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val accentColor: Long = AccentPreset.ONE_UI_BLUE.colorValue,
@@ -205,6 +216,9 @@ data class AppSettings(
     // Dynamic highlights: the premium glass specular border shifts
     // with device tilt. Default on; off when Animations is Off.
     val dynamicHighlights: Boolean = true,
+    // Ambient backdrop behind the tab content. Forced Off when
+    // Pure black dark mode is on (see AmbientBackdrop).
+    val backdrop: Backdrop = Backdrop.SUBTLE,
     val defaultStartTab: StartTab = StartTab.KEYPAD,
     val contactSortOrder: ContactSortOrder = ContactSortOrder.FIRST_NAME,
     val contactNameFormat: ContactNameFormat = ContactNameFormat.FIRST_NAME_FIRST,

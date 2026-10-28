@@ -84,7 +84,10 @@ fun ContactListScreen(
     val spacing = LocalSpacing.current
 
     Scaffold(
-        modifier = modifier.fillMaxSize().testTag("contact_list_screen")
+        modifier = modifier.fillMaxSize().testTag("contact_list_screen"),
+        // Transparent so the ambient backdrop shows through the
+        // gaps; only the list cards stay opaque.
+        containerColor = Color.Transparent
     ) { innerPadding ->
         if (uiState.showDuplicates && permissionState.status is ContactsPermissionStatus.Granted) {
             DuplicatesScreen(
@@ -100,7 +103,7 @@ fun ContactListScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
+                .background(Color.Transparent)
                 .padding(innerPadding)
         ) {
             when (val status = permissionState.status) {

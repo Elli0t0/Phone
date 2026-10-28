@@ -69,6 +69,7 @@ class SettingsDialogState {
     var showBottomBarSizeDialog by mutableStateOf(false)
     var showHeaderSizeDialog by mutableStateOf(false)
     var showGlassIntensityDialog by mutableStateOf(false)
+    var showBackdropDialog by mutableStateOf(false)
     var showSortDialog by mutableStateOf(false)
     var showFormatDialog by mutableStateOf(false)
     var showCallDisplayDialog by mutableStateOf(false)

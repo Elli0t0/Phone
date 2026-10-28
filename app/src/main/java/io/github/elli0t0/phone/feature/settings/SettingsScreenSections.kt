@@ -42,6 +42,7 @@ import io.github.elli0t0.phone.feature.setup.SetupChecklist
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import kotlin.math.roundToInt
 import io.github.elli0t0.phone.data.settings.model.AppSettings
+import io.github.elli0t0.phone.data.settings.model.Backdrop
 import androidx.compose.runtime.Composable
 import io.github.elli0t0.phone.core.design.Spacing
 import android.content.Context
@@ -384,6 +385,21 @@ item {
                 subtitle = stringResource(id = R.string.settings_dynamic_highlights_desc),
                 checked = settings.dynamicHighlights,
                 onCheckedChange = { viewModel.onDynamicHighlightsChanged(it) }
+            )
+
+            Spacer(modifier = Modifier.height(spacing.small))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            Spacer(modifier = Modifier.height(spacing.small))
+
+            SettingsRow(
+                title = stringResource(id = R.string.settings_backdrop),
+                // Pure black dark mode forces the backdrop off.
+                subtitle = if (settings.pureBlackDarkMode) {
+                    Backdrop.OFF.label
+                } else {
+                    settings.backdrop.label
+                },
+                onClick = { dialogs.showBackdropDialog = true }
             )
         }
     }

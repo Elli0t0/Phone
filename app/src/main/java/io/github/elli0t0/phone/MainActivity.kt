@@ -16,6 +16,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import io.github.elli0t0.phone.core.design.AmbientBackdrop
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import androidx.compose.foundation.layout.Box
@@ -287,6 +288,10 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
             .background(MaterialTheme.colorScheme.background)
             .nestedScroll(barScrollConnection)
     ) {
+        // Ambient backdrop first, behind the NavHost: the tab
+        // screens leave their gaps transparent (item D) so it
+        // shows through, and glass blurs it.
+        AmbientBackdrop()
         PhoneNavHost(
             navController = navController,
             startDestination = startDestination,

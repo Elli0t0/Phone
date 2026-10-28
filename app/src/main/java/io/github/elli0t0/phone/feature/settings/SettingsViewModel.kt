@@ -20,6 +20,7 @@ import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
+import io.github.elli0t0.phone.data.settings.model.Backdrop
 import io.github.elli0t0.phone.data.settings.model.GlassIntensity
 import io.github.elli0t0.phone.data.settings.model.HeaderSize
 import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
@@ -177,6 +178,12 @@ class SettingsViewModel(
     fun onDynamicHighlightsChanged(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setDynamicHighlights(enabled)
+        }
+    }
+
+    fun onBackdropChanged(backdrop: Backdrop) {
+        viewModelScope.launch {
+            settingsRepository.setBackdrop(backdrop)
         }
     }
 

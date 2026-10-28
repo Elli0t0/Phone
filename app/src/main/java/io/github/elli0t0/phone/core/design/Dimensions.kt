@@ -38,8 +38,8 @@ object PhoneDimens {
     val glassBlurRadiusSubtle = 20.dp
     val glassBlurRadiusStandard = 28.dp
     val glassBlurRadiusStrong = 36.dp
-    val glassBlurTintAlphaDark = 0.55f
-    val glassBlurTintAlphaLight = 0.60f
+    val glassBlurTintAlphaDark = 0.22f
+    val glassBlurTintAlphaLight = 0.30f
     // Container fill over a live blur: thin enough that the blurred
     // content shows through (the haze tint carries the dimming).
     val glassBlurContainerAlpha = 0.30f

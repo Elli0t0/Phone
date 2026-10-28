@@ -77,7 +77,7 @@ fun PageHeaderItem(
         modifier = modifier
             .fillMaxWidth()
             .height(headerHeight)
-            .background(MaterialTheme.colorScheme.background),
+            .background(Color.Transparent),
         contentAlignment = Alignment.Center
     ) {
         // Title block centered at ~40% of the header height: centered in

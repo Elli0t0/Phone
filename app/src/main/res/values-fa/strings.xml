@@ -60,5 +60,6 @@
     <string name="dialpad_voicemail_unavailable">شماره‌ای برای پست صوتی یافت نشد</string>
     <string name="dialpad_speed_dial_saved">شماره‌گیری سریع %1$s ذخیره شد</string>
     <string name="settings_dynamic_highlights">هایلایت‌های پویا</string>
+    <string name="settings_backdrop">پس‌زمینه</string>
     <string name="settings_dynamic_highlights_desc">هایلایت شیشه با شیب دستگاه جابه‌جا می‌شود</string>
 </resources>

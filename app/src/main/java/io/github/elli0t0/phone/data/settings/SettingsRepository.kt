@@ -26,6 +26,7 @@ import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
+import io.github.elli0t0.phone.data.settings.model.Backdrop
 import io.github.elli0t0.phone.data.settings.model.GlassIntensity
 import io.github.elli0t0.phone.data.settings.model.HeaderSize
 import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
@@ -67,6 +68,7 @@ interface SettingsRepository {
     suspend fun setReduceTransparency(enabled: Boolean)
     suspend fun setGlassCards(enabled: Boolean)
     suspend fun setDynamicHighlights(enabled: Boolean)
+    suspend fun setBackdrop(backdrop: Backdrop)
     suspend fun setDefaultStartTab(tab: StartTab)
     suspend fun setContactSortOrder(order: ContactSortOrder)
     suspend fun setContactNameFormat(format: ContactNameFormat)
@@ -127,6 +129,7 @@ class DataStoreSettingsRepository(
         val REDUCE_TRANSPARENCY = booleanPreferencesKey("reduce_transparency")
         val GLASS_CARDS = booleanPreferencesKey("glass_cards")
         val DYNAMIC_HIGHLIGHTS = booleanPreferencesKey("dynamic_highlights")
+        val BACKDROP = stringPreferencesKey("backdrop")
         val DEFAULT_START_TAB = stringPreferencesKey("default_start_tab")
         val CONTACT_SORT_ORDER = stringPreferencesKey("contact_sort_order")
         val CONTACT_NAME_FORMAT = stringPreferencesKey("contact_name_format")
@@ -202,6 +205,8 @@ class DataStoreSettingsRepository(
         val reduceTransparency = prefs[Keys.REDUCE_TRANSPARENCY] ?: false
         val glassCards = prefs[Keys.GLASS_CARDS] ?: false
         val dynamicHighlights = prefs[Keys.DYNAMIC_HIGHLIGHTS] ?: true
+        val backdropStr = prefs[Keys.BACKDROP]
+        val backdrop = backdropStr?.let { runCatching { Backdrop.valueOf(it) }.getOrNull() } ?: Backdrop.SUBTLE
 
         val tabStr = prefs[Keys.DEFAULT_START_TAB]
         val startTab = tabStr?.let { runCatching { StartTab.valueOf(it) }.getOrNull() } ?: StartTab.KEYPAD
@@ -341,6 +346,7 @@ class DataStoreSettingsRepository(
             reduceTransparency = reduceTransparency,
             glassCards = glassCards,
             dynamicHighlights = dynamicHighlights,
+            backdrop = backdrop,
             defaultStartTab = startTab,
             contactSortOrder = sortOrder,
             contactNameFormat = nameFormat,
@@ -504,6 +510,12 @@ class DataStoreSettingsRepository(
     override suspend fun setDynamicHighlights(enabled: Boolean) {
         dataStore.edit { prefs ->
             prefs[Keys.DYNAMIC_HIGHLIGHTS] = enabled
+        }
+    }
+
+    override suspend fun setBackdrop(backdrop: Backdrop) {
+        dataStore.edit { prefs ->
+            prefs[Keys.BACKDROP] = backdrop.name
         }
     }
 
