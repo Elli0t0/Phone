@@ -10,6 +10,7 @@ import androidx.compose.animation.core.StartOffset
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,15 +20,17 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -89,6 +92,7 @@ import io.github.elli0t0.phone.feature.contacts.ui.ContactAvatar
 import io.github.elli0t0.phone.feature.contacts.ui.avatarGradient
 import io.github.elli0t0.phone.core.common.bidiWrap
 import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.unit.dp
 
 @Composable
 fun OngoingCallScreen(
@@ -113,7 +117,6 @@ fun OngoingCallScreen(
     val spacing = LocalSpacing.current
     var showKeypad by remember { mutableStateOf(false) }
     val endCallSource = remember { MutableInteractionSource() }
-    val keypadScrollState = rememberScrollState()
     val lightHaptic = rememberLightHaptic()
     // One tilt listener for all call controls (Dynamic highlights).
     val tilt = rememberTilt()
@@ -195,23 +198,23 @@ fun OngoingCallScreen(
             )
         }
 
+        // No scrolling: the keypad-open stack always fits (compact
+        // identity + one weighted grid + fixed controls + button).
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = spacing.screenHorizontalPadding, vertical = spacing.large)
-                // With the keypad open the identity + keys + end-call
-                // button can exceed the screen (large fonts/sizes);
-                // let that stack scroll instead of squeezing the
-                // end-call button off the bottom edge.
-                .then(if (showKeypad) Modifier.verticalScroll(keypadScrollState) else Modifier),
+                .padding(horizontal = spacing.screenHorizontalPadding)
+                .statusBarsPadding()
+                .navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Caller info position: top (default), or centered at
             // ~30% of the height (a 14% spacer plus half the identity
-            // block lands its center there).
+            // block lands its center there). The centering gap is
+            // dropped with the keypad open, or the stack could not fit.
             val infoCentered =
                 LocalAppSettings.current.callerInfoPosition == CallerInfoPosition.CENTER
-            if (infoCentered) {
+            if (infoCentered && !showKeypad) {
                 Spacer(modifier = Modifier.fillMaxHeight(0.14f))
             }
             // Caller identity: avatar above the name, then the
@@ -232,11 +235,21 @@ fun OngoingCallScreen(
                 } else {
                     CircleShape
                 }
+                // Compact with the keypad open: the avatar shrinks
+                // to 56dp so the whole stack fits without scrolling.
+                val avatarSize by animateDpAsState(
+                    targetValue = if (showKeypad) {
+                        56.dp
+                    } else {
+                        PhoneDimens.ongoingAvatarSize * avatarScale
+                    },
+                    label = "callAvatarSize"
+                )
                 ContactAvatar(
                     photoUri = callModel.photoUri,
                     displayName = titleText,
                     modifier = Modifier.clip(avatarShape),
-                    size = PhoneDimens.ongoingAvatarSize * avatarScale,
+                    size = avatarSize,
                     textStyle = MaterialTheme.typography.displaySmall,
                     showPersonIcon = !hasName
                 )
@@ -261,7 +274,7 @@ fun OngoingCallScreen(
                         modifier = Modifier.padding(bottom = spacing.extraSmall)
                     )
                 }
-                if (!callModel.simLabel.isNullOrBlank()) {
+                if (!showKeypad && !callModel.simLabel.isNullOrBlank()) {
                     Text(
                         text = callModel.simLabel,
                         style = MaterialTheme.typography.bodySmall,
@@ -282,6 +295,7 @@ fun OngoingCallScreen(
             if (showKeypad) {
                 Spacer(modifier = Modifier.height(PhoneDimens.ongoingKeypadTopGap))
                 InCallKeypadGrid(
+                    modifier = Modifier.weight(1f),
                     isMuted = callModel.isMuted,
                     isSpeaker = isSpeaker,
                     onMuteToggle = { onMuteToggle(!callModel.isMuted) },
@@ -624,14 +638,24 @@ private fun InCallKeypadGrid(
             }
         }
         keys.forEach { row ->
+            // Each row takes an equal weighted share of the grid,
+            // and each key is centered in its cell: keys fill their
+            // cell up to 76dp, then shrink with the cell on small
+            // screens instead of overflowing.
             Row(
-                horizontalArrangement = Arrangement.spacedBy(PhoneDimens.ongoingKeypadColumnSpacing)
+                modifier = Modifier.weight(1f).fillMaxWidth()
             ) {
                 row.forEach { (digit, letters) ->
                     val keySource = remember { MutableInteractionSource() }
                     Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                    Box(
                         modifier = Modifier
-                            .size(PhoneDimens.ongoingDtmfKeySize * keyScale)
+                            .fillMaxHeight()
+                            .heightIn(max = 76.dp)
+                            .aspectRatio(1f)
                             .clip(CircleShape)
                             .background(if (glassCallScreens) InCallControlBackground else InCallControlBackgroundFlat)
                             .pressScale(keySource)
@@ -663,6 +687,7 @@ private fun InCallKeypadGrid(
                                 )
                             }
                         }
+                    }
                     }
                 }
             }

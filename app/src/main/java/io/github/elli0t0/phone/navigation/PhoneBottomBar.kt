@@ -275,7 +275,9 @@ fun PhoneBottomBar(
             .testTag("phone_bottom_bar"),
         contentAlignment = Alignment.Center
     ) {
-        val barWidth = maxWidth * sizeSpec.widthFraction
+        val barWidth = (maxWidth * sizeSpec.widthFraction).let { rawWidth ->
+            sizeSpec.maxWidth?.let { cap -> minOf(rawWidth, cap) } ?: rawWidth
+        }
         val density = LocalDensity.current
         val barWidthPx = with(density) { barWidth.toPx() }
         val pillWidth = barWidth / Screen.bottomNavItems.size -

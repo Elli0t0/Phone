@@ -13,7 +13,7 @@ object PhoneDimens {
     // items. The selected pill fills its item with a 4dp inset.
     // Very soft shadow, alpha <= 10% (solid style only; the glass
     // bar has no drop shadow).
-    val bottomBarWidthFraction = 0.85f
+    val bottomBarWidthFraction = 0.75f
     // Contact details bottom action bar: same pill, 70% of screen width.
     val detailBottomBarWidthFraction = 0.7f
     val bottomBarHeight = 64.dp
@@ -276,16 +276,18 @@ data class BottomBarSizeSpec(
     val widthFraction: Float,
     val height: Dp,
     val iconSize: Dp,
-    val labelSize: TextUnit
+    val labelSize: TextUnit,
+    val maxWidth: Dp? = null
 )
 
 fun bottomBarSizeSpec(size: BottomBarSize): BottomBarSizeSpec = when (size) {
-    BottomBarSize.SMALL -> BottomBarSizeSpec(0.70f, 52.dp, 20.dp, 11.sp)
+    BottomBarSize.SMALL -> BottomBarSizeSpec(0.62f, 52.dp, 20.dp, 11.sp)
     BottomBarSize.MEDIUM -> BottomBarSizeSpec(
         PhoneDimens.bottomBarWidthFraction,
         PhoneDimens.bottomBarHeight,
         PhoneDimens.bottomBarIconSize,
-        PhoneDimens.bottomBarLabelSize
+        PhoneDimens.bottomBarLabelSize,
+        maxWidth = 360.dp
     )
-    BottomBarSize.LARGE -> BottomBarSizeSpec(0.90f, 68.dp, 28.dp, 13.sp)
+    BottomBarSize.LARGE -> BottomBarSizeSpec(0.82f, 68.dp, 28.dp, 13.sp)
 }

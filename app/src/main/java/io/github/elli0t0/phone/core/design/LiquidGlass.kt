@@ -20,8 +20,10 @@ import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.ui.composed
@@ -775,7 +777,16 @@ fun LiquidGlassCard(
 ) {
     Column(
         modifier = modifier.liquidGlass(shape, tint, isSelected, forceDarkGlass, floating, premium = premium, tilt = tilt),
-        content = content
+        content = {
+            // Text without an explicit color falls back to black
+            // inside glass, which vanishes on dark glass: pin the
+            // content color to onSurface for everything inside.
+            CompositionLocalProvider(
+                LocalContentColor provides MaterialTheme.colorScheme.onSurface
+            ) {
+                content()
+            }
+        }
     )
 }
 
@@ -801,7 +812,13 @@ fun GlassListCard(
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
             ),
-            content = content
+            content = {
+                CompositionLocalProvider(
+                    LocalContentColor provides MaterialTheme.colorScheme.onSurface
+                ) {
+                    content()
+                }
+            }
         )
     }
 }
@@ -824,7 +841,13 @@ fun LiquidGlassPill(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier.liquidGlass(shape, tint, isSelected, forceDarkGlass, floating),
-        content = content
+        content = {
+            CompositionLocalProvider(
+                LocalContentColor provides MaterialTheme.colorScheme.onSurface
+            ) {
+                content()
+            }
+        }
     )
 }
 
@@ -879,7 +902,13 @@ fun LiquidGlassChip(
             .clickable(interactionSource = source, indication = null, onClick = onClick)
             .liquidGlass(shape, tint, selected, forceDarkGlass, floating)
             .glassPress(source),
-        content = content
+        content = {
+            CompositionLocalProvider(
+                LocalContentColor provides MaterialTheme.colorScheme.onSurface
+            ) {
+                content()
+            }
+        }
     )
 }
 
@@ -928,6 +957,12 @@ fun LiquidGlassPopupSurface(
 ) {
     Column(
         modifier = modifier.liquidGlass(shape, tint, false, forceDarkGlass, floating, premium = premium),
-        content = content
+        content = {
+            CompositionLocalProvider(
+                LocalContentColor provides MaterialTheme.colorScheme.onSurface
+            ) {
+                content()
+            }
+        }
     )
 }

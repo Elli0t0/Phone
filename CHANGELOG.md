@@ -164,6 +164,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.12.9]
+- Root cause of flat glass fixed: the ambient backdrop used to sit outside the haze source (only the tab content had hazeSource), so glass could never blur it. Backdrop and tab content now share one haze source; the bottom bar stays a sibling drawn after it, never a child. The detail bottom bar and the Edit Contact save pill were checked too: both already sit as siblings after their content, so they pick up the backdrop blur as well.
+- Invisible text fixed centrally: LiquidGlassPill, LiquidGlassChip, LiquidGlassCard, GlassListCard and LiquidGlassPopupSurface now pin their content color to onSurface, so Text without an explicit color no longer falls back to black on dark glass. The Favorites name and the Paste label on the keypad also carry an explicit onSurface color.
+- Quick-redial Recent pills (icon + name) now keep a 44dp minimum height, and an empty or still-loading list shows no pills at all instead of empty ones.
+- In-call screen with the keypad open no longer scrolls: the layout always fits. The avatar shrinks to 56dp (animated) and the SIM label hides while name, number and timer stay; the keypad grid takes the remaining height with four equal rows, each key centered in its cell and capped at 76dp so keys shrink on small screens instead of overflowing; the Speaker/Hide/Mute row keeps its fixed height and the end-call button sits at the bottom at full size, never clipped.
+- Edit Contact: the form's bottom clearance is now the save pill height + the navigation bar inset + 16dp, so the last card is never covered by the floating pill; the screen background is transparent like the other tabs, so the status bar area and the body match and the backdrop shows through.
+- Bottom bar widths: Small 62%, Medium 75% with a 360dp maximum, Large 82%. The droplet inset stays 4dp.
+
 ## [0.12.8]
 - Ambient backdrop now shows on Contacts and Keypad too: their roots go transparent whenever Backdrop is not Off and Pure black dark mode is off, like Recents. List cards stay opaque.
 - Keypad Paste chip: no more clipboard toast on screen open. The chip appears only when the clip description holds plain text (metadata only, no toast), shows a generic "Paste" label, and reads + validates the text only on tap (spaces, dashes and parentheses removed, optional leading +, 5 to 15 digits); a non-number pastes nothing and hides the chip.

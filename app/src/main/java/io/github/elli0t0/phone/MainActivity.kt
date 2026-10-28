@@ -288,20 +288,27 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
             .background(MaterialTheme.colorScheme.background)
             .nestedScroll(barScrollConnection)
     ) {
-        // Ambient backdrop first, behind the NavHost: the tab
-        // screens leave their gaps transparent (item D) so it
-        // shows through, and glass blurs it.
-        AmbientBackdrop()
-        PhoneNavHost(
-            navController = navController,
-            startDestination = startDestination,
-            defaultStartTabRoute = appSettings.defaultStartTab.route,
-            animationOption = appSettings.animationOption,
-            onContactsBarVisibilityChanged = { showContactsBar = it },
-            pendingDialNumber = pendingDialNumber,
-            onDialNumberConsumed = { pendingDialNumber = null },
+        // Backdrop + tab content share one haze source, so glass
+        // can actually blur the backdrop: the backdrop used to sit
+        // outside the source (only the NavHost had hazeSource), so
+        // glass only ever blurred the tab content and read as flat
+        // over the backdrop. The bar stays a sibling drawn after
+        // this source box, never a child of it.
+        Box(
             modifier = Modifier.fillMaxSize().hazeSource(hazeState)
-        )
+        ) {
+            AmbientBackdrop()
+            PhoneNavHost(
+                navController = navController,
+                startDestination = startDestination,
+                defaultStartTabRoute = appSettings.defaultStartTab.route,
+                animationOption = appSettings.animationOption,
+                onContactsBarVisibilityChanged = { showContactsBar = it },
+                pendingDialNumber = pendingDialNumber,
+                onDialNumberConsumed = { pendingDialNumber = null },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
         // The bar hides and shows with a slide + fade when entering or
         // leaving inner screens, and slides up on app start. Reduced
         // fades only; Off is instant.

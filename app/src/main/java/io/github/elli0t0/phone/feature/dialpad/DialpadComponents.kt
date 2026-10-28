@@ -593,6 +593,10 @@ fun QuickRedialChips(
     onRedial: (QuickRedialEntry) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Never render empty pills: an empty or still-loading list, or
+    // entries with no name, show nothing at all.
+    val visibleEntries = entries.filter { it.label.isNotBlank() }
+    if (visibleEntries.isEmpty()) return
     val spacing = LocalSpacing.current
     Column(modifier = modifier) {
         Text(
@@ -606,8 +610,11 @@ fun QuickRedialChips(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        entries.forEachIndexed { index, entry ->
-            val chipModifier = Modifier.weight(1f).testTag("dialpad_quick_redial_$index")
+        visibleEntries.forEachIndexed { index, entry ->
+            val chipModifier = Modifier
+                .weight(1f)
+                .heightIn(min = 44.dp)
+                .testTag("dialpad_quick_redial_$index")
             if (LocalAppSettings.current.glassDialpad) {
                 val source = remember { MutableInteractionSource() }
                 LiquidGlassPill(
@@ -714,6 +721,7 @@ fun FavoritesStrip(
                         style = MaterialTheme.typography.labelMedium.copy(
                             textDirection = TextDirection.Content
                         ),
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center
@@ -765,6 +773,7 @@ fun ClipboardChip(
                     Text(
                         text = stringResource(id = R.string.dialpad_paste),
                         style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -780,6 +789,7 @@ fun ClipboardChip(
                 Text(
                     text = stringResource(id = R.string.dialpad_paste),
                     style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
