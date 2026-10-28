@@ -51,16 +51,11 @@ import io.github.elli0t0.phone.core.design.LiquidGlassChip
 import io.github.elli0t0.phone.core.design.LiquidGlassPill
 import io.github.elli0t0.phone.core.design.LiquidGlassPillShape
 import io.github.elli0t0.phone.core.design.LocalAppSettings
-import io.github.elli0t0.phone.core.design.LocalHazeState
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
-import androidx.compose.runtime.CompositionLocalProvider
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.dialogEnter
 import io.github.elli0t0.phone.core.design.firstLoadReveal
 import io.github.elli0t0.phone.core.design.liquidGlass
-import io.github.elli0t0.phone.navigation.StickyGlassTopBar
 import io.github.elli0t0.phone.core.permissions.ContactsPermissionState
 import io.github.elli0t0.phone.core.permissions.ContactsPermissionStatus
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
@@ -187,10 +182,6 @@ private fun ContactsContent(
         if (uiState.allContacts.isNotEmpty()) listRevealed = true
     }
     val listState = rememberLazyListState()
-    // This list's own haze state: the sticky bar blurs only the
-    // list (provided around the bar), while the rest of the screen
-    // stays on the shared MainActivity state.
-    val listHaze = remember { HazeState() }
     val contactCount = uiState.allContacts.size
     val countText = if (contactCount == 1) {
         stringResource(id = R.string.contacts_count_single, contactCount)
@@ -304,58 +295,6 @@ private fun ContactsContent(
                 }
             }
         }
-        // Compact-bar buttons: plain icon buttons, no pills. Same
-        // handlers, tags and icons as the header's pill versions.
-        val groupsIconButton: @Composable RowScope.() -> Unit = {
-            IconButton(
-                onClick = onGroupsClick,
-                modifier = Modifier.testTag("button_groups_pill")
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_group),
-                    contentDescription = stringResource(id = R.string.groups_title),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-        val compactContactsActions: @Composable RowScope.() -> Unit = {
-            IconButton(
-                onClick = onAddContactClick,
-                modifier = Modifier.testTag("button_add_contact")
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_add),
-                    contentDescription = stringResource(id = R.string.cd_add_contact),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-            IconButton(
-                onClick = {
-                    if (searchVisible) onClearSearch()
-                    searchVisible = !searchVisible
-                },
-                modifier = Modifier.testTag("button_search_contacts")
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_search),
-                    contentDescription = stringResource(id = R.string.cd_search),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Box {
-                IconButton(
-                    onClick = { menuExpanded = true },
-                    modifier = Modifier.testTag("button_contacts_menu")
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_more_vert),
-                        contentDescription = stringResource(id = R.string.cd_more_options),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                contactsMenu()
-            }
-        }
         val topBarPills: @Composable RowScope.() -> Unit = {
             groupsPill()
             Spacer(modifier = Modifier.width(PhoneDimens.contactsTopBarPillGap))
@@ -382,18 +321,11 @@ private fun ContactsContent(
         } else if (uiState.filteredContacts.isEmpty() && uiState.searchQuery.isNotEmpty()) {
             SearchEmptyState(query = uiState.searchQuery)
         } else {
-        // Items use the list's own haze state: an item effect on the
-        // shared state would draw the shared area while the shared
-        // source is recording it, which crashes (Haze 1.5.3). With the
-        // list state, the list area is filtered out for its own items,
-        // so item glass renders tint + fill only.
-        CompositionLocalProvider(LocalHazeState provides listHaze) {
         LazyColumn(
             state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = spacing.screenHorizontalPadding)
-                .hazeSource(listHaze)
                 .testTag("contacts_lazy_column"),
             // Clearance above the overlaid bottom bar:
             // bar height + nav-bar inset + 16dp gap.
@@ -550,21 +482,6 @@ private fun ContactsContent(
                 }
             }
         }
-        }
-        }
-        // Sticky glass top bar at the top of the list area once the
-        // header starts scrolling away. Plain icon buttons here, not
-        // the header's pills. It blurs only this list: the list has
-        // its own haze state, provided here, while the rest of the
-        // screen stays on the shared one.
-        CompositionLocalProvider(LocalHazeState provides listHaze) {
-            StickyGlassTopBar(
-                title = stringResource(id = R.string.tab_contacts),
-                listState = listState,
-                modifier = Modifier.align(Alignment.TopCenter),
-                leftContent = groupsIconButton,
-                actions = compactContactsActions
-            )
         }
         }
     }

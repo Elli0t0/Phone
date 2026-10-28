@@ -82,10 +82,6 @@ import io.github.elli0t0.phone.LocalAppSnackbarHostState
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalAppSettings
-import io.github.elli0t0.phone.core.design.LocalHazeState
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
-import androidx.compose.runtime.CompositionLocalProvider
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.LiquidGlassPopupSurface
 import io.github.elli0t0.phone.core.design.Motion
@@ -93,7 +89,6 @@ import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.dialogEnter
 import io.github.elli0t0.phone.core.design.liquidGlass
-import io.github.elli0t0.phone.navigation.StickyGlassTopBar
 import io.github.elli0t0.phone.core.permissions.CallLogPermissionStatus
 import io.github.elli0t0.phone.core.permissions.rememberCallLogPermissionState
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
@@ -166,10 +161,6 @@ fun RecentsScreen(
     var filterMenuExpanded by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
-    // This list's own haze state: the sticky bar blurs only the
-    // list (provided around the bar), while the rest of the screen
-    // stays on the shared MainActivity state.
-    val listHaze = remember { HazeState() }
     val simAccounts = remember(context) { io.github.elli0t0.phone.core.telecom.TelecomHelper.getCallCapablePhoneAccounts(context) }
     val recentsScope = androidx.compose.runtime.rememberCoroutineScope()
 
@@ -540,17 +531,10 @@ fun RecentsScreen(
             // bottom behind the bar, and a second gradient double-dimmed it.
             when (val status = permissionState.status) {
                 is CallLogPermissionStatus.Granted -> {
-                    // Items use the list's own haze state: an item effect on the
-                    // shared state would draw the shared area while the shared
-                    // source is recording it, which crashes (Haze 1.5.3). With the
-                    // list state, the list area is filtered out for its own items,
-                    // so item glass renders tint + fill only.
-                    CompositionLocalProvider(LocalHazeState provides listHaze) {
                     LazyColumn(
                         state = listState,
                         modifier = Modifier
                             .fillMaxSize()
-                            .hazeSource(listHaze)
                             .testTag("recents_call_list"),
                         // Clearance above the overlaid bottom bar:
                         // bar height + nav-bar inset + 16dp gap.
@@ -673,7 +657,6 @@ fun RecentsScreen(
                             }
                         }
                     }
-                    }
                 }
                 is CallLogPermissionStatus.NotAsked,
                 is CallLogPermissionStatus.Denied -> {
@@ -696,18 +679,6 @@ fun RecentsScreen(
                 }
             }
             }
-        }
-        // Sticky glass top bar at the very top of the screen (outer
-        // box, full width, no Scaffold inset above it). It blurs
-        // only this list: the list has its own haze state, provided
-        // here, while the rest of the screen stays on the shared one.
-        CompositionLocalProvider(LocalHazeState provides listHaze) {
-            StickyGlassTopBar(
-                title = stringResource(id = R.string.app_name),
-                listState = listState,
-                modifier = Modifier.align(Alignment.TopCenter),
-                actions = headerActions
-            )
         }
         }
     }

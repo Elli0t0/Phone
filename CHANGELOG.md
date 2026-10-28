@@ -164,6 +164,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.13.6]
+
+- Sticky top bar removed: Recents and Contacts go back to the header-only look — the large header with title and pills scrolls away with the list, no floating bar. The per-list haze states and the list-item haze providers go away with it (they only existed for the bar), along with the bar-only compact buttons and the header-height measurement.
+- No other changes.
+
 ## [0.13.5]
 
 - Contacts crash fixed: opening the Contacts tab crashed on the first draw with Haze's "haze nodes can not draw hazeChild nodes" error. Cause: the glass header pills blur with the shared haze state, but since 0.13.3 they sit inside the list's own haze source, so Haze includes the shared area for them and draws it while the shared source is recording it. The list items now read the list's own haze state (same for Recents, which would hit the same crash with glass cards on), so item glass renders tint + fill only and the sticky bar keeps blurring the list.
