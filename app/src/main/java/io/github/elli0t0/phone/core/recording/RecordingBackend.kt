@@ -34,4 +34,7 @@ interface RecordingBackend {
     /** One-time wireless-debugging pairing; only the ADB backend supports it. */
     suspend fun pair(code: String): Result<Unit> =
         Result.failure(UnsupportedOperationException("Pairing not supported"))
+
+    /** ADB overrides: deletes the persisted identity so the next pairing starts fresh. */
+    suspend fun resetPairing() {}
 }

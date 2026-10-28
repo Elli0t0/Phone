@@ -87,7 +87,7 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
         RecordingController(
             context,
             ShizukuRecordingBackend(context),
-            AdbRecordingBackend(context),
+            AdbRecordingBackend(context, settingsRepository),
             settingsRepository,
             recordingsRepository
         )

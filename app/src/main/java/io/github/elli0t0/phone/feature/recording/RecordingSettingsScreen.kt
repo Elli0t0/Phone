@@ -19,33 +19,44 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.recording.BackendStatus
+import io.github.elli0t0.phone.core.recording.PairResult
 import io.github.elli0t0.phone.core.recording.RecordingSession
 import io.github.elli0t0.phone.data.recordings.RecordingEntity
 import io.github.elli0t0.phone.data.settings.model.RecordingBackendKind
@@ -111,8 +122,23 @@ fun RecordingSettingsScreen(
     val playError by viewModel.playError.collectAsStateWithLifecycle()
     val playingId by viewModel.playingId.collectAsStateWithLifecycle()
     val positionMs by viewModel.positionMs.collectAsStateWithLifecycle()
+    val backendDiagnostic by viewModel.backendDiagnostic.collectAsStateWithLifecycle()
+    val pairResult by viewModel.pairResult.collectAsStateWithLifecycle()
+    val manualPort by viewModel.manualPort.collectAsStateWithLifecycle()
+    val clipboardManager = LocalClipboardManager.current
 
     LaunchedEffect(Unit) { viewModel.refresh() }
+
+    // Returning from system Settings must re-probe: the wireless
+    // debugging toggle changed while Phone was in the background.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) viewModel.refresh()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     val statusText = if (backendKind == RecordingBackendKind.ADB) {
         when (status) {
@@ -215,6 +241,35 @@ fun RecordingSettingsScreen(
                                 color = MaterialTheme.colorScheme.error
                             )
                         }
+                        if (backendKind == RecordingBackendKind.ADB && backendDiagnostic != null) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            SelectionContainer {
+                                Text(
+                                    text = backendDiagnostic!!,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                            TextButton(onClick = {
+                                clipboardManager.setText(AnnotatedString(backendDiagnostic!!))
+                            }) {
+                                Text(text = stringResource(id = R.string.recording_copy_details))
+                            }
+                        }
+                        val result = pairResult
+                        if (result != null) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            when (result) {
+                                PairResult.Paired -> Text(
+                                    text = stringResource(id = R.string.recording_pair_success),
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                is PairResult.Failed -> Text(
+                                    text = result.message,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (backendKind == RecordingBackendKind.ADB) {
@@ -268,6 +323,69 @@ fun RecordingSettingsScreen(
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = stringResource(id = R.string.recording_pair_hint),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = stringResource(id = R.string.recording_adb_needs_wifi),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (backendKind == RecordingBackendKind.ADB) {
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = stringResource(id = R.string.recording_advanced_title),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = stringResource(id = R.string.recording_connection_port),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            OutlinedTextField(
+                                value = manualPort?.toString() ?: "",
+                                onValueChange = { text ->
+                                    val digits = text.filter { it.isDigit() }
+                                    if (digits.isEmpty()) {
+                                        viewModel.setManualPort(null)
+                                    } else {
+                                        val port = digits.toIntOrNull()
+                                        if (port != null && port in 1..65535) {
+                                            viewModel.setManualPort(port)
+                                        }
+                                    }
+                                },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = stringResource(id = R.string.recording_connection_port_hint),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(
+                                onClick = { viewModel.resetPairing() },
+                                enabled = !busy
+                            ) {
+                                Text(text = stringResource(id = R.string.recording_action_reset_pairing))
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = stringResource(id = R.string.recording_reset_hint),
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }

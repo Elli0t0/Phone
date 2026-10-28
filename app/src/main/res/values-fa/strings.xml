@@ -131,4 +131,16 @@
     <string name="recording_needed_adb_not_running">ضبط به روشن بودن اشکال‌زدایی بی‌سیم و اتصال گوشی به Wi-Fi نیاز دارد. کمک‌کننده هنگام نیاز دوباره راه‌اندازی می‌شود.</string>
     <string name="recording_needed_adb_error">ضبط ناموفق بود. وضعیت را در تنظیمات ← ضبط تماس بررسی کنید و دوباره تلاش کنید.</string>
     <string name="call_action_stop_recording">توقف ضبط</string>
+    <string name="recording_error_no_wifi">اشکال‌زدایی بی‌سیم فقط روی Wi-Fi کار می‌کند. به Wi-Fi وصل شوید.</string>
+    <string name="recording_error_wd_off">اشکال‌زدایی بی‌سیم خاموش است.</string>
+    <string name="recording_error_service_not_found">سرویس پیدا نشد. VPN را خاموش کنید و اشکال‌زدایی بی‌سیم را خاموش و دوباره روشن کنید.</string>
+    <string name="recording_error_key_not_accepted">کلید پذیرفته نشد. «Phone» را در دستگاه‌های جفت‌شده فراموش کنید، «بازنشانی جفت کردن» را بزنید و دوباره جفت کنید.</string>
+    <string name="recording_copy_details">کپی جزئیات</string>
+    <string name="recording_pair_success">جفت شد</string>
+    <string name="recording_advanced_title">پیشرفته</string>
+    <string name="recording_connection_port">درگاه اتصال</string>
+    <string name="recording_connection_port_hint">در صفحه‌ی اشکال‌زدایی بی‌سیم به‌صورت «نشانی IP و درگاه» نمایش داده می‌شود</string>
+    <string name="recording_action_reset_pairing">بازنشانی جفت کردن</string>
+    <string name="recording_reset_hint">پیش از جفت کردن دوباره، «Phone» را در فهرست دستگاه‌های جفت‌شده‌ی سامانه فراموش کنید.</string>
+    <string name="recording_adb_needs_wifi">به Wi-Fi نیاز دارد. اشکال‌زدایی بی‌سیم را روشن نگه دارید. اگر پس از خاموش کردن آن ضبط متوقف شد، اشکال‌زدایی USB را فعال کنید (به کابل نیاز نیست): ضبط‌کننده را زنده نگه می‌دارد.</string>
 </resources>

@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Environment
 import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
+import io.github.elli0t0.phone.core.recording.adb.AdbRecordingBackend
 import io.github.elli0t0.phone.data.call.CallRepository
 import io.github.elli0t0.phone.data.call.CallState
 import io.github.elli0t0.phone.data.recordings.RecordingEntity
@@ -41,6 +42,12 @@ sealed interface RecordingSession {
     ) : RecordingSession
 }
 
+/** Result of one pairing attempt, shown in-app as well as by notification. */
+sealed interface PairResult {
+    data object Paired : PairResult
+    data class Failed(val message: String) : PairResult
+}
+
 /**
  * Owns a recording session end to end: MediaStore file, privileged
  * capture, foreground-service indicator, and the metadata row. The
@@ -52,7 +59,7 @@ sealed interface RecordingSession {
 class RecordingController(
     private val context: Context,
     private val shizukuBackend: RecordingBackend,
-    private val adbBackend: RecordingBackend,
+    private val adbBackend: AdbRecordingBackend,
     private val settingsRepository: SettingsRepository,
     private val recordingsRepository: RecordingsRepository
 ) {
@@ -71,6 +78,31 @@ class RecordingController(
     val backendStatus: StateFlow<BackendStatus> = activeBackendKind
         .flatMapLatest { kind -> backendFor(kind).status }
         .stateIn(scope, SharingStarted.Eagerly, BackendStatus.NOT_RUNNING)
+
+    /** Diagnostic detail for the last ADB probe; null when healthy. */
+    val backendDiagnostic: StateFlow<String?> = adbBackend.lastError
+
+    /** Latest pairing attempt result, published by PairCodeReceiver. */
+    private val _pairResult = MutableStateFlow<PairResult?>(null)
+    val pairResult: StateFlow<PairResult?> = _pairResult.asStateFlow()
+
+    fun publishPairResult(result: PairResult) {
+        _pairResult.value = result
+    }
+
+    /** Optional manual ADB port from Settings; used only when NSD discovery fails. */
+    val manualPort: StateFlow<Int?> = settingsRepository.settingsFlow
+        .map { it.adbManualPort }
+        .stateIn(scope, SharingStarted.Eagerly, null)
+
+    suspend fun setManualPort(port: Int?) {
+        settingsRepository.setAdbManualPort(port)
+    }
+
+    suspend fun resetPairing() {
+        activeBackend().resetPairing()
+        refreshBackendStatus()
+    }
 
     private fun backendFor(kind: RecordingBackendKind): RecordingBackend =
         if (kind == RecordingBackendKind.ADB) adbBackend else shizukuBackend

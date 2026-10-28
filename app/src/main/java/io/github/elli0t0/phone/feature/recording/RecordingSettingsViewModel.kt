@@ -2,12 +2,21 @@ package io.github.elli0t0.phone.feature.recording
 
 import android.content.Context
 import android.content.Intent
+import android.database.ContentObserver
 import android.media.MediaPlayer
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import io.github.elli0t0.phone.core.recording.BackendStatus
+import io.github.elli0t0.phone.core.recording.PairResult
 import io.github.elli0t0.phone.core.recording.RecordingController
 import io.github.elli0t0.phone.core.recording.RecordingSession
 import io.github.elli0t0.phone.core.recording.adb.openWirelessDebugging
@@ -34,6 +43,9 @@ class RecordingSettingsViewModel(
 
     val backendStatus: StateFlow<BackendStatus> = controller.backendStatus
     val backendKind: StateFlow<RecordingBackendKind> = controller.activeBackendKind
+    val backendDiagnostic: StateFlow<String?> = controller.backendDiagnostic
+    val pairResult: StateFlow<PairResult?> = controller.pairResult
+    val manualPort: StateFlow<Int?> = controller.manualPort
     val session: StateFlow<RecordingSession> = controller.state
     val lastError: StateFlow<String?> = controller.lastError
     val recordings: StateFlow<List<RecordingEntity>> = recordingsRepository.recordings
@@ -53,12 +65,66 @@ class RecordingSettingsViewModel(
     val positionMs: StateFlow<Long> = _positionMs.asStateFlow()
     private var ticker: Job? = null
 
+    private var refreshJob: Job? = null
+
+    /** Re-probes when Wi-Fi appears or vanishes. */
+    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+            refresh()
+        }
+
+        override fun onLost(network: Network) {
+            refresh()
+        }
+    }
+
+    /** Re-probes when wireless debugging is toggled in system Settings. */
+    private val wifiSettingObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+        override fun onChange(selfChange: Boolean) {
+            refresh()
+        }
+    }
+
+    init {
+        runCatching {
+            val manager = appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+            manager?.registerNetworkCallback(
+                NetworkRequest.Builder()
+                    .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                    .build(),
+                networkCallback
+            )
+        }
+        runCatching {
+            appContext.contentResolver.registerContentObserver(
+                Settings.Global.getUriFor("adb_wifi_enabled"),
+                false,
+                wifiSettingObserver
+            )
+        }
+    }
+
     fun refresh() {
-        viewModelScope.launch { controller.refreshBackendStatus() }
+        // A fresh trigger cancels a stale NSD discovery instead of
+        // stacking probes when several triggers fire together.
+        refreshJob?.cancel()
+        refreshJob = viewModelScope.launch { controller.refreshBackendStatus() }
     }
 
     fun setBackend(kind: RecordingBackendKind) {
         viewModelScope.launch { controller.setBackend(kind) }
+    }
+
+    fun setManualPort(port: Int?) {
+        viewModelScope.launch { controller.setManualPort(port) }
+    }
+
+    fun resetPairing() {
+        viewModelScope.launch {
+            _busy.value = true
+            controller.resetPairing()
+            _busy.value = false
+        }
     }
 
     /** Posts the pairing notification and opens Developer options. */
@@ -162,6 +228,13 @@ class RecordingSettingsViewModel(
 
     override fun onCleared() {
         stopPlayback()
+        runCatching {
+            val manager = appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+            manager?.unregisterNetworkCallback(networkCallback)
+        }
+        runCatching {
+            appContext.contentResolver.unregisterContentObserver(wifiSettingObserver)
+        }
         super.onCleared()
     }
 

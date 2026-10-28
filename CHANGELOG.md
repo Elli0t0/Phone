@@ -164,6 +164,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.15.4]
+
+- ADB recording diagnostics: the status page now shows the specific reason instead of a bare "Not paired yet" — Wi-Fi missing, wireless debugging off, NSD service not found (with the VPN note), or key rejected — as selectable text with a Copy details button. Only an auth failure still maps to NOT_PAIRED; other connect failures show the raw error.
+- Connects robustly: tries 127.0.0.1 first, then the NSD host, each with a 10 s timeout, and reuses the working endpoint for the helper bootstrap (with one fresh discovery if it went stale).
+- Advanced card: optional "Connection port" (used only when NSD discovery fails) and "Reset pairing" (deletes the persisted key; forget "Phone" in system Paired devices first).
+- Pairing result now shows in-app ("Paired" or the error), not only in the notification; pairing discovery timeout raised to 30 s.
+- Helper launch detaches with nohup + setsid (nohup-only fallback) and polls up to 8 s, so it survives the ADB session closing; after the first successful connect, adb_allowed_connection_time is set to 0 so the authorization does not expire.
+- Status auto-refreshes on screen resume, on Wi-Fi changes, and when wireless debugging is toggled; a note explains the USB-debugging trick for keeping the recorder alive. Test recording stays disabled until READY and already showed the real error.
+
 ## [0.15.3]
 
 - Fixes built-in ADB pairing not sticking: Kadb's identity defaulted to an in-memory key, so pairing authorized a key that vanished when the app process died — the next status check then reported Not paired even though pairing had succeeded. The private key is now persisted in app-private storage, so one pairing survives restarts and updates.

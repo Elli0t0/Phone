@@ -520,5 +520,17 @@
     <string name="recording_needed_adb_not_running">Recording needs wireless debugging on and the phone on Wi-Fi. The helper restarts on demand.</string>
     <string name="recording_needed_adb_error">Recording failed. Check the status in Settings → Call recording and try again.</string>
     <string name="call_action_stop_recording">Stop rec.</string>
+    <string name="recording_error_no_wifi">Wireless debugging only works on Wi-Fi. Connect to Wi-Fi.</string>
+    <string name="recording_error_wd_off">Wireless debugging is off.</string>
+    <string name="recording_error_service_not_found">Service not found. Turn off VPN and toggle Wireless debugging off/on.</string>
+    <string name="recording_error_key_not_accepted">Key not accepted. Forget \'Phone\' in Paired devices, tap Reset pairing, pair again.</string>
+    <string name="recording_copy_details">Copy details</string>
+    <string name="recording_pair_success">Paired</string>
+    <string name="recording_advanced_title">Advanced</string>
+    <string name="recording_connection_port">Connection port</string>
+    <string name="recording_connection_port_hint">Shown on the Wireless debugging screen as IP address &amp; Port</string>
+    <string name="recording_action_reset_pairing">Reset pairing</string>
+    <string name="recording_reset_hint">Forget \'Phone\' in the system\'s Paired devices list before pairing again.</string>
+    <string name="recording_adb_needs_wifi">Needs Wi-Fi. Keep Wireless debugging on. If recording stops after you turn it off, enable USB debugging (no cable needed): it keeps the recorder alive.</string>
 </resources>
 

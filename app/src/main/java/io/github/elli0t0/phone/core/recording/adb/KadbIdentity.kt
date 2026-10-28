@@ -4,7 +4,6 @@ import android.content.Context
 import com.flyfishxu.kadb.cert.KadbCert
 import com.flyfishxu.kadb.cert.KadbPrivateKeyStore
 import java.io.File
-import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Kadb's identity defaults to an in-memory key: pairing authorizes a key
@@ -14,12 +13,14 @@ import java.util.concurrent.atomic.AtomicBoolean
  * (and app updates); only clearing app data or forgetting the pairing in
  * system Settings invalidates it.
  */
-private val configured = AtomicBoolean(false)
+fun kadbKeyFile(context: Context): File = File(context.filesDir, "kadb/adbkey.pem")
 
+/**
+ * No once-guard on purpose: Reset pairing deletes the file and
+ * re-configures, so the next use generates a fresh key.
+ */
 fun ensureKadbIdentity(context: Context) {
-    if (!configured.compareAndSet(false, true)) return
-    val file = File(context.filesDir, "kadb/adbkey.pem")
-    KadbCert.configure(store = FilePrivateKeyStore(file))
+    KadbCert.configure(store = FilePrivateKeyStore(kadbKeyFile(context)))
 }
 
 /** Minimal file store for Kadb's private key; no new dependency needed. */

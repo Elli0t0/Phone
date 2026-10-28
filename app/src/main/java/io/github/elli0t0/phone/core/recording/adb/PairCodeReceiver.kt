@@ -8,6 +8,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.RemoteInput
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.recording.PairResult
 import io.github.elli0t0.phone.core.recording.RecordingForegroundService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -30,7 +31,21 @@ class PairCodeReceiver : BroadcastReceiver() {
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
                 val app = context.applicationContext as PhoneApplication
-                val result = app.container.recordingController.pairAdb(code)
+                val controller = app.container.recordingController
+                val result = controller.pairAdb(code)
+                // In-app feedback too, not only the notification: the
+                // settings screen shows this line when the user returns.
+                controller.publishPairResult(
+                    if (result.isSuccess) {
+                        PairResult.Paired
+                    } else {
+                        PairResult.Failed(
+                            result.exceptionOrNull()?.message
+                                ?: context.getString(R.string.recording_pair_failed_text)
+                        )
+                    }
+                )
+                controller.refreshBackendStatus()
                 postResult(context, result.isSuccess, result.exceptionOrNull()?.message)
             } finally {
                 pending.finish()
