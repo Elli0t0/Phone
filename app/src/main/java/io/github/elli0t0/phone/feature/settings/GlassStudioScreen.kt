@@ -330,7 +330,10 @@ fun GlassStudioScreen(
 }
 
 // Slider row mirroring the Font size scale slider: label + value on
-// top, thin-track slider with the vertical-bar thumb below.
+// top, thin-track slider with the vertical-bar thumb below. The
+// thumb slot is an experimental Material3 API, so this row needs its
+// own opt-in (the page-level opt-in does not cover it).
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun GlassSliderRow(
     title: String,
