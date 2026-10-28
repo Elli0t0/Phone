@@ -3,6 +3,8 @@ package io.github.elli0t0.phone.core.recording.shizuku
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import android.os.Binder
+import android.os.Parcel
 import android.os.ParcelFileDescriptor
 import android.util.Log
 import io.github.elli0t0.phone.core.recording.WavWriter
@@ -16,8 +18,11 @@ import java.nio.ByteBuffer
  * this class by reflection, so it needs a public no-arg constructor and
  * a ProGuard keep rule. The user-service process is not killed on
  * unbind, so it idles after a recording until the next bind reuses it.
+ * The IPC surface is a hand-written Binder protocol (RecordingIpc),
+ * not AIDL: the CI unit-test graph never runs the aidl task, so a
+ * generated stub would not exist at compile time.
  */
-class RecordingUserService : IRecordingService.Stub() {
+class RecordingUserService : Binder() {
 
     private val lock = Any()
     private var captureThread: Thread? = null
@@ -26,7 +31,35 @@ class RecordingUserService : IRecordingService.Stub() {
     private var output: FileOutputStream? = null
     private var pcmBytes = 0L
 
-    override fun startRecording(fd: ParcelFileDescriptor?): Int {
+    override fun onTransact(code: Int, data: Parcel, reply: Parcel?, flags: Int): Boolean {
+        when (code) {
+            RecordingIpc.TRANSACTION_START -> {
+                data.enforceInterface(RecordingIpc.DESCRIPTOR)
+                val fd = ParcelFileDescriptor.CREATOR.createFromParcel(data)
+                val result = startRecording(fd)
+                reply?.writeNoException()
+                reply?.writeInt(result)
+                return true
+            }
+            RecordingIpc.TRANSACTION_STOP -> {
+                data.enforceInterface(RecordingIpc.DESCRIPTOR)
+                val result = stopRecording()
+                reply?.writeNoException()
+                reply?.writeLong(result)
+                return true
+            }
+            RecordingIpc.TRANSACTION_IS_RECORDING -> {
+                data.enforceInterface(RecordingIpc.DESCRIPTOR)
+                val result = isRecording()
+                reply?.writeNoException()
+                reply?.writeInt(if (result) 1 else 0)
+                return true
+            }
+            else -> return super.onTransact(code, data, reply, flags)
+        }
+    }
+
+    fun startRecording(fd: ParcelFileDescriptor?): Int {
         if (fd == null) return 1
         synchronized(lock) {
             if (captureThread != null) return 2
@@ -93,7 +126,7 @@ class RecordingUserService : IRecordingService.Stub() {
         }
     }
 
-    override fun stopRecording(): Long {
+    fun stopRecording(): Long {
         val thread = synchronized(lock) { captureThread } ?: return -1
         stopRequested = true
         // Unblock a pending read so the loop can exit promptly.
@@ -124,7 +157,7 @@ class RecordingUserService : IRecordingService.Stub() {
         }
     }
 
-    override fun isRecording(): Boolean = synchronized(lock) { captureThread != null }
+    fun isRecording(): Boolean = synchronized(lock) { captureThread != null }
 
     companion object {
         private const val TAG = "PhoneRecording"

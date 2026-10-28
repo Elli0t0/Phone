@@ -490,6 +490,7 @@ private fun PostDialDialog(
     }
 }
 
+@Composable
 private fun RecordingStatusDialog(
     title: String,
     body: String,

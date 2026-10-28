@@ -28,9 +28,10 @@ import kotlin.coroutines.resume
 
 /**
  * Shizuku backend: binds Phone's own UserService into Shizuku's
- * shell-privileged process and drives it over AIDL. The app process
- * never touches call audio itself. The service stays bound for the
- * app's lifetime once bound; unbinding would leave the privileged
+ * shell-privileged process and drives it over a hand-written Binder
+ * protocol (RecordingIpc, not AIDL — see that file for why). The app
+ * process never touches call audio itself. The service stays bound for
+ * the app's lifetime once bound; unbinding would leave the privileged
  * process idling anyway, so there is nothing to gain from it.
  */
 class ShizukuRecordingBackend(private val context: Context) : RecordingBackend {
@@ -39,7 +40,7 @@ class ShizukuRecordingBackend(private val context: Context) : RecordingBackend {
     private val _status = MutableStateFlow(BackendStatus.NOT_RUNNING)
     override val status: StateFlow<BackendStatus> = _status.asStateFlow()
 
-    private var service: IRecordingService? = null
+    private var service: RecordingServiceClient? = null
     private var bound = false
     private val bindMutex = Mutex()
     private var bindDeferred: CompletableDeferred<Boolean>? = null
@@ -58,7 +59,7 @@ class ShizukuRecordingBackend(private val context: Context) : RecordingBackend {
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
-            service = binder?.let { IRecordingService.Stub.asInterface(it) }
+            service = binder?.let { RecordingServiceClient(it) }
             bound = true
             bindDeferred?.complete(true)
             bindDeferred = null

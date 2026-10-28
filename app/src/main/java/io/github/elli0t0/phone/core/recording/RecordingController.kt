@@ -136,6 +136,7 @@ class RecordingController(
             context.startForegroundService(
                 Intent(context, RecordingForegroundService::class.java)
             )
+            Unit
         }
     }
 
