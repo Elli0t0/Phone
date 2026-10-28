@@ -12,7 +12,7 @@ val appVersionCode = versionMajor * 10000 + versionMinor * 100 + versionPatch
 
 android {
   namespace = "io.github.elli0t0.phone"
-  compileSdk = 35
+  compileSdk = 36
 
   defaultConfig {
     applicationId = "io.github.elli0t0.phone"

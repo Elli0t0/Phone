@@ -166,7 +166,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.15.1]
 
-- Fixes the 0.15.0 build: Kadb's SPAKE2 dependency (com.github.Flyfish233:spake2-java) is published only on JitPack, not on Maven Central, so dependency resolution failed. The build now includes the JitPack repository, scoped to that one group. No app code changes.
+- Fixes the 0.15.0 build: Kadb's SPAKE2 dependency (com.github.Flyfish233:spake2-java) is published only on JitPack, not on Maven Central, so dependency resolution failed. The build now includes the JitPack repository, scoped to that one group. Kadb's library also requires compiling against Android API 36+, so compileSdk moves 35 → 36 (targetSdk stays 35, minSdk stays 29 — no runtime behavior change). No app code changes.
 
 ## [0.15.0]
 
