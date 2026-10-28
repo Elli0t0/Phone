@@ -60,9 +60,12 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import io.github.elli0t0.phone.core.design.LocalHazeState
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import dev.chrisbanes.haze.HazeProgressive
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.PhoneTheme
 import io.github.elli0t0.phone.core.design.bottomBarSizeSpec
+import io.github.elli0t0.phone.core.design.glassBlurModifier
+import io.github.elli0t0.phone.core.design.isDarkGlassTheme
 import io.github.elli0t0.phone.core.permissions.SetupPermissions
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.navigation.PhoneBottomBar
@@ -384,6 +387,51 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
                             0.0f to Color.Transparent,
                             0.5f to MaterialTheme.colorScheme.background.copy(alpha = PhoneDimens.bottomScrimMaxAlpha),
                             1.0f to MaterialTheme.colorScheme.background.copy(alpha = PhoneDimens.bottomScrimMaxAlpha)
+                        )
+                    )
+            )
+        }
+        // Short progressive blur/scrim band directly above the bar:
+        // content scrolling toward the bar dissolves into blur (0 at
+        // the band's top edge, full at the bar's edge) instead of
+        // staying readable behind the tab labels. Same fade as the
+        // scrim, so it appears and hides with the bar. Plain Box, no
+        // clickable, so touches pass through to the list.
+        AnimatedVisibility(
+            visible = showBottomBar,
+            enter = fadeIn(tween(
+                durationMillis = Motion.scaledDurationMs(
+                    Motion.Durations.Medium,
+                    animationOption
+                ),
+                easing = Motion.Easings.Emphasized
+            )),
+            exit = fadeOut(tween(
+                durationMillis = Motion.scaledDurationMs(
+                    Motion.Durations.Short,
+                    animationOption
+                ),
+                easing = Motion.Easings.Exit
+            )),
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            Box(
+                modifier = Modifier
+                    .navigationBarsPadding()
+                    .padding(
+                        bottom = PhoneDimens.bottomBarBottomMargin +
+                            bottomBarSizeSpec(appSettings.bottomBarSize).height
+                    )
+                    .fillMaxWidth()
+                    .height(24.dp)
+                    .then(
+                        glassBlurModifier(
+                            isDarkGlassTheme(),
+                            blurRadius = 36.dp,
+                            progressive = HazeProgressive.verticalGradient(
+                                startIntensity = 0f,
+                                endIntensity = 1f
+                            )
                         )
                     )
             )

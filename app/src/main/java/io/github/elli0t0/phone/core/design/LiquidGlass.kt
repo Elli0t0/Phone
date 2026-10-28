@@ -63,6 +63,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import dev.chrisbanes.haze.HazeProgressive
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
@@ -97,9 +98,16 @@ private fun blurAvailable(hazeState: HazeState?, reduceTransparency: Boolean): B
  * at the intensity's radius, under the spec tint (dark #1C1C1E at 55%,
  * light white at 60%, scaled by GlassIntensity). Applied after clip so
  * the blur stays inside the shape, before the fill/sheen/rim.
+ * Internal (not private) so the sticky top bar and the bottom-bar
+ * band can share it; [progressive] fades the blur across the surface
+ * (a band below a bar uses full-to-zero).
  */
 @Composable
-private fun glassBlurModifier(dark: Boolean, blurRadius: Dp? = null): Modifier {
+internal fun glassBlurModifier(
+    dark: Boolean,
+    blurRadius: Dp? = null,
+    progressive: HazeProgressive? = null
+): Modifier {
     val hazeState = LocalHazeState.current
     val settings = LocalAppSettings.current
     if (!blurAvailable(hazeState, settings.reduceTransparency)) return Modifier
@@ -131,7 +139,8 @@ private fun glassBlurModifier(dark: Boolean, blurRadius: Dp? = null): Modifier {
             backgroundColor = Color.Transparent,
             tint = HazeTint(tint),
             blurRadius = radius
-        )
+        ),
+        progressive = progressive
     )
 }
 
@@ -141,7 +150,7 @@ private fun glassBlurModifier(dark: Boolean, blurRadius: Dp? = null): Modifier {
  * text can never collide with bar labels.
  */
 @Composable
-private fun glassSolidBaseModifier(dark: Boolean): Modifier {
+internal fun glassSolidBaseModifier(dark: Boolean): Modifier {
     val settings = LocalAppSettings.current
     val solid = settings.reduceTransparency ||
         Build.VERSION.SDK_INT < Build.VERSION_CODES.S

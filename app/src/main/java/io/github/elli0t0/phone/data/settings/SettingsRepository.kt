@@ -206,7 +206,7 @@ class DataStoreSettingsRepository(
         val barSize = barSizeStr?.let { runCatching { BottomBarSize.valueOf(it) }.getOrNull() } ?: BottomBarSize.MEDIUM
 
         val headerSizeStr = prefs[Keys.HEADER_SIZE]
-        val headerSize = headerSizeStr?.let { runCatching { HeaderSize.valueOf(it) }.getOrNull() } ?: HeaderSize.STANDARD
+        val headerSize = headerSizeStr?.let { runCatching { HeaderSize.valueOf(it) }.getOrNull() } ?: HeaderSize.COMPACT
 
         val barShrink = prefs[Keys.BOTTOM_BAR_SHRINK] ?: false
 

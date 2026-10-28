@@ -55,12 +55,13 @@ object PhoneDimens {
     val menuCornerRadius = 28.dp
     val menuElevation = 16.dp
     // Collapsing page header (Recents, Contacts): expanded header is
-    // ~38% of the screen (min 260dp), title centered at ~40% of its
-    // height, action row at the bottom 12dp above the first list item.
+    // a fraction of the screen (Compact 16%, Standard 30%, Large
+    // 38%), at least 160dp, title centered at ~40% of its height
+    // with the action icons on the same row as the title.
     val headerHeightFraction = 0.38f
-    val headerHeightFractionCompact = 0.22f
+    val headerHeightFractionCompact = 0.16f
     val headerHeightFractionStandard = 0.30f
-    val headerMinHeight = 220.dp
+    val headerMinHeight = 160.dp
     val headerTitleCenterFraction = 0.40f
     val headerTitleExpandedSize = 34.sp
     val headerActionsBottomPaddingExpanded = 12.dp

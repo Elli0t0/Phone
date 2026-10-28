@@ -221,7 +221,7 @@ data class AppSettings(
     val listDensity: ListDensity = ListDensity.DEFAULT,
     val cardStyle: CardStyle = CardStyle.ROUNDED,
     val fontSizeScale: Float = 1.0f,
-    val headerSize: HeaderSize = HeaderSize.STANDARD,
+    val headerSize: HeaderSize = HeaderSize.COMPACT,
     val animationOption: AnimationOption = AnimationOption.ON,
     val showBottomBarLabels: Boolean = true,
     val bottomBarStyle: BottomBarStyle = BottomBarStyle.GLASS,

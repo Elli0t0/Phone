@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -22,22 +23,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import dev.chrisbanes.haze.HazeProgressive
 import io.github.elli0t0.phone.core.design.GlassSurface
 import io.github.elli0t0.phone.core.design.LiquidGlassPillShape
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.glassBlurModifier
+import io.github.elli0t0.phone.core.design.glassSolidBaseModifier
+import io.github.elli0t0.phone.core.design.isDarkGlassTheme
 import io.github.elli0t0.phone.data.settings.model.HeaderSize
 
 /**
  * Expanded header height: the Header size setting's fraction of the
- * screen (Compact 22%, Standard 30%, Large 38%), at least 220dp.
+ * screen (Compact 16%, Standard 30%, Large 38%), at least 160dp.
  */
 @Composable
 fun pageHeaderHeight(): Dp {
@@ -56,10 +63,10 @@ fun pageHeaderHeight(): Dp {
 /**
  * Large page header (Recents, Contacts) as the first LazyColumn item.
  * Title centered at ~40% of the header height, subtitle under it, action
- * row right-aligned at the bottom, 12dp above the first list item.
- * [bottomContent] is an optional full-width row pinned to the header
- * bottom (e.g. Contacts' split top bar): it lives inside the header
- * block, so the header still caps at its height fraction. Pass either
+ * row on the same row as the title, right-aligned.
+ * [bottomContent] is an optional full-width row on the title row too
+ * (e.g. Contacts' split top bar): it lives inside the header block,
+ * so the header still caps at its height fraction. Pass either
  * [actions] or [bottomContent], not both — they would overlap.
  * Scrolls away naturally: no snapping, no height animation.
  */
@@ -111,22 +118,24 @@ fun PageHeaderItem(
                 )
             }
         }
-        // Action row at the bottom, right-aligned.
+        // Action row on the title row, right-aligned: the same -10%
+        // offset as the title block, so the icons sit on the title's
+        // row instead of far below it.
         Row(
             modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(bottom = PhoneDimens.headerActionsBottomPaddingExpanded),
+                .align(Alignment.CenterEnd)
+                .offset(y = headerHeight * (PhoneDimens.headerTitleCenterFraction - 0.5f)),
             verticalAlignment = Alignment.CenterVertically,
             content = actions
         )
-        // Full-width bottom row (Contacts' split top bar): pinned to
-        // the header bottom so the block stays one fraction tall.
+        // Full-width row (Contacts' split top bar): on the title row
+        // too, so the block stays one fraction tall.
         if (bottomContent != null) {
             Row(
                 modifier = Modifier
-                    .align(Alignment.BottomCenter)
+                    .align(Alignment.Center)
                     .fillMaxWidth()
-                    .padding(bottom = spacing.small),
+                    .offset(y = headerHeight * (PhoneDimens.headerTitleCenterFraction - 0.5f)),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
                 content = bottomContent
@@ -196,6 +205,109 @@ fun FloatingActionsPill(
                 pillContent()
             }
         }
+    }
+}
+
+/**
+ * Sticky glass top bar for a tab list (Recents, Contacts): an overlay
+ * drawn after the list (a sibling of it, never a list item), covering
+ * the status-bar inset plus a compact 56dp title row, with the
+ * collapsed title centered and the header's action icons reachable.
+ * Invisible while the large header is fully visible; fades in as the
+ * header scrolls away, driven by the list state against the header
+ * height. The bar blurs the scrolling content under it with the
+ * existing glass style, plus a 16dp progressive band below it (full
+ * blur fading to 0) so content dissolves instead of clipping. The
+ * content is only composed once scrolling starts: popups in the
+ * actions ignore alpha, so composing them at alpha 0 would open
+ * menus from an invisible bar (the FloatingActionsPill lesson).
+ * Falls back to the solid treatment when blur is unavailable
+ * (Reduce transparency / API < 31) via the shared glass helpers.
+ * Other tab lists can reuse it by passing their title and actions.
+ */
+@Composable
+fun StickyGlassTopBar(
+    title: String,
+    listState: LazyListState,
+    modifier: Modifier = Modifier,
+    leftContent: @Composable RowScope.() -> Unit = {},
+    actions: @Composable RowScope.() -> Unit = {}
+) {
+    val contentVisible by remember(listState) {
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 0 ||
+                listState.firstVisibleItemScrollOffset > 0
+        }
+    }
+    if (!contentVisible) return
+    val headerHeightPx = with(LocalDensity.current) { pageHeaderHeight().toPx() }
+    val barAlpha by remember(listState, headerHeightPx) {
+        derivedStateOf {
+            when {
+                listState.firstVisibleItemIndex > 0 -> 1f
+                listState.firstVisibleItemScrollOffset <= 0 -> 0f
+                else -> (listState.firstVisibleItemScrollOffset / headerHeightPx)
+                    .coerceIn(0f, 1f)
+            }
+        }
+    }
+    val dark = isDarkGlassTheme()
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .graphicsLayer { alpha = barAlpha }
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(glassBlurModifier(dark))
+                .then(glassSolidBaseModifier(dark))
+                .statusBarsPadding()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    content = leftContent
+                )
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    content = actions
+                )
+            }
+        }
+        // Progressive blur band below the bar: full blur at the bar's
+        // edge fading to 0 over 16dp, so scrolling content dissolves
+        // instead of clipping under a hard edge.
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(16.dp)
+                .then(
+                    glassBlurModifier(
+                        dark,
+                        progressive = HazeProgressive.verticalGradient(
+                            startIntensity = 1f,
+                            endIntensity = 0f
+                        )
+                    )
+                )
+        )
     }
 }
 

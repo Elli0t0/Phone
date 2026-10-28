@@ -764,7 +764,7 @@ fun PhoneBottomBar(
                 // highlights, and no drop shadow under the glass.
                 // Dark fill thinned to 0.16 so the colored backdrop
                 // shows through; light keeps 0.20.
-                containerAlpha = if (darkTheme) 0.16f else 0.20f,
+                containerAlpha = if (darkTheme) 0.30f else 0.20f,
                 blurRadius = 36.dp,
                 // Studio edge light scales the bar's rim (Soft =
                 // current behavior); the top is brighter now.

@@ -164,6 +164,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.13.1]
+- Sticky glass top bar on Recents and Contacts: an overlay above the list (never a list item) covering the status-bar inset plus a 56dp title row, with the collapsed title centered and the header's action icons reachable. Invisible while the large header is fully visible, fading in as it scrolls away; content scrolling under it blurs through the shared glass style plus a 16dp progressive band below the bar (full blur fading to 0). The top scroll fade is gone on these screens, and the old floating actions pill is replaced by the bar (its content is only composed once scrolling starts, so no menus can open from an invisible bar). Reduce transparency / API < 31 fall back to the solid treatment.
+- Header size now defaults to Compact, and Compact is ~16% of screen height (min 160dp) so the first list item starts higher; the other sizes are unchanged. Action icons sit on the title row now, not far below it.
+- Bottom bar legibility: dark fill raised to 0.30 (blur stays 36dp, size/droplet/rim/highlights untouched), plus a short 24dp progressive blur/scrim band directly above the bar so content dissolves instead of reading through the tab labels.
+- Recents ripple: only the header row of a call group is clickable now, with the bounded ripple clipped to it; the expanded details and action buttons no longer share that clickable/indication.
+- "My profile" avatar now always shows the initial letter: the device profile's photo tile was rendering instead of the letter, so the profile row no longer passes a photo to the avatar.
+- Duplicates banner is a slim glass row now (one line: count + Merge text button + close icon, max ~56dp high); dismiss behaviour and tags unchanged.
+
 ## [0.13.0]
 - Call timer no longer drifts: duration is derived from the real connect time on every tick (Details connect time converted once to the monotonic clock, or the elapsed clock captured when the call becomes ACTIVE), so activity recreation, screen-off and backgrounding can neither reset nor lag it. Ticks align to whole-second boundaries, so no second is ever shown twice, and the loop keeps ticking with the keypad open.
 - Recents expand and long-press menu are mutually exclusive now: long-press collapses any expanded row first, then opens the menu; tapping a row dismisses any open menu. The menu is anchored to the row's end side (the time slot) with a small offset, so it opens over the row's right half and never over expanded details text.

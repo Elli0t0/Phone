@@ -85,7 +85,7 @@ import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.dialogEnter
 import io.github.elli0t0.phone.core.design.liquidGlass
-import io.github.elli0t0.phone.core.design.scrollEdgeFade
+import io.github.elli0t0.phone.navigation.StickyGlassTopBar
 import io.github.elli0t0.phone.core.permissions.CallLogPermissionStatus
 import io.github.elli0t0.phone.core.permissions.rememberCallLogPermissionState
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
@@ -96,7 +96,7 @@ import io.github.elli0t0.phone.feature.setup.SetupWarningCard
 import io.github.elli0t0.phone.feature.recents.ui.CallLogRow
 import io.github.elli0t0.phone.feature.recents.ui.DaySectionCard
 import io.github.elli0t0.phone.feature.recents.ui.RecentsEmptyState
-import io.github.elli0t0.phone.navigation.FloatingActionsPill
+
 import io.github.elli0t0.phone.navigation.PageHeaderItem
 import java.time.Instant
 import java.time.LocalDate
@@ -516,7 +516,6 @@ fun RecentsScreen(
                         state = listState,
                         modifier = Modifier
                             .fillMaxSize()
-                            .scrollEdgeFade(listState, bottom = false)
                             .testTag("recents_call_list"),
                         // Clearance above the overlaid bottom bar:
                         // bar height + nav-bar inset + 16dp gap.
@@ -660,13 +659,13 @@ fun RecentsScreen(
                     )
                 }
             }
-            // Floating glass pill with the header actions, overlaid at the
-            // top-right of the list area once the header scrolls off.
-            FloatingActionsPill(
+            // Sticky glass top bar, overlaid at the top of the list
+            // area once the header starts scrolling away; it carries
+            // the same header actions, so the pill is gone.
+            StickyGlassTopBar(
+                title = stringResource(id = R.string.app_name),
                 listState = listState,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 8.dp),
+                modifier = Modifier.align(Alignment.TopCenter),
                 actions = headerActions
             )
             }

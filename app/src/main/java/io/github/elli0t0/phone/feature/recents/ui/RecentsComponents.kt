@@ -215,9 +215,23 @@ fun CallLogRow(
                 }
             }
         ) {
+            // No clickable on this column anymore: the header row
+            // below owns tap/long-press, so the ripple stays bounded
+            // to it instead of covering the whole expanded card.
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .testTag("call_row_${group.id}")
+            ) {
+                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = spacing.medium)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(PhoneDimens.recentsRowHeight)
+                    // Only the header row is clickable: the bounded
+                    // ripple stays clipped to this row's shape, and
+                    // the expanded details and action buttons no
+                    // longer share its clickable/indication.
                     .bouncyClick(rowSource)
                     .combinedClickable(
                         interactionSource = rowSource,
@@ -228,14 +242,7 @@ fun CallLogRow(
                         // coexist, so the menu can never cover
                         // expanded details text.
                         onLongClick = { onCollapse(); onShowMenu() }
-                    )
-                    .testTag("call_row_${group.id}")
-            ) {
-                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = spacing.medium)) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(PhoneDimens.recentsRowHeight),
+                    ),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Call Type Icon

@@ -52,13 +52,13 @@ import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.dialogEnter
 import io.github.elli0t0.phone.core.design.firstLoadReveal
 import io.github.elli0t0.phone.core.design.liquidGlass
-import io.github.elli0t0.phone.core.design.scrollEdgeFade
+import io.github.elli0t0.phone.navigation.StickyGlassTopBar
 import io.github.elli0t0.phone.core.permissions.ContactsPermissionState
 import io.github.elli0t0.phone.core.permissions.ContactsPermissionStatus
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 import io.github.elli0t0.phone.data.contacts.model.DuplicateGroup
 import io.github.elli0t0.phone.feature.contacts.ContactsUiState
-import io.github.elli0t0.phone.navigation.FloatingActionsPill
+
 import io.github.elli0t0.phone.navigation.PageHeaderItem
 
 @Composable
@@ -180,7 +180,10 @@ private fun ContactsContent(
         // Top-bar pills: Groups on the left, actions on the right.
         // Shared by the top-bar list item and the floating pill
         // (same lambda, one menu).
-        val topBarPills: @Composable RowScope.() -> Unit = {
+        // Split for the sticky top bar: the Groups pill goes left of
+        // the collapsed title, the add/search/menu actions right.
+        // topBarPills keeps composing both, so the header is unchanged.
+        val groupsPill: @Composable RowScope.() -> Unit = {
             ContactsPillButton(
                 onClick = onGroupsClick,
                 testTag = "button_groups_pill"
@@ -198,7 +201,8 @@ private fun ContactsContent(
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
-            Spacer(modifier = Modifier.width(PhoneDimens.contactsTopBarPillGap))
+        }
+        val contactsActions: @Composable RowScope.() -> Unit = {
             ContactsPillContainer {
                 IconButton(
                     onClick = onAddContactClick,
@@ -272,6 +276,11 @@ private fun ContactsContent(
                 }
             }
         }
+        val topBarPills: @Composable RowScope.() -> Unit = {
+            groupsPill()
+            Spacer(modifier = Modifier.width(PhoneDimens.contactsTopBarPillGap))
+            contactsActions()
+        }
 
         if (searchVisible) {
             ContactSearchBar(
@@ -297,7 +306,6 @@ private fun ContactsContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = spacing.screenHorizontalPadding)
-                .scrollEdgeFade(listState, bottom = false)
                 .testTag("contacts_lazy_column"),
             // Clearance above the overlaid bottom bar:
             // bar height + nav-bar inset + 16dp gap.
@@ -455,22 +463,16 @@ private fun ContactsContent(
             }
         }
         }
-        // Floating glass pill with the top-bar pills, overlaid at the
-        // top-right of the list area once the header scrolls off.
-        FloatingActionsPill(
+        // Sticky glass top bar, overlaid at the top of the list area
+        // once the header starts scrolling away; it carries the same
+        // pills (Groups left, actions right), so the pill is gone.
+        // The duplicates banner scrolls under it like any other item.
+        StickyGlassTopBar(
+            title = stringResource(id = R.string.tab_contacts),
             listState = listState,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 8.dp),
-            actions = topBarPills,
-            // Top bar now lives inside the header item (index 0):
-            // the pill appears once the header scrolls off. While the
-            // duplicates banner is shown it is item 1, so the pill
-            // waits until the banner scrolls off too instead of
-            // floating over it (and dimming what sits beneath it).
-            // The actions are already pills themselves, so no wrap.
-            revealAfterIndex = if (uiState.showDuplicatesCard && uiState.searchQuery.isEmpty()) 1 else 0,
-            wrapInPill = false
+            modifier = Modifier.align(Alignment.TopCenter),
+            leftContent = groupsPill,
+            actions = contactsActions
         )
         }
     }

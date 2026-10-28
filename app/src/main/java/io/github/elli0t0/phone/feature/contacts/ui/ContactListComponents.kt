@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -23,6 +24,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -328,8 +330,13 @@ fun ProfileRow(
                 ),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // The profile row always shows the initial letter, never
+            // the device profile's photo tile: that tile was rendering
+            // instead of the letter (a lowercase "a"), while every
+            // other avatar routes through contactInitial. Passing no
+            // photo forces ContactAvatar's initial branch.
             ContactAvatar(
-                photoUri = contact.photoUri,
+                photoUri = null,
                 displayName = displayName,
                 size = PhoneDimens.contactsRowAvatarSize,
                 modifier = Modifier.testTag("avatar_profile")
@@ -356,8 +363,8 @@ fun DuplicatesCard(
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
-    // Compact centered card (~70% width): centered text, Merge pill
-    // button below it, small circular dismiss at the top-right.
+    // Slim glass row, one line, max ~56dp high: count text, Merge
+    // text button, close icon. Dismiss behaviour and tags unchanged.
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -365,52 +372,46 @@ fun DuplicatesCard(
         contentAlignment = Alignment.Center
     ) {
         LiquidGlassCard(
-            modifier = Modifier
-                .fillMaxWidth(PhoneDimens.contactsDuplicatesCardWidthFraction),
+            modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.extraLarge,
             floating = false
         ) {
-            Column(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(spacing.medium),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .heightIn(max = 56.dp)
+                    .padding(
+                        start = spacing.medium,
+                        end = spacing.small,
+                        top = spacing.small,
+                        bottom = spacing.small
+                    ),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(PhoneDimens.contactsDuplicatesDismissSize)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .clickable(onClick = onDismiss)
-                            .testTag("button_duplicates_card_dismiss"),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_close),
-                            contentDescription = stringResource(id = R.string.cd_dismiss),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(PhoneDimens.contactsDuplicatesDismissIconSize)
-                        )
-                    }
-                }
                 Text(
                     text = stringResource(id = R.string.duplicates_card_message, duplicateCount),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
                 )
-                Spacer(modifier = Modifier.height(spacing.small))
-                Button(
+                TextButton(
                     onClick = onMergeClick,
-                    shape = RoundedCornerShape(PhoneDimens.contactsPillCornerPercent),
                     modifier = Modifier.testTag("button_duplicates_card_merge")
                 ) {
                     Text(text = stringResource(id = R.string.duplicates_merge))
+                }
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.testTag("button_duplicates_card_dismiss")
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_close),
+                        contentDescription = stringResource(id = R.string.cd_dismiss),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(PhoneDimens.contactsDuplicatesDismissIconSize)
+                    )
                 }
             }
         }
