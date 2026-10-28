@@ -6,17 +6,17 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,7 +25,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -35,7 +35,6 @@ import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.core.design.GlassSurface
 import io.github.elli0t0.phone.core.design.LiquidGlassPillShape
 import io.github.elli0t0.phone.core.design.LocalAppSettings
-import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.glassBlurModifier
 import io.github.elli0t0.phone.core.design.glassSolidBaseModifier
@@ -43,31 +42,31 @@ import io.github.elli0t0.phone.core.design.isDarkGlassTheme
 import io.github.elli0t0.phone.data.settings.model.HeaderSize
 
 /**
- * Expanded header height: the Header size setting's fraction of the
- * screen (Compact 16%, Standard 30%, Large 38%), at least 160dp.
+ * Measured height of the content-based header block, written by
+ * PageHeaderItem's onSizeChanged and read by pageHeaderHeight()
+ * (the sticky bar fades in from it). Starts at the old minimum;
+ * the first layout pass corrects it before the bar can appear
+ * (the bar only composes once scrolling starts).
+ */
+private val measuredHeaderHeightState = mutableStateOf(PhoneDimens.headerMinHeight)
+
+/**
+ * Current page-header height: the measured height of the
+ * PageHeaderItem block (content-based, scaled by the Header size
+ * setting), not a screen fraction.
  */
 @Composable
-fun pageHeaderHeight(): Dp {
-    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
-    val fraction = when (LocalAppSettings.current.headerSize) {
-        HeaderSize.COMPACT -> PhoneDimens.headerHeightFractionCompact
-        HeaderSize.STANDARD -> PhoneDimens.headerHeightFractionStandard
-        HeaderSize.LARGE -> PhoneDimens.headerHeightFraction
-    }
-    return maxOf(
-        screenHeight * fraction,
-        PhoneDimens.headerMinHeight
-    )
-}
+fun pageHeaderHeight(): Dp = measuredHeaderHeightState.value
 
 /**
  * Large page header (Recents, Contacts) as the first LazyColumn item.
- * Title centered at ~40% of the header height, subtitle under it, action
- * row on the same row as the title, right-aligned.
- * [bottomContent] is an optional full-width row on the title row too
- * (e.g. Contacts' split top bar): it lives inside the header block,
- * so the header still caps at its height fraction. Pass either
- * [actions] or [bottomContent], not both — they would overlap.
+ * Content-based height, scaled by the Header size setting only
+ * (Compact 0.85x, Standard 1x, Large 1.2x): Row 1 is the split top
+ * bar (Contacts) or the actions (Recents, end aligned), Row 2 the
+ * centered title, Row 3 the subtitle. Nothing is absolutely
+ * positioned, so the rows cannot overlap each other or the next
+ * list item. The block reports its measured height for the sticky
+ * bar's fade.
  * Scrolls away naturally: no snapping, no height animation.
  */
 @Composable
@@ -78,67 +77,60 @@ fun PageHeaderItem(
     actions: @Composable RowScope.() -> Unit = {},
     bottomContent: (@Composable RowScope.() -> Unit)? = null
 ) {
-    val spacing = LocalSpacing.current
-    val headerHeight = pageHeaderHeight()
-    Box(
+    val scale = when (LocalAppSettings.current.headerSize) {
+        HeaderSize.COMPACT -> 0.85f
+        HeaderSize.STANDARD -> 1f
+        HeaderSize.LARGE -> 1.2f
+    }
+    val density = LocalDensity.current
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .height(headerHeight)
-            .background(Color.Transparent),
-        contentAlignment = Alignment.Center
+            .statusBarsPadding()
+            .padding(horizontal = 16.dp)
+            .padding(top = 12.dp * scale, bottom = 12.dp)
+            .onSizeChanged { size ->
+                measuredHeaderHeightState.value = with(density) { size.height.toDp() }
+            },
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp * scale)
     ) {
-        // Title block centered at ~40% of the header height: centered in
-        // the box, then shifted up by the 50% - 40% difference.
-        Column(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .offset(y = headerHeight * (PhoneDimens.headerTitleCenterFraction - 0.5f))
-                .padding(horizontal = spacing.screenHorizontalPadding),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.headlineLarge.copy(
-                    fontSize = PhoneDimens.headerTitleExpandedSize,
-                    fontWeight = FontWeight.Bold
-                ),
-                color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Center,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            if (subtitle != null) {
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-        // Action row on the title row, right-aligned: the same -10%
-        // offset as the title block, so the icons sit on the title's
-        // row instead of far below it.
-        Row(
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .offset(y = headerHeight * (PhoneDimens.headerTitleCenterFraction - 0.5f)),
-            verticalAlignment = Alignment.CenterVertically,
-            content = actions
-        )
-        // Full-width row (Contacts' split top bar): on the title row
-        // too, so the block stays one fraction tall.
+        // Row 1: the split top bar (Contacts: Groups pill start,
+        // actions pill end) or the actions (Recents, end aligned).
         if (bottomContent != null) {
             Row(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .fillMaxWidth()
-                    .offset(y = headerHeight * (PhoneDimens.headerTitleCenterFraction - 0.5f)),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
                 content = bottomContent
+            )
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+                content = actions
+            )
+        }
+        Text(
+            text = title,
+            style = MaterialTheme.typography.headlineLarge.copy(
+                fontSize = PhoneDimens.headerTitleExpandedSize * scale,
+                fontWeight = FontWeight.Bold
+            ),
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        if (subtitle != null) {
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
@@ -210,27 +202,26 @@ fun FloatingActionsPill(
 
 /**
  * Sticky glass top bar for a tab list (Recents, Contacts): an overlay
- * drawn after the list (a sibling of it, never a list item), pinned
- * to the top of a container already inset below the status bar
- * (Scaffold innerPadding) plus a compact 56dp title row, with the
- * collapsed title centered and the header's action icons reachable.
- * The bar adds no status inset itself: it used to, which double-
- * inset it below the Scaffold padding so it floated mid-list over
- * sharp rows. The body also paints the theme background under the
- * blur: if the haze effect draws nothing for this bar, the
- * background still hides the list so the title stays legible
- * (when the blur works it draws opaquely over this fill).
+ * drawn after the list (a sibling of it, never a list item), placed
+ * at the very top of the screen at full width (no Scaffold top inset
+ * above it), with the collapsed title centered and the header's
+ * action icons reachable. Total height is the status-bar inset plus
+ * a compact 56dp title row: the inner Row carries the status inset
+ * itself, so the blur covers the status-bar area too.
  * Invisible while the large header is fully visible; fades in as the
- * header scrolls away, driven by the list state against the header
- * height. The bar blurs the scrolling content under it with the
- * existing glass style, plus a 16dp fade band below it (blur
- * fading into the background) so content dissolves instead of clipping. The
+ * header scrolls away, driven by the list state against the measured
+ * header height. The bar blurs the scrolling content under it with
+ * the existing glass style, plus a 16dp fade band below it (theme
+ * background at 0.6 fading to transparent, no blur on the band
+ * itself) so content dissolves downward instead of clipping. The
  * content is only composed once scrolling starts: popups in the
  * actions ignore alpha, so composing them at alpha 0 would open
  * menus from an invisible bar (the FloatingActionsPill lesson).
  * Falls back to the solid treatment when blur is unavailable
  * (Reduce transparency / API < 31) via the shared glass helpers.
- * Other tab lists can reuse it by passing their title and actions.
+ * The compact bar renders plain icon buttons, never the
+ * large-header pills. Other tab lists can reuse it by passing
+ * their title and actions.
  */
 @Composable
 fun StickyGlassTopBar(
@@ -267,15 +258,14 @@ fun StickyGlassTopBar(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    MaterialTheme.colorScheme.background.copy(alpha = 0.92f)
-                )
                 .then(glassBlurModifier(dark))
                 .then(glassSolidBaseModifier(dark))
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 16.dp)
                     .height(56.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -300,29 +290,21 @@ fun StickyGlassTopBar(
                 )
             }
         }
-        // Fade band below the bar: uniform blur plus a background
-        // gradient (transparent at the bar's edge, opaque at the
-        // bottom) so scrolling content dissolves over 16dp instead
-        // of clipping under a hard edge.
+        // Fade band below the bar: theme background at 0.6 fading to
+        // transparent over 16dp, so scrolling content dissolves
+        // downward instead of clipping under a hard edge. No blur
+        // on the band itself — the gradient does the fading.
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(16.dp)
-                .then(glassBlurModifier(dark))
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(
-                                Color.Transparent,
-                                MaterialTheme.colorScheme.background
-                            )
-                        )
+                .background(
+                    Brush.verticalGradient(
+                        0f to MaterialTheme.colorScheme.background.copy(alpha = 0.6f),
+                        1f to Color.Transparent
                     )
-            )
-        }
+                )
+        )
     }
 }
 

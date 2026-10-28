@@ -61,6 +61,16 @@ fun ContactAvatar(
     // Soft two-tone pastel gradient, deterministic per name. The brush is
     // remembered: rebuilding it every composition re-created the shader.
     val gradient = avatarGradient(displayName)
+    // Dark initial on light gradients (average luminance over
+    // 0.5), white otherwise, so the letter stays legible on every
+    // pastel pair.
+    val initialColor = if (
+        (gradient.first.luminance() + gradient.second.luminance()) / 2f > 0.5f
+    ) {
+        Color(0xFF1C1B1F).copy(alpha = 0.85f)
+    } else {
+        Color.White
+    }
     val fallbackBackground = remember(gradient) {
         Brush.linearGradient(colors = listOf(gradient.first, gradient.second))
     }
@@ -109,7 +119,7 @@ fun ContactAvatar(
                         Text(
                             text = initial,
                             style = textStyle,
-                            color = Color.White
+                            color = initialColor
                         )
                     }
                     }
@@ -132,7 +142,7 @@ fun ContactAvatar(
                         Text(
                             text = initial,
                             style = textStyle,
-                            color = Color.White
+                            color = initialColor
                         )
                     }
                     }
@@ -150,7 +160,7 @@ fun ContactAvatar(
                 Text(
                     text = initial,
                     style = textStyle,
-                    color = Color.White
+                    color = initialColor
                 )
             }
         }

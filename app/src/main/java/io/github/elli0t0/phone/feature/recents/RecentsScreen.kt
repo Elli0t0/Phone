@@ -15,6 +15,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -64,6 +65,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -79,7 +81,9 @@ import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalHazeState
+import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
+import androidx.compose.runtime.CompositionLocalProvider
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.LiquidGlassPopupSurface
 import io.github.elli0t0.phone.core.design.Motion
@@ -160,7 +164,10 @@ fun RecentsScreen(
     var filterMenuExpanded by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
-    val hazeState = LocalHazeState.current
+    // This list's own haze state: the sticky bar blurs only the
+    // list (provided around the bar), while the rest of the screen
+    // stays on the shared MainActivity state.
+    val listHaze = remember { HazeState() }
     val simAccounts = remember(context) { io.github.elli0t0.phone.core.telecom.TelecomHelper.getCallCapablePhoneAccounts(context) }
     val recentsScope = androidx.compose.runtime.rememberCoroutineScope()
 
@@ -249,16 +256,31 @@ fun RecentsScreen(
         // gaps; only the list cards stay opaque.
         containerColor = Color.Transparent
     ) { innerPadding ->
+        // Outer box at the very top of the screen: the sticky bar
+        // lives here (full width, no Scaffold inset above it) while
+        // the list keeps its inner padding below.
+        Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Transparent)
-                .padding(innerPadding)
+                // No Scaffold top inset here: the sticky bar covers
+                // the status area itself and the header self-insets
+                // (PageHeaderItem), so the list starts at the top.
+                .padding(
+                    PaddingValues(
+                        start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
+                        top = 0.dp,
+                        end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
+                        bottom = innerPadding.calculateBottomPadding()
+                    )
+                )
                 .padding(horizontal = spacing.screenHorizontalPadding)
         ) {
             SetupWarningCard(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .statusBarsPadding()
                     .padding(bottom = spacing.small)
             )
 
@@ -519,15 +541,7 @@ fun RecentsScreen(
                         state = listState,
                         modifier = Modifier
                             .fillMaxSize()
-                            // This list is its own haze source: the
-                            // sticky bar is a sibling after it, so the
-                            // bar blurs the list itself (the proven
-                            // sibling pattern, same as the bottom bar
-                            // over the MainActivity source).
-                            .then(
-                                hazeState?.let { Modifier.hazeSource(it) }
-                                    ?: Modifier
-                            )
+                            .hazeSource(listHaze)
                             .testTag("recents_call_list"),
                         // Clearance above the overlaid bottom bar:
                         // bar height + nav-bar inset + 16dp gap.
@@ -671,16 +685,20 @@ fun RecentsScreen(
                     )
                 }
             }
-            // Sticky glass top bar, overlaid at the top of the list
-            // area once the header starts scrolling away; it carries
-            // the same header actions, so the pill is gone.
+            }
+        }
+        // Sticky glass top bar at the very top of the screen (outer
+        // box, full width, no Scaffold inset above it). It blurs
+        // only this list: the list has its own haze state, provided
+        // here, while the rest of the screen stays on the shared one.
+        CompositionLocalProvider(LocalHazeState provides listHaze) {
             StickyGlassTopBar(
                 title = stringResource(id = R.string.app_name),
                 listState = listState,
                 modifier = Modifier.align(Alignment.TopCenter),
                 actions = headerActions
             )
-            }
+        }
         }
     }
 }

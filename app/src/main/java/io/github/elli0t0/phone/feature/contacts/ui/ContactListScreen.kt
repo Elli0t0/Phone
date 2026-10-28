@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -39,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -48,7 +50,9 @@ import io.github.elli0t0.phone.core.design.LiquidGlassPill
 import io.github.elli0t0.phone.core.design.LiquidGlassPillShape
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalHazeState
+import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
+import androidx.compose.runtime.CompositionLocalProvider
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.dialogEnter
@@ -106,7 +110,17 @@ fun ContactListScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Transparent)
-                .padding(innerPadding)
+                // No Scaffold top inset here: the sticky bar covers
+                // the status area itself and the header self-insets
+                // (PageHeaderItem), so the list starts at the top.
+                .padding(
+                    PaddingValues(
+                        start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
+                        top = 0.dp,
+                        end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
+                        bottom = innerPadding.calculateBottomPadding()
+                    )
+                )
         ) {
             when (val status = permissionState.status) {
                 is ContactsPermissionStatus.Granted -> {
@@ -171,7 +185,10 @@ private fun ContactsContent(
         if (uiState.allContacts.isNotEmpty()) listRevealed = true
     }
     val listState = rememberLazyListState()
-    val hazeState = LocalHazeState.current
+    // This list's own haze state: the sticky bar blurs only the
+    // list (provided around the bar), while the rest of the screen
+    // stays on the shared MainActivity state.
+    val listHaze = remember { HazeState() }
     val contactCount = uiState.allContacts.size
     val countText = if (contactCount == 1) {
         stringResource(id = R.string.contacts_count_single, contactCount)
@@ -202,6 +219,46 @@ private fun ContactsContent(
                     text = stringResource(id = R.string.groups_title),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+        // Shared overflow menu (Settings, Find duplicates): used by
+        // both the header's pill actions and the compact bar's plain
+        // icon buttons, so the items exist exactly once.
+        val contactsMenu: @Composable () -> Unit = {
+            DropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { menuExpanded = false },
+                // Glass menu: an opaque surface under the glass
+                // keeps list content from bleeding through;
+                // the liquid-glass modifier adds sheen/rim/shadow.
+                // The Surface itself stays transparent so it does
+                // not double-draw.
+                modifier = Modifier
+                    .background(
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(PhoneDimens.menuCornerRadius)
+                    )
+                    .liquidGlass(
+                        shape = RoundedCornerShape(PhoneDimens.menuCornerRadius),
+                        floating = true
+                    )
+                    .dialogEnter(),
+                shape = RoundedCornerShape(PhoneDimens.menuCornerRadius),
+                containerColor = Color.Transparent,
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
+            ) {
+                DropdownMenuItem(
+                    text = { Text(text = stringResource(id = R.string.settings_title)) },
+                    onClick = { menuExpanded = false; onNavigateToSettings() },
+                    modifier = Modifier.testTag("button_settings")
+                )
+                DropdownMenuItem(
+                    text = { Text(text = stringResource(id = R.string.duplicates_find)) },
+                    onClick = { menuExpanded = false; onFindDuplicates() },
+                    enabled = !uiState.isFindingDuplicates,
+                    modifier = Modifier.testTag("button_find_duplicates")
                 )
             }
         }
@@ -241,42 +298,60 @@ private fun ContactsContent(
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    DropdownMenu(
-                        expanded = menuExpanded,
-                        onDismissRequest = { menuExpanded = false },
-                        // Glass menu: an opaque surface under the glass
-                        // keeps list content from bleeding through;
-                        // the liquid-glass modifier adds sheen/rim/shadow.
-                        // The Surface itself stays transparent so it does
-                        // not double-draw.
-                        modifier = Modifier
-                            .background(
-                                color = MaterialTheme.colorScheme.surface,
-                                shape = RoundedCornerShape(PhoneDimens.menuCornerRadius)
-                            )
-                            .liquidGlass(
-                                shape = RoundedCornerShape(PhoneDimens.menuCornerRadius),
-                                floating = true
-                            )
-                            .dialogEnter(),
-                        shape = RoundedCornerShape(PhoneDimens.menuCornerRadius),
-                        containerColor = Color.Transparent,
-                        tonalElevation = 0.dp,
-                        shadowElevation = 0.dp
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text(text = stringResource(id = R.string.settings_title)) },
-                            onClick = { menuExpanded = false; onNavigateToSettings() },
-                            modifier = Modifier.testTag("button_settings")
-                        )
-                        DropdownMenuItem(
-                            text = { Text(text = stringResource(id = R.string.duplicates_find)) },
-                            onClick = { menuExpanded = false; onFindDuplicates() },
-                            enabled = !uiState.isFindingDuplicates,
-                            modifier = Modifier.testTag("button_find_duplicates")
-                        )
-                    }
+                    contactsMenu()
                 }
+            }
+        }
+        // Compact-bar buttons: plain icon buttons, no pills. Same
+        // handlers, tags and icons as the header's pill versions.
+        val groupsIconButton: @Composable RowScope.() -> Unit = {
+            IconButton(
+                onClick = onGroupsClick,
+                modifier = Modifier.testTag("button_groups_pill")
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_group),
+                    contentDescription = stringResource(id = R.string.groups_title),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        val compactContactsActions: @Composable RowScope.() -> Unit = {
+            IconButton(
+                onClick = onAddContactClick,
+                modifier = Modifier.testTag("button_add_contact")
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_add),
+                    contentDescription = stringResource(id = R.string.cd_add_contact),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            IconButton(
+                onClick = {
+                    if (searchVisible) onClearSearch()
+                    searchVisible = !searchVisible
+                },
+                modifier = Modifier.testTag("button_search_contacts")
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_search),
+                    contentDescription = stringResource(id = R.string.cd_search),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Box {
+                IconButton(
+                    onClick = { menuExpanded = true },
+                    modifier = Modifier.testTag("button_contacts_menu")
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_more_vert),
+                        contentDescription = stringResource(id = R.string.cd_more_options),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                contactsMenu()
             }
         }
         val topBarPills: @Composable RowScope.() -> Unit = {
@@ -292,6 +367,7 @@ private fun ContactsContent(
                 onClear = { onClearSearch(); searchVisible = false },
                 modifier = Modifier
                     .fillMaxWidth()
+                    .statusBarsPadding()
                     .padding(horizontal = spacing.screenHorizontalPadding, vertical = spacing.small)
             )
         }
@@ -309,13 +385,7 @@ private fun ContactsContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = spacing.screenHorizontalPadding)
-                // This list is its own haze source: the sticky bar
-                // is a sibling after it, so the bar blurs the list
-                // itself (the proven sibling pattern, same as the
-                // bottom bar over the MainActivity source).
-                .then(
-                    hazeState?.let { Modifier.hazeSource(it) } ?: Modifier
-                )
+                .hazeSource(listHaze)
                 .testTag("contacts_lazy_column"),
             // Clearance above the overlaid bottom bar:
             // bar height + nav-bar inset + 16dp gap.
@@ -473,17 +543,20 @@ private fun ContactsContent(
             }
         }
         }
-        // Sticky glass top bar, overlaid at the top of the list area
-        // once the header starts scrolling away; it carries the same
-        // pills (Groups left, actions right), so the pill is gone.
-        // The duplicates banner scrolls under it like any other item.
-        StickyGlassTopBar(
-            title = stringResource(id = R.string.tab_contacts),
-            listState = listState,
-            modifier = Modifier.align(Alignment.TopCenter),
-            leftContent = groupsPill,
-            actions = contactsActions
-        )
+        // Sticky glass top bar at the top of the list area once the
+        // header starts scrolling away. Plain icon buttons here, not
+        // the header's pills. It blurs only this list: the list has
+        // its own haze state, provided here, while the rest of the
+        // screen stays on the shared one.
+        CompositionLocalProvider(LocalHazeState provides listHaze) {
+            StickyGlassTopBar(
+                title = stringResource(id = R.string.tab_contacts),
+                listState = listState,
+                modifier = Modifier.align(Alignment.TopCenter),
+                leftContent = groupsIconButton,
+                actions = compactContactsActions
+            )
+        }
         }
     }
 }
