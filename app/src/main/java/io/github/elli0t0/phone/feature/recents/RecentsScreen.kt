@@ -15,6 +15,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -256,36 +258,9 @@ fun RecentsScreen(
         // gaps; only the list cards stay opaque.
         containerColor = Color.Transparent
     ) { innerPadding ->
-        // Outer box at the very top of the screen: the sticky bar
-        // lives here (full width, no Scaffold inset above it) while
-        // the list keeps its inner padding below.
-        Box(modifier = Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Transparent)
-                // No Scaffold top inset here: the sticky bar covers
-                // the status area itself and the header self-insets
-                // (PageHeaderItem), so the list starts at the top.
-                .padding(
-                    PaddingValues(
-                        start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
-                        top = 0.dp,
-                        end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
-                        bottom = innerPadding.calculateBottomPadding()
-                    )
-                )
-                .padding(horizontal = spacing.screenHorizontalPadding)
-        ) {
-            SetupWarningCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .padding(bottom = spacing.small)
-            )
-
-            // Header actions: filter, search, menu. Shared by the header's
-            // action row and the floating pill (same lambda, one menu).
+            // Header actions: filter, search, menu. Declared here (not
+            // in the Column) so both the header's action row and the
+            // sticky bar in the outer box share one lambda, one menu.
             val headerActions: @Composable RowScope.() -> Unit = {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
@@ -460,6 +435,34 @@ fun RecentsScreen(
                     }
                 }
             }
+
+        // Outer box at the very top of the screen: the sticky bar
+        // lives here (full width, no Scaffold inset above it) while
+        // the list keeps its inner padding below.
+        Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Transparent)
+                // No Scaffold top inset here: the sticky bar covers
+                // the status area itself and the header self-insets
+                // (PageHeaderItem), so the list starts at the top.
+                .padding(
+                    PaddingValues(
+                        start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
+                        top = 0.dp,
+                        end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
+                        bottom = innerPadding.calculateBottomPadding()
+                    )
+                )
+                .padding(horizontal = spacing.screenHorizontalPadding)
+        ) {
+            SetupWarningCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(bottom = spacing.small)
+            )
 
             // Search Bar with "Search calls" placeholder, shown when the search icon is tapped
             if (searchVisible) {
