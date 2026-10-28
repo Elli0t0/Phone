@@ -164,6 +164,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.12.0] - 2026-10-28
+
+- Premium glass polish: one shared premium glass treatment (diagonal specular border, soft inner top highlight, diffuse shadow, backdrop saturation boost) applied to dialpad keys, in-call controls, popup sheets and the contact detail bar.
+- New "Dynamic highlights" setting (default on, off when Animations is Off): the premium specular border shifts with device tilt (rotation-vector sensor with accelerometer fallback, low-pass filtered, registered only while resumed).
+- Glass press feel: dialpad keys and in-call controls now press to 0.96 with a brighter fill and light haptic, releasing on a soft bouncy spring.
+- Call screens: the Default background is now a slow animated gradient built from the contact avatar's colors (two or three drifting blobs, 20-30s loops), falling back to the current blue for unknown callers; the ringing avatar pulse ring is unchanged.
+- Progressive scroll fades: Contacts, Recents and contact detail now fade content in under the top edge over ~24dp of scroll instead of a hard edge; contact detail also fades above its floating bar, while the tab lists keep the existing bottom-bar scrim (a second bottom gradient there would double-dim).
+- Dialpad number display: each new digit now pops in on a spring from 0.8 scale; backspace removal stays smooth via the animated row size.
+- Slide-to-answer shimmer now stops when Animations is Reduced or Off (it previously shimmered always) and is drawn in the draw phase instead of recomposing per frame.
+- Contact detail: the header avatar now parallaxes at 0.5x scroll speed and scales slightly on overscroll; the sticky glass action bar is unchanged.
+- Shared-element transition from rows to contact detail skipped: detail navigation lives in AnimatedContent inside ContactsScreen (plus a cross-tab handoff), not a shared NavHost route, so a shared-element scope cannot span it cleanly.
+
 ## [0.11.50] - 2026-10-28
 
 - Keypad favorites: each favorite now shows its name under the avatar, resolved the same way as the Contacts tab's favorite cards (blank names fall back to the number, then Unknown) with bidi isolation and content direction.

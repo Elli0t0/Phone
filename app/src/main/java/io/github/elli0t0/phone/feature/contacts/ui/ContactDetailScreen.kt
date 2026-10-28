@@ -54,6 +54,7 @@ import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
+import io.github.elli0t0.phone.core.design.rememberTilt
 import io.github.elli0t0.phone.core.telecom.CallManager
 import io.github.elli0t0.phone.core.telecom.SimCallHelper
 import io.github.elli0t0.phone.core.telecom.SimCallResolution
@@ -92,6 +93,8 @@ fun ContactDetailScreen(
     BackHandler(onBack = onBackClick)
     val context = LocalContext.current
     val spacing = LocalSpacing.current
+    // One tilt listener for the detail bar (Dynamic highlights).
+    val tilt = rememberTilt()
     // Read here, not inside placeCallWithSim: the handler is not a
     // @Composable context, so it cannot read a CompositionLocal.
     val defaultSim = LocalAppSettings.current.defaultSim
@@ -322,7 +325,8 @@ fun ContactDetailScreen(
                     onDeleteClick = {
                         showMoreMenu = false
                         onDeleteRequest()
-                    }
+                    },
+                    tilt = tilt
                 )
             }
         },

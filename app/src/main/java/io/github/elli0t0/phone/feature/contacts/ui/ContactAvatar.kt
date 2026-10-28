@@ -26,6 +26,17 @@ import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import io.github.elli0t0.phone.core.design.ContactAvatarGradients
 
+/**
+ * Deterministic avatar gradient for a name: the same pair
+ * [ContactAvatar] draws. Call screens reuse it for the
+ * avatar-colored background.
+ */
+fun avatarGradient(displayName: String): Pair<Color, Color> {
+    val index = ((displayName.hashCode() % ContactAvatarGradients.size) +
+        ContactAvatarGradients.size) % ContactAvatarGradients.size
+    return ContactAvatarGradients[index]
+}
+
 @Composable
 fun ContactAvatar(
     photoUri: String?,
@@ -40,9 +51,7 @@ fun ContactAvatar(
     val initial = displayName.trim().take(1).uppercase().ifBlank { "?" }
     // Soft two-tone pastel gradient, deterministic per name. The brush is
     // remembered: rebuilding it every composition re-created the shader.
-    val gradientIndex =
-        ((displayName.hashCode() % ContactAvatarGradients.size) + ContactAvatarGradients.size) % ContactAvatarGradients.size
-    val gradient = ContactAvatarGradients[gradientIndex]
+    val gradient = avatarGradient(displayName)
     val fallbackBackground = remember(gradient) {
         Brush.linearGradient(colors = listOf(gradient.first, gradient.second))
     }

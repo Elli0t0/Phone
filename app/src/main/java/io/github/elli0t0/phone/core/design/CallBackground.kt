@@ -76,18 +76,179 @@ private fun Color.darken(factor: Float): Color =
 
 /**
  * The full call-screen background: the animated aurora for AURORA,
- * the static brush for every other mode.
+ * the avatar-colored animated gradient for DEFAULT when a contact
+ * is known ([avatarColors]), the static brush for every other mode
+ * (and for DEFAULT with no contact, which keeps the current blue).
  */
 @Composable
 fun CallBackgroundLayer(
     background: CallBackground,
     accentColor: Long,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    avatarColors: Pair<Color, Color>? = null
 ) {
     if (background == CallBackground.AURORA) {
         AuroraBackground(accentColor = accentColor, modifier = modifier)
+    } else if (background == CallBackground.DEFAULT && avatarColors != null) {
+        AvatarGradientBackground(avatarColors = avatarColors, modifier = modifier)
     } else {
         Box(modifier = modifier.background(callBackgroundBrush(background, accentColor)))
+    }
+}
+
+/**
+ * Avatar-colored call background: a darkened vertical gradient of
+ * the avatar's two tones, with three soft radial blobs (both tones
+ * plus their blend) drifting very slowly. Animations ON: blobs drift
+ * on 20-30s loops. REDUCED: the same blobs, static. OFF: base
+ * gradient only. Cheap by design: radial falloff + alpha, no blur
+ * pass and no full-screen shader, mirroring the aurora.
+ */
+@Composable
+fun AvatarGradientBackground(
+    avatarColors: Pair<Color, Color>,
+    modifier: Modifier = Modifier
+) {
+    val option = LocalAppSettings.current.animationOption
+    BoxWithConstraints(modifier = modifier) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            avatarColors.first.darken(0.35f),
+                            avatarColors.second.darken(0.35f)
+                        )
+                    )
+                )
+        )
+        if (option != AnimationOption.OFF) {
+            if (option == AnimationOption.ON) {
+                AvatarBlobsAnimated(avatarColors, maxWidth, maxHeight)
+            } else {
+                AvatarBlobsStatic(avatarColors, maxWidth, maxHeight)
+            }
+        }
+    }
+}
+
+@Composable
+private fun AvatarBlobsAnimated(
+    avatarColors: Pair<Color, Color>,
+    maxWidth: Dp,
+    maxHeight: Dp
+) {
+    val transition = rememberInfiniteTransition(label = "avatarBlobs")
+    val ax by transition.animateFloat(
+        initialValue = -0.06f,
+        targetValue = 0.06f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 20000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "avatarAx"
+    )
+    val ay by transition.animateFloat(
+        initialValue = -0.04f,
+        targetValue = 0.04f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 24000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "avatarAy"
+    )
+    val bx by transition.animateFloat(
+        initialValue = 0.06f,
+        targetValue = -0.06f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 28000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "avatarBx"
+    )
+    val by by transition.animateFloat(
+        initialValue = 0.04f,
+        targetValue = -0.04f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 22000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "avatarBy"
+    )
+    val cx by transition.animateFloat(
+        initialValue = -0.05f,
+        targetValue = 0.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 30000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "avatarCx"
+    )
+    val cy by transition.animateFloat(
+        initialValue = 0.05f,
+        targetValue = -0.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 26000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "avatarCy"
+    )
+    AvatarBlobs(
+        avatarColors = avatarColors,
+        maxWidth = maxWidth,
+        maxHeight = maxHeight,
+        drifts = listOf(ax to ay, bx to by, cx to cy)
+    )
+}
+
+@Composable
+private fun AvatarBlobsStatic(
+    avatarColors: Pair<Color, Color>,
+    maxWidth: Dp,
+    maxHeight: Dp
+) {
+    AvatarBlobs(
+        avatarColors = avatarColors,
+        maxWidth = maxWidth,
+        maxHeight = maxHeight,
+        drifts = listOf(0f to 0f, 0f to 0f, 0f to 0f)
+    )
+}
+
+@Composable
+private fun AvatarBlobs(
+    avatarColors: Pair<Color, Color>,
+    maxWidth: Dp,
+    maxHeight: Dp,
+    drifts: List<Pair<Float, Float>>
+) {
+    val blobSize = maxWidth * 1.1f
+    val blend = Color(
+        red = (avatarColors.first.red + avatarColors.second.red) / 2f,
+        green = (avatarColors.first.green + avatarColors.second.green) / 2f,
+        blue = (avatarColors.first.blue + avatarColors.second.blue) / 2f,
+        alpha = 1f
+    )
+    Box(modifier = Modifier.fillMaxSize()) {
+        AuroraBlob(
+            color = avatarColors.first,
+            size = blobSize,
+            offsetX = maxWidth * -0.2f + maxWidth * drifts[0].first,
+            offsetY = maxHeight * -0.15f + maxHeight * drifts[0].second
+        )
+        AuroraBlob(
+            color = avatarColors.second,
+            size = blobSize,
+            offsetX = maxWidth * 0.35f + maxWidth * drifts[1].first,
+            offsetY = maxHeight * 0.05f + maxHeight * drifts[1].second
+        )
+        AuroraBlob(
+            color = blend,
+            size = blobSize,
+            offsetX = maxWidth * -0.15f + maxWidth * drifts[2].first,
+            offsetY = maxHeight * 0.45f + maxHeight * drifts[2].second
+        )
     }
 }
 

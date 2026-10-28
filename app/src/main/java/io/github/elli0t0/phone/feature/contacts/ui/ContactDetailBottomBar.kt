@@ -54,11 +54,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -111,7 +113,8 @@ fun ContactDetailBottomBar(
     onChangePhoto: () -> Unit,
     onRingtoneClick: () -> Unit,
     onDeleteClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    tilt: State<Offset>? = null
 ) {
     Box(
         modifier = modifier
@@ -182,7 +185,9 @@ fun ContactDetailBottomBar(
                     .fillMaxWidth(PhoneDimens.detailBottomBarWidthFraction)
                     .height(PhoneDimens.bottomBarHeight),
                 shape = RoundedCornerShape(PhoneDimens.bottomBarCornerPercent),
-                floating = true
+                floating = true,
+                premium = true,
+                tilt = tilt
             ) {
                 barContent()
             }

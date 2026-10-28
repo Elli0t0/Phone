@@ -64,6 +64,7 @@ import io.github.elli0t0.phone.core.design.dialogEnter
 import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
+import io.github.elli0t0.phone.core.design.rememberTilt
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.core.telecom.CallManager
 import io.github.elli0t0.phone.data.settings.model.ThemeMode
@@ -177,6 +178,8 @@ fun DialpadScreen(
     // Shared light haptic for every keypad tap (follows the system
     // haptics setting), replacing the two local View-based helpers.
     val lightHaptic = rememberLightHaptic()
+    // One tilt listener for all keys (Dynamic highlights setting).
+    val tilt = rememberTilt()
 
     // Clipboard chip: read the clipboard on first composition and
     // every resume, so a number copied in another app shows up here.
@@ -416,7 +419,8 @@ fun DialpadScreen(
                         speedDial[digit]?.takeIf { it.isNotBlank() }?.let { dialNumber(it) }
                     }
                 }
-            }
+            },
+            tilt = tilt
         )
         DialpadCallButtonRow(
             glassDialpad = glassDialpad,

@@ -1,5 +1,6 @@
 package io.github.elli0t0.phone.core.design
 
+import androidx.compose.animation.core.DampingRatioMediumBouncy
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -23,6 +24,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.ui.composed
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,17 +35,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Outline
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
+import android.graphics.RenderEffect
 import android.os.Build
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.asComposeRenderEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
@@ -393,6 +403,16 @@ private class GlassSpec(
  * for surfaces that already have their own opaque background: the haze
  * tint would otherwise wash that background out (e.g. the green call
  * button under a white light-theme tint). Fill, sheen and rim stay.
+ *
+ * [premium] upgrades the treatment: a 1dp diagonal specular border
+ * (bright top-left, faint bottom-right) instead of the vertical rim,
+ * a soft inner top highlight, a soft diffuse shadow, and a ~1.7x
+ * saturation boost on the blurred backdrop (API 31+ live blur only,
+ * guarded so a failure just drops the boost). [tilt] shifts the
+ * specular border by ~20% of the size; it is a [State] read inside
+ * the draw lambda, so tilt updates redraw without recomposing.
+ * Premium surfaces keep achromatic children (text/icons), so the
+ * backdrop saturation never tints content.
  */
 fun Modifier.liquidGlass(
     shape: Shape = RoundedCornerShape(24.dp),
@@ -402,6 +422,8 @@ fun Modifier.liquidGlass(
     floating: Boolean = false,
     elevation: Dp = 8.dp,
     blur: Boolean = true,
+    premium: Boolean = false,
+    tilt: State<Offset>? = null,
 ): Modifier {
     val dark = isDarkGlassTheme() || forceDarkGlass
     val base = if (tint != Color.Unspecified) tint else MaterialTheme.colorScheme.primary
@@ -409,13 +431,87 @@ fun Modifier.liquidGlass(
     val spec = remember(dark, base, isSelected, settings.glassIntensity, settings.reduceTransparency) {
         GlassSpec.create(dark, base, isSelected, settings.glassIntensity, settings.reduceTransparency)
     }
+    val blurOn = blur && blurAvailable(LocalHazeState.current, settings.reduceTransparency)
+    val saturationEffect = remember(premium, blurOn) {
+        if (!premium || !blurOn || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            null
+        } else {
+            runCatching {
+                val matrix = ColorMatrix().apply { setSaturation(1.7f) }
+                RenderEffect.createColorFilterEffect(ColorMatrixColorFilter(matrix))
+                    .asComposeRenderEffect()
+            }.getOrNull()
+        }
+    }
     return this
+        .then(
+            if (premium) {
+                Modifier.shadow(
+                    elevation = 6.dp,
+                    shape = shape,
+                    spotColor = Color.Black.copy(alpha = 0.20f)
+                )
+            } else {
+                Modifier
+            }
+        )
         .clip(shape)
         .then(if (blur) glassBlurModifier(dark) else Modifier)
         .then(if (blur) glassSolidBaseModifier(dark) else Modifier)
         .background(spec.fill)
         .background(spec.sheen)
-        .border(1.dp, spec.rim, shape)
+        .then(if (premium) Modifier else Modifier.border(1.dp, spec.rim, shape))
+        .then(
+            if (premium) {
+                Modifier.drawBehind {
+                    val t = tilt?.value ?: Offset.Zero
+                    val shiftX = t.x * size.width * 0.2f
+                    val shiftY = t.y * size.height * 0.2f
+                    // Inset by half the stroke: the stroke is centered
+                    // on the outline, and the clip above would cut its
+                    // outer half, leaving a half-width border.
+                    val strokePx = 1.dp.toPx()
+                    translate(strokePx / 2f, strokePx / 2f) {
+                        drawOutline(
+                            outline = shape.createOutline(
+                                Size(size.width - strokePx, size.height - strokePx),
+                                layoutDirection,
+                                this
+                            ),
+                            brush = Brush.linearGradient(
+                                colors = listOf(
+                                    Color.White.copy(alpha = 0.55f),
+                                    Color.White.copy(alpha = 0.08f)
+                                ),
+                                start = Offset(shiftX, shiftY),
+                                end = Offset(size.width + shiftX, size.height + shiftY)
+                            ),
+                            style = Stroke(width = strokePx)
+                        )
+                    }
+                    drawRect(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.14f),
+                                Color.Transparent
+                            ),
+                            start = Offset(0f, 0f),
+                            end = Offset(0f, size.height * 0.45f)
+                        ),
+                        size = Size(size.width, size.height * 0.45f)
+                    )
+                }
+            } else {
+                Modifier
+            }
+        )
+        .then(
+            if (saturationEffect != null) {
+                Modifier.graphicsLayer { renderEffect = saturationEffect }
+            } else {
+                Modifier
+            }
+        )
 }
 
 /**
@@ -432,8 +528,8 @@ fun Modifier.glassPress(source: MutableInteractionSource): Modifier = composed {
     } else {
         val pressed by source.collectIsPressedAsState()
         val scale by animateFloatAsState(
-            targetValue = if (pressed) 0.92f else 1f,
-            animationSpec = spring(dampingRatio = 0.55f, stiffness = 600f),
+            targetValue = if (pressed) 0.96f else 1f,
+            animationSpec = spring(dampingRatio = DampingRatioMediumBouncy, stiffness = 400f),
             label = "glassPressScale"
         )
         val sheen by animateFloatAsState(
@@ -495,10 +591,12 @@ fun LiquidGlassCard(
     isSelected: Boolean = false,
     forceDarkGlass: Boolean = false,
     floating: Boolean = false,
+    premium: Boolean = false,
+    tilt: State<Offset>? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Column(
-        modifier = modifier.liquidGlass(shape, tint, isSelected, forceDarkGlass, floating),
+        modifier = modifier.liquidGlass(shape, tint, isSelected, forceDarkGlass, floating, premium = premium, tilt = tilt),
         content = content
     )
 }
@@ -647,10 +745,11 @@ fun LiquidGlassPopupSurface(
     tint: Color = Color.Unspecified,
     forceDarkGlass: Boolean = false,
     floating: Boolean = true,
+    premium: Boolean = true,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Column(
-        modifier = modifier.liquidGlass(shape, tint, false, forceDarkGlass, floating),
+        modifier = modifier.liquidGlass(shape, tint, false, forceDarkGlass, floating, premium = premium),
         content = content
     )
 }

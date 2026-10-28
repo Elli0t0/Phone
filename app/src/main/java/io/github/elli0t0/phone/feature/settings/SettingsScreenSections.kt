@@ -374,6 +374,17 @@ item {
                 checked = settings.glassCards,
                 onCheckedChange = { viewModel.onGlassCardsChanged(it) }
             )
+
+            Spacer(modifier = Modifier.height(spacing.small))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            Spacer(modifier = Modifier.height(spacing.small))
+
+            SettingsSwitchRow(
+                title = stringResource(id = R.string.settings_dynamic_highlights),
+                subtitle = stringResource(id = R.string.settings_dynamic_highlights_desc),
+                checked = settings.dynamicHighlights,
+                onCheckedChange = { viewModel.onDynamicHighlightsChanged(it) }
+            )
         }
     }
 }

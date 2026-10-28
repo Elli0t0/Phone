@@ -82,6 +82,7 @@ import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.call.OngoingCallModel
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
+import io.github.elli0t0.phone.feature.contacts.ui.avatarGradient
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import kotlin.math.roundToInt
 import io.github.elli0t0.phone.core.common.bidiWrap
@@ -131,7 +132,12 @@ fun IncomingCallScreen(
         CallBackgroundLayer(
             background = callBackground,
             accentColor = accentColor,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            // Known contact: avatar-colored gradient; unknown caller
+            // (blank name or bare number) keeps the current blue.
+            avatarColors = callModel.displayName
+                ?.takeIf { it.isNotBlank() && it != callModel.number }
+                ?.let { avatarGradient(it) }
         )
         if (dim > 0f) {
             Box(

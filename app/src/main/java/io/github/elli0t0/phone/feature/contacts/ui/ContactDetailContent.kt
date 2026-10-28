@@ -1,8 +1,13 @@
 package io.github.elli0t0.phone.feature.contacts.ui
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,13 +29,21 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import kotlinx.coroutines.delay
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +56,7 @@ import io.github.elli0t0.phone.core.telecom.SimAccountInfo
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
+import io.github.elli0t0.phone.core.design.scrollEdgeFade
 import io.github.elli0t0.phone.data.contacts.model.ContactDetail
 import io.github.elli0t0.phone.data.contacts.model.ContactPhone
 import io.github.elli0t0.phone.feature.contacts.ContactDetailUiState
@@ -75,11 +89,43 @@ fun ContactDetailContent(
     val context = LocalContext.current
     val spacing = LocalSpacing.current
     val lightHaptic = rememberLightHaptic()
+    val density = LocalDensity.current
+    // Overscroll pull at the top, for the avatar's slight scale-up:
+    // tracked in a nested-scroll connection (ScrollState itself does
+    // not expose overscroll), sprung back shortly after the pull ends.
+    var overscrollTarget by remember { mutableStateOf(0f) }
+    val overscrollMaxPx = with(density) { 120.dp.toPx() }
+    val overscroll by animateFloatAsState(
+        targetValue = overscrollTarget,
+        animationSpec = spring(dampingRatio = 0.6f, stiffness = 400f),
+        label = "avatarOverscroll"
+    )
+    LaunchedEffect(overscrollTarget) {
+        if (overscrollTarget != 0f) {
+            delay(150)
+            overscrollTarget = 0f
+        }
+    }
+    val overscrollConnection = remember(scrollState) {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (scrollState.value == 0 && available.y > 0) {
+                    overscrollTarget = (overscrollTarget + available.y * 0.3f)
+                        .coerceAtMost(overscrollMaxPx)
+                } else if (overscrollTarget != 0f) {
+                    overscrollTarget = 0f
+                }
+                return Offset.Zero
+            }
+        }
+    }
 Column(
     modifier = Modifier
         .fillMaxSize()
         .background(MaterialTheme.colorScheme.background)
+        .nestedScroll(overscrollConnection)
         .verticalScroll(scrollState)
+        .scrollEdgeFade(scrollState)
         .padding(horizontal = spacing.screenHorizontalPadding)
         .padding(top = contentTopPadding)
         // Clearance above the floating bar so the last card
@@ -140,7 +186,21 @@ DetailGlassCard(
                 displayName = displayName,
                 size = PhoneDimens.detailHeaderAvatarSize,
                 textStyle = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.testTag("contact_detail_avatar")
+                modifier = Modifier
+                    .testTag("contact_detail_avatar")
+                    .graphicsLayer {
+                        // Parallax: the avatar moves at half the
+                        // scroll speed (the card scrolls at full
+                        // speed, the avatar lags behind by half).
+                        // Overscroll: scales up slightly (max ~8%)
+                        // on a top pull. Both values are read here,
+                        // in the draw phase, so scrolling redraws
+                        // without recomposing.
+                        translationY = scrollState.value * 0.5f
+                        val scale = 1f + (overscroll / 120.dp.toPx()) * 0.08f
+                        scaleX = scale
+                        scaleY = scale
+                    }
             )
         }
 

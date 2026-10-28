@@ -73,6 +73,7 @@ import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.dialogEnter
 import io.github.elli0t0.phone.core.design.liquidGlass
+import io.github.elli0t0.phone.core.design.scrollEdgeFade
 import io.github.elli0t0.phone.core.permissions.CallLogPermissionStatus
 import io.github.elli0t0.phone.core.permissions.rememberCallLogPermissionState
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
@@ -442,6 +443,7 @@ fun RecentsScreen(
                         state = listState,
                         modifier = Modifier
                             .fillMaxSize()
+                            .scrollEdgeFade(listState, bottom = false)
                             .testTag("recents_call_list"),
                         // Clearance above the overlaid bottom bar:
                         // bar height + nav-bar inset + 16dp gap.

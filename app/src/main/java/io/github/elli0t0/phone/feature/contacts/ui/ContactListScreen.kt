@@ -52,6 +52,7 @@ import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.dialogEnter
 import io.github.elli0t0.phone.core.design.firstLoadReveal
 import io.github.elli0t0.phone.core.design.liquidGlass
+import io.github.elli0t0.phone.core.design.scrollEdgeFade
 import io.github.elli0t0.phone.core.permissions.ContactsPermissionState
 import io.github.elli0t0.phone.core.permissions.ContactsPermissionStatus
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
@@ -293,6 +294,7 @@ private fun ContactsContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = spacing.screenHorizontalPadding)
+                .scrollEdgeFade(listState, bottom = false)
                 .testTag("contacts_lazy_column"),
             // Clearance above the overlaid bottom bar:
             // bar height + nav-bar inset + 16dp gap.

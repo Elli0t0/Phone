@@ -163,7 +163,7 @@ object Motion {
     const val StudioChipSelectedScale = 1.06f
 
     /** Dialed-digit pop-in start scale (animates to 1.0). */
-    const val DialedDigitPopStartScale = 0.6f
+    const val DialedDigitPopStartScale = 0.8f
 
     /** Shared easing tokens. */
     object Easings {

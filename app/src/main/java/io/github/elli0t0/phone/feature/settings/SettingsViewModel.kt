@@ -174,6 +174,12 @@ class SettingsViewModel(
         }
     }
 
+    fun onDynamicHighlightsChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setDynamicHighlights(enabled)
+        }
+    }
+
     fun onDefaultStartTabChanged(tab: StartTab) {
         viewModelScope.launch {
             settingsRepository.setDefaultStartTab(tab)

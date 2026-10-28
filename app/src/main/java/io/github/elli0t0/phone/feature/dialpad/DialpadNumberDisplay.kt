@@ -184,10 +184,12 @@ fun DialpadNumberDisplay(
                         LaunchedEffect(Unit) { entered = true }
                         val progress by animateFloatAsState(
                             targetValue = if (entered) 1f else 0f,
-                            animationSpec = if (animationOption == AnimationOption.OFF) {
-                                snap()
-                            } else {
-                                tween(
+                            animationSpec = when (animationOption) {
+                                AnimationOption.OFF -> snap()
+                                // Spring pop (scale overshoots slightly);
+                                // REDUCED keeps the fade-only tween.
+                                AnimationOption.ON -> spring(dampingRatio = 0.6f, stiffness = 500f)
+                                else -> tween(
                                     durationMillis = Motion.scaledDurationMs(Motion.Durations.Short, animationOption),
                                     easing = Motion.Easings.Emphasized
                                 )
@@ -204,7 +206,9 @@ fun DialpadNumberDisplay(
                             maxLines = 1,
                             softWrap = false,
                             modifier = Modifier.graphicsLayer {
-                                alpha = progress
+                                // The spring overshoots past 1: clamp
+                                // alpha (scale keeps the pop).
+                                alpha = progress.coerceIn(0f, 1f)
                                 if (animationOption == AnimationOption.ON) {
                                     val s = Motion.DialedDigitPopStartScale +
                                         (1f - Motion.DialedDigitPopStartScale) * progress

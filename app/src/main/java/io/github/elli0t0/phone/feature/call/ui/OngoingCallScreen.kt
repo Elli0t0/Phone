@@ -33,9 +33,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,7 +45,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import kotlinx.coroutines.flow.collect
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -62,9 +66,11 @@ import io.github.elli0t0.phone.core.design.LiquidGlassEndCall
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.glassPress
 import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
+import io.github.elli0t0.phone.core.design.rememberTilt
 import io.github.elli0t0.phone.data.call.CallState
 import io.github.elli0t0.phone.data.call.OngoingCallModel
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
@@ -78,6 +84,7 @@ import io.github.elli0t0.phone.data.settings.model.EndCallButtonSize
 import io.github.elli0t0.phone.data.settings.model.IncomingAvatarShape
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.feature.contacts.ui.ContactAvatar
+import io.github.elli0t0.phone.feature.contacts.ui.avatarGradient
 import io.github.elli0t0.phone.core.common.bidiWrap
 import androidx.compose.ui.text.style.TextDirection
 
@@ -105,6 +112,8 @@ fun OngoingCallScreen(
     var showKeypad by remember { mutableStateOf(false) }
     val endCallSource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
+    // One tilt listener for all call controls (Dynamic highlights).
+    val tilt = rememberTilt()
 
     val formattedDuration = remember(callModel.durationSeconds) {
         val mins = callModel.durationSeconds / 60
@@ -168,7 +177,12 @@ fun OngoingCallScreen(
         CallBackgroundLayer(
             background = callBackground,
             accentColor = accentColor,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            // Known contact: avatar-colored gradient; unknown caller
+            // (blank name or bare number) keeps the current blue.
+            avatarColors = callModel.displayName
+                ?.takeIf { it.isNotBlank() && it != callModel.number }
+                ?.let { avatarGradient(it) }
         )
         if (dim > 0f) {
             Box(
@@ -267,7 +281,8 @@ fun OngoingCallScreen(
                     onDigit = onDtmfDigit,
                     typedDigits = dtmfDigits,
                     onClearDigits = onClearDtmfDigits,
-                    onClose = { showKeypad = false; onKeypadHidden() }
+                    onClose = { showKeypad = false; onKeypadHidden() },
+                    tilt = tilt
                 )
             }
             Spacer(modifier = Modifier.weight(1f))
@@ -329,6 +344,7 @@ fun OngoingCallScreen(
                                             isActive = callModel.isMuted,
                                             onClick = { onMuteToggle(!callModel.isMuted) },
                                             testTag = "mute_button"
+                                            tilt = tilt,
                                         )
                                         OngoingCallButton.SPEAKER -> InCallControlButton(
                                             iconRes = R.drawable.ic_volume_up,
@@ -336,6 +352,7 @@ fun OngoingCallScreen(
                                             isActive = isSpeaker,
                                             onClick = onSpeakerToggle,
                                             testTag = "speaker_button"
+                                            tilt = tilt,
                                         )
                                         OngoingCallButton.BLUETOOTH -> InCallControlButton(
                                             iconRes = R.drawable.ic_bluetooth,
@@ -343,6 +360,7 @@ fun OngoingCallScreen(
                                             isActive = isBluetooth,
                                             onClick = onBluetoothToggle,
                                             testTag = "bluetooth_button"
+                                            tilt = tilt,
                                         )
                                         OngoingCallButton.KEYPAD -> InCallControlButton(
                                             iconRes = R.drawable.ic_dialpad,
@@ -350,6 +368,7 @@ fun OngoingCallScreen(
                                             isActive = false,
                                             onClick = { showKeypad = true },
                                             testTag = "keypad_button"
+                                            tilt = tilt,
                                         )
                                         OngoingCallButton.HOLD -> InCallControlButton(
                                             iconRes = if (isHolding) R.drawable.ic_play else R.drawable.ic_pause,
@@ -361,6 +380,7 @@ fun OngoingCallScreen(
                                             isActive = isHolding,
                                             onClick = { onHoldToggle(!isHolding) },
                                             testTag = "hold_button"
+                                            tilt = tilt,
                                         )
                                     }
                                 }
@@ -404,20 +424,32 @@ private fun InCallControlButton(
     isActive: Boolean,
     onClick: () -> Unit,
     testTag: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    tilt: State<Offset>? = null
 ) {
     val controlSource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
     val glassCallScreens = LocalAppSettings.current.glassCallScreens
     val controlScale = LocalAppSettings.current.controlButtonSize.scale
-    // Glass icon button: liquid glass over the call background,
-    // bright (selected) when active. Flat branch keeps the solid color.
+    // Glass press-down tick (flat branch ticks on click instead):
+    // the glass surface itself is the feedback, so no ripple there.
+    LaunchedEffect(controlSource, glassCallScreens) {
+        if (!glassCallScreens) return@LaunchedEffect
+        controlSource.interactions.collect { interaction ->
+            if (interaction is PressInteraction.Press) lightHaptic()
+        }
+    }
+    // Glass icon button: premium liquid glass over the call
+    // background, bright (selected) when active. Flat branch keeps
+    // the solid color.
     val controlBackground = if (glassCallScreens) {
         Modifier.liquidGlass(
             shape = CircleShape,
             tint = Color.White,
             isSelected = isActive,
-            forceDarkGlass = true
+            forceDarkGlass = true,
+            premium = true,
+            tilt = tilt
         )
     } else {
         Modifier.background(if (isActive) InCallControlActive else InCallControlBackgroundFlat)
@@ -432,11 +464,20 @@ private fun InCallControlButton(
                 .size(PhoneDimens.ongoingControlButtonSize * controlScale)
                 .clip(CircleShape)
                 .then(controlBackground)
-                .pressScale(controlSource)
+                .then(
+                    if (glassCallScreens) {
+                        Modifier.glassPress(controlSource)
+                    } else {
+                        Modifier.pressScale(controlSource)
+                    }
+                )
                 .clickable(
                     interactionSource = controlSource,
-                    indication = ripple()
-                ) { lightHaptic(); onClick() }
+                    indication = if (glassCallScreens) null else ripple()
+                ) {
+                    if (!glassCallScreens) lightHaptic()
+                    onClick()
+                }
                 .testTag(testTag),
             contentAlignment = Alignment.Center
         ) {
@@ -465,7 +506,8 @@ private fun InCallKeypadGrid(
     typedDigits: String,
     onClearDigits: () -> Unit,
     onClose: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    tilt: State<Offset>? = null
 ) {
     val keys = listOf(
         listOf('1' to "", '2' to "ABC", '3' to "DEF"),
@@ -602,6 +644,7 @@ private fun InCallKeypadGrid(
                 isActive = isSpeaker,
                 onClick = onSpeakerToggle,
                 testTag = "keypad_speaker_button"
+                tilt = tilt,
             )
             InCallControlButton(
                 iconRes = R.drawable.ic_close,
@@ -609,6 +652,7 @@ private fun InCallKeypadGrid(
                 isActive = false,
                 onClick = onClose,
                 testTag = "keypad_hide_button"
+                tilt = tilt,
             )
             InCallControlButton(
                 iconRes = if (isMuted) R.drawable.ic_mic_off else R.drawable.ic_mic,
@@ -620,6 +664,7 @@ private fun InCallKeypadGrid(
                 isActive = isMuted,
                 onClick = onMuteToggle,
                 testTag = "keypad_mute_button"
+                tilt = tilt,
             )
         }
     }

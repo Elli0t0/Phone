@@ -36,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -208,7 +209,13 @@ internal fun SlideToAnswer(
     }
 }
 
-/** "Slide to answer" label with a moving shine (Animations On only). */
+/**
+ * "Slide to answer" label with a moving shine (the caller only
+ * shows it when Animations is On; Reduced/Off get plain text).
+ * The shine is a translucent band drawn over the text in the draw
+ * phase: the animated progress is read inside drawWithContent, so
+ * the wave moves without recomposing the text each frame.
+ */
 
 @Composable
 internal fun ShimmerLabel(
@@ -227,17 +234,23 @@ internal fun ShimmerLabel(
     )
     Text(
         text = text,
-        modifier = modifier,
-        style = MaterialTheme.typography.bodyLarge.copy(
-            brush = Brush.linearGradient(
-                colors = listOf(
-                    Color.White.copy(alpha = 0.45f),
-                    Color.White,
-                    Color.White.copy(alpha = 0.45f)
-                ),
-                start = Offset(s * 600f - 300f, 0f),
-                end = Offset(s * 600f, 0f)
+        modifier = modifier.drawWithContent {
+            drawContent()
+            val bandWidth = size.width * 0.5f
+            val bandX = s * (size.width + bandWidth) - bandWidth
+            drawRect(
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        Color.Transparent,
+                        Color.White.copy(alpha = 0.4f),
+                        Color.Transparent
+                    ),
+                    start = Offset(bandX, 0f),
+                    end = Offset(bandX + bandWidth, 0f)
+                )
             )
-        )
+        },
+        style = MaterialTheme.typography.bodyLarge,
+        color = Color.White.copy(alpha = 0.6f)
     )
 }

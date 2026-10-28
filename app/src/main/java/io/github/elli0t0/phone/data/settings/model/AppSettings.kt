@@ -202,6 +202,9 @@ data class AppSettings(
     val glassIntensity: GlassIntensity = GlassIntensity.STANDARD,
     val reduceTransparency: Boolean = false,
     val glassCards: Boolean = false,
+    // Dynamic highlights: the premium glass specular border shifts
+    // with device tilt. Default on; off when Animations is Off.
+    val dynamicHighlights: Boolean = true,
     val defaultStartTab: StartTab = StartTab.KEYPAD,
     val contactSortOrder: ContactSortOrder = ContactSortOrder.FIRST_NAME,
     val contactNameFormat: ContactNameFormat = ContactNameFormat.FIRST_NAME_FIRST,

@@ -66,6 +66,7 @@ interface SettingsRepository {
     suspend fun setGlassIntensity(intensity: GlassIntensity)
     suspend fun setReduceTransparency(enabled: Boolean)
     suspend fun setGlassCards(enabled: Boolean)
+    suspend fun setDynamicHighlights(enabled: Boolean)
     suspend fun setDefaultStartTab(tab: StartTab)
     suspend fun setContactSortOrder(order: ContactSortOrder)
     suspend fun setContactNameFormat(format: ContactNameFormat)
@@ -125,6 +126,7 @@ class DataStoreSettingsRepository(
         val GLASS_INTENSITY = stringPreferencesKey("glass_intensity")
         val REDUCE_TRANSPARENCY = booleanPreferencesKey("reduce_transparency")
         val GLASS_CARDS = booleanPreferencesKey("glass_cards")
+        val DYNAMIC_HIGHLIGHTS = booleanPreferencesKey("dynamic_highlights")
         val DEFAULT_START_TAB = stringPreferencesKey("default_start_tab")
         val CONTACT_SORT_ORDER = stringPreferencesKey("contact_sort_order")
         val CONTACT_NAME_FORMAT = stringPreferencesKey("contact_name_format")
@@ -199,6 +201,7 @@ class DataStoreSettingsRepository(
 
         val reduceTransparency = prefs[Keys.REDUCE_TRANSPARENCY] ?: false
         val glassCards = prefs[Keys.GLASS_CARDS] ?: false
+        val dynamicHighlights = prefs[Keys.DYNAMIC_HIGHLIGHTS] ?: true
 
         val tabStr = prefs[Keys.DEFAULT_START_TAB]
         val startTab = tabStr?.let { runCatching { StartTab.valueOf(it) }.getOrNull() } ?: StartTab.KEYPAD
@@ -337,6 +340,7 @@ class DataStoreSettingsRepository(
             glassIntensity = glassIntensity,
             reduceTransparency = reduceTransparency,
             glassCards = glassCards,
+            dynamicHighlights = dynamicHighlights,
             defaultStartTab = startTab,
             contactSortOrder = sortOrder,
             contactNameFormat = nameFormat,
@@ -494,6 +498,12 @@ class DataStoreSettingsRepository(
     override suspend fun setGlassCards(enabled: Boolean) {
         dataStore.edit { prefs ->
             prefs[Keys.GLASS_CARDS] = enabled
+        }
+    }
+
+    override suspend fun setDynamicHighlights(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.DYNAMIC_HIGHLIGHTS] = enabled
         }
     }
 

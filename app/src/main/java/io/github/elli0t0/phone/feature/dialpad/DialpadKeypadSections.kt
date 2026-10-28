@@ -15,12 +15,14 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -39,7 +41,8 @@ import io.github.elli0t0.phone.core.design.bouncyClick
 @Composable
 fun DialpadKeypadGrid(
     onKeyPressed: (Char) -> Unit,
-    onLongPressDigit: (Char) -> Unit
+    onLongPressDigit: (Char) -> Unit,
+    tilt: State<Offset>? = null
 ) {
     val spacing = LocalSpacing.current
     // Keypad Grid (Keys 1-9, *, 0, #)
@@ -63,7 +66,8 @@ fun DialpadKeypadGrid(
                         },
                         onLongClick = {
                             onLongPressDigit(dialKey.digit)
-                        }
+                        },
+                        tilt = tilt
                     )
                 }
             }

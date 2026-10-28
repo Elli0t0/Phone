@@ -35,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.testTag
 import kotlinx.coroutines.flow.collect
 import androidx.compose.ui.res.painterResource
@@ -91,7 +93,8 @@ fun DialKeyView(
     dialKey: DialKey,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    tilt: State<Offset>? = null
 ) {
     val keyTag = when (dialKey.digit) {
         '*' -> "star"
@@ -158,7 +161,7 @@ fun DialKeyView(
             modifier = modifier
                 .size(PhoneDimens.keypadTouchSize)
                 .then(if (lightKey) Modifier.background(LiquidGlassSurfaceLight, CircleShape) else Modifier)
-                .liquidGlass(shape = CircleShape)
+                .liquidGlass(shape = CircleShape, premium = true, tilt = tilt)
                 .then(if (lightKey) Modifier.border(1.dp, KeypadKeyLightRim, CircleShape) else Modifier)
                 .glassPress(keySource)
                 .combinedClickable(
