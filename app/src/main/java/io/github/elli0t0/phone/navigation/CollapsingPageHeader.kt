@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -22,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
@@ -31,7 +33,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import dev.chrisbanes.haze.HazeProgressive
 import io.github.elli0t0.phone.core.design.GlassSurface
 import io.github.elli0t0.phone.core.design.LiquidGlassPillShape
 import io.github.elli0t0.phone.core.design.LocalAppSettings
@@ -216,8 +217,8 @@ fun FloatingActionsPill(
  * Invisible while the large header is fully visible; fades in as the
  * header scrolls away, driven by the list state against the header
  * height. The bar blurs the scrolling content under it with the
- * existing glass style, plus a 16dp progressive band below it (full
- * blur fading to 0) so content dissolves instead of clipping. The
+ * existing glass style, plus a 16dp fade band below it (blur
+ * fading into the background) so content dissolves instead of clipping. The
  * content is only composed once scrolling starts: popups in the
  * actions ignore alpha, so composing them at alpha 0 would open
  * menus from an invisible bar (the FloatingActionsPill lesson).
@@ -291,23 +292,29 @@ fun StickyGlassTopBar(
                 )
             }
         }
-        // Progressive blur band below the bar: full blur at the bar's
-        // edge fading to 0 over 16dp, so scrolling content dissolves
-        // instead of clipping under a hard edge.
+        // Fade band below the bar: uniform blur plus a background
+        // gradient (transparent at the bar's edge, opaque at the
+        // bottom) so scrolling content dissolves over 16dp instead
+        // of clipping under a hard edge.
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(16.dp)
-                .then(
-                    glassBlurModifier(
-                        dark,
-                        progressive = HazeProgressive.verticalGradient(
-                            startIntensity = 1f,
-                            endIntensity = 0f
+                .then(glassBlurModifier(dark))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.Transparent,
+                                MaterialTheme.colorScheme.background
+                            )
                         )
                     )
-                )
-        )
+            )
+        }
     }
 }
 

@@ -63,7 +63,6 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import dev.chrisbanes.haze.HazeProgressive
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
@@ -99,14 +98,15 @@ private fun blurAvailable(hazeState: HazeState?, reduceTransparency: Boolean): B
  * light white at 60%, scaled by GlassIntensity). Applied after clip so
  * the blur stays inside the shape, before the fill/sheen/rim.
  * Internal (not private) so the sticky top bar and the bottom-bar
- * band can share it; [progressive] fades the blur across the surface
- * (a band below a bar uses full-to-zero).
+ * band can share it. Fade bands add a background-color gradient
+ * overlay on top of this uniform blur: Haze 1.5.3's hazeEffect has
+ * no progressive parameter, so the fade is painted over the blur
+ * rather than varying the blur itself.
  */
 @Composable
 internal fun glassBlurModifier(
     dark: Boolean,
-    blurRadius: Dp? = null,
-    progressive: HazeProgressive? = null
+    blurRadius: Dp? = null
 ): Modifier {
     val hazeState = LocalHazeState.current
     val settings = LocalAppSettings.current
@@ -139,8 +139,7 @@ internal fun glassBlurModifier(
             backgroundColor = Color.Transparent,
             tint = HazeTint(tint),
             blurRadius = radius
-        ),
-        progressive = progressive
+        )
     )
 }
 

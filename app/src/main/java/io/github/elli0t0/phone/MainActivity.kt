@@ -60,7 +60,6 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import io.github.elli0t0.phone.core.design.LocalHazeState
 import io.github.elli0t0.phone.core.design.LocalSpacing
-import dev.chrisbanes.haze.HazeProgressive
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.PhoneTheme
 import io.github.elli0t0.phone.core.design.bottomBarSizeSpec
@@ -391,7 +390,7 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
                     )
             )
         }
-        // Short progressive blur/scrim band directly above the bar:
+        // Short blur/scrim band directly above the bar:
         // content scrolling toward the bar dissolves into blur (0 at
         // the band's top edge, full at the bar's edge) instead of
         // staying readable behind the tab labels. Same fade as the
@@ -427,14 +426,23 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
                     .then(
                         glassBlurModifier(
                             isDarkGlassTheme(),
-                            blurRadius = 36.dp,
-                            progressive = HazeProgressive.verticalGradient(
-                                startIntensity = 0f,
-                                endIntensity = 1f
-                            )
+                            blurRadius = 36.dp
                         )
                     )
-            )
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    MaterialTheme.colorScheme.background,
+                                    Color.Transparent
+                                )
+                            )
+                        )
+                )
+            }
         }
         AnimatedVisibility(
             visible = showBottomBar,
