@@ -373,10 +373,17 @@ fun DialpadScreen(
                     digit == '0' -> viewModel.onLongPressZero()
                     digit == '1' -> {
                         // Voicemail: the carrier's number, if any.
+                        // getVoiceMailNumber takes an account handle
+                        // (there is no zero-arg version); try each
+                        // call-capable account, first non-blank wins.
                         val voicemail = runCatching {
-                            (context.getSystemService(Context.TELECOM_SERVICE) as? TelecomManager)
-                                ?.voiceMailNumber
-                        }.getOrNull()?.takeIf { it.isNotBlank() }
+                            val telecom = context.getSystemService(Context.TELECOM_SERVICE)
+                                as? TelecomManager
+                            simAccounts.firstNotNullOfOrNull { account ->
+                                runCatching { telecom?.getVoiceMailNumber(account.handle) }
+                                    .getOrNull()?.takeIf { it.isNotBlank() }
+                            }
+                        }.getOrNull()
                         if (voicemail != null) {
                             dialNumber(voicemail)
                         } else {
