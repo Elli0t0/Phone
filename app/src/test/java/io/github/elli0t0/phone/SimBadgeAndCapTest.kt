@@ -42,6 +42,20 @@ class SimBadgeAndCapTest {
     }
 
     @Test
+    fun firstMatchWinsOnDuplicateIccid() {
+        val dupes = listOf(
+            SimBadge("89010000000000000001", "First"),
+            SimBadge("89010000000000000001", "Second")
+        )
+        assertEquals("First", resolveSimBadge("89010000000000000001", dupes))
+    }
+
+    @Test
+    fun emptySimListHasNoBadge() {
+        assertNull(resolveSimBadge("89010000000000000001", emptyList()))
+    }
+
+    @Test
     fun legacySortOrderHasNoLimitClause() {
         val order = AndroidCallLogRepository.legacyCallLogSortOrder()
         assertFalse(order.contains("LIMIT"))

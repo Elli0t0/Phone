@@ -164,6 +164,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.49] - 2026-10-28
+
+- Architecture: AndroidCallLogRepository (495 lines) is split by responsibility with no behavior change — the repository skeleton, observer, and orchestration stay in AndroidCallLogRepository (149 lines); the streaming query in AndroidCallLogStreaming, the paged history query in AndroidCallLogHistory, the JSON cache in AndroidCallLogCache, and row mapping in AndroidCallLogRowMapping. Cross-file members are internal (same-module visibility) and the paged query keeps a thin delegating override so the class still implements its interface.
+- New unit tests: row-type mapping for every provider type code plus unknown fallback, and SIM badge edge cases (first match wins on duplicate account ids, empty account list shows no badge). The existing SIM badge and Android 10 query-contract tests still pin the split files' shared constants.
+
 ## [0.11.48] - 2026-10-27
 
 - Visual balance fixes: the floating actions pill now appears only once the header item has scrolled off completely, instead of fading in on any scroll offset over the still-visible header; Contacts' pill no longer wraps its top-bar pills in a second pill container (Recents' plain icon actions keep the outer wrap); the per-screen bottom scrims are gone — MainActivity's fade behind the bar is now the single owner, ending the double-dimming on Recents and Contacts; the empty keypad centers its content with breathing room instead of squishing it above the keys under a tall blank; the Liquid answer control now vibrates at its 0.7 commit threshold like Slider and Swipe; the contact edit form lifts with the keyboard, so the floating Cancel/Save pill no longer covers the last fields.
