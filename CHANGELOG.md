@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.15.8]
+
+- Fixed the crash when opening Call background (the same crash would hit a real incoming call): the quick-reply FlowRow was compiled against a newer foundation-layout than the one shipped in the APK, whose FlowRow overload changed between versions. foundation-layout is now pinned to the BOM's 1.7.0, aligning compile time with the shipped runtime; no runtime behavior changes.
+
 ## [0.15.7]
 
 - ADB recorder endpoint selection reworked (stale-port refused connections): ports are now tried in order — manual port (always wins), getprop service.adb.tls.port, NSD services newest-first, last known working port (persisted after every success) — and every candidate is TCP-checked (loopback first, then NSD hosts) before Kadb sees it.
