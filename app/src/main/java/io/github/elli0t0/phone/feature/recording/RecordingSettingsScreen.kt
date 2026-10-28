@@ -1,0 +1,380 @@
+package io.github.elli0t0.phone.feature.recording
+
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import io.github.elli0t0.phone.PhoneApplication
+import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.recording.BackendStatus
+import io.github.elli0t0.phone.core.recording.RecordingSession
+import io.github.elli0t0.phone.data.recordings.RecordingEntity
+import io.github.elli0t0.phone.navigation.InnerTopBar
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+/**
+ * Call recording page: Shizuku backend status + setup actions, a
+ * 3-second pipeline test, the active recording (if any), and the
+ * recordings list with playback, delete, and share.
+ */
+@Composable
+fun RecordingSettingsScreen(
+    onNavigateBack: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val app = context.applicationContext as PhoneApplication
+    val viewModel: RecordingSettingsViewModel = viewModel(
+        factory = RecordingSettingsViewModel.provideFactory(
+            app.container.recordingController,
+            app.container.recordingsRepository,
+            context.applicationContext
+        )
+    )
+    val status by viewModel.backendStatus.collectAsStateWithLifecycle()
+    val session by viewModel.session.collectAsStateWithLifecycle()
+    val lastError by viewModel.lastError.collectAsStateWithLifecycle()
+    val recordings by viewModel.recordings.collectAsStateWithLifecycle()
+    val busy by viewModel.busy.collectAsStateWithLifecycle()
+    val testOutcome by viewModel.testOutcome.collectAsStateWithLifecycle()
+    val playError by viewModel.playError.collectAsStateWithLifecycle()
+    val playingId by viewModel.playingId.collectAsStateWithLifecycle()
+    val positionMs by viewModel.positionMs.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) { viewModel.refresh() }
+
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            InnerTopBar(
+                onBack = onNavigateBack,
+                title = stringResource(id = R.string.settings_call_recording)
+            )
+        }
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = stringResource(id = R.string.recording_status_title),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = when (status) {
+                                BackendStatus.NOT_INSTALLED -> stringResource(
+                                    id = R.string.recording_status_not_installed
+                                )
+                                BackendStatus.NOT_RUNNING -> stringResource(
+                                    id = R.string.recording_status_not_running
+                                )
+                                BackendStatus.PERMISSION_NEEDED -> stringResource(
+                                    id = R.string.recording_status_permission
+                                )
+                                BackendStatus.READY -> stringResource(
+                                    id = R.string.recording_status_ready
+                                )
+                                BackendStatus.ERROR -> stringResource(
+                                    id = R.string.recording_status_error
+                                )
+                            },
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        if (lastError != null) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = lastError!!,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            when (status) {
+                                BackendStatus.NOT_INSTALLED -> Button(
+                                    onClick = {
+                                        openUrl(
+                                            context,
+                                            SHIZUKU_DOWNLOAD_URL
+                                        )
+                                    }
+                                ) {
+                                    Text(text = stringResource(id = R.string.recording_action_get_shizuku))
+                                }
+                                BackendStatus.NOT_RUNNING -> Button(
+                                    onClick = { openShizuku(context) }
+                                ) {
+                                    Text(text = stringResource(id = R.string.recording_action_start_shizuku))
+                                }
+                                BackendStatus.PERMISSION_NEEDED -> Button(
+                                    onClick = { viewModel.requestPermission() },
+                                    enabled = !busy
+                                ) {
+                                    Text(text = stringResource(id = R.string.recording_action_grant))
+                                }
+                                else -> Unit
+                            }
+                            TextButton(
+                                onClick = { viewModel.refresh() },
+                                enabled = !busy
+                            ) {
+                                Text(text = stringResource(id = R.string.recording_action_refresh))
+                            }
+                        }
+                    }
+                }
+            }
+
+            val active = session as? RecordingSession.Recording
+            if (active != null) {
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = if (active.isTest) {
+                                    stringResource(id = R.string.recording_test_running)
+                                } else {
+                                    stringResource(id = R.string.recording_active_call)
+                                },
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Button(onClick = { viewModel.stopActive() }) {
+                                Text(text = stringResource(id = R.string.recording_stop))
+                            }
+                        }
+                    }
+                }
+            }
+
+            item {
+                Column {
+                    Button(
+                        onClick = { viewModel.runTest() },
+                        enabled = status == BackendStatus.READY && !busy &&
+                            session is RecordingSession.Idle
+                    ) {
+                        Text(text = stringResource(id = R.string.recording_test))
+                    }
+                    if (testOutcome != null) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = if (testOutcome!!.error != null) {
+                                stringResource(
+                                    id = R.string.recording_test_failed,
+                                    testOutcome!!.error!!
+                                )
+                            } else {
+                                stringResource(
+                                    id = R.string.recording_test_ok,
+                                    testOutcome!!.bytes,
+                                    testOutcome!!.durationMs
+                                )
+                            },
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            }
+
+            item {
+                Text(
+                    text = stringResource(id = R.string.recording_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            if (playError != null) {
+                item {
+                    Text(
+                        text = playError!!,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+
+            if (recordings.isEmpty()) {
+                item {
+                    Text(
+                        text = stringResource(id = R.string.recording_empty),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                items(recordings, key = { it.id }) { entity ->
+                    RecordingRow(
+                        entity = entity,
+                        isPlaying = playingId == entity.id,
+                        positionMs = if (playingId == entity.id) positionMs else 0L,
+                        onPlayToggle = { viewModel.togglePlay(entity) },
+                        onSeek = { viewModel.seekTo(it) },
+                        onDelete = { viewModel.delete(entity) },
+                        onShare = { viewModel.share(entity, context) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecordingRow(
+    entity: RecordingEntity,
+    isPlaying: Boolean,
+    positionMs: Long,
+    onPlayToggle: () -> Unit,
+    onSeek: (Int) -> Unit,
+    onDelete: () -> Unit,
+    onShare: () -> Unit
+) {
+    val dateFormat = remember {
+        SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+    }
+    val title = when {
+        entity.isTest -> stringResource(id = R.string.recording_test_title)
+        !entity.displayName.isNullOrBlank() -> entity.displayName!!
+        else -> entity.number
+    }
+    val durationText = if (entity.durationMs >= 60_000) {
+        stringResource(
+            id = R.string.recents_duration_min_sec,
+            (entity.durationMs / 60_000).toInt(),
+            ((entity.durationMs / 1000) % 60).toInt()
+        )
+    } else {
+        stringResource(
+            id = R.string.recents_duration_sec,
+            (entity.durationMs / 1000).toInt()
+        )
+    }
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = title, style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = "${dateFormat.format(Date(entity.startedAt))}  •  $durationText",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onPlayToggle) {
+                    Icon(
+                        painter = painterResource(
+                            id = if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play
+                        ),
+                        contentDescription = null
+                    )
+                }
+                Slider(
+                    value = positionMs.toFloat(),
+                    onValueChange = { if (isPlaying) onSeek(it.toInt()) },
+                    valueRange = 0f..maxOf(1f, entity.durationMs.toFloat()),
+                    enabled = isPlaying,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = "${formatPlayerTime(positionMs)} / ${formatPlayerTime(entity.durationMs)}",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = onDelete) {
+                    Text(text = stringResource(id = R.string.recording_delete))
+                }
+                TextButton(onClick = onShare) {
+                    Text(text = stringResource(id = R.string.recording_share))
+                }
+            }
+        }
+    }
+}
+
+private fun formatPlayerTime(ms: Long): String {
+    val totalSeconds = ms / 1000
+    return "${totalSeconds / 60}:${(totalSeconds % 60).toString().padStart(2, '0')}"
+}
+
+private fun openUrl(context: android.content.Context, url: String) {
+    runCatching {
+        context.startActivity(
+            Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        )
+    }
+}
+
+private fun openShizuku(context: android.content.Context) {
+    val launch = context.packageManager.getLaunchIntentForPackage(SHIZUKU_PACKAGE)
+    if (launch != null) {
+        runCatching { context.startActivity(launch) }
+    } else {
+        openUrl(context, SHIZUKU_DOWNLOAD_URL)
+    }
+}
+
+private const val SHIZUKU_PACKAGE = "moe.shizuku.privileged.api"
+private const val SHIZUKU_DOWNLOAD_URL = "https://shizuku.rikka.app/download/"

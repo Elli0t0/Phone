@@ -181,6 +181,16 @@ item {
                 title = stringResource(id = R.string.settings_quick_decline),
                 onClick = { dialogs.showQuickDeclineDialog = true }
             )
+
+            Spacer(modifier = Modifier.height(spacing.small))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            Spacer(modifier = Modifier.height(spacing.small))
+
+            SettingsRow(
+                title = stringResource(id = R.string.settings_call_recording),
+                subtitle = stringResource(id = R.string.settings_call_recording_desc),
+                onClick = { dialogs.showRecordingPage = true }
+            )
         }
     }
 }

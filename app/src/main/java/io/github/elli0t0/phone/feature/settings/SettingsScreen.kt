@@ -98,6 +98,7 @@ import io.github.elli0t0.phone.core.permissions.SetupPermissions
 import io.github.elli0t0.phone.core.telecom.rememberDefaultDialerState
 import io.github.elli0t0.phone.core.telecom.UssdHelper
 import io.github.elli0t0.phone.core.telecom.UssdSim
+import io.github.elli0t0.phone.feature.recording.RecordingSettingsScreen
 import io.github.elli0t0.phone.feature.setup.SetupChecklist
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
@@ -281,6 +282,7 @@ fun SettingsScreen(
     BackHandler(enabled = dialogs.showAnswerStylePage) { dialogs.showAnswerStylePage = false }
     BackHandler(enabled = dialogs.showGlassStudioPage) { dialogs.showGlassStudioPage = false }
     BackHandler(enabled = dialogs.showBlockedNumbers) { dialogs.showBlockedNumbers = false }
+    BackHandler(enabled = dialogs.showRecordingPage) { dialogs.showRecordingPage = false }
 
     if (dialogs.showAnswerStylePage) {
         AnswerStyleScreen(
@@ -311,5 +313,9 @@ fun SettingsScreen(
 
     if (dialogs.showBlockedNumbers) {
         BlockedNumbersScreen(onNavigateBack = { dialogs.showBlockedNumbers = false })
+    }
+
+    if (dialogs.showRecordingPage) {
+        RecordingSettingsScreen(onNavigateBack = { dialogs.showRecordingPage = false })
     }
 }

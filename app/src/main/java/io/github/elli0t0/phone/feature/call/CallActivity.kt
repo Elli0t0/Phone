@@ -5,12 +5,17 @@ import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import kotlinx.coroutines.launch
+import io.github.elli0t0.phone.core.recording.BackendStatus
+import io.github.elli0t0.phone.core.recording.RecordingSession
+import kotlinx.coroutines.flow.MutableStateFlow
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -121,6 +126,20 @@ class CallActivity : ComponentActivity() {
                 val dtmfDigits by CallRepository.typedDtmfDigits.collectAsStateWithLifecycle()
                 val postDialRemaining by CallRepository.postDialRemaining.collectAsStateWithLifecycle()
 
+                // Recording state for the in-call record button. The
+                // fallbacks only apply when the app container is
+                // unavailable; in practice it always is.
+                val recordingController = app?.container?.recordingController
+                val recordingSession by (recordingController?.state
+                    ?: remember { MutableStateFlow<RecordingSession>(RecordingSession.Idle) })
+                    .collectAsStateWithLifecycle()
+                val recordingBackendStatus by (recordingController?.backendStatus
+                    ?: remember { MutableStateFlow(BackendStatus.NOT_RUNNING) })
+                    .collectAsStateWithLifecycle()
+                val recordingScope = rememberCoroutineScope()
+                var showRecordingNeeded by remember { mutableStateOf(false) }
+                var recordingError by remember { mutableStateOf<String?>(null) }
+
                 // Post-dial wait (";" only; "," pauses continue on
                 // their own): a glass dialog asking whether to send
                 // the remaining tones. Dismissing counts as Cancel.
@@ -129,6 +148,75 @@ class CallActivity : ComponentActivity() {
                         remaining = postDialRemaining!!,
                         onSend = { CallRepository.postDialContinue(true) },
                         onCancel = { CallRepository.postDialContinue(false) }
+                    )
+                }
+
+                // Recording setup: the record button never dead-ends.
+                // Each state offers the one action that moves it
+                // forward; the full setup lives in Settings.
+                if (showRecordingNeeded) {
+                    RecordingStatusDialog(
+                        title = stringResource(id = R.string.recording_dialog_title),
+                        body = stringResource(
+                            id = when (recordingBackendStatus) {
+                                BackendStatus.NOT_INSTALLED -> R.string.recording_needed_not_installed
+                                BackendStatus.NOT_RUNNING -> R.string.recording_needed_not_running
+                                BackendStatus.PERMISSION_NEEDED -> R.string.recording_needed_permission
+                                else -> R.string.recording_needed_error
+                            }
+                        ),
+                        actionLabel = when (recordingBackendStatus) {
+                            BackendStatus.NOT_INSTALLED, BackendStatus.ERROR ->
+                                stringResource(id = R.string.recording_action_get_shizuku)
+                            BackendStatus.NOT_RUNNING ->
+                                stringResource(id = R.string.recording_action_start_shizuku)
+                            BackendStatus.PERMISSION_NEEDED ->
+                                stringResource(id = R.string.recording_action_grant)
+                            BackendStatus.READY -> null
+                        },
+                        onAction = {
+                            when (recordingBackendStatus) {
+                                BackendStatus.PERMISSION_NEEDED -> recordingScope.launch {
+                                    recordingController?.requestBackendPermission()
+                                    showRecordingNeeded = false
+                                }
+                                BackendStatus.NOT_RUNNING -> {
+                                    val launch = packageManager.getLaunchIntentForPackage(
+                                        "moe.shizuku.privileged.api"
+                                    )
+                                    if (launch != null) {
+                                        startActivity(launch)
+                                    } else {
+                                        startActivity(
+                                            Intent(
+                                                Intent.ACTION_VIEW,
+                                                Uri.parse("https://shizuku.rikka.app/download/")
+                                            )
+                                        )
+                                    }
+                                    showRecordingNeeded = false
+                                }
+                                else -> {
+                                    startActivity(
+                                        Intent(
+                                            Intent.ACTION_VIEW,
+                                            Uri.parse("https://shizuku.rikka.app/download/")
+                                        )
+                                    )
+                                    showRecordingNeeded = false
+                                }
+                            }
+                        },
+                        onDismiss = { showRecordingNeeded = false }
+                    )
+                }
+                if (recordingError != null) {
+                    RecordingStatusDialog(
+                        title = stringResource(id = R.string.recording_dialog_title),
+                        body = recordingError!!,
+                        actionLabel = null,
+                        onAction = null,
+                        onDismiss = { recordingError = null }
                     )
                 }
 
@@ -243,7 +331,31 @@ class CallActivity : ComponentActivity() {
                                                 settings.accentColor
                                             },
                                             dim = settings.callBackgroundDim,
-                                            showNumber = settings.showNumberOnCallScreen
+                                            showNumber = settings.showNumberOnCallScreen,
+                                            isRecording = recordingSession is RecordingSession.Recording,
+                                            onRecordToggle = {
+                                                recordingScope.launch {
+                                                    val controller = recordingController
+                                                    if (controller != null) {
+                                                        when (recordingSession) {
+                                                            is RecordingSession.Recording -> controller.stopRecording()
+                                                            else -> {
+                                                                val result = controller.startCallRecording(
+                                                                    currentModel.number,
+                                                                    currentModel.displayName
+                                                                )
+                                                                if (result.isFailure) {
+                                                                    if (controller.backendStatus.value == BackendStatus.READY) {
+                                                                        recordingError = result.exceptionOrNull()?.message
+                                                                    } else {
+                                                                        showRecordingNeeded = true
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
                                         )
                                     }
                                 }
@@ -371,6 +483,62 @@ private fun PostDialDialog(
                         )
                     ) {
                         Text(text = stringResource(id = R.string.post_dial_send))
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun RecordingStatusDialog(
+    title: String,
+    body: String,
+    actionLabel: String?,
+    onAction: (() -> Unit)?,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        GlassSurface(
+            shape = RoundedCornerShape(20.dp),
+            dark = true,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = body,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color.White.copy(alpha = 0.8f)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text(text = stringResource(id = R.string.action_cancel))
+                    }
+                    if (actionLabel != null && onAction != null) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = onAction,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        ) {
+                            Text(text = actionLabel)
+                        }
                     }
                 }
             }

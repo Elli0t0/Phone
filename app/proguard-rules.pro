@@ -47,3 +47,8 @@
 -keepclasseswithmembernames class * {
     native <methods>;
 }
+
+# Shizuku: the recording UserService is instantiated by Shizuku via
+# reflection, and its AIDL stub is reached across processes.
+-keep public class io.github.elli0t0.phone.core.recording.shizuku.RecordingUserService { *; }
+-keep public class io.github.elli0t0.phone.core.recording.shizuku.IRecordingService* { *; }

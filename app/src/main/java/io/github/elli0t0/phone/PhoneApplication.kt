@@ -22,6 +22,10 @@ import io.github.elli0t0.phone.data.settings.SettingsRepository
 import io.github.elli0t0.phone.data.settings.SetupRepository
 import io.github.elli0t0.phone.data.settings.settingsDataStore
 import io.github.elli0t0.phone.data.settings.setupDataStore
+import io.github.elli0t0.phone.core.recording.RecordingController
+import io.github.elli0t0.phone.core.recording.shizuku.ShizukuRecordingBackend
+import io.github.elli0t0.phone.data.recordings.DefaultRecordingsRepository
+import io.github.elli0t0.phone.data.recordings.RecordingsRepository
 import kotlinx.coroutines.flow.MutableSharedFlow
 
 /** One external dial request (tap a number in another app). The id
@@ -36,6 +40,8 @@ interface AppContainer {
     val contactSimRepository: ContactSimRepository
     val settingsRepository: SettingsRepository
     val setupRepository: SetupRepository
+    val recordingsRepository: RecordingsRepository
+    val recordingController: RecordingController
     val dialRequests: MutableSharedFlow<DialRequest>
 }
 
@@ -70,6 +76,14 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
 
     override val setupRepository: SetupRepository by lazy {
         DataStoreSetupRepository(context.applicationContext.setupDataStore)
+    }
+
+    override val recordingsRepository: RecordingsRepository by lazy {
+        DefaultRecordingsRepository(database.recordingsDao(), context.contentResolver)
+    }
+
+    override val recordingController: RecordingController by lazy {
+        RecordingController(context, ShizukuRecordingBackend(context), recordingsRepository)
     }
 
     override val dialRequests: MutableSharedFlow<DialRequest> by lazy {

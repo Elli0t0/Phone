@@ -112,6 +112,8 @@ fun OngoingCallScreen(
     // Black scrim over the background (0 = none). Number under the name.
     dim: Float = 0f,
     showNumber: Boolean = true,
+    isRecording: Boolean = false,
+    onRecordToggle: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
@@ -288,6 +290,22 @@ fun OngoingCallScreen(
                     style = MaterialTheme.typography.titleMedium.copy(fontSize = PhoneDimens.ongoingStateSize),
                     color = Color.White.copy(alpha = 0.6f)
                 )
+                if (isRecording) {
+                    Spacer(modifier = Modifier.height(spacing.extraSmall))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(MaterialTheme.colorScheme.error, CircleShape)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = stringResource(id = R.string.recording_active),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
             }
 
             // Center: in-call DTMF keypad when open; the controls stay
@@ -416,6 +434,18 @@ fun OngoingCallScreen(
                                             isActive = isHolding,
                                             onClick = { onHoldToggle(!isHolding) },
                                             testTag = "hold_button",
+                                            tilt = tilt,
+                                        )
+                                        OngoingCallButton.RECORD -> InCallControlButton(
+                                            iconRes = R.drawable.ic_record,
+                                            label = if (isRecording) {
+                                                stringResource(id = R.string.call_action_stop_recording)
+                                            } else {
+                                                stringResource(id = R.string.call_action_record)
+                                            },
+                                            isActive = isRecording,
+                                            onClick = onRecordToggle,
+                                            testTag = "record_button",
                                             tilt = tilt,
                                         )
                                     }

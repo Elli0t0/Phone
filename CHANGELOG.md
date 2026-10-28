@@ -164,6 +164,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.14.0]
+
+- Call recording (manual, via Shizuku): a Record button joins the in-call controls (last in the grid; add it from Call Studio if you customized your buttons), with a red recording indicator under the timer. Tapping it while Shizuku is missing, stopped, or ungranted opens a dialog with the one action that moves setup forward instead of dead-ending.
+- Settings → Calls → Call recording: backend status, Shizuku setup actions, a 3-second pipeline test that proves bind + capture + file without a call, and the recordings list with playback (play/pause, seek), delete, and share. Files are WAV (16 kHz mono) in Music/Phone; metadata lives in a new recordings table.
+- How it works: the app itself never records. A small privileged service running under Shizuku's shell identity captures VOICE_CALL audio and writes it to a file the app created; a foreground service keeps the recording visible (with a Stop action) and stops it automatically when the call ends. No CallVault code is used: the bridge is original, and Shizuku's own API is MIT-licensed.
+- Needs the Shizuku app, started and granted. Built-in ADB pairing (no second app) is planned as a later backend behind the same interface. VoLTE/VoWiFi behavior on your phone is unproven until tested — the pipeline test proves the bridge, a real call proves the audio.
+- No other changes.
+
 ## [0.13.7]
 
 - Floating actions pill: once the header has scrolled off, a small pill with the header's buttons floats at the top-right — Recents: filter, search, menu; Contacts: Groups, add, search, menu. No title, no full-width band. The pill is a sibling of the list (never a list item), so it cannot hit the 0.13.3 haze crash.

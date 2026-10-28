@@ -145,7 +145,8 @@ enum class OngoingCallButton(val label: String) {
     SPEAKER("Speaker"),
     BLUETOOTH("Bluetooth"),
     KEYPAD("Keypad"),
-    HOLD("Hold")
+    HOLD("Hold"),
+    RECORD("Record")
 }
 
 enum class DefaultSim(val label: String) {
