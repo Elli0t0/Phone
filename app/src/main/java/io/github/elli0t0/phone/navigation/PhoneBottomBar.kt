@@ -10,7 +10,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.ui.input.pointer.awaitPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -39,6 +38,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -182,6 +182,10 @@ fun PhoneBottomBar(
     val dragSpeed = remember { Animatable(0f) }
     var dragging by remember { mutableStateOf(false) }
     var releaseSpringActive by remember { mutableStateOf(false) }
+    // The gesture block is a restricted scope: it cannot call
+    // Animatable functions or launch directly. All animated work
+    // goes through this external scope instead.
+    val scope = rememberCoroutineScope()
     // One press source per item, hoisted so the Row gesture can emit
     // press/release into the item under the finger and glassPress
     // keeps working without a clickable.
@@ -411,18 +415,20 @@ fun PhoneBottomBar(
                             if (w <= 0f) return@awaitEachGesture
                             dragging = true
                             releaseSpringActive = false
-                            dragX.stop()
-                            lift.stop()
-                            dragSpeed.stop()
-                            dragSpeed.snapTo(0f)
+                            scope.launch {
+                                dragX.stop()
+                                lift.stop()
+                                dragSpeed.stop()
+                                dragSpeed.snapTo(0f)
+                                dragX.snapTo(down.position.x.coerceIn(0f, w))
+                            }
                             var press: PressInteraction.Press? = null
                             var last = indexAt(down.position.x, w)
                             try {
                                 press = PressInteraction.Press(down.position)
                                 itemSources[last].tryEmit(press)
-                                dragX.snapTo(down.position.x.coerceIn(0f, w))
                                 if (animationOption == AnimationOption.ON) {
-                                    launch {
+                                    scope.launch {
                                         lift.animateTo(
                                             1f,
                                             spring(dampingRatio = 0.6f, stiffness = 400f)
@@ -436,12 +442,12 @@ fun PhoneBottomBar(
                                     val ev = awaitPointerEvent()
                                     val c = ev.changes.first()
                                     val x = c.position.x.coerceIn(0f, w)
-                                    dragX.snapTo(x)
+                                    scope.launch { dragX.snapTo(x) }
                                     if (animationOption == AnimationOption.ON) {
                                         val dtMs = (c.uptimeMillis - lastT).coerceAtLeast(1L)
                                         val rate = abs(x - lastX) / (dtMs / 1000f)
                                         smoothSpeed += (rate - smoothSpeed) * 0.25f
-                                        dragSpeed.snapTo(smoothSpeed)
+                                        scope.launch { dragSpeed.snapTo(smoothSpeed) }
                                     }
                                     lastX = x
                                     lastT = c.uptimeMillis
@@ -471,14 +477,16 @@ fun PhoneBottomBar(
                                 }
                                 press = null
                                 dragging = false
-                                dragSpeed.snapTo(0f)
-                                pillProgress.stop()
+                                scope.launch {
+                                    dragSpeed.snapTo(0f)
+                                    pillProgress.stop()
+                                    pillProgress.snapTo(1f)
+                                }
                                 pillFromIndex = pillToIndex
                                 pillToIndex = last
-                                pillProgress.snapTo(1f)
                                 if (animationOption == AnimationOption.ON) {
                                     releaseSpringActive = true
-                                    launch {
+                                    scope.launch {
                                         lift.animateTo(
                                             0f,
                                             // MediumBouncy is 0.5f; the
@@ -488,7 +496,7 @@ fun PhoneBottomBar(
                                             spring(dampingRatio = 0.5f, stiffness = 300f)
                                         )
                                     }
-                                    launch {
+                                    scope.launch {
                                         dragX.animateTo(
                                             centerOf(last, w),
                                             spring(dampingRatio = 0.5f, stiffness = 300f)
@@ -496,7 +504,7 @@ fun PhoneBottomBar(
                                         releaseSpringActive = false
                                     }
                                 } else {
-                                    dragX.snapTo(centerOf(last, w))
+                                    scope.launch { dragX.snapTo(centerOf(last, w)) }
                                 }
                                 navigateTo(Screen.bottomNavItems[last])
                             } finally {
