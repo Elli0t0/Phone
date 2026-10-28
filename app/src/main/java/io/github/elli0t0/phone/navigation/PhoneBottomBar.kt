@@ -50,6 +50,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -318,6 +319,9 @@ fun PhoneBottomBar(
             layout(placeable.width, h) { placeable.place(0, 0) }
         }
         val barContent: @Composable BoxScope.() -> Unit = {
+            // Accent glow color, read here in composable scope: a
+            // drawBehind block cannot read MaterialTheme.
+            val accentGlow = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
             // The one shared droplet, behind the items: a small
             // glass lens, not a flat pill. A soft accent glow sits
             // behind it (radial gradient, scaled up, no real blur);
@@ -394,7 +398,7 @@ fun PhoneBottomBar(
                             drawRect(
                                 brush = Brush.radialGradient(
                                     colors = listOf(
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
+                                        accentGlow,
                                         Color.Transparent
                                     ),
                                     center = Offset(size.width / 2f, size.height / 2f),
