@@ -30,6 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -73,6 +74,33 @@ class PhoneInCallService : InCallService() {
         Log.d(TAG, "onCallAdded state=${call.state} number=${call.details?.handle?.schemeSpecificPart} isDefaultDialer=$isDefault")
         if (!isDefault) {
             Log.e(TAG, "onCallAdded but app is NOT default dialer, Telecom may not bind service reliably")
+        }
+        // App-side prefix blocking: the platform provider only matches
+        // exact numbers, so a ringing call whose digits start with a
+        // stored prefix is disconnected here. Only incoming calls, and
+        // only while still ringing (the check itself is async).
+        if (call.state == Call.STATE_RINGING) {
+            serviceScope.launch {
+                runCatching {
+                    val prefixes = (application as? PhoneApplication)
+                        ?.container?.settingsRepository?.settingsFlow?.first()
+                        ?.blockedPrefixes ?: emptySet()
+                    if (prefixes.isEmpty()) return@runCatching
+                    val digits = PhoneNumberFormatter.normalizeDigits(
+                        call.details?.handle?.schemeSpecificPart.orEmpty()
+                    ).filter { it.isDigit() }
+                    if (digits.isEmpty()) return@runCatching
+                    val blocked = prefixes.any { prefix ->
+                        val prefixDigits = PhoneNumberFormatter.normalizeDigits(prefix)
+                            .filter { it.isDigit() }
+                        prefixDigits.isNotEmpty() && digits.startsWith(prefixDigits)
+                    }
+                    if (blocked && call.state == Call.STATE_RINGING) {
+                        Log.d(TAG, "Rejecting call matching blocked prefix")
+                        call.disconnect()
+                    }
+                }
+            }
         }
         try {
             // Channels first, synchronously, before any notification or lookup.

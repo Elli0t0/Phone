@@ -54,6 +54,7 @@ import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 import io.github.elli0t0.phone.core.common.bidiWrap
+import io.github.elli0t0.phone.core.common.textAlignFor
 import androidx.compose.ui.text.style.TextDirection
 
 @Composable
@@ -153,7 +154,9 @@ fun ContactRow(
                 Text(
                     text = bidiWrap(displayName),
                     style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Content),
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = textAlignFor(displayName),
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
@@ -336,7 +339,9 @@ fun ProfileRow(
                 Text(
                     text = bidiWrap(displayName),
                     style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Content),
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = textAlignFor(displayName),
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }

@@ -190,12 +190,16 @@ sealed interface UssdState {
 }
 
 // Call waiting dialog: title, description, three full-width actions,
-// Cancel bottom-right. Tapping an action runs its MMI code on the
-// chosen SIM (SIM picker first on dual SIM).
+// Cancel bottom-right. Activate/deactivate dismiss and run their MMI
+// code; Check status keeps the dialog open and shows the carrier's
+// reply (or the sending state) inside the dialog instead of a
+// separate popup.
 @Composable
 fun CallWaitingDialog(
     onDismiss: () -> Unit,
-    onAction: (String) -> Unit
+    onAction: (String) -> Unit,
+    onCheck: () -> Unit,
+    ussdState: UssdState? = null
 ) {
     val spacing = LocalSpacing.current
     Dialog(onDismissRequest = onDismiss) {
@@ -230,10 +234,29 @@ fun CallWaitingDialog(
                 }
                 Spacer(modifier = Modifier.height(spacing.small))
                 FilledTonalButton(
-                    onClick = { onAction("*#43#") },
+                    onClick = onCheck,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(text = stringResource(id = R.string.call_waiting_check))
+                }
+                when (val state = ussdState) {
+                    is UssdState.Sending -> {
+                        Spacer(modifier = Modifier.height(spacing.medium))
+                        Text(
+                            text = stringResource(id = R.string.ussd_sending),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    is UssdState.Result -> {
+                        Spacer(modifier = Modifier.height(spacing.medium))
+                        Text(
+                            text = state.message,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    null -> Unit
                 }
                 Spacer(modifier = Modifier.height(spacing.medium))
                 Row(

@@ -329,7 +329,12 @@ private fun ContactsContent(
                         modifier = Modifier
                             .animateItem()
                             .firstLoadReveal(revealIndex++, listRevealed)
-                            .padding(bottom = PhoneDimens.duplicatesCardFavoritesGap)
+                            // Clear gap above the banner so it never
+                            // crowds the header's bottom pills.
+                            .padding(
+                                top = spacing.medium,
+                                bottom = PhoneDimens.duplicatesCardFavoritesGap
+                            )
                     )
                 }
             }
@@ -454,9 +459,12 @@ private fun ContactsContent(
                 .padding(top = 8.dp),
             actions = topBarPills,
             // Top bar now lives inside the header item (index 0):
-            // the pill appears once the header scrolls off. The
-            // actions are already pills themselves, so no outer wrap.
-            revealAfterIndex = 0,
+            // the pill appears once the header scrolls off. While the
+            // duplicates banner is shown it is item 1, so the pill
+            // waits until the banner scrolls off too instead of
+            // floating over it (and dimming what sits beneath it).
+            // The actions are already pills themselves, so no wrap.
+            revealAfterIndex = if (uiState.showDuplicatesCard && uiState.searchQuery.isEmpty()) 1 else 0,
             wrapInPill = false
         )
         }

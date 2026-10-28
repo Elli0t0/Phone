@@ -21,6 +21,10 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -31,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -39,6 +44,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
@@ -64,6 +70,10 @@ fun BlockedNumbersScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     var numberInput by remember { mutableStateOf("") }
     var inputError by remember { mutableStateOf(false) }
+    var prefixChecked by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarScope = rememberCoroutineScope()
 
     if (showAddDialog) {
         AlertDialog(
@@ -90,6 +100,17 @@ fun BlockedNumbersScreen(
                             modifier = Modifier.padding(top = 4.dp)
                         )
                     }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(
+                            checked = prefixChecked,
+                            onCheckedChange = { prefixChecked = it },
+                            modifier = Modifier.testTag("blocked_number_prefix")
+                        )
+                        Text(
+                            text = stringResource(id = R.string.blocked_numbers_prefix_option),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
             },
             confirmButton = {
@@ -98,8 +119,9 @@ fun BlockedNumbersScreen(
                         if (numberInput.isBlank()) {
                             inputError = true
                         } else {
-                            viewModel.blockNumber(numberInput)
+                            viewModel.blockNumber(numberInput, prefixChecked)
                             numberInput = ""
+                            prefixChecked = false
                             showAddDialog = false
                         }
                     },
@@ -118,6 +140,7 @@ fun BlockedNumbersScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize().testTag("blocked_numbers_screen"),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             if (uiState.canBlock) {
                 FloatingActionButton(
@@ -179,9 +202,31 @@ fun BlockedNumbersScreen(
                 Spacer(modifier = Modifier.height(spacing.medium))
             }
 
-            if (!uiState.isLoading && uiState.numbers.isEmpty()) {
+            if (!uiState.isLoading && uiState.entries.isNotEmpty()) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    label = { Text(text = stringResource(id = R.string.blocked_numbers_search_hint)) },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = spacing.small)
+                        .testTag("blocked_numbers_search")
+                )
+            }
+            val filteredEntries = uiState.entries.filter {
+                it.number.contains(searchQuery.trim(), ignoreCase = true)
+            }
+            if (!uiState.isLoading && uiState.entries.isEmpty()) {
                 Text(
                     text = stringResource(id = R.string.blocked_numbers_empty),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = spacing.medium)
+                )
+            } else if (!uiState.isLoading && filteredEntries.isEmpty()) {
+                Text(
+                    text = stringResource(id = R.string.blocked_numbers_no_results),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = spacing.medium)
@@ -190,7 +235,10 @@ fun BlockedNumbersScreen(
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(spacing.small)
                 ) {
-                    itemsIndexed(uiState.numbers, key = { _, number -> number }) { index, number ->
+                    itemsIndexed(
+                        filteredEntries,
+                        key = { _, entry -> "${entry.isPrefix}:${entry.number}" }
+                    ) { index, entry ->
                         Card(
                             shape = MaterialTheme.shapes.extraLarge,
                             colors = CardDefaults.cardColors(
@@ -205,13 +253,34 @@ fun BlockedNumbersScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text(
-                                    text = number,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.weight(1f)
-                                )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = entry.number,
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
+                                    if (entry.isPrefix) {
+                                        Text(
+                                            text = stringResource(id = R.string.blocked_numbers_prefix),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
                                 IconButton(
-                                    onClick = { viewModel.unblockNumber(number) },
+                                    onClick = {
+                                        viewModel.unblockNumber(entry)
+                                        snackbarScope.launch {
+                                            val result = snackbarHostState.showSnackbar(
+                                                message = context.getString(
+                                                    R.string.blocked_numbers_unblocked
+                                                ),
+                                                actionLabel = context.getString(R.string.action_undo)
+                                            )
+                                            if (result == SnackbarResult.ActionPerformed) {
+                                                viewModel.blockNumber(entry.number, entry.isPrefix)
+                                            }
+                                        }
+                                    },
                                     modifier = Modifier.testTag("unblock_button_$index")
                                 ) {
                                     Icon(

@@ -23,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.data.settings.model.AnswerStyle
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import androidx.compose.runtime.Composable
 import io.github.elli0t0.phone.core.design.Spacing
@@ -140,7 +141,15 @@ item {
 
             SettingsRow(
                 title = stringResource(id = R.string.settings_answer_style),
-                subtitle = settings.answerStyle.label,
+                // Slider + locked-only reads confusingly as just
+                // "Slider": spell out the effective behavior.
+                subtitle = if (settings.answerStyle == AnswerStyle.SLIDER &&
+                    settings.sliderOnlyWhenLocked
+                ) {
+                    "${AnswerStyle.SLIDER.label} (locked) / ${AnswerStyle.CLASSIC.label} (unlocked)"
+                } else {
+                    settings.answerStyle.label
+                },
                 onClick = { dialogs.showAnswerStylePage = true }
             )
 

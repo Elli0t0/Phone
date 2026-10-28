@@ -164,6 +164,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.11.50] - 2026-10-28
+
+- Keypad favorites: each favorite now shows its name under the avatar, resolved the same way as the Contacts tab's favorite cards (blank names fall back to the number, then Unknown) with bidi isolation and content direction.
+- RTL names: Recents and Contacts rows now right-align Persian/Arabic names (direction-aware alignment from the name's first strong character); Latin names are unchanged.
+- Contacts: the duplicate-contacts banner now has clearance above it, and the floating actions pill waits until the banner has scrolled off instead of floating over it.
+- In-call/incoming screens: the top-right X exists only on the Call Studio fullscreen preview; the real call screens never had one, so nothing was removed there.
+- Answer style: when Slider with "Slider only when locked" is on, the Settings row now reads "Slider (locked) / Classic (unlocked)" instead of just "Slider".
+- Call waiting: Check status keeps the dialog open and shows the carrier's reply (Active/Inactive) inside it; activate/deactivate still use the separate result popup.
+- Keypad overflow menu: now the standard anchored glass dropdown used by the Contacts/Recents menus.
+- Block numbers: search field, an Unblocked snackbar with Undo on delete, and prefix blocking (numbers starting with a stored prefix are rejected on arrival; exact numbers still go through the platform provider).
+- Dialpad keys: light haptic tick now fires on press-down instead of on release (still gated by the system haptic setting).
+- Dialpad long-press: 1 dials the carrier voicemail number; long-pressing 2-9 with a number typed assigns it as that digit's speed dial, and long-pressing 2-9 on an empty keypad dials the assigned number.
+
 ## [0.11.49] - 2026-10-28
 
 - Architecture: AndroidCallLogRepository (495 lines) is split by responsibility with no behavior change — the repository skeleton, observer, and orchestration stay in AndroidCallLogRepository (149 lines); the streaming query in AndroidCallLogStreaming, the paged history query in AndroidCallLogHistory, the JSON cache in AndroidCallLogCache, and row mapping in AndroidCallLogRowMapping. Cross-file members are internal (same-module visibility) and the paged query keeps a thin delegating override so the class still implements its interface.

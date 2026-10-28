@@ -93,6 +93,8 @@ interface SettingsRepository {
     suspend fun setShowNumberOnCallScreen(show: Boolean)
     suspend fun setDefaultSim(defaultSim: DefaultSim)
     suspend fun setQuickDeclineMessages(messages: List<String>)
+    suspend fun setSpeedDial(speedDial: Map<Char, String>)
+    suspend fun setBlockedPrefixes(prefixes: Set<String>)
     suspend fun resetToDefaults()
 }
 
@@ -150,6 +152,8 @@ class DataStoreSettingsRepository(
         val SHOW_NUMBER_ON_CALL_SCREEN = booleanPreferencesKey("show_number_on_call_screen")
         val DEFAULT_SIM = stringPreferencesKey("default_sim")
         val QUICK_DECLINE_MESSAGES = stringPreferencesKey("quick_decline_messages")
+        val SPEED_DIAL = stringPreferencesKey("speed_dial")
+        val BLOCKED_PREFIXES = stringPreferencesKey("blocked_prefixes")
     }
 
     override val settingsFlow: Flow<AppSettings> = dataStore.data.map { prefs ->
@@ -293,6 +297,23 @@ class DataStoreSettingsRepository(
         val quickDeclineOverrides = (quickDeclineStored.split("\n") + listOf("", "", ""))
             .take(3)
 
+        // "2=+98912...;3=021..." — digits and '+' never collide
+        // with the ';' and '=' separators.
+        val speedDial = (prefs[Keys.SPEED_DIAL] ?: "")
+            .split(";")
+            .mapNotNull { part ->
+                val keyValue = part.split("=", limit = 2)
+                val digit = keyValue.getOrNull(0)?.singleOrNull()
+                val number = keyValue.getOrNull(1)?.takeIf { it.isNotBlank() }
+                if (digit != null && number != null) digit to number else null
+            }
+            .toMap()
+        val blockedPrefixes = (prefs[Keys.BLOCKED_PREFIXES] ?: "")
+            .split(";")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .toSet()
+
         AppSettings(
             themeMode = themeMode,
             accentColor = accent,
@@ -342,7 +363,9 @@ class DataStoreSettingsRepository(
             ongoingCallButtons = ongoingCallButtons,
             showNumberOnCallScreen = showNumberOnCallScreen,
             defaultSim = defaultSim,
-            quickDeclineOverrides = quickDeclineOverrides
+            quickDeclineOverrides = quickDeclineOverrides,
+            speedDial = speedDial,
+            blockedPrefixes = blockedPrefixes
         )
     }
 
@@ -635,6 +658,23 @@ class DataStoreSettingsRepository(
             prefs[Keys.QUICK_DECLINE_MESSAGES] = (messages.map { it.replace("\n", " ") } + listOf("", "", ""))
                 .take(3)
                 .joinToString("\n")
+        }
+    }
+
+    override suspend fun setSpeedDial(speedDial: Map<Char, String>) {
+        dataStore.edit { prefs ->
+            prefs[Keys.SPEED_DIAL] = speedDial.entries
+                .filter { it.key in '2'..'9' && it.value.isNotBlank() }
+                .joinToString(";") { "${it.key}=${it.value.trim()}" }
+        }
+    }
+
+    override suspend fun setBlockedPrefixes(prefixes: Set<String>) {
+        dataStore.edit { prefs ->
+            prefs[Keys.BLOCKED_PREFIXES] = prefixes
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+                .joinToString(";")
         }
     }
 

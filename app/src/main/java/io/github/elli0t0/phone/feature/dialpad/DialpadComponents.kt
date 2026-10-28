@@ -8,6 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import kotlinx.coroutines.flow.collect
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -59,6 +62,7 @@ import io.github.elli0t0.phone.core.design.LiquidGlassPill
 import io.github.elli0t0.phone.core.design.KeypadKeyLightRim
 import io.github.elli0t0.phone.core.design.LiquidGlassPillShape
 import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.LiquidGlassSurfaceLight
@@ -99,6 +103,15 @@ fun DialKeyView(
     // the same press state, so the key bounces (0.90) while pressed.
     // No ripple: the glass surface is the feedback.
     val keySource = remember { MutableInteractionSource() }
+    // Light tick on press-down (system haptic setting respected):
+    // click-time feedback fires on release, which feels late while
+    // typing. The screen's key lambdas must not tick again.
+    val lightHaptic = rememberLightHaptic()
+    LaunchedEffect(keySource) {
+        keySource.interactions.collect { interaction ->
+            if (interaction is PressInteraction.Press) lightHaptic()
+        }
+    }
     val glassDialpad = LocalAppSettings.current.glassDialpad
     // Key content shared by the glass and flat branches.
     val keyContent: @Composable () -> Unit = {
@@ -671,6 +684,13 @@ fun FavoritesStrip(
             horizontalArrangement = Arrangement.spacedBy(spacing.small)
         ) {
             items(favorites, key = { it.id }) { contact ->
+                // Same name as the Contacts tab's favorite cards:
+                // blank names fall back to the number, then Unknown,
+                // and RTL names get bidi isolation + content direction.
+                val displayName = contact.displayName.ifBlank {
+                    contact.primaryNumberPreview
+                        ?: stringResource(id = R.string.contact_unknown)
+                }
                 Column(
                     modifier = Modifier
                         .width(72.dp)
@@ -682,13 +702,15 @@ fun FavoritesStrip(
                 ) {
                     ContactAvatar(
                         photoUri = contact.photoUri,
-                        displayName = contact.displayName,
+                        displayName = displayName,
                         size = 48.dp
                     )
                     Spacer(modifier = Modifier.size(4.dp))
                     Text(
-                        text = contact.displayName,
-                        style = MaterialTheme.typography.labelMedium,
+                        text = bidiWrap(displayName),
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            textDirection = TextDirection.Content
+                        ),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center

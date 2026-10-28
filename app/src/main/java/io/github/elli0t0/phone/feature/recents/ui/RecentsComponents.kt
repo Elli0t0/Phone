@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -81,6 +82,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import io.github.elli0t0.phone.core.common.bidiWrap
+import io.github.elli0t0.phone.core.common.textAlignFor
 import androidx.compose.ui.text.style.TextDirection
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -239,9 +241,19 @@ fun CallLogRow(
 
                 Spacer(modifier = Modifier.width(spacing.medium))
 
-                // Title + Subtitle
+                // Title + Subtitle. An RTL name right-aligns the whole
+                // title row (name + count stay glued together); LTR
+                // keeps the existing start alignment.
                 Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = if (textAlignFor(group.displayTitle) == TextAlign.End) {
+                            Arrangement.End
+                        } else {
+                            Arrangement.Start
+                        },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
                             text = bidiWrap(group.displayTitle),
                             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium, textDirection = TextDirection.Content),

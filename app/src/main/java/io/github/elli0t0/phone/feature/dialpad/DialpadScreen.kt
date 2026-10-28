@@ -4,7 +4,9 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.telecom.TelecomManager
 import android.telephony.PhoneNumberUtils
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -27,6 +29,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -43,6 +46,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -56,6 +60,8 @@ import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.dialogEnter
+import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
@@ -108,6 +114,10 @@ fun DialpadScreen(
     val defaultSim = LocalAppSettings.current.defaultSim
     val animationOption = LocalAppSettings.current.animationOption
     val glassDialpad = LocalAppSettings.current.glassDialpad
+    // Read here, not inside the long-press handler: it runs outside
+    // composition and cannot read a CompositionLocal (same reason as
+    // dialNumber above).
+    val speedDial = LocalAppSettings.current.speedDial
     val coroutineScope = rememberCoroutineScope()
 
     val simAccounts = remember(context) { io.github.elli0t0.phone.core.telecom.TelecomHelper.getCallCapablePhoneAccounts(context) }
@@ -241,7 +251,23 @@ fun DialpadScreen(
                 }
                 DropdownMenu(
                     expanded = menuExpanded,
-                    onDismissRequest = { menuExpanded = false }
+                    onDismissRequest = { menuExpanded = false },
+                    // Standard anchored menu, same glass treatment as
+                    // the Contacts/Recents overflow menus.
+                    modifier = Modifier
+                        .background(
+                            color = MaterialTheme.colorScheme.surface,
+                            shape = RoundedCornerShape(PhoneDimens.menuCornerRadius)
+                        )
+                        .liquidGlass(
+                            shape = RoundedCornerShape(PhoneDimens.menuCornerRadius),
+                            floating = true
+                        )
+                        .dialogEnter(),
+                    shape = RoundedCornerShape(PhoneDimens.menuCornerRadius),
+                    containerColor = Color.Transparent,
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
                 ) {
                     DropdownMenuItem(
                         text = { Text(text = stringResource(id = R.string.settings_title)) },
@@ -338,13 +364,51 @@ fun DialpadScreen(
         )
         Spacer(modifier = Modifier.height(spacing.small))
         DialpadKeypadGrid(
+            // No tick here: DialKeyView ticks on press-down.
             onKeyPressed = { digit ->
-                lightHaptic()
                 viewModel.onKeyPressed(digit)
             },
-            onLongPressZero = {
-                lightHaptic()
-                viewModel.onLongPressZero()
+            onLongPressDigit = { digit ->
+                when {
+                    digit == '0' -> viewModel.onLongPressZero()
+                    digit == '1' -> {
+                        // Voicemail: the carrier's number, if any.
+                        val voicemail = runCatching {
+                            (context.getSystemService(Context.TELECOM_SERVICE) as? TelecomManager)
+                                ?.voiceMailNumber
+                        }.getOrNull()?.takeIf { it.isNotBlank() }
+                        if (voicemail != null) {
+                            dialNumber(voicemail)
+                        } else {
+                            Toast.makeText(
+                                context,
+                                R.string.dialpad_voicemail_unavailable,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                    uiState.rawNumber.isNotBlank() -> {
+                        // Typed number + long-press assigns it to
+                        // this digit for later speed dialing.
+                        coroutineScope.launch {
+                            app.container.settingsRepository.setSpeedDial(
+                                speedDial + (digit to uiState.rawNumber)
+                            )
+                        }
+                        Toast.makeText(
+                            context,
+                            context.getString(
+                                R.string.dialpad_speed_dial_saved,
+                                digit.toString()
+                            ),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                    else -> {
+                        // Empty keypad: dial the assigned number, if any.
+                        speedDial[digit]?.takeIf { it.isNotBlank() }?.let { dialNumber(it) }
+                    }
+                }
             }
         )
         DialpadCallButtonRow(

@@ -39,7 +39,7 @@ import io.github.elli0t0.phone.core.design.bouncyClick
 @Composable
 fun DialpadKeypadGrid(
     onKeyPressed: (Char) -> Unit,
-    onLongPressZero: () -> Unit
+    onLongPressDigit: (Char) -> Unit
 ) {
     val spacing = LocalSpacing.current
     // Keypad Grid (Keys 1-9, *, 0, #)
@@ -61,11 +61,9 @@ fun DialpadKeypadGrid(
                         onClick = {
                             onKeyPressed(dialKey.digit)
                         },
-                        onLongClick = if (dialKey.digit == '0') {
-                            {
-                                onLongPressZero()
-                            }
-                        } else null
+                        onLongClick = {
+                            onLongPressDigit(dialKey.digit)
+                        }
                     )
                 }
             }

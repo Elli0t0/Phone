@@ -43,6 +43,7 @@
     <string name="contact_delete_confirm">Delete</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_ok">OK</string>
+    <string name="action_undo">Undo</string>
     <string name="action_save">Save</string>
     <string name="cd_back">Back</string>
 
@@ -362,6 +363,13 @@
     <string name="blocked_numbers_set_default">Set as default</string>
     <string name="blocked_numbers_invalid">Enter a phone number</string>
     <string name="blocked_numbers_open_system">Open system call settings</string>
+    <string name="blocked_numbers_search_hint">Search blocked numbers</string>
+    <string name="blocked_numbers_unblocked">Number unblocked</string>
+    <string name="blocked_numbers_prefix">Prefix</string>
+    <string name="blocked_numbers_prefix_option">Block numbers starting with this</string>
+    <string name="blocked_numbers_no_results">No matches</string>
+    <string name="dialpad_voicemail_unavailable">No voicemail number</string>
+    <string name="dialpad_speed_dial_saved">Speed dial %1$s saved</string>
     <string name="recents_block_number">Block number</string>
     <string name="recents_unblock_number">Unblock number</string>
     <string name="settings_reset_dialog_title">Reset settings?</string>

@@ -231,5 +231,12 @@ data class AppSettings(
     // Quick-decline message overrides, one per reply chip. A blank entry
     // falls back to the built-in default message for that slot, so an
     // untouched setting keeps the localized defaults.
-    val quickDeclineOverrides: List<String> = emptyList()
+    val quickDeclineOverrides: List<String> = emptyList(),
+    // Speed dial: digit ('2'-'9') to number, assigned by long-pressing
+    // a digit with a number typed. '1' is always voicemail.
+    val speedDial: Map<Char, String> = emptyMap(),
+    // App-side blocked prefixes: numbers starting with one of these
+    // are rejected on arrival (the platform provider only matches
+    // exact numbers, so prefixes live here, not there).
+    val blockedPrefixes: Set<String> = emptySet()
 )

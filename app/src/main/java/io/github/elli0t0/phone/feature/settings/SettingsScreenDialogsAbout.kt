@@ -195,11 +195,18 @@ if (updateCheckState != null) {
 
 if (dialogs.showCallWaitingDialog) {
     CallWaitingDialog(
-        onDismiss = { dialogs.showCallWaitingDialog = false },
+        onDismiss = {
+            dialogs.showCallWaitingDialog = false
+            dialogs.ussdState = null
+        },
         onAction = { code ->
             dialogs.showCallWaitingDialog = false
             dialogs.pickSimForUssd(context, code)
-        }
+        },
+        // Check keeps the dialog open: the reply lands in ussdState
+        // and renders inside this dialog (see below).
+        onCheck = { dialogs.pickSimForUssd(context, "*#43#") },
+        ussdState = dialogs.ussdState
     )
 }
 
@@ -218,7 +225,10 @@ if (dialogs.showUssdSimPicker) {
     )
 }
 
-when (val state = dialogs.ussdState) {
+// While the call-waiting dialog is open its own body shows the
+// sending/result states; the separate popups below only serve the
+// activate/deactivate flows (which dismiss that dialog first).
+if (!dialogs.showCallWaitingDialog) when (val state = dialogs.ussdState) {
     is UssdState.Sending -> {
         AlertDialog(
             onDismissRequest = {
