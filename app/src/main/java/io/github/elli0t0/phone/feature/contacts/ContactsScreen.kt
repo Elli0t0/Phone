@@ -5,7 +5,9 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -25,6 +27,7 @@ import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.permissions.rememberContactsPermissionState
 import io.github.elli0t0.phone.data.contacts.model.ContactDetail
+import io.github.elli0t0.phone.data.settings.model.Backdrop
 import io.github.elli0t0.phone.feature.contacts.ui.ContactDetailScreen
 import io.github.elli0t0.phone.feature.contacts.ui.ContactEditScreen
 import io.github.elli0t0.phone.feature.contacts.ui.ContactHistoryScreen
@@ -152,8 +155,21 @@ fun ContactsScreen(
         }
     }
 
+    // Transparent when the ambient backdrop is live so it shows
+    // through the gaps, exactly like Recents (the list screen itself
+    // is already transparent; this outer Scaffold was the opaque
+    // layer). Otherwise the theme background, as before. List cards
+    // stay opaque either way.
+    val backdropVisible = LocalAppSettings.current.let {
+        it.backdrop != Backdrop.OFF && !it.pureBlackDarkMode
+    }
     Scaffold(
-        modifier = modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize(),
+        containerColor = if (backdropVisible) {
+            Color.Transparent
+        } else {
+            MaterialTheme.colorScheme.background
+        }
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
             AnimatedContent(

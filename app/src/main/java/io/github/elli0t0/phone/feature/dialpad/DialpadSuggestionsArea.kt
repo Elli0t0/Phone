@@ -44,7 +44,7 @@ fun ColumnScope.DialpadSuggestionsArea(
     onSuggestionSelect: (ContactSummary) -> Unit,
     onRedial: (QuickRedialEntry) -> Unit,
     onFavoriteClick: (ContactSummary) -> Unit,
-    clipboardNumber: String?,
+    showPasteChip: Boolean,
     onClipboardPaste: () -> Unit,
     onCreateContactAction: () -> Unit,
     onAddToExistingContactAction: () -> Unit,
@@ -127,9 +127,8 @@ fun ColumnScope.DialpadSuggestionsArea(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-            if (clipboardNumber != null) {
+            if (showPasteChip) {
                 ClipboardChip(
-                    number = clipboardNumber,
                     onPaste = onClipboardPaste,
                     modifier = Modifier.fillMaxWidth()
                 )

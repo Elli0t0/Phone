@@ -725,13 +725,13 @@ fun FavoritesStrip(
 }
 
 /**
- * Empty-keypad clipboard chip: the number currently on the clipboard,
- * under its own label like the sections around it. Tap pastes it into
- * the keypad (the chip then hides, since the keypad is no longer empty).
+ * Empty-keypad paste chip: a generic "Paste" action under the
+ * Clipboard label, like the sections around it. The clipboard text
+ * is never shown here (reading it would fire the system toast), and
+ * it is read and validated as a phone number only on tap.
  */
 @Composable
 fun ClipboardChip(
-    number: String,
     onPaste: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -763,8 +763,8 @@ fun ClipboardChip(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = bidiWrap(number),
-                        style = MaterialTheme.typography.labelLarge.copy(textDirection = TextDirection.Content),
+                        text = stringResource(id = R.string.dialpad_paste),
+                        style = MaterialTheme.typography.labelLarge,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -778,8 +778,8 @@ fun ClipboardChip(
                     .testTag("dialpad_clipboard_chip")
             ) {
                 Text(
-                    text = bidiWrap(number),
-                    style = MaterialTheme.typography.labelLarge.copy(textDirection = TextDirection.Content),
+                    text = stringResource(id = R.string.dialpad_paste),
+                    style = MaterialTheme.typography.labelLarge,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )

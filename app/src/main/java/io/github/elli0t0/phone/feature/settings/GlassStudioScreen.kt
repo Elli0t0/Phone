@@ -1,25 +1,27 @@
 package io.github.elli0t0.phone.feature.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -34,20 +36,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.AmbientBackdrop
+import io.github.elli0t0.phone.core.design.GlassSurface
 import io.github.elli0t0.phone.core.design.LiquidGlassPillShape
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
-import io.github.elli0t0.phone.core.design.liquidGlass
+import io.github.elli0t0.phone.core.design.isDarkGlassTheme
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.Backdrop
 import io.github.elli0t0.phone.data.settings.model.DropletStretch
 import io.github.elli0t0.phone.data.settings.model.EdgeLight
 import io.github.elli0t0.phone.data.settings.model.GlassHapticFeedback
 import io.github.elli0t0.phone.navigation.InnerTopBar
+import io.github.elli0t0.phone.navigation.Screen
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -110,33 +116,44 @@ fun GlassStudioScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         AmbientBackdrop(modifier = Modifier.fillMaxSize())
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(spacing.large),
-                            verticalAlignment = Alignment.CenterVertically
+                        // Mini bottom bar: the bar's own glass
+                        // treatment (same GlassSurface parameters,
+                        // including the refraction switch) with three
+                        // tab icons and the droplet on the middle one.
+                        // The old pill + key preview never showed the
+                        // bar's glass on-device; this one previews
+                        // what Studio actually tunes. Inert: no
+                        // gestures, no navigation. The translucent
+                        // fill lets the backdrop show through even
+                        // where the live blur has nothing to sample.
+                        GlassSurface(
+                            shape = LiquidGlassPillShape,
+                            modifier = Modifier
+                                .fillMaxWidth(PhoneDimens.bottomBarWidthFraction)
+                                .height(PhoneDimens.bottomBarHeight),
+                            containerAlpha = 0.20f,
+                            blurRadius = 36.dp,
+                            edgeHighlightAlpha = 0.10f,
+                            edgeRefraction = settings.edgeRefraction
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(
-                                        width = PhoneDimens.glassStudioPreviewPillWidth,
-                                        height = PhoneDimens.glassStudioPreviewPillHeight
-                                    )
-                                    .liquidGlass(
-                                        shape = LiquidGlassPillShape,
-                                        premium = true
-                                    )
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .size(PhoneDimens.ongoingDtmfKeySize)
-                                    .liquidGlass(shape = CircleShape, premium = true),
-                                contentAlignment = Alignment.Center
+                            Row(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = "5",
-                                    style = MaterialTheme.typography.titleLarge.copy(
-                                        fontWeight = FontWeight.Bold
-                                    ),
-                                    color = Color.White
+                                PreviewBarIcon(
+                                    screen = Screen.Dialpad,
+                                    selected = false,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                PreviewBarIcon(
+                                    screen = Screen.Recents,
+                                    selected = true,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                PreviewBarIcon(
+                                    screen = Screen.Contacts,
+                                    selected = false,
+                                    modifier = Modifier.weight(1f)
                                 )
                             }
                         }
@@ -388,4 +405,58 @@ private fun GlassSliderRow(
             )
         }
     )
+}
+
+/**
+ * One inert tab slot of the Studio preview bar: the tab icon, with
+ * the neutral droplet behind it when selected, matching the bar's
+ * icon tints (selected white / near-black, unselected 80% / 60%).
+ */
+@Composable
+private fun PreviewBarIcon(
+    screen: Screen,
+    selected: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val dark = isDarkGlassTheme()
+    Box(
+        modifier = modifier.fillMaxHeight(),
+        contentAlignment = Alignment.Center
+    ) {
+        if (selected) {
+            Box(
+                modifier = Modifier
+                    .size(width = 64.dp, height = 48.dp)
+                    .background(
+                        color = if (dark) {
+                            Color.White.copy(alpha = 0.16f)
+                        } else {
+                            Color.Black.copy(alpha = 0.08f)
+                        },
+                        shape = RoundedCornerShape(50)
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = Color.White.copy(alpha = 0.22f),
+                        shape = RoundedCornerShape(50)
+                    )
+            )
+        }
+        Icon(
+            painter = painterResource(
+                id = if (selected) screen.iconResSelected else screen.iconRes
+            ),
+            contentDescription = null,
+            tint = if (selected) {
+                if (dark) Color.White else Color.Black
+            } else {
+                if (dark) {
+                    Color.White.copy(alpha = 0.80f)
+                } else {
+                    Color.Black.copy(alpha = 0.60f)
+                }
+            },
+            modifier = Modifier.size(PhoneDimens.bottomBarIconSize)
+        )
+    }
 }

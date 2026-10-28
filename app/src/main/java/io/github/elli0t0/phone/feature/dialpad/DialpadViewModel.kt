@@ -190,16 +190,30 @@ class DialpadViewModel(
     }
 
     /**
-     * Clipboard chip: the clipboard's number, refreshed when the
-     * dialpad resumes. Only dialable content counts (at least 3 digits
-     * after sanitize); anything else clears the chip.
+     * Paste chip visibility, from the clip description only (mime
+     * type text/plain): no clipboard text is read here, so no system
+     * toast fires when the dialpad opens or resumes.
      */
-    fun refreshClipboardNumber(clipboardText: String?) {
-        val sanitized = clipboardText?.let { PhoneNumberFormatter.sanitize(it) } ?: ""
-        val digits = sanitized.filter { it.isDigit() }
-        _uiState.value = _uiState.value.copy(
-            clipboardNumber = sanitized.takeIf { it.isNotEmpty() && digits.length >= 3 }
-        )
+    fun refreshClipboardAvailability(hasPlainText: Boolean) {
+        _uiState.value = _uiState.value.copy(showPasteChip = hasPlainText)
+    }
+
+    /**
+     * Paste chip tapped: the clipboard text is read only now, then
+     * validated as a phone number — spaces, dashes and parentheses
+     * removed, optional leading '+', 5 to 15 digits. A valid number
+     * is pasted; anything else hides the chip and pastes nothing, so
+     * a non-number never shows as a number chip.
+     */
+    fun onPasteChipTapped(clipboardText: String?) {
+        val normalized = clipboardText?.let { PhoneNumberFormatter.normalizeDigits(it) } ?: ""
+        val stripped = normalized.filter { it != ' ' && it != '-' && it != '(' && it != ')' }
+        val isNumber = stripped.matches(Regex("^\\+?[0-9]{5,15}$"))
+        if (isNumber) {
+            onNumberPasted(stripped)
+        } else {
+            _uiState.value = _uiState.value.copy(showPasteChip = false)
+        }
     }
 
     fun onNumberPasted(pastedText: String) {

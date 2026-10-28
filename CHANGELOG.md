@@ -164,6 +164,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.12.8]
+- Ambient backdrop now shows on Contacts and Keypad too: their roots go transparent whenever Backdrop is not Off and Pure black dark mode is off, like Recents. List cards stay opaque.
+- Keypad Paste chip: no more clipboard toast on screen open. The chip appears only when the clip description holds plain text (metadata only, no toast), shows a generic "Paste" label, and reads + validates the text only on tap (spaces, dashes and parentheses removed, optional leading +, 5 to 15 digits); a non-number pastes nothing and hides the chip.
+- Glass Studio preview rebuilt as a mini bottom bar (the bar's own glass, droplet + tab icons over the backdrop) so it previews what Studio actually tunes.
+
 ## [0.12.7]
 - Glass Studio: new "Edge refraction" switch (default on) for the floating bottom bar.
 - Edge refraction (API 33+): a subtle AGSL warp on the bar's blur layer only, magnifying the backdrop near the bar's ends; icons and the droplet are untouched.

@@ -47,8 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
+import android.content.ClipDescriptionimport androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -67,6 +66,7 @@ import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.core.design.rememberTilt
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.core.telecom.CallManager
+import io.github.elli0t0.phone.data.settings.model.Backdrop
 import io.github.elli0t0.phone.data.settings.model.ThemeMode
 import io.github.elli0t0.phone.feature.contacts.ui.ContactSearchBar
 import io.github.elli0t0.phone.feature.setup.SetupWarningCard
@@ -181,11 +181,22 @@ fun DialpadScreen(
     // One tilt listener for all keys (Dynamic highlights setting).
     val tilt = rememberTilt()
 
-    // Clipboard chip: read the clipboard on first composition and
-    // every resume, so a number copied in another app shows up here.
-    val clipboardManager = LocalClipboardManager.current
+    // Paste chip: never read the clipboard text automatically (that
+    // fires the system "pasted from your clipboard" toast on every
+    // open). Only the clip description is checked — mime type
+    // text/plain, metadata only, no toast — and the text itself is
+    // read only when the user taps the chip.
+    val platformClipboard = remember {
+        context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+    }
+    fun refreshPasteChip() {
+        val description = platformClipboard.primaryClipDescription
+        viewModel.refreshClipboardAvailability(
+            description?.hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN) == true
+        )
+    }
     LaunchedEffect(Unit) {
-        viewModel.refreshClipboardNumber(clipboardManager.getText()?.text)
+        refreshPasteChip()
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -195,7 +206,7 @@ fun DialpadScreen(
                 viewModel.stopBackspaceRepeat()
             }
             if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.refreshClipboardNumber(clipboardManager.getText()?.text)
+                refreshPasteChip()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -205,11 +216,22 @@ fun DialpadScreen(
         }
     }
 
-    // Keypad page background: the theme background, like every other page.
+    // Keypad page background: transparent when the ambient backdrop
+    // is live so it shows through, like Recents; otherwise the theme
+    // background, as before.
+    val backdropVisible = LocalAppSettings.current.let {
+        it.backdrop != Backdrop.OFF && !it.pureBlackDarkMode
+    }
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(
+                if (backdropVisible) {
+                    Color.Transparent
+                } else {
+                    MaterialTheme.colorScheme.background
+                }
+            )
             .padding(horizontal = spacing.screenHorizontalPadding)
             // Top: status-bar inset (the dialpad has no Scaffold of its own).
             // Bottom: clearance above the overlaid bottom bar
@@ -332,10 +354,18 @@ fun DialpadScreen(
                     dialNumber(num, contact.lookupKey)
                 }
             },
-            clipboardNumber = uiState.clipboardNumber,
+            showPasteChip = uiState.showPasteChip,
             onClipboardPaste = {
                 lightHaptic()
-                uiState.clipboardNumber?.let { viewModel.onNumberPasted(it) }
+                // User-initiated read: the text is fetched only now,
+                // validated as a phone number, and pasted or rejected.
+                val clip = platformClipboard.primaryClip
+                val text = if ((clip?.itemCount ?: 0) > 0) {
+                    clip?.getItemAt(0)?.text?.toString()
+                } else {
+                    null
+                }
+                viewModel.onPasteChipTapped(text)
             },
             onCreateContactAction = {
                 lightHaptic()

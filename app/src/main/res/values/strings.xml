@@ -150,6 +150,7 @@
     <string name="dialpad_show_less">Show less</string>
     <string name="dialpad_message">Message</string>
     <string name="dialpad_clipboard">Clipboard</string>
+    <string name="dialpad_paste">Paste</string>
     <string name="cd_dialpad_key">Key %1$s</string>
     <string name="permission_call_title">Phone Call Permission</string>
     <string name="permission_call_message">Phone needs permission to place direct phone calls. Otherwise, calls will be handed off to the system dialer.</string>
