@@ -95,11 +95,13 @@ private fun blurAvailable(hazeState: HazeState?, reduceTransparency: Boolean): B
  * the blur stays inside the shape, before the fill/sheen/rim.
  */
 @Composable
-private fun glassBlurModifier(dark: Boolean): Modifier {
+private fun glassBlurModifier(dark: Boolean, blurRadius: Dp? = null): Modifier {
     val hazeState = LocalHazeState.current
     val settings = LocalAppSettings.current
     if (!blurAvailable(hazeState, settings.reduceTransparency)) return Modifier
-    val radius = when (settings.glassIntensity) {
+    // An explicit radius wins (the bottom bar wants ~36dp); otherwise
+    // the radius follows GlassIntensity.
+    val radius = blurRadius ?: when (settings.glassIntensity) {
         GlassIntensity.SUBTLE -> PhoneDimens.glassBlurRadiusSubtle
         GlassIntensity.STANDARD -> PhoneDimens.glassBlurRadiusStandard
         GlassIntensity.STRONG -> PhoneDimens.glassBlurRadiusStrong
@@ -278,21 +280,61 @@ fun GlassSurface(
     dark: Boolean = isDarkGlassTheme(),
     containerColor: Color = glassColors(dark).container,
     floating: Boolean = true,
+    // Fill alpha while live blur is on (defaults to the standard
+    // thinned fill; the bottom bar passes 0.20f so the blur and the
+    // backdrop show through clearly).
+    containerAlpha: Float = PhoneDimens.glassBlurContainerAlpha,
+    // Blur radius override; null keeps the GlassIntensity radius.
+    blurRadius: Dp? = null,
+    // 1dp rim override; null keeps the standard vertical sheen.
+    rim: Brush? = null,
+    // Faint vertical highlights fading inward from the left/right
+    // ends, drawn over the fill and under the rim; 0 disables them.
+    edgeHighlightAlpha: Float = 0f,
     content: @Composable BoxScope.() -> Unit
 ) {
     val settings = LocalAppSettings.current
     val blurOn = blurAvailable(LocalHazeState.current, settings.reduceTransparency)
     val effectiveContainer =
-        if (blurOn) containerColor.copy(alpha = PhoneDimens.glassBlurContainerAlpha) else containerColor
+        if (blurOn) containerColor.copy(alpha = containerAlpha) else containerColor
     Box(
         modifier = modifier
             .clip(shape)
-            .then(glassBlurModifier(dark))
+            .then(glassBlurModifier(dark, blurRadius))
             .then(glassSolidBaseModifier(dark))
             .background(effectiveContainer)
+            .then(
+                if (edgeHighlightAlpha > 0f) {
+                    Modifier.drawBehind {
+                        val fadeWidth = size.width * 0.12f
+                        drawRect(
+                            brush = Brush.horizontalGradient(
+                                listOf(
+                                    Color.White.copy(alpha = edgeHighlightAlpha),
+                                    Color.Transparent
+                                ),
+                                startX = 0f,
+                                endX = fadeWidth
+                            )
+                        )
+                        drawRect(
+                            brush = Brush.horizontalGradient(
+                                listOf(
+                                    Color.Transparent,
+                                    Color.White.copy(alpha = edgeHighlightAlpha)
+                                ),
+                                startX = size.width - fadeWidth,
+                                endX = size.width
+                            )
+                        )
+                    }
+                } else {
+                    Modifier
+                }
+            )
             .border(
                 width = 1.dp,
-                brush = Brush.verticalGradient(
+                brush = rim ?: Brush.verticalGradient(
                     listOf(
                         Color.White.copy(alpha = 0.35f),
                         Color.White.copy(alpha = 0.05f)

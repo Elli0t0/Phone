@@ -22,11 +22,14 @@ val OnAccentBlue = Color(0xFFFFFFFF)
 val BottomBarDark = Color(0xFF2C2C2E)
 val BottomBarDarkSelected = Color(0xFF48484A)
 val BottomBarDarkSelectedContent = Color(0xFFFFFFFF)
-val BottomBarDarkUnselected = Color(0xFFB0B0B5)
+val BottomBarDarkUnselected = Color.White.copy(alpha = 0.80f)
 val BottomBarLight = Color(0xFFEBEBED)
 val BottomBarLightSelected = Color(0xFFD9D9DD)
 val BottomBarLightSelectedContent = Color(0xFF1C1C1E)
-val BottomBarLightUnselected = Color(0xFF6E6E73)
+val BottomBarLightUnselected = Color.Black.copy(alpha = 0.60f)
+// Selected droplet: neutral translucent fill, no primary tint.
+val BottomBarDarkDroplet = Color.White.copy(alpha = 0.16f)
+val BottomBarLightDroplet = Color.Black.copy(alpha = 0.08f)
 
 // Favorite contact card gradients: calm muted pastels,
 // same family as the avatar palette, white name text on top.

@@ -8,23 +8,25 @@ import io.github.elli0t0.phone.data.settings.model.BottomBarSize
 
 /** Bottom bar island and keypad dimensions. */
 object PhoneDimens {
-    // Bottom bar: floating pill, 60% of screen width, 60dp tall,
-    // 3 equal-width items. The selected pill fills its item with a
-    // 4dp inset. Very soft shadow, alpha <= 10%.
-    val bottomBarWidthFraction = 0.6f
+    // Bottom bar: floating stadium pill, 85% of screen width for
+    // Medium (70% Small, 90% Large), 64dp tall, 3 equal-width
+    // items. The selected pill fills its item with a 4dp inset.
+    // Very soft shadow, alpha <= 10% (solid style only; the glass
+    // bar has no drop shadow).
+    val bottomBarWidthFraction = 0.85f
     // Contact details bottom action bar: same pill, 70% of screen width.
     val detailBottomBarWidthFraction = 0.7f
-    val bottomBarHeight = 60.dp
+    val bottomBarHeight = 64.dp
     val bottomBarBottomMargin = 12.dp
     val bottomBarCornerPercent = 50
     val bottomBarItemInset = 4.dp
     // Extra width the shared selection pill gains mid-flight.
-    val bottomBarPillStretch = 14.dp
+    val bottomBarPillStretch = 20.dp
     // Height lost when the bar compacts on scroll (icons only).
     val bottomBarShrinkDelta = 12.dp
     val bottomBarElevation = 2.dp
     val bottomBarShadowAlpha = 0.08f
-    val bottomBarIconSize = 24.dp
+    val bottomBarIconSize = 26.dp
     val bottomBarLabelSize = 12.sp
     val bottomBarLabelIconGap = 2.dp
     // Space kept clear above the bar: largest bar height (68dp, the
@@ -33,7 +35,9 @@ object PhoneDimens {
     val bottomBarReservedHeight = 96.dp
     // Bottom scrim: page color fades from 0% to this alpha over the
     // fade zone above the bar, then stays at this alpha under the bar.
-    val bottomScrimMaxAlpha = 0.55f
+    // Light enough that list content scrolling behind the glass bar
+    // stays visible through the blur.
+    val bottomScrimMaxAlpha = 0.35f
     // Real glass blur (Haze): radius and tint alpha by intensity.
     val glassBlurRadiusSubtle = 20.dp
     val glassBlurRadiusStandard = 28.dp
@@ -271,12 +275,12 @@ data class BottomBarSizeSpec(
 )
 
 fun bottomBarSizeSpec(size: BottomBarSize): BottomBarSizeSpec = when (size) {
-    BottomBarSize.SMALL -> BottomBarSizeSpec(0.5f, 52.dp, 20.dp, 11.sp)
+    BottomBarSize.SMALL -> BottomBarSizeSpec(0.70f, 52.dp, 20.dp, 11.sp)
     BottomBarSize.MEDIUM -> BottomBarSizeSpec(
         PhoneDimens.bottomBarWidthFraction,
         PhoneDimens.bottomBarHeight,
         PhoneDimens.bottomBarIconSize,
         PhoneDimens.bottomBarLabelSize
     )
-    BottomBarSize.LARGE -> BottomBarSizeSpec(0.7f, 68.dp, 28.dp, 13.sp)
+    BottomBarSize.LARGE -> BottomBarSizeSpec(0.90f, 68.dp, 28.dp, 13.sp)
 }

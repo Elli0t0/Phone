@@ -164,6 +164,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.12.2] - 2026-10-28
+
+- Bottom bar restyled as a modern liquid-glass pill: stadium shape, 85% of screen width for Medium (70% Small, 90% Large), 64dp tall, floating 12dp above the navigation-bar inset, 26dp icons.
+- Bar glass: 36dp Haze blur, near-black tint at 22% (dark) / white at 30% (light) via the existing tint tokens, container fill 0.20 so the blur and backdrop show through, 1dp vertical-gradient rim (white 38% top → 6% bottom) plus faint highlights at the left/right ends, no drop shadow under the glass.
+- Selected droplet is now neutral (white 16% dark / black 8% light, no primary tint) with a 1dp white border whose alpha rises to ~40% mid-flight and settles at ~22% at rest; the bouncy sine-bulge slide is kept, stretch 14dp → 20dp.
+- Icons: selected filled pure white (dark) / near-black (light), unselected outline white 80% (dark) / black 60% (light); outline-to-filled Crossfade and 1 → 1.15 → 1 pop kept.
+- Bottom scrim lightened (max alpha 0.55 → 0.35) so list content scrolling behind the bar stays visible through the blur.
+
 ## [0.12.1] - 2026-10-28
 
 - Glass now has something to blur: a soft ambient backdrop (three large accent-hue radial blobs drifting on a 28s loop) drawn at the root behind the tab content, with a new Backdrop setting (Off / Subtle / Vivid, default Subtle; forced Off by Pure black dark mode).

@@ -28,7 +28,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -41,8 +40,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -51,16 +54,17 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.core.design.BottomBarDark
-import io.github.elli0t0.phone.core.design.BottomBarDarkSelected
+import io.github.elli0t0.phone.core.design.BottomBarDarkDroplet
 import io.github.elli0t0.phone.core.design.BottomBarDarkSelectedContent
 import io.github.elli0t0.phone.core.design.BottomBarDarkUnselected
 import io.github.elli0t0.phone.core.design.BottomBarLight
-import io.github.elli0t0.phone.core.design.BottomBarLightSelected
+import io.github.elli0t0.phone.core.design.BottomBarLightDroplet
 import io.github.elli0t0.phone.core.design.BottomBarLightSelectedContent
 import io.github.elli0t0.phone.core.design.BottomBarLightUnselected
 import io.github.elli0t0.phone.core.design.GlassSurface
@@ -68,7 +72,6 @@ import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.bottomBarSizeSpec
-import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.design.glassPress
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
@@ -78,20 +81,28 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 
 /**
- * Floating glass bottom bar, overlaid on content. 60% of the screen
- * width, 60dp tall, three equal-width items. One shared liquid-glass
- * droplet indicator is drawn behind the items: it slides to the selected
- * item with a Bouncy spring and stretches ~14dp mid-flight (a sine bulge
- * on its width), so the droplet feels liquid. The pill progress is read only
- * inside layout/draw lambdas, so the flight never recomposes.
- * The icon cross-fades outline to filled (Short) with a scale pop
- * 1 to 1.15 to 1 (Bouncy) on selection; the label cross-fades between
- * Normal and SemiBold with its color (Short). The bar is real glass:
- * content scrolls visibly behind it. Labels show unless the setting
- * turns them off. The bar floats above the gesture handle:
- * navigation-bar inset + 12dp gap. Style (Glass/Solid) and size
- * (S/M/L) come from Settings; shrinkProgress compacts the bar to
- * icons only as it goes 0 to 1.
+ * Floating liquid-glass bottom bar, overlaid on content. Stadium pill,
+ * 85% of the screen width for Medium (70% Small, 90% Large), 64dp tall,
+ * three equal-width items, 26dp icons. The bar glass is a 36dp Haze
+ * blur with a 0.20 fill, a 1dp vertical-gradient rim (white 38% at
+ * the top edge to 6% at the bottom) and faint highlights at the
+ * left/right ends, with no drop shadow; list content scrolls visibly
+ * behind it, blurred. One shared droplet indicator is drawn behind
+ * the items: it slides to the selected item with a Bouncy spring and
+ * stretches ~20dp mid-flight (a sine bulge on its width), so the
+ * droplet feels liquid. The droplet is neutral (white 16% in dark,
+ * black 8% in light, no primary tint) with a 1dp white border whose
+ * alpha rises to ~40% mid-flight and settles at ~22% at rest. The
+ * pill progress is read only inside layout/draw lambdas, so the
+ * flight never recomposes. The icon cross-fades outline to filled
+ * (Short) with a scale pop 1 to 1.15 to 1 (Bouncy) on selection;
+ * the label cross-fades between Normal and SemiBold with its color
+ * (Short). Selected icons are filled pure white (dark) / near-black
+ * (light); unselected are outline white 80% (dark) / black 60%
+ * (light). Labels show unless the setting turns them off. The bar
+ * floats above the gesture handle: navigation-bar inset + 12dp gap.
+ * Style (Glass/Solid) and size (S/M/L) come from Settings;
+ * shrinkProgress compacts the bar to icons only as it goes 0 to 1.
  */
 @Composable
 fun PhoneBottomBar(
@@ -108,8 +119,8 @@ fun PhoneBottomBar(
         ThemeMode.DARK -> true
         ThemeMode.SYSTEM -> isSystemInDarkTheme()
     }
-    val selectedPillColor = if (darkTheme) BottomBarDarkSelected else BottomBarLightSelected
     val selectedContentColor = if (darkTheme) BottomBarDarkSelectedContent else BottomBarLightSelectedContent
+    val dropletColor = if (darkTheme) BottomBarDarkDroplet else BottomBarLightDroplet
     val unselectedContentColor = if (darkTheme) BottomBarDarkUnselected else BottomBarLightUnselected
     val barColor = if (darkTheme) BottomBarDark else BottomBarLight
     val sizeSpec = bottomBarSizeSpec(LocalAppSettings.current.bottomBarSize)
@@ -169,9 +180,9 @@ fun PhoneBottomBar(
         }
     }
 
-    // Width 60% of the screen. Height fixed at 60dp; the three items
-    // share the width equally via weight, so nothing can overflow
-    // or clip.
+    // Width from the size spec (70/85/90% for S/M/L). Height from
+    // the spec (64dp Medium); the three items share the width
+    // equally via weight, so nothing can overflow or clip.
     BoxWithConstraints(
         modifier = modifier
             .navigationBarsPadding()
@@ -214,7 +225,14 @@ fun PhoneBottomBar(
             layout(placeable.width, h) { placeable.place(0, 0) }
         }
         val barContent: @Composable BoxScope.() -> Unit = {
-            // The one shared liquid-glass droplet, behind the items.
+            // The one shared droplet, behind the items: neutral
+            // translucent fill in both styles (no primary tint), with
+            // a 1dp white border drawn here so its alpha can follow
+            // the flight progress inside the draw lambda: ~22% at
+            // rest, rising to ~40% mid-flight. The border is inset
+            // by half the stroke, like the premium glass border, so
+            // the clip does not halve it. The border is drawn the
+            // same way in both styles; only the bar behind it differs.
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
@@ -244,17 +262,40 @@ fun PhoneBottomBar(
                     .width(pillWidth)
                     .fillMaxHeight()
                     .padding(vertical = PhoneDimens.bottomBarItemInset)
-                    .then(
-                        if (glassBottomBar) {
-                            Modifier.liquidGlass(
-                                shape = pillShape,
-                                tint = MaterialTheme.colorScheme.primary,
-                                isSelected = true
-                            )
+                    .clip(pillShape)
+                    .background(dropletColor)
+                    .drawBehind {
+                        val p = pillProgress.value.coerceIn(0f, 1f)
+                        val borderAlpha = if (animationOption == AnimationOption.ON) {
+                            0.22f + 0.18f * sin(p * PI).toFloat()
                         } else {
-                            Modifier.clip(pillShape).background(selectedPillColor)
+                            0.22f
                         }
-                    )
+                        val strokePx = 1.dp.toPx()
+                        val borderSize = Size(size.width - strokePx, size.height - strokePx)
+                        val borderStroke = Stroke(width = strokePx)
+                        val borderColor = Color.White.copy(alpha = borderAlpha)
+                        translate(strokePx / 2f, strokePx / 2f) {
+                            when (val outline = pillShape.createOutline(borderSize, layoutDirection, this)) {
+                                is Outline.Rectangle -> drawRect(
+                                    color = borderColor,
+                                    size = borderSize,
+                                    style = borderStroke
+                                )
+                                is Outline.Rounded -> drawRoundRect(
+                                    color = borderColor,
+                                    size = borderSize,
+                                    cornerRadius = outline.roundRect.topLeftCornerRadius,
+                                    style = borderStroke
+                                )
+                                is Outline.Generic -> drawPath(
+                                    path = outline.path,
+                                    color = borderColor,
+                                    style = borderStroke
+                                )
+                            }
+                        }
+                    }
             )
             Row(
                 modifier = Modifier.fillMaxSize(),
@@ -443,7 +484,19 @@ fun PhoneBottomBar(
         if (LocalAppSettings.current.bottomBarStyle == BottomBarStyle.GLASS && glassBottomBar) {
             GlassSurface(
                 shape = pillShape,
-                modifier = Modifier.width(barWidth).then(barHeightModifier)
+                modifier = Modifier.width(barWidth).then(barHeightModifier),
+                // Thin fill so the blur and the backdrop show through,
+                // 36dp blur, vertical-gradient rim, faint end
+                // highlights, and no drop shadow under the glass.
+                containerAlpha = 0.20f,
+                blurRadius = 36.dp,
+                rim = Brush.verticalGradient(
+                    listOf(
+                        Color.White.copy(alpha = 0.38f),
+                        Color.White.copy(alpha = 0.06f)
+                    )
+                ),
+                edgeHighlightAlpha = 0.10f
             ) {
                 barContent()
             }
