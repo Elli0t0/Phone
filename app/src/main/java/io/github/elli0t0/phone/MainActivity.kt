@@ -16,6 +16,9 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import io.github.elli0t0.phone.core.common.CrashLog
 import io.github.elli0t0.phone.core.design.AmbientBackdrop
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
@@ -23,11 +26,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -46,8 +53,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -415,6 +425,67 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
                         LocalSpacing.current.small
                 )
         )
+        CrashReportDialog()
     }
     }
+}
+
+/**
+ * One-shot crash report: if the previous run died on an uncaught
+ * exception, the trace saved by CrashLog is shown here on next launch
+ * so it can be copied out (there is no user-visible crash log on the
+ * phone itself). Copy or Dismiss both delete the saved report.
+ */
+@Composable
+private fun CrashReportDialog() {
+    val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
+    var report by remember { mutableStateOf(CrashLog.read(context.applicationContext)) }
+    val text = report ?: return
+    AlertDialog(
+        onDismissRequest = {
+            CrashLog.clear(context.applicationContext)
+            report = null
+        },
+        title = {
+            Text(
+                text = stringResource(id = R.string.crash_log_title),
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
+        text = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 400.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    clipboardManager.setText(AnnotatedString(text))
+                    CrashLog.clear(context.applicationContext)
+                    report = null
+                }
+            ) {
+                Text(text = stringResource(id = R.string.crash_log_copy))
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    CrashLog.clear(context.applicationContext)
+                    report = null
+                }
+            ) {
+                Text(text = stringResource(id = R.string.crash_log_dismiss))
+            }
+        }
+    )
 }

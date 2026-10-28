@@ -464,5 +464,8 @@
     <string name="recents_duration_zero">0 sec</string>
     <string name="recents_duration_min_sec">%1$dm %2$ds</string>
     <string name="recents_duration_sec">%1$ds</string>
+    <string name="crash_log_title">Crash report</string>
+    <string name="crash_log_copy">Copy</string>
+    <string name="crash_log_dismiss">Dismiss</string>
 </resources>
 

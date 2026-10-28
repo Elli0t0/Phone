@@ -164,6 +164,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.13.4]
+
+- In-app crash log: an uncaught crash now saves its stack trace inside the app, and the next launch shows it in a dialog with Copy and Dismiss, so a crash can be diagnosed without logcat access. The saved report is deleted once copied or dismissed, and the next crash overwrites it.
+- No other changes.
+
 ## [0.13.3]
 - Sticky glass top bar fixed: no more 0.92 background hiding the blur; the fade band under it is now a background gradient (0.6 to transparent over 16dp, no blur on the band) instead of the inverted one; the bar sits at the very top of the screen at full width with its own status-bar inset (status inset + 56dp), so it covers the status area; each list has its own haze state so the bar blurs only the list; the compact bar renders plain icon buttons instead of the large-header pills (Contacts: Groups icon, add, search, menu; Recents: filter, search, menu).
 - Page header rebuilt as a content-based Column (title row, centered title, subtitle) scaled by the Header size setting (0.85x/1x/1.2x) instead of the fraction + offset layout, so the rows cannot overlap; the sticky bar fades in from the header's measured height.

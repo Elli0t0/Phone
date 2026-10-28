@@ -13,6 +13,7 @@ import io.github.elli0t0.phone.data.favorites.ContactSimRepository
 import io.github.elli0t0.phone.data.favorites.DefaultContactSimRepository
 import io.github.elli0t0.phone.data.favorites.DefaultFavoritesRepository
 import io.github.elli0t0.phone.data.favorites.FavoritesRepository
+import io.github.elli0t0.phone.core.common.CrashLog
 import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
 import io.github.elli0t0.phone.core.notifications.CallNotificationChannels
 import io.github.elli0t0.phone.data.settings.DataStoreSettingsRepository
@@ -83,6 +84,7 @@ class PhoneApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        CrashLog.install(this)
         PhoneNumberMatcher.initRegion(this)
         container = DefaultAppContainer(this)
         CallNotificationChannels.createAll(this)
