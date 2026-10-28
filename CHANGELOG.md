@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.15.1]
+
+- Fixes the 0.15.0 build: Kadb's SPAKE2 dependency (com.github.Flyfish233:spake2-java) is published only on JitPack, not on Maven Central, so dependency resolution failed. The build now includes the JitPack repository, scoped to that one group. No app code changes.
+
 ## [0.15.0]
 
 - Call recording without Shizuku: Settings → Calls → Call recording now offers a Backend choice — Shizuku (as before) or Built-in ADB. Built-in ADB pairs the phone with itself over wireless debugging (one-time, six-digit code typed into a notification so the system pairing dialog stays open), then starts Phone's own shell-privileged recorder over that ADB connection. No second app needed; the Shizuku path is unchanged and still available.
