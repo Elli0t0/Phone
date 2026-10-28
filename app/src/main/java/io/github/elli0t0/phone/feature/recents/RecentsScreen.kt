@@ -151,6 +151,10 @@ fun RecentsScreen(
     var addNumber by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
     var searchVisible by remember { mutableStateOf(uiState.searchQuery.isNotEmpty()) }
     var menuExpanded by remember { mutableStateOf(false) }
+    // Long-press menu, hoisted so expand and menu stay mutually
+    // exclusive across rows: expanding dismisses it, opening it
+    // collapses any expanded row.
+    var menuCallId by remember { mutableStateOf<Long?>(null) }
     var filterMenuExpanded by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
@@ -600,9 +604,16 @@ fun RecentsScreen(
                                         CallLogRow(
                                             group = group,
                                             isExpanded = uiState.expandedCallId == group.id,
+                                            showMenu = menuCallId == group.id,
                                             canWriteCallLog = permissionState.hasWritePermission,
                                             showSim = simAccounts.size > 1,
-                                            onRowClick = { viewModel.onToggleExpandCall(group.id) },
+                                            onRowClick = {
+                                                menuCallId = null
+                                                viewModel.onToggleExpandCall(group.id)
+                                            },
+                                            onCollapse = { viewModel.onCollapseExpandedCall() },
+                                            onShowMenu = { menuCallId = group.id },
+                                            onDismissMenu = { menuCallId = null },
                                             onCallClick = { initiateCall(group.number) },
                                             onMessageClick = {
                                                 val uri = Uri.parse("smsto:${Uri.encode(group.number)}")

@@ -51,6 +51,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -89,8 +90,12 @@ import androidx.compose.ui.text.style.TextDirection
 fun CallLogRow(
     group: CallGroup,
     isExpanded: Boolean,
+    showMenu: Boolean,
     canWriteCallLog: Boolean,
     onRowClick: () -> Unit,
+    onCollapse: () -> Unit,
+    onShowMenu: () -> Unit,
+    onDismissMenu: () -> Unit,
     onCallClick: () -> Unit,
     onMessageClick: () -> Unit,
     onOpenContactClick: () -> Unit,
@@ -102,7 +107,6 @@ fun CallLogRow(
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
-    var showMenu by remember { mutableStateOf(false) }
     val timeFormat = rememberTimeFormat()
     val formattedTime = remember(group.date, timeFormat) { timeFormat.format(Date(group.date)) }
     // Expanded details respect the Animations setting: ON expands +
@@ -219,7 +223,11 @@ fun CallLogRow(
                         interactionSource = rowSource,
                         indication = ripple(),
                         onClick = onRowClick,
-                        onLongClick = { showMenu = true }
+                        // Collapse first (this row or any other),
+                        // then open the menu: expand and menu never
+                        // coexist, so the menu can never cover
+                        // expanded details text.
+                        onLongClick = { onCollapse(); onShowMenu() }
                     )
                     .testTag("call_row_${group.id}")
             ) {
@@ -303,41 +311,46 @@ fun CallLogRow(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                }
-
-                // Long press context menu
-                DropdownMenu(
-                    expanded = showMenu,
-                    onDismissRequest = { showMenu = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(id = R.string.action_call)) },
-                        onClick = { showMenu = false; onCallClick() }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(id = R.string.action_message)) },
-                        onClick = { showMenu = false; onMessageClick() }
-                    )
-                    if (group.primaryCall.contactId != null) {
+                    // Long press context menu, anchored to the row's
+                    // end side (the time slot) with a small offset,
+                    // so it opens over the row's right half. Expanded
+                    // details are collapsed whenever it opens, so it
+                    // can never cover detail lines; the stock menu
+                    // still flips above when there is no room below.
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = onDismissMenu,
+                        offset = DpOffset(0.dp, 4.dp)
+                    ) {
                         DropdownMenuItem(
-                            text = { Text(stringResource(id = R.string.action_open_contact)) },
-                            onClick = { showMenu = false; onOpenContactClick() }
+                            text = { Text(stringResource(id = R.string.action_call)) },
+                            onClick = { onDismissMenu(); onCallClick() }
                         )
-                    } else {
                         DropdownMenuItem(
-                            text = { Text(stringResource(id = R.string.action_add_contact)) },
-                            onClick = { showMenu = false; onAddContactClick() }
+                            text = { Text(stringResource(id = R.string.action_message)) },
+                            onClick = { onDismissMenu(); onMessageClick() }
                         )
-                    }
-                    DropdownMenuItem(
-                        text = { Text(stringResource(id = R.string.action_copy_number)) },
-                        onClick = { showMenu = false; onCopyNumberClick() }
-                    )
-                    if (canWriteCallLog) {
+                        if (group.primaryCall.contactId != null) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(id = R.string.action_open_contact)) },
+                                onClick = { onDismissMenu(); onOpenContactClick() }
+                            )
+                        } else {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(id = R.string.action_add_contact)) },
+                                onClick = { onDismissMenu(); onAddContactClick() }
+                            )
+                        }
                         DropdownMenuItem(
-                            text = { Text(stringResource(id = R.string.action_delete_call), color = MaterialTheme.colorScheme.error) },
-                            onClick = { showMenu = false; onDeleteClick() }
+                            text = { Text(stringResource(id = R.string.action_copy_number)) },
+                            onClick = { onDismissMenu(); onCopyNumberClick() }
                         )
+                        if (canWriteCallLog) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(id = R.string.action_delete_call), color = MaterialTheme.colorScheme.error) },
+                                onClick = { onDismissMenu(); onDeleteClick() }
+                            )
+                        }
                     }
                 }
             }

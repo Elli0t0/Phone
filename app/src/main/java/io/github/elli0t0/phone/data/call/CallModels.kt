@@ -19,6 +19,9 @@ data class OngoingCallModel(
     val displayName: String?,
     val state: CallState,
     val durationSeconds: Long = 0L,
+    // Connect time in elapsed-realtime basis (see CallRepository):
+    // 0 while the call has not connected yet.
+    val connectTimeMillis: Long = 0L,
     val isMuted: Boolean = false,
     val isSpeakerOn: Boolean = false,
     val audioRoute: Int = CallAudioState.ROUTE_EARPIECE,

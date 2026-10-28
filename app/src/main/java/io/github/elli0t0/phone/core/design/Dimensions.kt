@@ -1,5 +1,9 @@
 package io.github.elli0t0.phone.core.design
 
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -290,4 +294,18 @@ fun bottomBarSizeSpec(size: BottomBarSize): BottomBarSizeSpec = when (size) {
         maxWidth = 360.dp
     )
     BottomBarSize.LARGE -> BottomBarSizeSpec(0.82f, 68.dp, 28.dp, 13.sp)
+}
+
+/**
+ * Bottom clearance for a scrolling list under the floating bar,
+ * from the bar-height state (never a hard-coded dp): the current
+ * bar height + the navigation-bar inset + a 16dp gap, so the last
+ * item scrolls fully above the bar at any bar size.
+ */
+@Composable
+fun bottomBarListBottomPadding(): Dp {
+    val barHeight = bottomBarSizeSpec(LocalAppSettings.current.bottomBarSize).height
+    return barHeight +
+        WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() +
+        16.dp
 }

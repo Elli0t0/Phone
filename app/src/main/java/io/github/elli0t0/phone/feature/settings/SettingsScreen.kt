@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -92,6 +93,7 @@ import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.bottomBarListBottomPadding
 import io.github.elli0t0.phone.core.permissions.SetupPermissions
 import io.github.elli0t0.phone.core.telecom.rememberDefaultDialerState
 import io.github.elli0t0.phone.core.telecom.UssdHelper
@@ -236,7 +238,8 @@ fun SettingsScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
                 .padding(horizontal = spacing.screenHorizontalPadding),
-            verticalArrangement = Arrangement.spacedBy(spacing.medium)
+            verticalArrangement = Arrangement.spacedBy(spacing.medium),
+            contentPadding = PaddingValues(bottom = bottomBarListBottomPadding())
         ) {
             settingsSections(
                 settings = settings,

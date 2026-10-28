@@ -212,6 +212,12 @@ class RecentsViewModel(
         _expandedCallId.value = if (_expandedCallId.value == callId) null else callId
     }
 
+    // Collapse-only, no toggle: opening a menu must collapse
+    // whichever row is expanded, never expand another one.
+    fun onCollapseExpandedCall() {
+        _expandedCallId.value = null
+    }
+
     fun deleteCall(callId: Long) {
         activeScope?.launch {
             val success = callLogRepository.deleteCall(callId)

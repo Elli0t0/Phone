@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.bottomBarListBottomPadding
 import io.github.elli0t0.phone.data.contacts.model.ContactGroup
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 import io.github.elli0t0.phone.feature.contacts.GroupsViewModel
@@ -114,7 +115,10 @@ fun GroupsScreen(
                     else -> {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(top = spacing.small)
+                            contentPadding = PaddingValues(
+                                top = spacing.small,
+                                bottom = bottomBarListBottomPadding()
+                            )
                         ) {
                             items(
                                 items = uiState.groups,
@@ -156,7 +160,10 @@ fun GroupsScreen(
                     else -> {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(top = spacing.small)
+                            contentPadding = PaddingValues(
+                                top = spacing.small,
+                                bottom = bottomBarListBottomPadding()
+                            )
                         ) {
                             item(key = "members") {
                                 ContactGroupCard(

@@ -1,5 +1,6 @@
 package io.github.elli0t0.phone.data.call
 
+import android.os.SystemClock
 import android.telecom.Call
 import android.telecom.CallAudioState
 import android.telecom.VideoProfile
@@ -105,7 +106,9 @@ object CallRepository {
 
     fun updateDuration(durationSeconds: Long) {
         val current = _ongoingCallModel.value ?: return
-        _ongoingCallModel.value = current.copy(durationSeconds = durationSeconds)
+        if (current.durationSeconds != durationSeconds) {
+            _ongoingCallModel.value = current.copy(durationSeconds = durationSeconds)
+        }
     }
 
     fun updateDisplayName(name: String?) {
@@ -156,12 +159,30 @@ object CallRepository {
             ?: contactDisplayName?.takeIf { it.isNotBlank() }
             ?: callerDisplayName?.takeIf { it.isNotBlank() }
 
+        // Connect time, kept in elapsed-realtime basis so the timer
+        // is monotonic: Details.connectTimeMillis is wall-clock
+        // epoch, so it is converted once (exact unless the wall
+        // clock jumped since connect). Captured once and kept on
+        // every rebuild, so activity recreation can never reset it;
+        // when Details has no connect time yet, the elapsed clock
+        // is captured the moment the call becomes ACTIVE.
+        val detailsConnect = call.details?.connectTimeMillis ?: 0L
+        val previousConnect = currentModel?.connectTimeMillis ?: 0L
+        val connectTimeMillis = when {
+            previousConnect != 0L -> previousConnect
+            detailsConnect > 0L -> SystemClock.elapsedRealtime() -
+                (System.currentTimeMillis() - detailsConnect)
+            state == CallState.ACTIVE -> SystemClock.elapsedRealtime()
+            else -> 0L
+        }
+
         _ongoingCallModel.value = OngoingCallModel(
             id = call.hashCode().toString(),
             number = rawNumber,
             displayName = effectiveDisplayName,
             state = state,
             durationSeconds = currentModel?.durationSeconds ?: 0L,
+            connectTimeMillis = connectTimeMillis,
             isMuted = currentModel?.isMuted ?: false,
             isSpeakerOn = currentModel?.isSpeakerOn ?: false,
             audioRoute = currentModel?.audioRoute ?: CallAudioState.ROUTE_EARPIECE,

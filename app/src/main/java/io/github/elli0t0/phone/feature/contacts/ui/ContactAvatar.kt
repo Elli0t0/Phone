@@ -37,6 +37,15 @@ fun avatarGradient(displayName: String): Pair<Color, Color> {
     return ContactAvatarGradients[index]
 }
 
+/**
+ * The letter shown when a contact has no photo: the first character
+ * of the trimmed name, uppercased, or "?" when the name is blank.
+ * Every avatar in the app, including the profile row, routes through
+ * this one helper so the initial can never differ by call site.
+ */
+internal fun contactInitial(displayName: String): String =
+    displayName.trim().take(1).uppercase().ifBlank { "?" }
+
 @Composable
 fun ContactAvatar(
     photoUri: String?,
@@ -48,7 +57,7 @@ fun ContactAvatar(
     // gradient instead of the number's first character ("+").
     showPersonIcon: Boolean = false
 ) {
-    val initial = displayName.trim().take(1).uppercase().ifBlank { "?" }
+    val initial = contactInitial(displayName)
     // Soft two-tone pastel gradient, deterministic per name. The brush is
     // remembered: rebuilding it every composition re-created the shader.
     val gradient = avatarGradient(displayName)

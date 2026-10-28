@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.SystemClock
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -131,14 +132,27 @@ class CallActivity : ComponentActivity() {
                     )
                 }
 
-                // Timer loop when active
+                // Timer loop when active, keyed on state only: the
+                // keypad is screen state, so opening it must not
+                // restart or stop the loop. Duration is derived
+                // from the connect time on every tick, so activity
+                // recreation, screen-off and backgrounding can
+                // neither reset nor lag it. Ticks align to
+                // whole-second boundaries, so no second is ever
+                // shown twice; the first tick corrects any stale
+                // value immediately.
                 LaunchedEffect(ongoingCall?.state) {
                     if (ongoingCall?.state == CallState.ACTIVE) {
-                        var seconds = ongoingCall?.durationSeconds ?: 0L
                         while (isActive) {
-                            delay(1000L)
-                            seconds++
-                            CallRepository.updateDuration(seconds)
+                            val connect = CallRepository.ongoingCallModel.value?.connectTimeMillis ?: 0L
+                            val now = SystemClock.elapsedRealtime()
+                            val elapsed = if (connect > 0L) {
+                                (now - connect).coerceAtLeast(0L)
+                            } else {
+                                0L
+                            }
+                            CallRepository.updateDuration(elapsed / 1000L)
+                            delay(1000L - (elapsed % 1000L))
                         }
                     }
                 }

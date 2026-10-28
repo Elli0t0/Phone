@@ -164,6 +164,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.13.0]
+- Call timer no longer drifts: duration is derived from the real connect time on every tick (Details connect time converted once to the monotonic clock, or the elapsed clock captured when the call becomes ACTIVE), so activity recreation, screen-off and backgrounding can neither reset nor lag it. Ticks align to whole-second boundaries, so no second is ever shown twice, and the loop keeps ticking with the keypad open.
+- Recents expand and long-press menu are mutually exclusive now: long-press collapses any expanded row first, then opens the menu; tapping a row dismisses any open menu. The menu is anchored to the row's end side (the time slot) with a small offset, so it opens over the row's right half and never over expanded details text.
+- Profile avatar initial now routes through the same helper as every other avatar (first character of the trimmed name, uppercased, "?" when blank), with a small unit test for the helper.
+- Bottom clearance under the floating bar fixed where it was missing: Groups (both lists), Blocked numbers and the Settings main page now use one shared value from the bar-height state (current bar height + navigation-bar inset + 16dp). Recents, Contacts and the Favorites section already cleared the bar and were left alone.
+
 ## [0.12.10]
 - Bottom bar droplet is a glass lens now: white vertical-gradient fill, crescent top highlight, 1dp gradient rim (bright top-left, faint bottom-right), plus a soft accent-colored glow behind it (radial gradient, no real blur).
 - Bar surface: dark fill thinned to 0.16 so the colored backdrop shows through (light stays 0.20), rim brighter at the top (white 0.45 to 0.06, still scaled by the Studio edge-light setting), and a very light white wash from the top for the thick-glass look.

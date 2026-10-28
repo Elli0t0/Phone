@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -49,6 +50,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.bottomBarListBottomPadding
 import io.github.elli0t0.phone.core.telecom.rememberDefaultDialerState
 import io.github.elli0t0.phone.navigation.InnerTopBar
 
@@ -233,7 +235,8 @@ fun BlockedNumbersScreen(
                 )
             } else {
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(spacing.small)
+                    verticalArrangement = Arrangement.spacedBy(spacing.small),
+                    contentPadding = PaddingValues(bottom = bottomBarListBottomPadding())
                 ) {
                     itemsIndexed(
                         filteredEntries,
