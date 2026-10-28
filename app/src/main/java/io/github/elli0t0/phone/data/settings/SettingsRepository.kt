@@ -74,6 +74,7 @@ interface SettingsRepository {
     suspend fun setGlassColorRichness(richness: Float)
     suspend fun setDropletStretch(stretch: DropletStretch)
     suspend fun setGlassHapticFeedback(feedback: GlassHapticFeedback)
+    suspend fun setEdgeRefraction(enabled: Boolean)
     suspend fun setReduceTransparency(enabled: Boolean)
     suspend fun setGlassCards(enabled: Boolean)
     suspend fun setDynamicHighlights(enabled: Boolean)
@@ -141,6 +142,7 @@ class DataStoreSettingsRepository(
         val GLASS_COLOR_RICHNESS = floatPreferencesKey("glass_color_richness")
         val DROPLET_STRETCH = stringPreferencesKey("droplet_stretch")
         val GLASS_HAPTIC_FEEDBACK = stringPreferencesKey("glass_haptic_feedback")
+        val EDGE_REFRACTION = booleanPreferencesKey("edge_refraction")
         val REDUCE_TRANSPARENCY = booleanPreferencesKey("reduce_transparency")
         val GLASS_CARDS = booleanPreferencesKey("glass_cards")
         val DYNAMIC_HIGHLIGHTS = booleanPreferencesKey("dynamic_highlights")
@@ -226,6 +228,7 @@ class DataStoreSettingsRepository(
         val dropletStretch = dropletStretchStr?.let { runCatching { DropletStretch.valueOf(it) }.getOrNull() } ?: DropletStretch.NORMAL
         val glassHapticStr = prefs[Keys.GLASS_HAPTIC_FEEDBACK]
         val glassHapticFeedback = glassHapticStr?.let { runCatching { GlassHapticFeedback.valueOf(it) }.getOrNull() } ?: GlassHapticFeedback.LIGHT
+        val edgeRefraction = prefs[Keys.EDGE_REFRACTION] ?: true
 
         val reduceTransparency = prefs[Keys.REDUCE_TRANSPARENCY] ?: false
         val glassCards = prefs[Keys.GLASS_CARDS] ?: false
@@ -374,6 +377,7 @@ class DataStoreSettingsRepository(
             glassColorRichness = glassColorRichness,
             dropletStretch = dropletStretch,
             glassHapticFeedback = glassHapticFeedback,
+            edgeRefraction = edgeRefraction,
             reduceTransparency = reduceTransparency,
             glassCards = glassCards,
             dynamicHighlights = dynamicHighlights,
@@ -559,6 +563,12 @@ class DataStoreSettingsRepository(
     override suspend fun setGlassHapticFeedback(feedback: GlassHapticFeedback) {
         dataStore.edit { prefs ->
             prefs[Keys.GLASS_HAPTIC_FEEDBACK] = feedback.name
+        }
+    }
+
+    override suspend fun setEdgeRefraction(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.EDGE_REFRACTION] = enabled
         }
     }
 

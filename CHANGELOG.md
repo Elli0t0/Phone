@@ -164,6 +164,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.12.7]
+- Glass Studio: new "Edge refraction" switch (default on) for the floating bottom bar.
+- Edge refraction (API 33+): a subtle AGSL warp on the bar's blur layer only, magnifying the backdrop near the bar's ends; icons and the droplet are untouched.
+- Any failure, API below 33, or Reduce transparency falls back silently to the plain blur.
+
 ## [0.12.6] - 2026-10-28
 
 - New Glass Studio page, opened from the Liquid glass section of Settings: a live preview card (glass pill + glass key over the real backdrop) plus blur amount (0.5–1.5x), glass tint (0–1), edge light (Off/Soft/Bright), dynamic highlights, color richness (1.0–2.2x), droplet stretch (Off/Normal/Extra), glass haptics (Off/Light/Medium), backdrop (Off/Subtle/Vivid, reusing the existing setting) and a reset-to-defaults button. All defaults reproduce the current behavior; Reduce transparency and Animations Off are respected as before.

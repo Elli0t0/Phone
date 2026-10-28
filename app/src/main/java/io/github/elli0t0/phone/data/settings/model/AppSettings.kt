@@ -246,6 +246,10 @@ data class AppSettings(
     val glassColorRichness: Float = 1.7f,
     val dropletStretch: DropletStretch = DropletStretch.NORMAL,
     val glassHapticFeedback: GlassHapticFeedback = GlassHapticFeedback.LIGHT,
+    // Edge refraction on the floating bottom bar's blur layer.
+    // Default on; forced off by Reduce transparency (no blur, so
+    // nothing to refract) and by API < 33 (no RuntimeShader).
+    val edgeRefraction: Boolean = true,
     // Dynamic highlights: the premium glass specular border shifts
     // with device tilt. Default on; off when Animations is Off.
     val dynamicHighlights: Boolean = true,

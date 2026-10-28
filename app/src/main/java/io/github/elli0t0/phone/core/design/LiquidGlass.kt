@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.Outline
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.RenderEffect
+import android.graphics.RuntimeShader
 import android.os.Build
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Shape
@@ -56,6 +57,7 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.onSizeChanged
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -294,6 +296,11 @@ fun GlassSurface(
     // Faint vertical highlights fading inward from the left/right
     // ends, drawn over the fill and under the rim; 0 disables them.
     edgeHighlightAlpha: Float = 0f,
+    // Edge refraction on the blur layer only (the floating bottom
+    // bar passes true; every other caller keeps the plain blur).
+    // The icons and the droplet live in the content layer above the
+    // blur, so they are never warped.
+    edgeRefraction: Boolean = false,
     content: @Composable BoxScope.() -> Unit
 ) {
     val settings = LocalAppSettings.current
@@ -304,54 +311,149 @@ fun GlassSurface(
     val effectiveEdgeHighlightAlpha = (edgeHighlightAlpha * edgeLightFactor).coerceIn(0f, 1f)
     val effectiveContainer =
         if (blurOn) containerColor.copy(alpha = containerAlpha) else containerColor
-    Box(
-        modifier = modifier
-            .clip(shape)
-            .then(glassBlurModifier(dark, blurRadius))
-            .then(glassSolidBaseModifier(dark))
-            .background(effectiveContainer)
-            .then(
-                if (effectiveEdgeHighlightAlpha > 0f) {
-                    Modifier.drawBehind {
-                        val fadeWidth = size.width * 0.12f
-                        drawRect(
-                            brush = Brush.horizontalGradient(
-                                listOf(
-                                    Color.White.copy(alpha = effectiveEdgeHighlightAlpha),
-                                    Color.Transparent
-                                ),
-                                startX = 0f,
-                                endX = fadeWidth
-                            )
-                        )
-                        drawRect(
-                            brush = Brush.horizontalGradient(
-                                listOf(
-                                    Color.Transparent,
-                                    Color.White.copy(alpha = effectiveEdgeHighlightAlpha)
-                                ),
-                                startX = size.width - fadeWidth,
-                                endX = size.width
-                            )
-                        )
-                    }
-                } else {
-                    Modifier
-                }
-            )
-            .border(
-                width = 1.dp,
-                brush = rim ?: Brush.verticalGradient(
-                    listOf(
-                        Color.White.copy(alpha = (0.35f * edgeLightFactor).coerceIn(0f, 1f)),
-                        Color.White.copy(alpha = (0.05f * edgeLightFactor).coerceIn(0f, 1f))
+    val edgeHighlightModifier =
+        if (effectiveEdgeHighlightAlpha > 0f) {
+            Modifier.drawBehind {
+                val fadeWidth = size.width * 0.12f
+                drawRect(
+                    brush = Brush.horizontalGradient(
+                        listOf(
+                            Color.White.copy(alpha = effectiveEdgeHighlightAlpha),
+                            Color.Transparent
+                        ),
+                        startX = 0f,
+                        endX = fadeWidth
                     )
-                ),
-                shape = shape
-            ),
-        content = content
+                )
+                drawRect(
+                    brush = Brush.horizontalGradient(
+                        listOf(
+                            Color.Transparent,
+                            Color.White.copy(alpha = effectiveEdgeHighlightAlpha)
+                        ),
+                        startX = size.width - fadeWidth,
+                        endX = size.width
+                    )
+                )
+            }
+        } else {
+            Modifier
+        }
+    val effectiveRim = rim ?: Brush.verticalGradient(
+        listOf(
+            Color.White.copy(alpha = (0.35f * edgeLightFactor).coerceIn(0f, 1f)),
+            Color.White.copy(alpha = (0.05f * edgeLightFactor).coerceIn(0f, 1f))
+        )
     )
+    // Solid fallback + fill + highlights + rim, shared by both
+    // layouts below so the refracted and plain bars match exactly.
+    val fillChain = Modifier
+        .then(glassSolidBaseModifier(dark))
+        .background(effectiveContainer)
+        .then(edgeHighlightModifier)
+        .border(
+            width = 1.dp,
+            brush = effectiveRim,
+            shape = shape
+        )
+    // Edge refraction: an AGSL warp of the blurred backdrop, pulling
+    // samples slightly toward the center near the left/right ends so
+    // the backdrop reads magnified there (cubic falloff, zero at the
+    // center, 3% of the width at most). API 33+ only (RuntimeShader);
+    // Reduce transparency already disables blur, which disables this
+    // too. Any failure (bad shader, missing effect) falls back to the
+    // plain blur: the branch below only runs when the effect exists.
+    // Note: this surface has no saturation RenderEffect to chain
+    // with (its blur is a Haze effect, not a RenderEffect); the
+    // saturation effect in liquidGlass() is untouched, and chaining
+    // would only apply if both effects ever shared one layer.
+    val refractionWanted = edgeRefraction && blurOn &&
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+    val refractionShader = remember(refractionWanted) {
+        if (refractionWanted) {
+            runCatching { RuntimeShader(EdgeRefractionAgSL) }.getOrNull()
+        } else {
+            null
+        }
+    }
+    val refractionEffect = remember(refractionShader) {
+        refractionShader?.let {
+            runCatching {
+                RenderEffect.createRuntimeShaderEffect(it, "inputShader")
+                    .asComposeRenderEffect()
+            }.getOrNull()
+        }
+    }
+    if (refractionEffect != null) {
+        // Refracted layout: three stacked layers, all clipped to the
+        // shape. The blur layer carries the warp; the fill layer and
+        // the content layer sit above it, unwarped. The blur and fill
+        // layers are matchParentSize, so the content layer alone sizes
+        // the bar exactly as the single Box did. Neither lower layer
+        // handles input, so taps and drags still hit the content.
+        Box(modifier = modifier) {
+            Box(
+                modifier = Modifier.matchParentSize()
+                    .clip(shape)
+                    .then(glassBlurModifier(dark, blurRadius))
+                    .onSizeChanged { size ->
+                        runCatching {
+                            refractionShader?.setFloatUniform(
+                                "size",
+                                size.width.toFloat(),
+                                size.height.toFloat()
+                            )
+                        }
+                    }
+                    .graphicsLayer { renderEffect = refractionEffect }
+            )
+            Box(
+                modifier = Modifier.matchParentSize()
+                    .clip(shape)
+                    .then(fillChain)
+            )
+            Box(
+                modifier = Modifier.clip(shape),
+                content = content
+            )
+        }
+    } else {
+        Box(
+            modifier = modifier
+                .clip(shape)
+                .then(glassBlurModifier(dark, blurRadius))
+                .then(fillChain),
+            content = content
+        )
+    }
 }
+
+/**
+ * AGSL for the bottom bar's edge refraction. Samples the layer's
+ * blurred backdrop with a horizontal warp: near the left/right ends
+ * the sample coordinate is pulled toward the center, so a small
+ * output span covers a smaller input span and the backdrop reads
+ * magnified there. The pull is cubic in the distance from the
+ * center, so it is zero and flat at the center and strongest at the
+ * very ends, with no seam. Vertical coordinates are untouched, and
+ * the sample is clamped to the layer so no edge pixels are invented.
+ * Until the layer size is known the shader passes through.
+ */
+private const val EdgeRefractionAgSL = """
+    uniform float2 size;
+    uniform shader inputShader;
+    vec4 main(vec2 fragCoord) {
+        if (size.x < 1.0 || size.y < 1.0) {
+            return inputShader.eval(fragCoord);
+        }
+        float halfW = size.x * 0.5;
+        float dist = abs(fragCoord.x - halfW) / halfW;
+        float e = dist * dist * dist;
+        float sampleX = fragCoord.x - sign(fragCoord.x - halfW) * e * 0.03 * size.x;
+        sampleX = clamp(sampleX, 0.0, size.x);
+        return inputShader.eval(vec2(sampleX, fragCoord.y));
+    }
+"""
 
 /**
  * The brushes of one liquid-glass treatment, built once

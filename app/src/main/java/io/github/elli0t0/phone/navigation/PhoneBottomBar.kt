@@ -738,7 +738,8 @@ fun PhoneBottomBar(
                         )
                     )
                 ),
-                edgeHighlightAlpha = 0.10f
+                edgeHighlightAlpha = 0.10f,
+                edgeRefraction = LocalAppSettings.current.edgeRefraction
             ) {
                 barContent()
             }

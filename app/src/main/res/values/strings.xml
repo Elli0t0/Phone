@@ -317,6 +317,8 @@
     <string name="settings_droplet_stretch">Droplet stretch</string>
     <string name="settings_glass_haptic">Haptic feedback</string>
     <string name="settings_glass_preview">Live preview</string>
+    <string name="settings_edge_refraction">Edge refraction</string>
+    <string name="settings_edge_refraction_desc">Slightly magnify the bottom bar backdrop near its ends</string>
     <string name="settings_glass_reset">Reset glass to defaults</string>
 
     <string name="settings_cat_layout">Layout &amp; Density</string>

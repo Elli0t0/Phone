@@ -202,6 +202,12 @@ class SettingsViewModel(
         }
     }
 
+    fun onEdgeRefractionChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setEdgeRefraction(enabled)
+        }
+    }
+
     /** Glass Studio reset: every Studio setting back to its default. */
     fun onResetGlassDefaults() {
         onGlassBlurAmountChanged(1.0f)
@@ -211,6 +217,7 @@ class SettingsViewModel(
         onGlassColorRichnessChanged(1.7f)
         onDropletStretchChanged(DropletStretch.NORMAL)
         onGlassHapticFeedbackChanged(GlassHapticFeedback.LIGHT)
+        onEdgeRefractionChanged(true)
         onBackdropChanged(Backdrop.SUBTLE)
     }
 

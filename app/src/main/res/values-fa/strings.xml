@@ -71,5 +71,7 @@
     <string name="settings_droplet_stretch">کشش قطره</string>
     <string name="settings_glass_haptic">بازخورد لمسی</string>
     <string name="settings_glass_preview">پیش‌نمایش زنده</string>
+    <string name="settings_edge_refraction">شکست نور لبه‌ها</string>
+    <string name="settings_edge_refraction_desc">بزرگ‌نمایی جزئی پس‌زمینه نوار پایین در نزدیکی دو انتهای آن</string>
     <string name="settings_glass_reset">بازنشانی شیشه به پیش‌فرض‌ها</string>
 </resources>

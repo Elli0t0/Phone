@@ -242,6 +242,19 @@ fun GlassStudioScreen(
                             )
                             Spacer(modifier = Modifier.height(spacing.small))
 
+                            SettingsSwitchRow(
+                                title = stringResource(id = R.string.settings_edge_refraction),
+                                subtitle = stringResource(id = R.string.settings_edge_refraction_desc),
+                                checked = settings.edgeRefraction,
+                                onCheckedChange = { viewModel.onEdgeRefractionChanged(it) }
+                            )
+
+                            Spacer(modifier = Modifier.height(spacing.small))
+                            HorizontalDivider(
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                            )
+                            Spacer(modifier = Modifier.height(spacing.small))
+
                             SettingsRow(
                                 title = stringResource(id = R.string.settings_droplet_stretch),
                                 subtitle = settings.dropletStretch.label,
