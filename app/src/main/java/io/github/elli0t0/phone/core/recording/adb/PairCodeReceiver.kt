@@ -10,9 +10,6 @@ import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.recording.PairResult
 import io.github.elli0t0.phone.core.recording.RecordingForegroundService
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 /**
@@ -20,6 +17,12 @@ import kotlinx.coroutines.launch
  * notification and runs the pairing. The result is posted as a
  * notification because the user is in system Settings at that point,
  * not in Phone.
+ *
+ * The code submission is acknowledged immediately: the notification is
+ * replaced with an ongoing "Pairing…" one (so the system "sending"
+ * spinner stops) and the work runs in the application scope, not in
+ * goAsync — discovery alone takes up to 30 s, far past its ~10 s
+ * budget. The pending result is finished right after launching.
  */
 class PairCodeReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
@@ -27,30 +30,28 @@ class PairCodeReceiver : BroadcastReceiver() {
         val code = RemoteInput.getResultsFromIntent(intent)
             ?.getCharSequence(PAIR_CODE_KEY)?.toString()?.trim()
         if (code.isNullOrBlank()) return
+        postPairingProgressNotification(context)
+        val app = context.applicationContext as PhoneApplication
         val pending = goAsync()
-        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
-            try {
-                val app = context.applicationContext as PhoneApplication
-                val controller = app.container.recordingController
-                val result = controller.pairAdb(code)
-                // In-app feedback too, not only the notification: the
-                // settings screen shows this line when the user returns.
-                controller.publishPairResult(
-                    if (result.isSuccess) {
-                        PairResult.Paired
-                    } else {
-                        PairResult.Failed(
-                            result.exceptionOrNull()?.message
-                                ?: context.getString(R.string.recording_pair_failed_text)
-                        )
-                    }
-                )
-                controller.refreshBackendStatus()
-                postResult(context, result.isSuccess, result.exceptionOrNull()?.message)
-            } finally {
-                pending.finish()
-            }
+        app.applicationScope.launch {
+            val controller = app.container.recordingController
+            val result = controller.pairAdb(code)
+            // In-app feedback too, not only the notification: the
+            // settings screen shows this line when the user returns.
+            controller.publishPairResult(
+                if (result.isSuccess) {
+                    PairResult.Paired
+                } else {
+                    PairResult.Failed(
+                        result.exceptionOrNull()?.message
+                            ?: context.getString(R.string.recording_pair_failed_text)
+                    )
+                }
+            )
+            controller.refreshBackendStatus()
+            postResult(context, result.isSuccess, result.exceptionOrNull()?.message)
         }
+        pending.finish()
     }
 
     private fun postResult(context: Context, success: Boolean, error: String?) {

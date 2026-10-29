@@ -164,6 +164,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.16.5]
+
+- Pairing UX: submitting the code now immediately replaces the notification with an ongoing "Pairing…" one (indeterminate progress, no reply action), so the system "sending" spinner stops; the pairing itself runs in the application scope instead of goAsync (whose ~10 s budget cut off the 30 s discovery), and the pending result finishes right after launching. If the pairing service is not found within 30 s, the result notification says to open "Pair device with pairing code" first, then type the code; on success it posts "Paired" and refreshes the status.
+- Settings > Call recording: once the probe connected (READY, or ERROR with a working connection — i.e. the key is accepted), the status card shows a checked "Paired" line and the big Pair button becomes a small "Pair again" text button; the how-to-pair instructions only appear while status is "Not paired yet".
+
 ## [0.16.4]
 
 - Built-in ADB recorder helper now talks to the app over loopback TCP instead of an abstract local socket (which the shell SELinux domain denied to the app): the app picks a random port (20000-60000) and a random 24-byte hex token per launch, stores both so a running helper is reused after an app restart, and passes them to the helper; every connection must send the token first. START streams raw PCM that the app writes into its own MediaStore file (placeholder WAV header, patched on stop); STATUS reports IDLE/RECORDING, QUIT stops the helper.

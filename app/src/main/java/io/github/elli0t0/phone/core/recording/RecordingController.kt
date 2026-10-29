@@ -103,6 +103,9 @@ class RecordingController(
     /** True when the last successful ADB probe used the local offline port. */
     val offlinePortActive: StateFlow<Boolean> = adbBackend.offlinePortActive
 
+    /** True when the latest ADB probe connected, i.e. the key is accepted. */
+    val adbKeyAccepted: StateFlow<Boolean> = adbBackend.keyAccepted
+
     /** Latest Detect-port attempt: the attempt list when nothing answered, null on success. */
     private val _detectResult = MutableStateFlow<String?>(null)
     val detectResult: StateFlow<String?> = _detectResult.asStateFlow()

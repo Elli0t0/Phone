@@ -120,6 +120,9 @@
     <string name="recording_status_adb_not_running">اشکال‌زدایی بی‌سیم خاموش است یا کمک‌کننده ضبط اجرا نشده است</string>
     <string name="recording_status_adb_error">کمک‌کننده ضبط راه‌اندازی نشد</string>
     <string name="recording_action_pair">جفت کردن</string>
+    <string name="recording_action_pair_again">جفت کردن دوباره</string>
+    <string name="recording_pairing_progress">در حال جفت‌سازی…</string>
+    <string name="recording_pair_open_first">ابتدا «جفت کردن دستگاه با کد» را باز کنید، سپس کد را وارد کنید</string>
     <string name="recording_action_wireless_debugging">باز کردن اشکال‌زدایی بی‌سیم</string>
     <string name="recording_pair_hint">برای جفت کردن: در گزینه‌های توسعه‌دهنده، «اشکال‌زدایی بی‌سیم» را باز کنید، «جفت کردن دستگاه با کد» را بزنید و شش رقم را در اعلان Phone وارد کنید. هنگام وارد کردن، پنجره سامانه را باز نگه دارید.</string>
     <string name="recording_pair_code_hint">کد جفت کردن</string>

@@ -49,6 +49,7 @@ class RecordingSettingsViewModel(
     val detectResult: StateFlow<String?> = controller.detectResult
     val offlineMode: StateFlow<Boolean> = controller.offlineMode
     val offlinePortActive: StateFlow<Boolean> = controller.offlinePortActive
+    val keyAccepted: StateFlow<Boolean> = controller.adbKeyAccepted
     val session: StateFlow<RecordingSession> = controller.state
     val lastError: StateFlow<String?> = controller.lastError
     val recordings: StateFlow<List<RecordingEntity>> = recordingsRepository.recordings

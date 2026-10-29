@@ -135,6 +135,7 @@ fun RecordingSettingsScreen(
     val detectResult by viewModel.detectResult.collectAsStateWithLifecycle()
     val offlineMode by viewModel.offlineMode.collectAsStateWithLifecycle()
     val offlinePortActive by viewModel.offlinePortActive.collectAsStateWithLifecycle()
+    val keyAccepted by viewModel.keyAccepted.collectAsStateWithLifecycle()
     val clipboardManager = LocalClipboardManager.current
 
     LaunchedEffect(Unit) { viewModel.refresh() }
@@ -247,6 +248,21 @@ fun RecordingSettingsScreen(
                             text = statusText,
                             style = MaterialTheme.typography.bodyMedium
                         )
+                        // The probe already connected (READY, or ERROR
+                        // with a working connection): the key is
+                        // accepted, so the state is "Paired", not "pair
+                        // me". A failed probe proves nothing about the
+                        // key, so it shows no such line.
+                        if (backendKind == RecordingBackendKind.ADB &&
+                            (status == BackendStatus.READY ||
+                                (status == BackendStatus.ERROR && keyAccepted))
+                        ) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "✓ " + stringResource(id = R.string.recording_pair_success),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
                         if (lastError != null) {
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
@@ -287,12 +303,26 @@ fun RecordingSettingsScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (backendKind == RecordingBackendKind.ADB) {
-                                // Pair is available in every non-ready state, not
-                                // only once pairing is already possible: from
-                                // NOT_RUNNING it posts the notification and opens
-                                // Developer options, so the user is never stuck
-                                // with no way to reach the code entry.
-                                if (status != BackendStatus.READY) {
+                                if (status == BackendStatus.READY ||
+                                    (status == BackendStatus.ERROR && keyAccepted)
+                                ) {
+                                    // Already paired: re-pairing is an
+                                    // option, not the action — small
+                                    // text button instead of the big one.
+                                    TextButton(
+                                        onClick = onPairClick,
+                                        enabled = !busy
+                                    ) {
+                                        Text(text = stringResource(id = R.string.recording_action_pair_again))
+                                    }
+                                } else {
+                                    // Pair is available in every other
+                                    // state, not only once pairing is
+                                    // already possible: from NOT_RUNNING
+                                    // it posts the notification and opens
+                                    // Developer options, so the user is
+                                    // never stuck with no way to reach
+                                    // the code entry.
                                     Button(
                                         onClick = onPairClick,
                                         enabled = !busy
@@ -334,11 +364,16 @@ fun RecordingSettingsScreen(
                             }
                         }
                         if (backendKind == RecordingBackendKind.ADB) {
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = stringResource(id = R.string.recording_pair_hint),
-                                style = MaterialTheme.typography.bodySmall
-                            )
+                            // The how-to-pair steps only matter before
+                            // the key is accepted; afterwards they are
+                            // noise next to the Paired line.
+                            if (status == BackendStatus.NOT_PAIRED) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = stringResource(id = R.string.recording_pair_hint),
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = stringResource(id = R.string.recording_adb_needs_wifi),

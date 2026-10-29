@@ -509,6 +509,9 @@
     <string name="recording_status_adb_not_running">Wireless debugging is off, or the recorder helper is not running</string>
     <string name="recording_status_adb_error">The recorder helper could not start</string>
     <string name="recording_action_pair">Pair</string>
+    <string name="recording_action_pair_again">Pair again</string>
+    <string name="recording_pairing_progress">Pairing…</string>
+    <string name="recording_pair_open_first">Open “Pair device with pairing code” first, then type the code</string>
     <string name="recording_action_wireless_debugging">Open wireless debugging</string>
     <string name="recording_pair_hint">To pair: open Wireless debugging in Developer options, tap “Pair device with pairing code”, and type the six digits into the notification from Phone. Keep the system dialog open while you type.</string>
     <string name="recording_pair_code_hint">Pairing code</string>

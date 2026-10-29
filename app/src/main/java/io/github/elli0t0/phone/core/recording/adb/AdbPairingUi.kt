@@ -96,3 +96,22 @@ fun postPairNotification(context: Context) {
     manager.notify(PAIR_NOTIFICATION_ID, notification)
     openWirelessDebugging(context)
 }
+
+/**
+ * Replaces the pairing notification the moment the code is submitted:
+ * a plain ongoing "Pairing…" notification with indeterminate progress
+ * and no reply action, so the system "sending" spinner stops. It uses
+ * the same id, so the result notification later cancels it.
+ */
+fun postPairingProgressNotification(context: Context) {
+    ensureRecordingChannel(context)
+    val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+        ?: return
+    val notification = NotificationCompat.Builder(context, RecordingForegroundService.CHANNEL_ID)
+        .setSmallIcon(R.drawable.ic_record)
+        .setContentTitle(context.getString(R.string.recording_pairing_progress))
+        .setProgress(0, 0, true)
+        .setOngoing(true)
+        .build()
+    manager.notify(PAIR_NOTIFICATION_ID, notification)
+}

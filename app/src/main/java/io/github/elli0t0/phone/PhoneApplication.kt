@@ -27,6 +27,9 @@ import io.github.elli0t0.phone.core.recording.adb.AdbRecordingBackend
 import io.github.elli0t0.phone.core.recording.shizuku.ShizukuRecordingBackend
 import io.github.elli0t0.phone.data.recordings.DefaultRecordingsRepository
 import io.github.elli0t0.phone.data.recordings.RecordingsRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
 
 /** One external dial request (tap a number in another app). The id
@@ -102,6 +105,13 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
 class PhoneApplication : Application() {
     lateinit var container: AppContainer
         private set
+
+    /**
+     * Scope for work that must outlive a broadcast: goAsync only gives
+     * a receiver ~10 s, but pairing (30 s discovery + connect) runs
+     * here instead, so it is never cut off mid-flight.
+     */
+    val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onCreate() {
         super.onCreate()

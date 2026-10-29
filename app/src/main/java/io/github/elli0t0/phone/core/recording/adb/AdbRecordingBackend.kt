@@ -74,6 +74,16 @@ class AdbRecordingBackend(
     private val _lastError = MutableStateFlow<String?>(null)
     val lastError: StateFlow<String?> = _lastError.asStateFlow()
 
+    /**
+     * True when the latest probe connected over ADB, i.e. the pairing
+     * key is accepted. False after any failed probe and after a reset:
+     * a failed probe proves nothing about the key either way, so only
+     * a successful connect counts. The settings screen shows "Paired"
+     * from this, not from the status alone.
+     */
+    private val _keyAccepted = MutableStateFlow(false)
+    val keyAccepted: StateFlow<Boolean> = _keyAccepted.asStateFlow()
+
     /** True when the last successful probe used the local offline port. */
     private val _offlinePortActive = MutableStateFlow(false)
     val offlinePortActive: StateFlow<Boolean> = _offlinePortActive.asStateFlow()
@@ -107,6 +117,7 @@ class AdbRecordingBackend(
     override suspend fun refreshStatus() {
         when (val probe = probe()) {
             is Probe.Ok -> {
+                _keyAccepted.value = true
                 workingEndpoint = probe.host to probe.port
                 // The offline port is never persisted as last-known: it
                 // must not leak into the Wi-Fi path when the switch is off.
@@ -129,6 +140,7 @@ class AdbRecordingBackend(
                 }
             }
             is Probe.Fail -> {
+                _keyAccepted.value = false
                 workingEndpoint = null
                 _offlinePortActive.value = false
                 _status.value = probe.status
@@ -184,7 +196,16 @@ class AdbRecordingBackend(
     }
 
     override suspend fun pair(code: String): Result<Unit> = runCatching {
-        val endpoint = AdbDiscovery.discoverPairing(context, 30_000).getOrThrow()
+        // A failed discovery means the pairing service was not found
+        // within 30 s: tell the user to open the system dialog first
+        // instead of surfacing NSD internals.
+        val endpoint = runCatching {
+            AdbDiscovery.discoverPairing(context, 30_000).getOrThrow()
+        }.getOrElse {
+            throw IllegalStateException(
+                context.getString(R.string.recording_pair_open_first)
+            )
+        }
         // Pair as "Phone": Kadb's default name is the OS build's
         // user@host, which shows up as a cryptic entry in Paired devices.
         Kadb.pair(endpoint.first, endpoint.second, code, "Phone")
@@ -195,6 +216,7 @@ class AdbRecordingBackend(
     override suspend fun resetPairing() {
         runCatching { kadbKeyFile(context).delete() }
         ensureKadbIdentity(context)
+        _keyAccepted.value = false
     }
 
     override suspend fun startCapture(fd: ParcelFileDescriptor): Result<Unit> = runCatching {
