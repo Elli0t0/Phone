@@ -321,6 +321,13 @@ fun ContactsScreen(
                     )
                 }
 
+                // Create/edit are no longer destinations: the editor
+                // opens as a bottom sheet (editSheet) instead. These
+                // branches exist only because this when must be
+                // exhaustive; no setter enters them anymore.
+                is ContactsNavDestination.Create,
+                is ContactsNavDestination.Edit -> Unit
+
                 }
             }
             // Create/edit open as a bottom sheet over the list (or
