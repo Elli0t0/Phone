@@ -379,6 +379,10 @@ data class AppSettings(
     val adbLastKnownPort: Int? = null,
     /** Offline ADB recording: prefer a local debugging port (5555) over Wi-Fi. */
     val adbOfflineMode: Boolean = false,
+    /** Loopback recorder-helper port/token: an already running helper
+     * can be reused after an app restart instead of relaunching. */
+    val adbHelperPort: Int? = null,
+    val adbHelperToken: String? = null,
     val showNumberOnCallScreen: Boolean = true,
     val defaultSim: DefaultSim = DefaultSim.ASK,
     // Quick-decline message overrides, one per reply chip. A blank entry

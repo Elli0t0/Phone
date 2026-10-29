@@ -192,7 +192,16 @@ class RecordingController(
         if (activeBackend().status.value != BackendStatus.READY) {
             activeBackend().refreshStatus()
             if (activeBackend().status.value != BackendStatus.READY) {
-                return Result.failure(IllegalStateException("Recorder is not ready"))
+                // The test button shows the exact reason, not a bare
+                // "not ready": the ADB diagnostic when ADB is selected.
+                val detail = if (activeBackendKind.value == RecordingBackendKind.ADB) {
+                    backendDiagnostic.value?.takeIf { it.isNotBlank() }
+                } else {
+                    null
+                }
+                return Result.failure(
+                    IllegalStateException(detail ?: "Recorder is not ready")
+                )
             }
         }
         val started = startSession("", null, isTest = true)

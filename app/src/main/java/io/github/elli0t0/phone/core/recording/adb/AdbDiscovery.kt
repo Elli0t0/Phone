@@ -11,8 +11,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
 
-/** Abstract-namespace socket the shell-side recorder helper listens on. */
-internal const val ADB_RECORDING_SOCKET = "phone-recording"
+/** Loopback log file the recorder helper writes to (see AdbRecordingBackend). */
+internal const val HELPER_LOG_PATH = "/data/local/tmp/phone_helper.log"
 
 private const val PAIRING_SERVICE_TYPE = "_adb-tls-pairing._tcp"
 private const val CONNECT_SERVICE_TYPE = "_adb-tls-connect._tcp"

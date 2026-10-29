@@ -3,187 +3,265 @@ package io.github.elli0t0.phone.core.recording.adb
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
-import android.net.LocalServerSocket
-import android.net.LocalSocket
-import android.util.Log
+import android.os.Build
 import io.github.elli0t0.phone.core.recording.WavWriter
 import java.io.ByteArrayOutputStream
-import java.io.FileDescriptor
-import java.io.FileOutputStream
 import java.io.InputStream
-import java.nio.ByteBuffer
+import java.net.InetAddress
+import java.net.ServerSocket
+import java.net.Socket
+import kotlin.concurrent.thread
 
 /**
  * Shell-side recorder helper. Started as shell via app_process (see
  * AdbRecordingBackend) and detached from the ADB session, so it keeps
  * running after wireless debugging is switched off, until reboot.
- * Speaks a tiny line protocol over an abstract-namespace local socket:
- * START (with a file descriptor attached) / STOP / STATUS / QUIT.
- * Uses only framework classes plus WavWriter, all present in the APK's
- * classpath under app_process. Never touches the app process, storage
- * permissions, or ContentResolver: the app hands it a descriptor for a
- * MediaStore file it created, exactly like the Shizuku path.
+ *
+ * Speaks a tiny line protocol over loopback TCP (an abstract local
+ * socket owned by the shell SELinux domain turned out to be denied to
+ * the app): every connection sends the launch token as its first line
+ * and is closed immediately otherwise, then one command:
+ * STATUS -> IDLE|RECORDING, QUIT -> OK (and the helper exits),
+ * START -> OK followed by raw 16-bit mono PCM chunks on the same
+ * connection until the app closes it (or ERR <reason> instead of OK).
+ *
+ * Uses only framework classes plus WavWriter's constants, all present
+ * in the APK's classpath under app_process. Never touches the app
+ * process, storage permissions, or ContentResolver: the app writes the
+ * PCM it reads here into its own MediaStore file.
+ *
+ * Everything is wrapped so failures land in stderr, which the backend
+ * redirects to [HELPER_LOG_PATH] and reads back for diagnostics.
  */
-private const val TAG = "PhoneAdbRecorder"
-
 fun main(args: Array<String>) {
-    RecordingHelperServer().run()
+    try {
+        val port = args.getOrNull(0)?.toIntOrNull()
+        val token = args.getOrNull(1)?.takeIf { it.isNotBlank() }
+        if (port == null || token == null) {
+            System.err.println("usage: RecordingHelperMainKt <port> <token>")
+            return
+        }
+        RecordingHelperServer(port, token).run()
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
 }
 
-private class RecordingHelperServer {
+private class RecordingHelperServer(
+    private val port: Int,
+    private val token: String
+) {
     private val lock = Any()
     private var recorder: AudioRecord? = null
-    private var output: FileOutputStream? = null
     private var captureThread: Thread? = null
-    private var pcmBytes = 0L
+    @Volatile
     private var stopRequested = false
+    private var serverSocket: ServerSocket? = null
+    private var quitRequested = false
 
     fun run() {
         val server = try {
-            LocalServerSocket(ADB_RECORDING_SOCKET)
+            ServerSocket(port, 4, InetAddress.getByName("127.0.0.1"))
         } catch (e: Exception) {
-            Log.e(TAG, "Could not listen", e)
+            e.printStackTrace()
             return
         }
-        Log.i(TAG, "Helper listening")
+        serverSocket = server
+        System.err.println("Helper listening on 127.0.0.1:$port")
         try {
             while (true) {
                 val socket = try {
                     server.accept()
                 } catch (e: Exception) {
+                    if (!quitRequested) e.printStackTrace()
                     break
                 }
-                try {
-                    if (handle(socket)) break
-                } catch (e: Exception) {
-                    Log.e(TAG, "Command failed", e)
-                } finally {
-                    runCatching { socket.close() }
-                }
+                // Daemon threads: a blocked watcher must not keep the
+                // process alive after QUIT closes the server socket.
+                thread(isDaemon = true) { handle(socket) }
             }
         } finally {
             runCatching { server.close() }
         }
     }
 
-    /** Returns true when the server loop should exit (QUIT). */
-    private fun handle(socket: LocalSocket): Boolean {
-        val input = socket.inputStream
-        val command = readLine(input)
-        val reply = when (command) {
-            "START" -> startRecording(socket.ancillaryFileDescriptors?.firstOrNull())
-            "STOP" -> stopRecording()?.let { "OK $it" } ?: "ERR not_recording"
-            "STATUS" -> if (isRecording()) "RECORDING" else "IDLE"
-            "QUIT" -> {
-                stopRecording()
-                socket.outputStream.write("OK\n".toByteArray(Charsets.US_ASCII))
-                socket.outputStream.flush()
-                return true
+    private fun handle(socket: Socket) {
+        try {
+            val input = socket.inputStream
+            // A bare TCP probe (connect + close, no data) reads EOF
+            // here and is dropped, same as a wrong token.
+            val clientToken = readLine(input)
+            if (clientToken != token) {
+                runCatching { socket.close() }
+                return
             }
-            else -> "ERR unknown"
+            when (val command = readLine(input)) {
+                "STATUS" -> {
+                    reply(socket, if (isRecording()) "RECORDING" else "IDLE")
+                    runCatching { socket.close() }
+                }
+                "QUIT" -> {
+                    reply(socket, "OK")
+                    stopCaptureInternal()
+                    quitRequested = true
+                    runCatching { socket.close() }
+                    runCatching { serverSocket?.close() }
+                }
+                "START" -> {
+                    val result = startCapture(socket)
+                    reply(socket, result)
+                    if (result == "OK") {
+                        // This thread watches the socket: EOF (the app
+                        // closing it) ends the capture promptly, even
+                        // while the writer thread is blocked in a read.
+                        try {
+                            input.read()
+                        } catch (_: Exception) {
+                        }
+                        stopCaptureInternal()
+                        runCatching { socket.close() }
+                    } else {
+                        runCatching { socket.close() }
+                    }
+                }
+                else -> {
+                    System.err.println("Unknown helper command: $command")
+                    reply(socket, "ERR unknown")
+                    runCatching { socket.close() }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            runCatching { socket.close() }
         }
-        socket.outputStream.write("$reply\n".toByteArray(Charsets.US_ASCII))
-        socket.outputStream.flush()
-        return false
     }
 
-    private fun startRecording(fd: FileDescriptor?): String {
-        if (fd == null) return "ERR no_fd"
+    /**
+     * Starts capture on [socket]'s output. A capture orphaned by an
+     * app restart is preempted: the new session owns the recorder.
+     * Returns "OK" or "ERR <reason>" (the exact AudioRecord failure
+     * text when creation or start throws, so it shows in the UI).
+     */
+    private fun startCapture(socket: Socket): String {
+        if (isRecording()) stopCaptureInternal()
         synchronized(lock) {
-            if (captureThread != null) return "ERR already_recording"
             val minBuffer = AudioRecord.getMinBufferSize(
                 WavWriter.SAMPLE_RATE,
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT
             )
             if (minBuffer <= 0) return "ERR audio"
-            val record = AudioRecord(
-                MediaRecorder.AudioSource.VOICE_CALL,
-                WavWriter.SAMPLE_RATE,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                maxOf(minBuffer, 8192)
-            )
+            val record = try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    AudioRecord.Builder()
+                        .setAudioSource(MediaRecorder.AudioSource.VOICE_CALL)
+                        .setAudioFormat(
+                            AudioFormat.Builder()
+                                .setSampleRate(WavWriter.SAMPLE_RATE)
+                                .setChannelMask(AudioFormat.CHANNEL_IN_MONO)
+                                .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                                .build()
+                        )
+                        .setBufferSizeInBytes(maxOf(minBuffer, 8192))
+                        .build()
+                } else {
+                    AudioRecord(
+                        MediaRecorder.AudioSource.VOICE_CALL,
+                        WavWriter.SAMPLE_RATE,
+                        AudioFormat.CHANNEL_IN_MONO,
+                        AudioFormat.ENCODING_PCM_16BIT,
+                        maxOf(minBuffer, 8192)
+                    )
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                return "ERR ${e.message ?: e.toString()}"
+            }
             if (record.state != AudioRecord.STATE_INITIALIZED) {
                 record.release()
                 return "ERR audio"
             }
-            val out = FileOutputStream(fd)
             try {
-                out.write(WavWriter.header(0))
-                out.flush()
+                record.startRecording()
             } catch (e: Exception) {
-                Log.e(TAG, "Could not write WAV header", e)
-                runCatching { out.close() }
+                e.printStackTrace()
                 record.release()
-                return "ERR io"
+                return "ERR ${e.message ?: e.toString()}"
             }
             recorder = record
-            output = out
-            pcmBytes = 0L
             stopRequested = false
-            val thread = Thread(::captureLoop, "phone-recording")
+            val thread = thread(isDaemon = true, name = "phone-recording") {
+                captureLoop(socket)
+            }
             captureThread = thread
-            thread.start()
             return "OK"
         }
     }
 
-    private fun captureLoop() {
+    /** Writer thread: raw PCM to the START connection until the app
+     * closes it (write fails), the capture errors, or a stop arrives. */
+    private fun captureLoop(socket: Socket) {
         val record = synchronized(lock) { recorder } ?: return
         val buffer = ByteArray(8192)
         try {
-            record.startRecording()
             while (!stopRequested) {
                 val read = record.read(buffer, 0, buffer.size)
                 if (read > 0) {
-                    synchronized(lock) {
-                        output?.write(buffer, 0, read)
-                        pcmBytes += read
+                    try {
+                        socket.outputStream.write(buffer, 0, read)
+                    } catch (_: Exception) {
+                        break
                     }
                 } else if (read < 0) {
                     break
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Capture loop failed", e)
+            e.printStackTrace()
         } finally {
-            runCatching { record.stop() }
-            runCatching { record.release() }
+            synchronized(lock) {
+                if (captureThread == Thread.currentThread()) {
+                    captureThread = null
+                }
+                // Exactly-once release: a preempt owns the release of
+                // the recorder it replaced, so only release when this
+                // loop's recorder is still the current one.
+                if (recorder === record) {
+                    recorder = null
+                    runCatching { record.release() }
+                }
+            }
+            runCatching { socket.close() }
         }
     }
 
-    private fun stopRecording(): Long? {
-        val thread = synchronized(lock) { captureThread } ?: return null
-        stopRequested = true
-        runCatching { synchronized(lock) { recorder }?.stop() }
-        thread.join(5000)
+    /**
+     * Stops the capture thread and releases the recorder. The join
+     * runs outside the lock so the writer's finally (which takes the
+     * lock) can complete; stop() unblocks its read first.
+     */
+    private fun stopCaptureInternal() {
+        val thread = synchronized(lock) {
+            stopRequested = true
+            runCatching { recorder?.stop() }
+            captureThread
+        }
+        thread?.join(5000)
         synchronized(lock) {
-            captureThread = null
+            val stale = recorder
             recorder = null
-            try {
-                output?.flush()
-                val channel = output?.channel
-                if (channel != null) {
-                    channel.position(0)
-                    val header = ByteBuffer.wrap(WavWriter.header(pcmBytes.toInt()))
-                    while (header.hasRemaining()) {
-                        channel.write(header)
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Could not patch WAV header", e)
-            } finally {
-                runCatching { output?.close() }
-                output = null
-            }
-            val written = pcmBytes
-            pcmBytes = 0L
-            return written
+            runCatching { stale?.release() }
+            captureThread = null
+            stopRequested = false
         }
     }
 
     private fun isRecording(): Boolean = synchronized(lock) { captureThread != null }
+
+    private fun reply(socket: Socket, text: String) {
+        socket.outputStream.write("$text\n".toByteArray(Charsets.US_ASCII))
+        socket.outputStream.flush()
+    }
 
     private fun readLine(input: InputStream): String {
         val bytes = ByteArrayOutputStream()

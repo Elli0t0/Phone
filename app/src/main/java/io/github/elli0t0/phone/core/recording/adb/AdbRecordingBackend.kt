@@ -2,8 +2,6 @@ package io.github.elli0t0.phone.core.recording.adb
 
 import android.content.Context
 import android.net.ConnectivityManager
-import android.net.LocalSocket
-import android.net.LocalSocketAddress
 import android.net.NetworkCapabilities
 import android.os.ParcelFileDescriptor
 import android.provider.Settings
@@ -16,28 +14,40 @@ import io.github.elli0t0.phone.core.recording.WavWriter
 import io.github.elli0t0.phone.data.settings.SettingsRepository
 import io.github.elli0t0.phone.data.settings.model.RecordingBackendKind
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import okio.buffer
 import java.io.ByteArrayOutputStream
+import java.io.FileOutputStream
 import java.net.InetSocketAddress
 import java.net.Socket
+import java.nio.ByteBuffer
+import java.util.concurrent.atomic.AtomicLong
+import kotlin.random.Random
 
 /**
  * Call recording without a second app. The phone pairs with itself over
  * wireless debugging (one-time, via Kadb's SPAKE2/TLS pairing), then this
  * backend runs shell commands over that ADB connection to start Phone's
- * own recorder helper as shell, detached from the ADB session. The helper
- * writes to a MediaStore descriptor the app created, over a local socket,
- * exactly like the Shizuku path — so storage, playback, delete, and
- * share are identical. After a reboot the helper is gone; it is re-armed
- * on demand whenever wireless debugging is on and the phone is on Wi-Fi.
+ * own recorder helper as shell, detached from the ADB session. The
+ * helper streams raw PCM to the app over loopback TCP (an abstract
+ * local socket owned by the shell SELinux domain was denied to the
+ * app); the app writes the WAV into the MediaStore descriptor it
+ * created, exactly like the Shizuku path — so storage, playback,
+ * delete, and share are identical. After a reboot the helper is gone;
+ * it is re-armed on demand whenever wireless debugging is on and the
+ * phone is on Wi-Fi.
  *
  * Diagnostics: probe() checks Wi-Fi, the wireless-debugging setting,
  * NSD discovery, then the ADB connect in order, and reports a specific
@@ -74,6 +84,16 @@ class AdbRecordingBackend(
     /** adb_allowed_connection_time is set once per process, best-effort. */
     private var connectionTimeApplied = false
 
+    /** Active TCP capture: the socket, the WAV stream, the reader job, the byte count. */
+    private val captureScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var captureSocket: Socket? = null
+    private var captureOut: FileOutputStream? = null
+    private var captureJob: Job? = null
+    private val captureBytes = AtomicLong(0)
+
+    /** Message from the last failed helper-socket connect, for diagnostics. */
+    private var lastSocketError: String? = null
+
     private sealed interface Probe {
         data class Ok(
             val host: String,
@@ -97,7 +117,15 @@ class AdbRecordingBackend(
                     _lastError.value = probe.offlineNote
                 } else {
                     _status.value = BackendStatus.ERROR
-                    _lastError.value = probe.offlineNote
+                    // ensureHelperAlive left the helper diagnostics in
+                    // _lastError; keep them (plus any offline note) so
+                    // Recorder status and Copy details show the reason
+                    // instead of a bare "helper could not start".
+                    val details = listOfNotNull(
+                        probe.offlineNote,
+                        _lastError.value
+                    ).joinToString("\n").takeIf { it.isNotBlank() }
+                    _lastError.value = details
                 }
             }
             is Probe.Fail -> {
@@ -115,16 +143,25 @@ class AdbRecordingBackend(
     }
 
     override suspend fun ensureBound(): Boolean {
-        if (runCatching { helperCommand("STATUS") }.isSuccess) return true
-        val stored = workingEndpoint
-        if (stored != null) {
+        // A helper already running (stored port/token) is reused
+        // without any Kadb round-trip, so it survives app restarts.
+        val stored = settingsRepository.settingsFlow.first()
+        val storedPort = stored.adbHelperPort
+        val storedToken = stored.adbHelperToken
+        if (storedPort != null && storedToken != null &&
+            helperStatus(storedPort, storedToken) != null
+        ) {
+            return true
+        }
+        val storedEndpoint = workingEndpoint
+        if (storedEndpoint != null) {
             // Reuse the verified endpoint; no second discovery while
             // it still answers — a fresh discovery could return a
             // different stale service.
             val stillAnswers = withContext(Dispatchers.IO) {
-                reachable(stored.first, stored.second)
+                reachable(storedEndpoint.first, storedEndpoint.second)
             }
-            if (stillAnswers) return ensureHelperAlive(stored.first, stored.second)
+            if (stillAnswers) return ensureHelperAlive(storedEndpoint.first, storedEndpoint.second)
         }
         // Stored endpoint missing or dead: prefer the local offline port
         // when the switch is on, before falling back to Wi-Fi selection.
@@ -162,25 +199,92 @@ class AdbRecordingBackend(
 
     override suspend fun startCapture(fd: ParcelFileDescriptor): Result<Unit> = runCatching {
         if (!ensureBound()) {
+            throw IllegalStateException(
+                _lastError.value?.takeIf { it.isNotBlank() }
+                    ?: "Recorder helper is not running"
+            )
+        }
+        val settings = settingsRepository.settingsFlow.first()
+        val port = settings.adbHelperPort
+        val token = settings.adbHelperToken
+        if (port == null || token == null) {
             throw IllegalStateException("Recorder helper is not running")
         }
         // A helper orphaned by an app restart still holds a capture;
-        // stop it first so this session owns the file.
-        if (runCatching { helperCommand("STATUS") }.getOrNull() == "RECORDING") {
-            runCatching { helperCommand("STOP") }
+        // the helper preempts it on START, so this session owns the file.
+        val socket = withContext(Dispatchers.IO) {
+            val s = Socket()
+            s.connect(InetSocketAddress(OFFLINE_ADB_HOST, port), 1500)
+            s.soTimeout = 15_000
+            s.getOutputStream().write("$token\nSTART\n".toByteArray(Charsets.US_ASCII))
+            s.getOutputStream().flush()
+            val reply = readLine(s.getInputStream())
+            if (reply != "OK") {
+                runCatching { s.close() }
+                throw IllegalStateException(
+                    reply.removePrefix("ERR ").ifBlank { "Recorder refused to start" }
+                )
+            }
+            s
         }
-        val reply = helperCommand("START", fd)
-        if (reply != "OK") {
-            throw IllegalStateException(reply.removePrefix("ERR ").ifBlank { "Recorder refused to start" })
+        // The helper now streams raw PCM on this socket; the app
+        // writes it into its own MediaStore file with a placeholder
+        // header, patched on stop — the old FD-passing path is gone.
+        val out = FileOutputStream(fd.fileDescriptor)
+        out.write(WavWriter.header(0))
+        out.flush()
+        captureSocket = socket
+        captureOut = out
+        captureBytes.set(0)
+        captureJob = captureScope.launch {
+            val buffer = ByteArray(8192)
+            try {
+                while (true) {
+                    val read = socket.getInputStream().read(buffer)
+                    if (read == -1) break
+                    if (read > 0) {
+                        out.write(buffer, 0, read)
+                        captureBytes.addAndGet(read.toLong())
+                    }
+                }
+            } catch (_: Exception) {
+                // Socket closed by stopCapture, or the helper died:
+                // bytes so far are still a valid recording.
+            }
         }
         Unit
     }
 
     override suspend fun stopCapture(): Result<CaptureResult> = runCatching {
-        val reply = helperCommand("STOP")
-        val bytes = reply.removePrefix("OK ").trim().toLongOrNull()
-            ?: throw IllegalStateException(reply.ifBlank { "Recorder did not stop" })
-        CaptureResult(bytes, WavWriter.durationMs(bytes))
+        val socket = captureSocket
+            ?: throw IllegalStateException("Nothing is recording")
+        val out = captureOut
+        try {
+            // Closing the socket ends the helper's capture (its watcher
+            // sees EOF); wait briefly for the reader to drain, then
+            // patch the placeholder header with the real sizes.
+            runCatching { socket.close() }
+            withTimeoutOrNull(2000) { captureJob?.join() }
+            val bytes = captureBytes.get()
+            if (out != null) {
+                out.flush()
+                val channel = out.channel
+                channel.position(0)
+                val header = ByteBuffer.wrap(WavWriter.header(bytes.toInt()))
+                while (header.hasRemaining()) {
+                    channel.write(header)
+                }
+                out.flush()
+            }
+            CaptureResult(bytes, WavWriter.durationMs(bytes))
+        } finally {
+            // The ParcelFileDescriptor itself stays open: the
+            // controller owns and closes it after stop.
+            captureSocket = null
+            captureOut = null
+            captureJob = null
+            captureBytes.set(0)
+        }
     }
 
     /**
@@ -333,10 +437,14 @@ class AdbRecordingBackend(
                     return@withContext if (ensureHelperAlive(OFFLINE_ADB_HOST, OFFLINE_ADB_PORT)) {
                         null
                     } else {
+                        // The helper diagnostics (already in lastError)
+                        // travel with the note so they show under
+                        // Recorder status instead of a bare failure.
+                        val detail = _lastError.value
                         context.getString(
                             R.string.recording_error_offline_port,
                             "recorder helper did not start"
-                        )
+                        ) + if (detail != null) "\n$detail" else ""
                     }
                 }
             }
@@ -441,57 +549,120 @@ class AdbRecordingBackend(
         }
     }
 
+    /**
+     * Makes sure the recorder helper answers on loopback TCP. First
+     * reuses the stored port/token (an already running helper survives
+     * app restarts); otherwise kills any stale helper, launches a fresh
+     * one on a new random port/token over the ADB endpoint, and polls
+     * STATUS up to 8 s. On failure the helper's log, its process line,
+     * and the last socket error go into lastError, so Recorder status
+     * and Copy details show the reason instead of a bare failure.
+     */
     private suspend fun ensureHelperAlive(host: String, port: Int): Boolean {
-        if (runCatching { helperCommand("STATUS") }.isSuccess) return true
+        val stored = settingsRepository.settingsFlow.first()
+        val storedPort = stored.adbHelperPort
+        val storedToken = stored.adbHelperToken
+        if (storedPort != null && storedToken != null &&
+            helperStatus(storedPort, storedToken) != null
+        ) {
+            _lastError.value = null
+            return true
+        }
+        runCatching {
+            withContext(Dispatchers.IO) {
+                kadbShell(host, port, "pkill -f phone_recorder")
+            }
+        }
+        val helperPort = Random.nextInt(20000, 60001)
+        val helperToken = randomHexToken()
+        settingsRepository.setAdbHelperPort(helperPort)
+        settingsRepository.setAdbHelperToken(helperToken)
         val hasSetsid = runCatching {
             withContext(Dispatchers.IO) {
-                Kadb.create(host, port, connectTimeout = 10_000, socketTimeout = 10_000).use {
-                    it.shell("command -v setsid").output.isNotBlank()
-                }
+                kadbShell(host, port, "command -v setsid").isNotBlank()
             }
         }.getOrDefault(false)
         val sourceDir = context.applicationInfo.sourceDir
         // nohup + setsid detach the helper from the ADB session so it
         // survives wireless debugging being switched off afterwards.
+        // Output goes to a file, not /dev/null, so a helper that never
+        // answers can be diagnosed from its own stderr.
         val command = "CLASSPATH=$sourceDir " +
             (if (hasSetsid) "nohup setsid " else "nohup ") +
             "app_process /system/bin --nice-name=phone_recorder " +
-            "io.github.elli0t0.phone.core.recording.adb.RecordingHelperMainKt >/dev/null 2>&1 &"
+            "io.github.elli0t0.phone.core.recording.adb.RecordingHelperMainKt " +
+            "$helperPort $helperToken >$HELPER_LOG_PATH 2>&1 &"
         runCatching {
             withContext(Dispatchers.IO) {
-                Kadb.create(host, port, connectTimeout = 10_000, socketTimeout = 10_000).use { kadb ->
-                    kadb.shell(command)
-                }
+                kadbShell(host, port, command)
             }
         }
         repeat(32) {
             delay(250)
-            if (runCatching { helperCommand("STATUS") }.isSuccess) return true
+            if (helperStatus(helperPort, helperToken) != null) {
+                _lastError.value = null
+                return true
+            }
         }
+        _lastError.value = helperDiagnostics(host, port)
         return false
     }
 
-    /**
-     * One command to the helper over its local socket. For START the
-     * app's file descriptor travels with the command (ancillary data),
-     * so the helper writes straight into the app's MediaStore file.
-     */
-    private fun helperCommand(command: String, fd: ParcelFileDescriptor? = null): String {
-        val socket = LocalSocket()
-        try {
-            socket.connect(
-                LocalSocketAddress(ADB_RECORDING_SOCKET, LocalSocketAddress.Namespace.ABSTRACT)
-            )
-            socket.soTimeout = 15_000
-            if (fd != null) {
-                socket.setFileDescriptorsForSend(arrayOf(fd.fileDescriptor))
-            }
-            socket.outputStream.write("$command\n".toByteArray(Charsets.US_ASCII))
-            socket.outputStream.flush()
-            return readLine(socket.inputStream)
-        } finally {
-            runCatching { socket.close() }
+    /** STATUS reply ("IDLE"/"RECORDING"), or null when the helper does not answer. */
+    private suspend fun helperStatus(port: Int, token: String): String? =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val socket = Socket()
+                try {
+                    socket.connect(InetSocketAddress(OFFLINE_ADB_HOST, port), 1500)
+                    socket.soTimeout = 5000
+                    socket.getOutputStream().write(
+                        "$token\nSTATUS\n".toByteArray(Charsets.US_ASCII)
+                    )
+                    socket.getOutputStream().flush()
+                    readLine(socket.getInputStream()).takeIf { it.isNotBlank() }
+                } finally {
+                    runCatching { socket.close() }
+                }
+            }.onFailure { e ->
+                lastSocketError = e.message?.takeIf { it.isNotBlank() } ?: e.toString()
+            }.getOrNull()
         }
+
+    /** One Kadb shell command's stdout (stderr when stdout is blank). */
+    private fun kadbShell(host: String, port: Int, command: String): String {
+        val response = Kadb.create(host, port, connectTimeout = 10_000, socketTimeout = 10_000).use { kadb ->
+            kadb.shell(command)
+        }
+        return response.output.ifBlank { response.errorOutput }
+    }
+
+    /**
+     * Helper diagnostics for lastError: the helper's log file plus its
+     * process line, read back over Kadb, truncated to 1500 chars, plus
+     * the message from the failed socket connect.
+     */
+    private suspend fun helperDiagnostics(host: String, port: Int): String =
+        withContext(Dispatchers.IO) {
+            val raw = runCatching {
+                kadbShell(
+                    host,
+                    port,
+                    "cat $HELPER_LOG_PATH; echo ---; ps -A | grep phone_recorder"
+                )
+            }.getOrElse { e ->
+                "could not read helper log: ${e.message ?: e.toString()}"
+            }
+            val text = raw.take(1500)
+            val socketError = lastSocketError
+            if (socketError != null) "$text\n$socketError" else text
+        }
+
+    /** 24 random bytes rendered as hex (48 chars), per helper launch. */
+    private fun randomHexToken(): String {
+        val bytes = ByteArray(24)
+        Random.nextBytes(bytes)
+        return bytes.joinToString("") { "%02x".format(it.toInt() and 0xFF) }
     }
 
     private fun readLine(input: java.io.InputStream): String {

@@ -122,6 +122,8 @@ interface SettingsRepository {
     suspend fun setAdbManualPort(port: Int?)
     suspend fun setAdbLastKnownPort(port: Int?)
     suspend fun setAdbOfflineMode(enabled: Boolean)
+    suspend fun setAdbHelperPort(port: Int?)
+    suspend fun setAdbHelperToken(token: String?)
     suspend fun setShowNumberOnCallScreen(show: Boolean)
     suspend fun setDefaultSim(defaultSim: DefaultSim)
     suspend fun setQuickDeclineMessages(messages: List<String>)
@@ -204,6 +206,8 @@ class DataStoreSettingsRepository(
         val ADB_MANUAL_PORT = intPreferencesKey("adb_manual_port")
         val ADB_LAST_KNOWN_PORT = intPreferencesKey("adb_last_known_port")
         val ADB_OFFLINE_MODE = booleanPreferencesKey("adb_offline_mode")
+        val ADB_HELPER_PORT = intPreferencesKey("adb_helper_port")
+        val ADB_HELPER_TOKEN = stringPreferencesKey("adb_helper_token")
         val SHOW_NUMBER_ON_CALL_SCREEN = booleanPreferencesKey("show_number_on_call_screen")
         val DEFAULT_SIM = stringPreferencesKey("default_sim")
         val QUICK_DECLINE_MESSAGES = stringPreferencesKey("quick_decline_messages")
@@ -379,6 +383,9 @@ class DataStoreSettingsRepository(
         val adbLastKnownPort = prefs[Keys.ADB_LAST_KNOWN_PORT]?.takeIf { it in 1..65535 }
         val adbOfflineMode = prefs[Keys.ADB_OFFLINE_MODE] ?: false
 
+        val adbHelperPort = prefs[Keys.ADB_HELPER_PORT]?.takeIf { it in 20000..60000 }
+        val adbHelperToken = prefs[Keys.ADB_HELPER_TOKEN]?.takeIf { it.isNotBlank() }
+
         val showNumberOnCallScreen = prefs[Keys.SHOW_NUMBER_ON_CALL_SCREEN] ?: true
 
         val defaultSimStr = prefs[Keys.DEFAULT_SIM]
@@ -472,6 +479,8 @@ class DataStoreSettingsRepository(
             adbManualPort = adbManualPort,
             adbLastKnownPort = adbLastKnownPort,
             adbOfflineMode = adbOfflineMode,
+            adbHelperPort = adbHelperPort,
+            adbHelperToken = adbHelperToken,
             showNumberOnCallScreen = showNumberOnCallScreen,
             defaultSim = defaultSim,
             quickDeclineOverrides = quickDeclineOverrides,
@@ -900,6 +909,26 @@ class DataStoreSettingsRepository(
 
     override suspend fun setAdbOfflineMode(enabled: Boolean) {
         dataStore.edit { prefs -> prefs[Keys.ADB_OFFLINE_MODE] = enabled }
+    }
+
+    override suspend fun setAdbHelperPort(port: Int?) {
+        dataStore.edit { prefs ->
+            if (port == null) {
+                prefs.remove(Keys.ADB_HELPER_PORT)
+            } else {
+                prefs[Keys.ADB_HELPER_PORT] = port
+            }
+        }
+    }
+
+    override suspend fun setAdbHelperToken(token: String?) {
+        dataStore.edit { prefs ->
+            if (token == null) {
+                prefs.remove(Keys.ADB_HELPER_TOKEN)
+            } else {
+                prefs[Keys.ADB_HELPER_TOKEN] = token
+            }
+        }
     }
 
     override suspend fun setShowNumberOnCallScreen(show: Boolean) {

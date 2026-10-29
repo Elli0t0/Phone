@@ -164,6 +164,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.16.4]
+
+- Built-in ADB recorder helper now talks to the app over loopback TCP instead of an abstract local socket (which the shell SELinux domain denied to the app): the app picks a random port (20000-60000) and a random 24-byte hex token per launch, stores both so a running helper is reused after an app restart, and passes them to the helper; every connection must send the token first. START streams raw PCM that the app writes into its own MediaStore file (placeholder WAV header, patched on stop); STATUS reports IDLE/RECORDING, QUIT stops the helper.
+- When the helper does not answer within the 8 s poll, Recorder status and Copy details now show the helper's own log file, its process line, and the failed socket error (truncated to 1500 chars) instead of a bare failure; the helper logs its startup and every stack trace to that file, and a stale helper is killed and relaunched with a fresh port/token.
+- On Android 12+ the helper creates AudioRecord with AudioRecord.Builder; if creation or start throws, the exact exception text travels back as the error instead of a generic one, and the 3-second test button shows that exact text.
+
 ## [0.16.3]
 
 - New "App style" setting at the top of Appearance & Display: Classic (system font, rounded cards, glass keys, default switches, fade transitions, dialogs, no swipe actions) and Clean (Inter, inset cards, flat keys, green switches, push transitions, bottom sheets, swipe actions). Picking a preset applies it live across the app.
