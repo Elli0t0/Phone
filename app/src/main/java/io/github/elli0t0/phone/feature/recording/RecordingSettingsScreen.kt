@@ -640,3 +640,9 @@ private fun formatPlayerTime(ms: Long): String {
     return "${totalSeconds / 60}:${(totalSeconds % 60).toString().padStart(2, '0')}"
 }
 
+private fun openNotificationSettings(context: android.content.Context) {
+    val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+        putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+    }
+    runCatching { context.startActivity(intent) }
+}
