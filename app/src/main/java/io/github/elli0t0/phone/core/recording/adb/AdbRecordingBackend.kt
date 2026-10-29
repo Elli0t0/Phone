@@ -741,6 +741,7 @@ class AdbRecordingBackend(
             }.onFailure { e ->
                 lastSocketError = e.message?.takeIf { it.isNotBlank() } ?: e.toString()
             }.getOrNull()
+        }
 
     /** Same socket code as helperStatus, but sends QUIT and ignores the reply. */
     private suspend fun sendQuit(port: Int, token: String) {
@@ -760,7 +761,6 @@ class AdbRecordingBackend(
             }
         }
     }
-        }
 
     /** One Kadb shell command's stdout (stderr when stdout is blank). */
     private fun kadbShell(host: String, port: Int, command: String): String {
