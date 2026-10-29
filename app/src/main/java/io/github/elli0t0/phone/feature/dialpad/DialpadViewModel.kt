@@ -189,6 +189,15 @@ class DialpadViewModel(
         setRawNumber("")
     }
 
+    /** Long-press paste on the number display: sanitize and append. */
+    fun onNumberPasted(pastedText: String) {
+        val sanitized = PhoneNumberFormatter.sanitize(pastedText)
+        if (sanitized.isNotEmpty()) {
+            val updated = _rawNumber.value + sanitized
+            setRawNumber(updated)
+        }
+    }
+
     /** External dial request: replace the input with the number
      * (sanitized, so +, * and # survive). */
     fun onExternalDialNumber(number: String) {

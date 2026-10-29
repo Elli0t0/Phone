@@ -7,12 +7,14 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -33,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -53,11 +56,15 @@ fun DialpadNumberDisplay(
     rawNumber: String,
     animationOption: AnimationOption,
     lightHaptic: () -> Unit,
+    onPaste: (String) -> Unit,
     onBackspacePressed: () -> Unit,
     onStartBackspaceRepeat: ((() -> Unit)?) -> Unit,
     onStopBackspaceRepeat: () -> Unit
 ) {
-    // Formatted Number Display.
+    val clipboardManager = LocalClipboardManager.current
+    // Formatted Number Display. Long-press pastes the clipboard
+    // number; the paste target excludes the backspace slot (see
+    // below), so a backspace long-press can never paste.
     // Always rendered: a fixed slot, so typing the first digit
     // never shifts the layout. Number centered, regular weight,
     // auto-shrinks on overflow; the backspace owns a reserved
@@ -82,6 +89,31 @@ fun DialpadNumberDisplay(
                 .testTag("dialpad_number_display"),
             contentAlignment = Alignment.Center
         ) {
+            // Long-press paste target: the number area except the
+            // backspace slot (end padding matches the backspace's
+            // CenterEnd slot, RTL included). It is a SIBLING of the
+            // backspace, not an ancestor: hit-testing picks the
+            // topmost sibling, so a backspace press never reaches
+            // this detector at all. The old parent-level detector
+            // relied on the backspace consuming the down event, but
+            // a long-press wait that already started is not reliably
+            // cancelled by that — which pasted before deleting.
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(end = 56.dp)
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onLongPress = {
+                                val clipText = clipboardManager.getText()?.text
+                                if (!clipText.isNullOrBlank()) {
+                                    lightHaptic()
+                                    onPaste(clipText)
+                                }
+                            }
+                        )
+                    }
+            )
             // Hidden full-string Text: measures overflow and drives
             // the auto-shrink, exactly as the single Text did. It
             // spans the number area (full width minus the reserved
@@ -242,9 +274,10 @@ fun DialpadNumberDisplay(
                                 Modifier.pointerInput(Unit) {
                                     awaitEachGesture {
                                         val down = awaitFirstDown(requireUnconsumed = false)
-                                        // Consume the press so the parent number
-                                        // row's long-press (paste) never fires
-                                        // from a backspace long-press.
+                                        // Consume the press as well: belt
+                                        // and braces next to the geometric
+                                        // separation (the paste target
+                                        // excludes this slot entirely).
                                         down.consume()
                                         lightHaptic()
                                         onBackspacePressed()

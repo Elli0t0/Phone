@@ -356,6 +356,7 @@ fun DialpadScreen(
             rawNumber = uiState.rawNumber,
             animationOption = animationOption,
             lightHaptic = lightHaptic,
+            onPaste = viewModel::onNumberPasted,
             onBackspacePressed = viewModel::onBackspacePressed,
             onStartBackspaceRepeat = viewModel::startBackspaceRepeat,
             onStopBackspaceRepeat = viewModel::stopBackspaceRepeat

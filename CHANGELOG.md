@@ -164,6 +164,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.16.7]
+
+- Keypad: long-press paste on the number display is back (the Clipboard chip stays gone).
+- Fixed: long-pressing backspace pasted the clipboard before deleting. The old paste detector sat on the whole display area, above the backspace, and the backspace's event consumption could not reliably cancel a long-press wait that had already started. The paste target is now a separate area covering the number field except the backspace slot, so a backspace press can never reach it; backspace long-press only repeats deletion until release.
+
 ## [0.16.6]
 
 - Keypad: the "Clipboard / Paste" chip and its title are gone completely, together with every clipboard read or check on that screen — the chip composable, the clip-description check on open/resume, the tap-to-read path, and the number display's long-press paste. The Recent chips (quick redial) and the favorites strip are untouched.

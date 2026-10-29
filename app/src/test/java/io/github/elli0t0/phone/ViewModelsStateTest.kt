@@ -142,5 +142,13 @@ class ViewModelsStateTest {
         // Long press zero appends +
         viewModel.onLongPressZero()
         assertEquals("091+", viewModel.uiState.value.rawNumber)
+
+        // Long-press paste on the number display
+        viewModel.onClearAll()
+        assertEquals("", viewModel.uiState.value.rawNumber)
+        assertFalse(viewModel.uiState.value.canCall)
+
+        viewModel.onNumberPasted("+98 (912) 345-6789")
+        assertEquals("+989123456789", viewModel.uiState.value.rawNumber)
     }
 }
