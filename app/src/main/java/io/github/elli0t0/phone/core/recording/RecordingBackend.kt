@@ -1,7 +1,6 @@
 package io.github.elli0t0.phone.core.recording
 
 import android.os.ParcelFileDescriptor
-import io.github.elli0t0.phone.data.settings.model.RecordingBackendKind
 import kotlinx.coroutines.flow.StateFlow
 
 enum class BackendStatus {
@@ -23,8 +22,8 @@ enum class CaptureSource {
 
 /**
  * One finished capture. Peak values are fractions 0..1 (max absolute
- * 16-bit sample / 32768); null when the backend does not measure them
- * (Shizuku), so a null peak must never read as silence. The
+ * 16-bit sample / 32768); null when the backend does not measure them,
+ * so a null peak must never read as silence. The
  * diagnostic line carries everything Copy details needs: the source
  * tried, the sample rate, the first-second peak, and any fallback
  * failure text.
@@ -53,21 +52,19 @@ data class CaptureResult(
  * can change without touching the UI, the controller, or storage. The app
  * process itself never records: the backend runs capture in a
  * shell-privileged process and writes to a file descriptor the app
- * created. Backends: Shizuku (a second app) and built-in ADB (the phone
- * pairs with itself over wireless debugging, no second app).
+ * created. The backend is built-in ADB (the phone pairs with itself
+ * over wireless debugging, no second app).
  */
 interface RecordingBackend {
-    val kind: RecordingBackendKind
     val status: StateFlow<BackendStatus>
     suspend fun refreshStatus()
-    suspend fun requestPermission(): Boolean
     suspend fun ensureBound(): Boolean
     suspend fun startCapture(fd: ParcelFileDescriptor, source: CaptureSource = CaptureSource.CALL): Result<Unit>
     suspend fun stopCapture(): Result<CaptureResult>
-    /** One-time wireless-debugging pairing; only the ADB backend supports it. */
+    /** One-time wireless-debugging pairing with the phone itself. */
     suspend fun pair(code: String): Result<Unit> =
         Result.failure(UnsupportedOperationException("Pairing not supported"))
 
-    /** ADB overrides: deletes the persisted identity so the next pairing starts fresh. */
+    /** Deletes the persisted identity so the next pairing starts fresh. */
     suspend fun resetPairing() {}
 }

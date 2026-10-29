@@ -5,7 +5,6 @@ import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
@@ -17,7 +16,6 @@ import io.github.elli0t0.phone.core.recording.BackendStatus
 import io.github.elli0t0.phone.core.recording.RecordingSession
 import io.github.elli0t0.phone.core.recording.adb.openWirelessDebugging
 import io.github.elli0t0.phone.core.recording.adb.postPairNotification
-import io.github.elli0t0.phone.data.settings.model.RecordingBackendKind
 import kotlinx.coroutines.flow.MutableStateFlow
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -142,9 +140,6 @@ class CallActivity : ComponentActivity() {
                 val recordingBackendStatus by (recordingController?.backendStatus
                     ?: remember { MutableStateFlow(BackendStatus.NOT_RUNNING) })
                     .collectAsStateWithLifecycle()
-                val recordingBackendKind by (recordingController?.activeBackendKind
-                    ?: remember { MutableStateFlow(RecordingBackendKind.SHIZUKU) })
-                    .collectAsStateWithLifecycle()
                 val recordingLevel by (recordingController?.recordingLevel
                     ?: remember { MutableStateFlow(0f) })
                     .collectAsStateWithLifecycle()
@@ -188,86 +183,31 @@ class CallActivity : ComponentActivity() {
                     RecordingStatusDialog(
                         title = stringResource(id = R.string.recording_dialog_title),
                         body = stringResource(
-                            id = if (recordingBackendKind == RecordingBackendKind.ADB) {
-                                when (recordingBackendStatus) {
-                                    BackendStatus.NOT_PAIRED -> R.string.recording_needed_adb_not_paired
-                                    BackendStatus.NOT_RUNNING -> R.string.recording_needed_adb_not_running
-                                    else -> R.string.recording_needed_adb_error
-                                }
-                            } else {
-                                when (recordingBackendStatus) {
-                                    BackendStatus.NOT_INSTALLED -> R.string.recording_needed_not_installed
-                                    BackendStatus.NOT_RUNNING -> R.string.recording_needed_not_running
-                                    BackendStatus.PERMISSION_NEEDED -> R.string.recording_needed_permission
-                                    else -> R.string.recording_needed_error
-                                }
+                            id = when (recordingBackendStatus) {
+                                BackendStatus.NOT_PAIRED -> R.string.recording_needed_adb_not_paired
+                                BackendStatus.NOT_RUNNING -> R.string.recording_needed_adb_not_running
+                                else -> R.string.recording_needed_adb_error
                             }
                         ),
-                        actionLabel = if (recordingBackendKind == RecordingBackendKind.ADB) {
-                            when (recordingBackendStatus) {
-                                BackendStatus.NOT_PAIRED ->
-                                    stringResource(id = R.string.recording_action_pair)
-                                BackendStatus.NOT_RUNNING ->
-                                    stringResource(id = R.string.recording_action_wireless_debugging)
-                                else -> null
-                            }
-                        } else {
-                            when (recordingBackendStatus) {
-                                BackendStatus.NOT_INSTALLED, BackendStatus.ERROR ->
-                                    stringResource(id = R.string.recording_action_get_shizuku)
-                                BackendStatus.NOT_RUNNING ->
-                                    stringResource(id = R.string.recording_action_start_shizuku)
-                                BackendStatus.PERMISSION_NEEDED ->
-                                    stringResource(id = R.string.recording_action_grant)
-                                BackendStatus.NOT_PAIRED, BackendStatus.READY -> null
-                            }
+                        actionLabel = when (recordingBackendStatus) {
+                            BackendStatus.NOT_PAIRED ->
+                                stringResource(id = R.string.recording_action_pair)
+                            BackendStatus.NOT_RUNNING ->
+                                stringResource(id = R.string.recording_action_wireless_debugging)
+                            else -> null
                         },
                         onAction = {
-                            if (recordingBackendKind == RecordingBackendKind.ADB) {
-                                when (recordingBackendStatus) {
-                                    BackendStatus.NOT_PAIRED -> {
-                                        postPairNotification(applicationContext)
-                                        showRecordingNeeded = false
-                                    }
-                                    BackendStatus.NOT_RUNNING -> {
-                                        openWirelessDebugging(applicationContext)
-                                        showRecordingNeeded = false
-                                    }
-                                    else -> {
-                                        showRecordingNeeded = false
-                                    }
+                            when (recordingBackendStatus) {
+                                BackendStatus.NOT_PAIRED -> {
+                                    postPairNotification(applicationContext)
+                                    showRecordingNeeded = false
                                 }
-                            } else {
-                                when (recordingBackendStatus) {
-                                    BackendStatus.PERMISSION_NEEDED -> recordingScope.launch {
-                                        recordingController?.requestBackendPermission()
-                                        showRecordingNeeded = false
-                                    }
-                                    BackendStatus.NOT_RUNNING -> {
-                                        val launch = packageManager.getLaunchIntentForPackage(
-                                            "moe.shizuku.privileged.api"
-                                        )
-                                        if (launch != null) {
-                                            startActivity(launch)
-                                        } else {
-                                            startActivity(
-                                                Intent(
-                                                    Intent.ACTION_VIEW,
-                                                    Uri.parse("https://shizuku.rikka.app/download/")
-                                                )
-                                            )
-                                        }
-                                        showRecordingNeeded = false
-                                    }
-                                    else -> {
-                                        startActivity(
-                                            Intent(
-                                                Intent.ACTION_VIEW,
-                                                Uri.parse("https://shizuku.rikka.app/download/")
-                                            )
-                                        )
-                                        showRecordingNeeded = false
-                                    }
+                                BackendStatus.NOT_RUNNING -> {
+                                    openWirelessDebugging(applicationContext)
+                                    showRecordingNeeded = false
+                                }
+                                else -> {
+                                    showRecordingNeeded = false
                                 }
                             }
                         },

@@ -13,7 +13,6 @@ import io.github.elli0t0.phone.core.recording.CaptureSource
 import io.github.elli0t0.phone.core.recording.RecordingBackend
 import io.github.elli0t0.phone.core.recording.WavWriter
 import io.github.elli0t0.phone.data.settings.SettingsRepository
-import io.github.elli0t0.phone.data.settings.model.RecordingBackendKind
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -45,7 +44,7 @@ import kotlin.random.Random
  * helper streams raw PCM to the app over loopback TCP (an abstract
  * local socket owned by the shell SELinux domain was denied to the
  * app); the app writes the WAV into the MediaStore descriptor it
- * created, exactly like the Shizuku path — so storage, playback,
+ * created, so storage, playback,
  * delete, and share are identical. After a reboot the helper is gone;
  * it is re-armed on demand whenever wireless debugging is on and the
  * phone is on Wi-Fi.
@@ -61,8 +60,6 @@ class AdbRecordingBackend(
     private val context: Context,
     private val settingsRepository: SettingsRepository
 ) : RecordingBackend {
-
-    override val kind = RecordingBackendKind.ADB
 
     init {
         ensureKadbIdentity(context)
@@ -166,11 +163,6 @@ class AdbRecordingBackend(
                 _lastError.value = probe.message
             }
         }
-    }
-
-    override suspend fun requestPermission(): Boolean {
-        // ADB has no permission prompt; pairing is the gate.
-        return status.value == BackendStatus.READY
     }
 
     override suspend fun ensureBound(): Boolean {

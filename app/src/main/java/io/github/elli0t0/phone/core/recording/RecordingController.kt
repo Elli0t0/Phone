@@ -14,7 +14,6 @@ import io.github.elli0t0.phone.data.call.CallState
 import io.github.elli0t0.phone.data.recordings.RecordingEntity
 import io.github.elli0t0.phone.data.recordings.RecordingsRepository
 import io.github.elli0t0.phone.data.settings.SettingsRepository
-import io.github.elli0t0.phone.data.settings.model.RecordingBackendKind
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -23,7 +22,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -59,7 +57,6 @@ sealed interface PairResult {
  */
 class RecordingController(
     private val context: Context,
-    private val shizukuBackend: RecordingBackend,
     private val adbBackend: AdbRecordingBackend,
     private val settingsRepository: SettingsRepository,
     private val recordingsRepository: RecordingsRepository
@@ -70,15 +67,8 @@ class RecordingController(
     private val _state = MutableStateFlow<RecordingSession>(RecordingSession.Idle)
     val state: StateFlow<RecordingSession> = _state.asStateFlow()
 
-    /** The backend the user picked in Settings; Shizuku until they choose ADB. */
-    val activeBackendKind: StateFlow<RecordingBackendKind> = settingsRepository.settingsFlow
-        .map { it.recordingBackend }
-        .stateIn(scope, SharingStarted.Eagerly, RecordingBackendKind.SHIZUKU)
-
-    /** Status of whichever backend is currently selected. */
-    val backendStatus: StateFlow<BackendStatus> = activeBackendKind
-        .flatMapLatest { kind -> backendFor(kind).status }
-        .stateIn(scope, SharingStarted.Eagerly, BackendStatus.NOT_RUNNING)
+    /** Status of the built-in ADB backend, the only backend. */
+    val backendStatus: StateFlow<BackendStatus> = adbBackend.status
 
     /** Diagnostic detail for the last ADB probe; null when healthy. */
     val backendDiagnostic: StateFlow<String?> = adbBackend.lastError
@@ -95,8 +85,7 @@ class RecordingController(
     val lastRecordingSilent: StateFlow<Boolean> = _lastRecordingSilent.asStateFlow()
 
     /** Live capture level (0..1) from the ADB backend's reader; the
-     * in-call meter reads it. Shizuku stays at 0 (it does not stream
-     * PCM through the app). */
+     * in-call meter reads it. */
     val recordingLevel: StateFlow<Float> = adbBackend.captureLevel
 
     /** True while a call recording is armed: tapped before the call
@@ -159,14 +148,10 @@ class RecordingController(
     }
 
     suspend fun resetPairing() {
-        activeBackend().resetPairing()
+        adbBackend.resetPairing()
         refreshBackendStatus()
     }
 
-    private fun backendFor(kind: RecordingBackendKind): RecordingBackend =
-        if (kind == RecordingBackendKind.ADB) adbBackend else shizukuBackend
-
-    private fun activeBackend(): RecordingBackend = backendFor(activeBackendKind.value)
     private val _lastError = MutableStateFlow<String?>(null)
     val lastError: StateFlow<String?> = _lastError.asStateFlow()
 
@@ -210,24 +195,14 @@ class RecordingController(
         }
     }
 
-    suspend fun refreshBackendStatus() = activeBackend().refreshStatus()
+    suspend fun refreshBackendStatus() = adbBackend.refreshStatus()
 
-    suspend fun requestBackendPermission(): Boolean {
-        val granted = activeBackend().requestPermission()
-        activeBackend().refreshStatus()
-        return granted
-    }
-
-    suspend fun setBackend(kind: RecordingBackendKind) {
-        settingsRepository.setRecordingBackend(kind)
-    }
-
-    suspend fun pairAdb(code: String): Result<Unit> = activeBackend().pair(code)
+    suspend fun pairAdb(code: String): Result<Unit> = adbBackend.pair(code)
 
     suspend fun startCallRecording(number: String, displayName: String?): Result<Unit> {
-        if (activeBackend().status.value != BackendStatus.READY) {
-            activeBackend().refreshStatus()
-            if (activeBackend().status.value != BackendStatus.READY) {
+        if (adbBackend.status.value != BackendStatus.READY) {
+            adbBackend.refreshStatus()
+            if (adbBackend.status.value != BackendStatus.READY) {
                 return Result.failure(IllegalStateException("Recorder is not ready"))
             }
         }
@@ -253,32 +228,23 @@ class RecordingController(
 
     /**
      * 3-second pipeline check: proves bind + capture + file without a
-     * call. The ADB backend records from the microphone (VOICE_CALL is
+     * call. The backend records from the microphone (VOICE_CALL is
      * silent outside an active call, which is exactly what the old
-     * test measured); Shizuku keeps its old call-source behavior.
+     * test measured).
      */
     suspend fun runPipelineTest(): Result<CaptureResult> {
-        if (activeBackend().status.value != BackendStatus.READY) {
-            activeBackend().refreshStatus()
-            if (activeBackend().status.value != BackendStatus.READY) {
+        if (adbBackend.status.value != BackendStatus.READY) {
+            adbBackend.refreshStatus()
+            if (adbBackend.status.value != BackendStatus.READY) {
                 // The test button shows the exact reason, not a bare
-                // "not ready": the ADB diagnostic when ADB is selected.
-                val detail = if (activeBackendKind.value == RecordingBackendKind.ADB) {
-                    backendDiagnostic.value?.takeIf { it.isNotBlank() }
-                } else {
-                    null
-                }
+                // "not ready": the ADB probe diagnostic.
+                val detail = backendDiagnostic.value?.takeIf { it.isNotBlank() }
                 return Result.failure(
                     IllegalStateException(detail ?: "Recorder is not ready")
                 )
             }
         }
-        val source = if (activeBackendKind.value == RecordingBackendKind.ADB) {
-            CaptureSource.MIC
-        } else {
-            CaptureSource.CALL
-        }
-        val started = startSession("", null, isTest = true, source = source)
+        val started = startSession("", null, isTest = true, source = CaptureSource.MIC)
         if (started.isFailure) return Result.failure(started.exceptionOrNull()!!)
         delay(TEST_DURATION_MS)
         return stopSession()
@@ -296,7 +262,7 @@ class RecordingController(
         runCatching {
             val startedAt = System.currentTimeMillis()
             val (uri, pfd) = createEntry(number, startedAt, isTest)
-            val capture = activeBackend().startCapture(pfd, source)
+            val capture = adbBackend.startCapture(pfd, source)
             if (capture.isFailure) {
                 runCatching { pfd.close() }
                 runCatching { context.contentResolver.delete(uri, null, null) }
@@ -328,7 +294,7 @@ class RecordingController(
         )
         active = null
         _state.value = RecordingSession.Idle
-        val capture = activeBackend().stopCapture()
+        val capture = adbBackend.stopCapture()
         runCatching { session.pfd.close() }
         runCatching {
             val pendingOff = ContentValues().apply {
@@ -338,7 +304,7 @@ class RecordingController(
         }
         context.stopService(Intent(context, RecordingForegroundService::class.java))
         capture.onSuccess { result ->
-            // A null peak means the backend does not measure (Shizuku):
+            // A null peak means the backend does not measure:
             // never read as silence. Below 1% the file is kept but
             // badged Silent, and a non-test stop raises the in-call
             // silent message.

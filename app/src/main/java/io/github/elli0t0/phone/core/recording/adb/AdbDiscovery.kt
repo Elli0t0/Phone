@@ -18,10 +18,10 @@ private const val PAIRING_SERVICE_TYPE = "_adb-tls-pairing._tcp"
 private const val CONNECT_SERVICE_TYPE = "_adb-tls-connect._tcp"
 
 /**
- * Finds the phone's own wireless-debugging services via NSD, the same
- * discovery Shizuku uses. The pairing service only exists while the
- * system "Pair device with pairing code" dialog is open; the connect
- * service exists while wireless debugging is on.
+ * Finds the phone's own wireless-debugging services via NSD. The pairing
+ * service only exists while the system "Pair device with pairing code"
+ * dialog is open; the connect service exists while wireless debugging
+ * is on.
  */
 object AdbDiscovery {
 

@@ -3,12 +3,10 @@ package io.github.elli0t0.phone.feature.recording
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,7 +26,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
@@ -65,7 +62,6 @@ import io.github.elli0t0.phone.core.recording.BackendStatus
 import io.github.elli0t0.phone.core.recording.PairResult
 import io.github.elli0t0.phone.core.recording.RecordingSession
 import io.github.elli0t0.phone.data.recordings.RecordingEntity
-import io.github.elli0t0.phone.data.settings.model.RecordingBackendKind
 import io.github.elli0t0.phone.data.settings.model.SwitchStyle
 import io.github.elli0t0.phone.navigation.InnerTopBar
 import java.text.SimpleDateFormat
@@ -73,10 +69,9 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Call recording page: backend choice (Shizuku or built-in ADB),
- * backend status + setup actions, a 3-second pipeline test, the active
- * recording (if any), and the recordings list with playback, delete,
- * and share.
+ * Call recording page: built-in ADB backend status + setup actions, a
+ * 3-second pipeline test, the active recording (if any), and the
+ * recordings list with playback, delete, and share.
  */
 @Composable
 fun RecordingSettingsScreen(
@@ -93,7 +88,6 @@ fun RecordingSettingsScreen(
         )
     )
     val status by viewModel.backendStatus.collectAsStateWithLifecycle()
-    val backendKind by viewModel.backendKind.collectAsStateWithLifecycle()
     // Hoisted: the Advanced card's condition sits at LazyListScope
     // level (not a @Composable scope), so the settings read must
     // happen here in the function body, not in the condition.
@@ -156,28 +150,19 @@ fun RecordingSettingsScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    val statusText = if (backendKind == RecordingBackendKind.ADB) {
-        when (status) {
-            BackendStatus.NOT_PAIRED -> stringResource(id = R.string.recording_status_not_paired)
-            BackendStatus.NOT_RUNNING -> stringResource(id = R.string.recording_status_adb_not_running)
-            BackendStatus.PERMISSION_NEEDED -> stringResource(id = R.string.recording_status_permission)
-            BackendStatus.NOT_INSTALLED -> stringResource(id = R.string.recording_status_not_installed)
-            BackendStatus.READY -> if (offlinePortActive) {
-                stringResource(id = R.string.recording_status_offline_active)
-            } else {
-                stringResource(id = R.string.recording_status_ready)
-            }
-            BackendStatus.ERROR -> stringResource(id = R.string.recording_status_adb_error)
+    val statusText = when (status) {
+        BackendStatus.NOT_PAIRED -> stringResource(id = R.string.recording_status_not_paired)
+        BackendStatus.NOT_RUNNING -> stringResource(id = R.string.recording_status_adb_not_running)
+        BackendStatus.READY -> if (offlinePortActive) {
+            stringResource(id = R.string.recording_status_offline_active)
+        } else {
+            stringResource(id = R.string.recording_status_ready)
         }
-    } else {
-        when (status) {
-            BackendStatus.NOT_INSTALLED -> stringResource(id = R.string.recording_status_not_installed)
-            BackendStatus.NOT_RUNNING -> stringResource(id = R.string.recording_status_not_running)
-            BackendStatus.PERMISSION_NEEDED -> stringResource(id = R.string.recording_status_permission)
-            BackendStatus.READY -> stringResource(id = R.string.recording_status_ready)
-            BackendStatus.ERROR -> stringResource(id = R.string.recording_status_error)
-            BackendStatus.NOT_PAIRED -> stringResource(id = R.string.recording_status_not_paired)
-        }
+        BackendStatus.ERROR -> stringResource(id = R.string.recording_status_adb_error)
+        // NOT_INSTALLED and PERMISSION_NEEDED never come from the
+        // ADB backend; they fall here only to keep the when
+        // exhaustive, and read as a generic error.
+        else -> stringResource(id = R.string.recording_status_adb_error)
     }
 
     Scaffold(
@@ -196,45 +181,6 @@ fun RecordingSettingsScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            item {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = stringResource(id = R.string.recording_backend_title),
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        RecordingBackendKind.entries.forEach { kind ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { viewModel.setBackend(kind) },
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                RadioButton(
-                                    selected = backendKind == kind,
-                                    onClick = { viewModel.setBackend(kind) }
-                                )
-                                Text(
-                                    text = stringResource(
-                                        id = if (kind == RecordingBackendKind.ADB) {
-                                            R.string.recording_backend_adb
-                                        } else {
-                                            R.string.recording_backend_shizuku
-                                        }
-                                    ),
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                        }
-                    }
-                }
-            }
 
             item {
                 Card(
@@ -258,9 +204,8 @@ fun RecordingSettingsScreen(
                         // accepted, so the state is "Paired", not "pair
                         // me". A failed probe proves nothing about the
                         // key, so it shows no such line.
-                        if (backendKind == RecordingBackendKind.ADB &&
-                            (status == BackendStatus.READY ||
-                                (status == BackendStatus.ERROR && keyAccepted))
+                        if (status == BackendStatus.READY ||
+                            (status == BackendStatus.ERROR && keyAccepted)
                         ) {
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
@@ -285,7 +230,7 @@ fun RecordingSettingsScreen(
                             backendDiagnostic,
                             captureDiagnostic
                         ).joinToString("\n").takeIf { it.isNotBlank() }
-                        if (backendKind == RecordingBackendKind.ADB && detailsText != null) {
+                        if (detailsText != null) {
                             Spacer(modifier = Modifier.height(4.dp))
                             SelectionContainer {
                                 Text(
@@ -316,58 +261,31 @@ fun RecordingSettingsScreen(
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            if (backendKind == RecordingBackendKind.ADB) {
-                                if (status == BackendStatus.READY ||
-                                    (status == BackendStatus.ERROR && keyAccepted)
+                            if (status == BackendStatus.READY ||
+                                (status == BackendStatus.ERROR && keyAccepted)
+                            ) {
+                                // Already paired: re-pairing is an
+                                // option, not the action — small
+                                // text button instead of the big one.
+                                TextButton(
+                                    onClick = onPairClick,
+                                    enabled = !busy
                                 ) {
-                                    // Already paired: re-pairing is an
-                                    // option, not the action — small
-                                    // text button instead of the big one.
-                                    TextButton(
-                                        onClick = onPairClick,
-                                        enabled = !busy
-                                    ) {
-                                        Text(text = stringResource(id = R.string.recording_action_pair_again))
-                                    }
-                                } else {
-                                    // Pair is available in every other
-                                    // state, not only once pairing is
-                                    // already possible: from NOT_RUNNING
-                                    // it posts the notification and opens
-                                    // Developer options, so the user is
-                                    // never stuck with no way to reach
-                                    // the code entry.
-                                    Button(
-                                        onClick = onPairClick,
-                                        enabled = !busy
-                                    ) {
-                                        Text(text = stringResource(id = R.string.recording_action_pair))
-                                    }
+                                    Text(text = stringResource(id = R.string.recording_action_pair_again))
                                 }
                             } else {
-                                when (status) {
-                                    BackendStatus.NOT_INSTALLED -> Button(
-                                        onClick = {
-                                            openUrl(
-                                                context,
-                                                SHIZUKU_DOWNLOAD_URL
-                                            )
-                                        }
-                                    ) {
-                                        Text(text = stringResource(id = R.string.recording_action_get_shizuku))
-                                    }
-                                    BackendStatus.NOT_RUNNING -> Button(
-                                        onClick = { openShizuku(context) }
-                                    ) {
-                                        Text(text = stringResource(id = R.string.recording_action_start_shizuku))
-                                    }
-                                    BackendStatus.PERMISSION_NEEDED -> Button(
-                                        onClick = { viewModel.requestPermission() },
-                                        enabled = !busy
-                                    ) {
-                                        Text(text = stringResource(id = R.string.recording_action_grant))
-                                    }
-                                    else -> Unit
+                                // Pair is available in every other
+                                // state, not only once pairing is
+                                // already possible: from NOT_RUNNING
+                                // it posts the notification and opens
+                                // Developer options, so the user is
+                                // never stuck with no way to reach
+                                // the code entry.
+                                Button(
+                                    onClick = onPairClick,
+                                    enabled = !busy
+                                ) {
+                                    Text(text = stringResource(id = R.string.recording_action_pair))
                                 }
                             }
                             TextButton(
@@ -377,28 +295,26 @@ fun RecordingSettingsScreen(
                                 Text(text = stringResource(id = R.string.recording_action_refresh))
                             }
                         }
-                        if (backendKind == RecordingBackendKind.ADB) {
-                            // The how-to-pair steps only matter before
-                            // the key is accepted; afterwards they are
-                            // noise next to the Paired line.
-                            if (status == BackendStatus.NOT_PAIRED) {
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = stringResource(id = R.string.recording_pair_hint),
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
+                        // The how-to-pair steps only matter before
+                        // the key is accepted; afterwards they are
+                        // noise next to the Paired line.
+                        if (status == BackendStatus.NOT_PAIRED) {
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = stringResource(id = R.string.recording_adb_needs_wifi),
+                                text = stringResource(id = R.string.recording_pair_hint),
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = stringResource(id = R.string.recording_adb_needs_wifi),
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                 }
             }
 
-            if (backendKind == RecordingBackendKind.ADB && showAdvancedSettings) {
+            if (showAdvancedSettings) {
                 item {
                     Card(
                         colors = CardDefaults.cardColors(
@@ -552,7 +468,7 @@ fun RecordingSettingsScreen(
                     }
                     if (testOutcome != null) {
                         Spacer(modifier = Modifier.height(4.dp))
-                        // Shizuku does not measure a peak, so it keeps
+                        // A null peak means unmeasured, so it keeps
                         // the old line. The ADB mic test shows bytes,
                         // duration and peak; below 2% it is silence,
                         // not success, with the exact next check.
@@ -724,31 +640,3 @@ private fun formatPlayerTime(ms: Long): String {
     return "${totalSeconds / 60}:${(totalSeconds % 60).toString().padStart(2, '0')}"
 }
 
-private fun openUrl(context: android.content.Context, url: String) {
-    runCatching {
-        context.startActivity(
-            Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-        )
-    }
-}
-
-private fun openShizuku(context: android.content.Context) {
-    val launch = context.packageManager.getLaunchIntentForPackage(SHIZUKU_PACKAGE)
-    if (launch != null) {
-        runCatching { context.startActivity(launch) }
-    } else {
-        openUrl(context, SHIZUKU_DOWNLOAD_URL)
-    }
-}
-
-private fun openNotificationSettings(context: android.content.Context) {
-    val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-        putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-    }
-    runCatching { context.startActivity(intent) }
-}
-
-private const val SHIZUKU_PACKAGE = "moe.shizuku.privileged.api"
-private const val SHIZUKU_DOWNLOAD_URL = "https://shizuku.rikka.app/download/"

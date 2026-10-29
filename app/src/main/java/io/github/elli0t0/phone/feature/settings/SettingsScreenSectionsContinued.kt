@@ -27,7 +27,6 @@ import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.recording.BackendStatus
 import io.github.elli0t0.phone.data.settings.model.AnswerStyle
-import io.github.elli0t0.phone.data.settings.model.RecordingBackendKind
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import androidx.compose.runtime.Composable
 import io.github.elli0t0.phone.core.design.Spacing

@@ -21,7 +21,6 @@ import io.github.elli0t0.phone.core.recording.RecordingController
 import io.github.elli0t0.phone.core.recording.RecordingSession
 import io.github.elli0t0.phone.core.recording.adb.openWirelessDebugging
 import io.github.elli0t0.phone.core.recording.adb.postPairNotification
-import io.github.elli0t0.phone.data.settings.model.RecordingBackendKind
 import io.github.elli0t0.phone.data.recordings.RecordingEntity
 import io.github.elli0t0.phone.data.recordings.RecordingsRepository
 import kotlinx.coroutines.Job
@@ -37,7 +36,7 @@ data class RecordingTestOutcome(
     val bytes: Long,
     val durationMs: Long,
     val error: String?,
-    /** Peak 0..1 for the ADB mic test; null when unmeasured (Shizuku). */
+    /** Peak 0..1 for the ADB mic test; null when unmeasured. */
     val peak: Float? = null
 )
 
@@ -48,7 +47,6 @@ class RecordingSettingsViewModel(
 ) : ViewModel() {
 
     val backendStatus: StateFlow<BackendStatus> = controller.backendStatus
-    val backendKind: StateFlow<RecordingBackendKind> = controller.activeBackendKind
     val backendDiagnostic: StateFlow<String?> = controller.backendDiagnostic
     val captureDiagnostic: StateFlow<String?> = controller.lastCaptureDiagnostic
     val pairResult: StateFlow<PairResult?> = controller.pairResult
@@ -122,10 +120,6 @@ class RecordingSettingsViewModel(
         refreshJob = viewModelScope.launch { controller.refreshBackendStatus() }
     }
 
-    fun setBackend(kind: RecordingBackendKind) {
-        viewModelScope.launch { controller.setBackend(kind) }
-    }
-
     fun setManualPort(port: Int?) {
         viewModelScope.launch { controller.setManualPort(port) }
     }
@@ -159,14 +153,6 @@ class RecordingSettingsViewModel(
         viewModelScope.launch {
             postPairNotification(appContext)
             openWirelessDebugging(appContext)
-        }
-    }
-
-    fun requestPermission() {
-        viewModelScope.launch {
-            _busy.value = true
-            controller.requestBackendPermission()
-            _busy.value = false
         }
     }
 

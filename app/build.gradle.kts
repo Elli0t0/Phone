@@ -127,8 +127,6 @@ dependencies {
   implementation(libs.androidx.compose.material3)
   implementation(libs.haze)
   implementation(libs.backdrop)
-  implementation(libs.shizuku.api)
-  implementation(libs.shizuku.provider)
   implementation(libs.kadb)
   implementation(libs.coil.compose)
   implementation(libs.androidx.datastore.preferences)

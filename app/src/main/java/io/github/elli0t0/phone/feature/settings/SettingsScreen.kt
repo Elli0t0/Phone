@@ -104,7 +104,6 @@ import io.github.elli0t0.phone.feature.recording.RecordingSettingsScreen
 import io.github.elli0t0.phone.feature.setup.SetupChecklist
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.data.settings.model.Backdrop
-import io.github.elli0t0.phone.data.settings.model.RecordingBackendKind
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
 import io.github.elli0t0.phone.data.settings.model.GlassIntensity
@@ -167,30 +166,18 @@ fun SettingsScreen(
     val dialogs = remember { SettingsDialogState() }
 
     // Live recording status for the main Call recording row (moved
-    // from the Calls card): the backend kind comes from settings,
-    // the status from the controller. The row refreshes the status
-    // on entry, so the subtitle is current, not the last probe
-    // from another screen.
+    // from the Calls card): the backend is built-in ADB, the status
+    // from the controller. The row refreshes the status on entry, so
+    // the subtitle is current, not the last probe from another screen.
     val recordingController =
         (context.applicationContext as PhoneApplication).container.recordingController
     val recordingStatus by recordingController.backendStatus.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { recordingController.refreshBackendStatus() }
-    val recordingBackendLabel = stringResource(
-        id = if (settings.recordingBackend == RecordingBackendKind.ADB) {
-            R.string.recording_backend_adb
-        } else {
-            R.string.recording_backend_shizuku
-        }
-    )
+    val recordingBackendLabel = stringResource(id = R.string.recording_backend_adb)
     val recordingStatusWord = when (recordingStatus) {
         BackendStatus.READY -> stringResource(id = R.string.recording_status_ready)
         BackendStatus.NOT_PAIRED -> stringResource(id = R.string.recording_status_not_paired_short)
-        BackendStatus.NOT_RUNNING ->
-            if (settings.recordingBackend == RecordingBackendKind.ADB) {
-                stringResource(id = R.string.recording_status_needs_wifi)
-            } else {
-                null
-            }
+        BackendStatus.NOT_RUNNING -> stringResource(id = R.string.recording_status_needs_wifi)
         else -> null
     }
     val recordingSubtitle = if (recordingStatusWord != null) {

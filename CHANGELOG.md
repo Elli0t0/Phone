@@ -164,6 +164,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.17.1]
+
+- Shizuku recording backend removed: built-in ADB is now the only backend. The Backend radio group is gone from the recording page, the RecordingBackendKind setting and its repository key/setter are gone, and the controller, recording view model, recording page, main Settings recording subtitle, and in-call recording dialog no longer branch on a backend kind — they use the ADB backend directly. The settings test always records from the microphone.
+- Deleted: the three shizuku/ classes (backend, IPC, user service), the Shizuku manifest permission and binder provider, the libs.shizuku.api and libs.shizuku.provider dependencies, the Shizuku ProGuard keeps, the Shizuku strings (en + fa, incl. the backend title and the grant/get/open actions), and the Shizuku branches of the recording dialogs. The recording note and pairing notification text no longer mention a second app.
+- Migration: a stored backend=SHIZUKU preference is simply ignored now (DataStore drops unknown keys) — every existing user lands on the built-in ADB backend, with no action needed. Note: the push tool cannot delete files, so the three shizuku/ files on GitHub are empty stubs in this commit; delete them by hand on GitHub (nothing references them, CI stays green either way).
+
 ## [0.17.0]
 
 - Bottom bar lens artifacts: chromatic aberration is off in both lens surfaces (droplet and whole bar) — it fringed the selected droplet's rim rainbow and separated a green channel blob beside it. The lens bend itself is unchanged.

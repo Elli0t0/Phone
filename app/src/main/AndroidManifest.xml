@@ -18,9 +18,6 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
-    <!-- Granted by the Shizuku manager, not the system: lets Phone bind
-         its privileged recording service through Shizuku. -->
-    <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <queries>
@@ -120,16 +117,6 @@
         <receiver
             android:name=".core.recording.adb.PairCodeReceiver"
             android:exported="false" />
-
-        <!-- Shizuku binder provider (see the Shizuku-API setup guide):
-             without it Phone cannot receive Shizuku's binder. -->
-        <provider
-            android:name="rikka.shizuku.ShizukuProvider"
-            android:authorities="${applicationId}.shizuku"
-            android:multiprocess="false"
-            android:enabled="true"
-            android:exported="true"
-            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
 
         <!-- Keep-alive + visible indicator for an ongoing recording.
              Owns no capture state; the RecordingController does. -->
