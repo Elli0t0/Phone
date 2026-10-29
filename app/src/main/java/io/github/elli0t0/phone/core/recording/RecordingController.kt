@@ -70,10 +70,6 @@ class RecordingController(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val sessionMutex = Mutex()
 
-    companion object {
-        private const val AUTO_RECORD_NOTIFICATION_ID = 4403
-    }
-
     private val _state = MutableStateFlow<RecordingSession>(RecordingSession.Idle)
     val state: StateFlow<RecordingSession> = _state.asStateFlow()
 
@@ -463,5 +459,6 @@ class RecordingController(
 
     companion object {
         private const val TEST_DURATION_MS = 3000L
+        private const val AUTO_RECORD_NOTIFICATION_ID = 4403
     }
 }

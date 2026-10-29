@@ -45,9 +45,11 @@ import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.WrappingRow
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.data.settings.model.AccentChoice
+import io.github.elli0t0.phone.data.settings.model.accentChoice
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
 import io.github.elli0t0.phone.data.settings.model.BottomBarChoice
+import io.github.elli0t0.phone.data.settings.model.bottomBarChoice
 import io.github.elli0t0.phone.data.settings.model.Backdrop
 import io.github.elli0t0.phone.data.settings.model.GlassIntensity
 import io.github.elli0t0.phone.data.settings.model.HeaderSize

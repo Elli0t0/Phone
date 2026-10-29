@@ -275,14 +275,14 @@ object CallRepository {
         } else {
             appContext.registerReceiver(receiver, IntentFilter(action))
         }
-        val sentIntents = parts.mapIndexed { index, _ ->
+        val sentIntents = ArrayList(parts.mapIndexed { index, _ ->
             PendingIntent.getBroadcast(
                 appContext,
                 index,
                 Intent(action),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
-        }
+        })
         try {
             sms.sendMultipartTextMessage(number, null, parts, sentIntents, null)
         } catch (e: Exception) {
