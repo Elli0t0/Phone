@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.17.5]
+
+- Recents header actions now sit in a pill like the Contacts actions toolbar: the filter, search, and menu buttons were bare icons; they now render inside the same pill container (glass when the glass-headers switch is on, flat surface + soft shadow when off), shared with Contacts instead of duplicated. Tapping the search button inside the pill still reveals the search bar exactly as before. The floating actions pill shown after scrolling keeps the bare actions, so nothing double-pills.
+
 ## [0.17.4]
 
 - Recents search now sits below the status bar like the Contacts search: the search pill had no top inset, so with search open (and the self-insetting header hidden) it drew under the status bar, clipped by the clock and icons. It now uses the same status-bar padding plus small vertical padding as the Contacts search bar. The bottom overlap in the same screenshot is the list scrolling under the floating bar, which is normal and also happens on Contacts — the list's bottom padding already clears the last item at full scroll.

@@ -640,9 +640,10 @@ private fun ContactsPillButton(
 /**
  * A pill container (e.g. the actions toolbar) that renders glass when
  * the headers glass switch is on, flat surface + soft shadow when off.
+ * Shared with Recents, whose header actions use the same pill.
  */
 @Composable
-private fun ContactsPillContainer(
+internal fun ContactsPillContainer(
     modifier: Modifier = Modifier,
     content: @Composable RowScope.() -> Unit
 ) {

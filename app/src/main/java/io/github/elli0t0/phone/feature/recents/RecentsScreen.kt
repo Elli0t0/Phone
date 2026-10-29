@@ -96,6 +96,7 @@ import io.github.elli0t0.phone.core.permissions.rememberCallLogPermissionState
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.core.telecom.CallManager
 import io.github.elli0t0.phone.feature.contacts.ui.ContactSearchBar
+import io.github.elli0t0.phone.feature.contacts.ui.ContactsPillContainer
 import io.github.elli0t0.phone.feature.contacts.ui.PermissionCard
 import io.github.elli0t0.phone.feature.setup.SetupWarningCard
 import io.github.elli0t0.phone.feature.recents.ui.CallLogRow
@@ -588,7 +589,14 @@ fun RecentsScreen(
                                     subtitle = null,
                                     modifier = Modifier
                                         .animateItem(),
-                                    actions = headerActions
+                                    // Same pill as the Contacts actions toolbar;
+                                    // the floating pill below keeps the bare
+                                    // actions, so this does not double-pill.
+                                    actions = {
+                                        ContactsPillContainer {
+                                            headerActions()
+                                        }
+                                    }
                                 )
                             }
                         }
