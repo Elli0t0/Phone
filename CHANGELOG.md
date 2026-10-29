@@ -164,6 +164,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.16.9]
+
+- Settings restructured into 8 section pages (Appearance, Liquid glass, Layout & navigation, Calls, Contacts, Call recording, Privacy, About), each with an icon row and a live summary subtitle on the main page; "Reset to defaults" stays at the bottom.
+- New "Show advanced settings" switch (default OFF) at the bottom of the main page: when OFF it hides the Glass Studio entry, Call Studio's detailed sub-options (keeps control button size, background, show number), Call recording > Advanced, App style > Customize and the debug-log row; when ON everything is visible.
+- Dead-setting audit: only one field was stored but never applied anywhere — answerGesture (Call Studio preset matching only, never read by a call screen). Removed: the enum, the field, the repo setter, the ViewModel setter, the Call Studio "Answer gesture" group and the SWIPE preset (now identical to CLASSIC); the stored value still migrates into answerStyle on first load, so no data is lost.
+- Contacts clutter: the duplicates banner shows only while duplicates exist and it has never been dismissed; after dismissal its action moves into the Contacts overflow menu as "Merge duplicates". The "Add your favorite contacts" row shows only when favorites are empty and it has never been dismissed (new dismiss x); both dismissals persist across restarts.
+
 ## [0.16.8]
 
 - Smaller APK, no feature removed: native libraries now ship arm64-v8a only (the APK carried four ABIs of the same two libraries); packaging drops dead metadata (META-INF license/version files, DebugProbesKt.bin, kotlin-tooling-metadata.json, *.kotlin_builtins).

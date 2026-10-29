@@ -210,6 +210,7 @@ object PhoneDimens {
     // Settings rows, dialogs, accent picker.
     val settingsSectionHeaderVerticalPadding = 4.dp
     val settingsRowVerticalPadding = 12.dp
+    val settingsNavRowIconGap = 16.dp
     val settingsSwitchRowVerticalPadding = 4.dp
     val settingsSwitchRowTextEndPadding = 8.dp
     val settingsChoiceOptionGap = 8.dp

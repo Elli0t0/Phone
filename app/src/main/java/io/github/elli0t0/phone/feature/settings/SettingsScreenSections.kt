@@ -49,100 +49,19 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 
 /**
- * The Settings LazyColumn sections (Appearance, Liquid glass, Layout,
- * Navigation, Contacts, Calls, Privacy, About, Reset). Extracted from
- * SettingsScreen to keep that file under 400 lines. Each section opens
- * its dialogs via [dialogs]; the dialogs themselves live in the main
- * SettingsScreen function.
+ * The Settings section cards (Appearance, Liquid glass). Each card is
+ * one page of the restructured Settings: the main page shows a row
+ * per section, and SettingsPages renders the card full-screen.
+ * The rows open their dialogs via [dialogs]; the dialogs themselves
+ * live in the main SettingsScreen function.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
-fun androidx.compose.foundation.lazy.LazyListScope.settingsSections(
+@Composable
+fun AppearanceCard(
     settings: AppSettings,
     viewModel: SettingsViewModel,
     dialogs: SettingsDialogState,
-    dialerState: io.github.elli0t0.phone.core.telecom.DefaultDialerState,
-    showSupplementaryRow: Boolean,
-    requiredSetupComplete: Boolean,
-    spacing: Spacing,
-    context: Context
+    spacing: Spacing
 ) {
-item {
-    Spacer(modifier = Modifier.height(spacing.extraSmall))
-}
-
-// Default Phone App Card: hidden once Phone is the default dialer,
-// since there is nothing left to do here.
-if (!dialerState.isDefault) {
-item {
-    Card(
-        shape = settingsListCardShape(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .testTag("default_phone_app_card")
-    ) {
-        Column(modifier = Modifier.padding(spacing.medium)) {
-            Text(
-                text = stringResource(id = R.string.settings_default_phone_app),
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.height(spacing.extraSmall))
-            Text(
-                text = stringResource(id = R.string.settings_default_phone_app_desc),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(spacing.medium))
-
-            Button(
-                onClick = dialerState.requestDefaultDialer,
-                modifier = Modifier.testTag("set_as_default_button")
-            ) {
-                Text(text = stringResource(id = R.string.settings_set_as_default))
-            }
-        }
-    }
-}
-}
-
-// Permissions & setup: shown only while a required permission or the
-// default dialer role is missing.
-if (!requiredSetupComplete) {
-    item {
-        SettingsSectionHeader(title = stringResource(id = R.string.settings_permissions_setup_title))
-    }
-
-    item {
-        Card(
-            shape = settingsListCardShape(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(spacing.medium)) {
-                Text(
-                    text = stringResource(id = R.string.settings_permissions_setup_desc),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(spacing.medium))
-                SetupChecklist(
-                    modifier = Modifier.fillMaxWidth(),
-                    scrollable = false
-                )
-            }
-        }
-    }
-}
-
-// Category 1: Appearance & Display
-item {
-    SettingsSectionHeader(title = stringResource(id = R.string.settings_cat_appearance))
-}
-
-item {
     Card(
         shape = settingsListCardShape(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -290,12 +209,13 @@ item {
     }
 }
 
-// Liquid glass: per-section on/off switches.
-item {
-    SettingsSectionHeader(title = stringResource(id = R.string.settings_cat_liquid_glass))
-}
-
-item {
+@Composable
+fun GlassCard(
+    settings: AppSettings,
+    viewModel: SettingsViewModel,
+    dialogs: SettingsDialogState,
+    spacing: Spacing
+) {
     Card(
         shape = settingsListCardShape(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -410,6 +330,9 @@ item {
                 onClick = { dialogs.showBackdropDialog = true }
             )
 
+            // Glass Studio is advanced: hidden unless the
+            // advanced toggle is on.
+            if (settings.showAdvancedSettings) {
             Spacer(modifier = Modifier.height(spacing.small))
             SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
@@ -419,8 +342,7 @@ item {
                 subtitle = stringResource(id = R.string.settings_glass_studio_desc),
                 onClick = { dialogs.showGlassStudioPage = true }
             )
+            }
         }
     }
-}
-
 }

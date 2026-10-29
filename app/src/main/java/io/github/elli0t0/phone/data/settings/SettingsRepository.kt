@@ -12,7 +12,6 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
-import io.github.elli0t0.phone.data.settings.model.AnswerGesture
 import io.github.elli0t0.phone.data.settings.model.AnswerStyle
 import io.github.elli0t0.phone.data.settings.model.AnswerSide
 import io.github.elli0t0.phone.data.settings.model.CallerInfoPosition
@@ -101,7 +100,6 @@ interface SettingsRepository {
     suspend fun setCallBackground(background: CallBackground)
     suspend fun setCallBackgroundDim(dim: Float)
     suspend fun setCallBackgroundCustomColor(color: Long)
-    suspend fun setAnswerGesture(gesture: AnswerGesture)
     suspend fun setAnswerStyle(style: AnswerStyle)
     suspend fun setSliderOnlyWhenLocked(enabled: Boolean)
     suspend fun setAnswerSide(side: AnswerSide)
@@ -129,6 +127,9 @@ interface SettingsRepository {
     suspend fun setQuickDeclineMessages(messages: List<String>)
     suspend fun setSpeedDial(speedDial: Map<Char, String>)
     suspend fun setBlockedPrefixes(prefixes: Set<String>)
+    suspend fun setShowAdvancedSettings(show: Boolean)
+    suspend fun setDuplicatesDismissed(dismissed: Boolean)
+    suspend fun setFavoritesHintDismissed(dismissed: Boolean)
     suspend fun resetToDefaults()
 }
 
@@ -185,6 +186,9 @@ class DataStoreSettingsRepository(
         val CALL_BACKGROUND = stringPreferencesKey("call_background")
         val CALL_BACKGROUND_DIM = floatPreferencesKey("call_background_dim")
         val CALL_BACKGROUND_CUSTOM_COLOR = longPreferencesKey("call_background_custom_color")
+        // Legacy only: the answer-gesture setting was removed
+        // (no screen ever applied it); this key survives solely so
+        // the answer-style migration above can still read it.
         val ANSWER_GESTURE = stringPreferencesKey("answer_gesture")
         val ANSWER_STYLE = stringPreferencesKey("call_answer_style")
         val SLIDER_ONLY_WHEN_LOCKED = booleanPreferencesKey("call_slider_only_when_locked")
@@ -213,6 +217,9 @@ class DataStoreSettingsRepository(
         val QUICK_DECLINE_MESSAGES = stringPreferencesKey("quick_decline_messages")
         val SPEED_DIAL = stringPreferencesKey("speed_dial")
         val BLOCKED_PREFIXES = stringPreferencesKey("blocked_prefixes")
+        val SHOW_ADVANCED_SETTINGS = booleanPreferencesKey("show_advanced_settings")
+        val DUPLICATES_DISMISSED = booleanPreferencesKey("duplicates_dismissed")
+        val FAVORITES_HINT_DISMISSED = booleanPreferencesKey("favorites_hint_dismissed")
     }
 
     override val settingsFlow: Flow<AppSettings> = dataStore.data.map { prefs ->
@@ -306,18 +313,16 @@ class DataStoreSettingsRepository(
         val callBackgroundCustomColor = prefs[Keys.CALL_BACKGROUND_CUSTOM_COLOR]
             ?: AccentPreset.ONE_UI_BLUE.colorValue
 
-        val answerGestureStr = prefs[Keys.ANSWER_GESTURE]
-        val answerGesture = answerGestureStr?.let { runCatching { AnswerGesture.valueOf(it) }.getOrNull() }
-            ?: AnswerGesture.TAP
-
         // Answer style: the stored style wins; before it was ever set,
         // migrate the old answer gesture (TAP -> CLASSIC,
-        // SWIPE -> SWIPE_BUTTONS).
+        // SWIPE -> SWIPE_BUTTONS). The gesture setting itself is
+        // gone (no screen ever applied it); only this legacy read
+        // of its stored value remains, so old users keep their style.
         val answerStyleStr = prefs[Keys.ANSWER_STYLE]
         val answerStyle = answerStyleStr?.let { runCatching { AnswerStyle.valueOf(it) }.getOrNull() }
-            ?: when (answerGesture) {
-                AnswerGesture.TAP -> AnswerStyle.CLASSIC
-                AnswerGesture.SWIPE -> AnswerStyle.SWIPE_BUTTONS
+            ?: when (prefs[Keys.ANSWER_GESTURE]) {
+                "SWIPE" -> AnswerStyle.SWIPE_BUTTONS
+                else -> AnswerStyle.CLASSIC
             }
 
         val sliderOnlyWhenLocked = prefs[Keys.SLIDER_ONLY_WHEN_LOCKED] ?: true
@@ -411,6 +416,9 @@ class DataStoreSettingsRepository(
             .map { it.trim() }
             .filter { it.isNotEmpty() }
             .toSet()
+        val showAdvancedSettings = prefs[Keys.SHOW_ADVANCED_SETTINGS] ?: false
+        val duplicatesDismissed = prefs[Keys.DUPLICATES_DISMISSED] ?: false
+        val favoritesHintDismissed = prefs[Keys.FAVORITES_HINT_DISMISSED] ?: false
 
         AppSettings(
             themeMode = themeMode,
@@ -458,7 +466,6 @@ class DataStoreSettingsRepository(
             callBackground = callBackground,
             callBackgroundDim = callBackgroundDim,
             callBackgroundCustomColor = callBackgroundCustomColor,
-            answerGesture = answerGesture,
             answerStyle = answerStyle,
             sliderOnlyWhenLocked = sliderOnlyWhenLocked,
             answerSide = answerSide,
@@ -485,7 +492,10 @@ class DataStoreSettingsRepository(
             defaultSim = defaultSim,
             quickDeclineOverrides = quickDeclineOverrides,
             speedDial = speedDial,
-            blockedPrefixes = blockedPrefixes
+            blockedPrefixes = blockedPrefixes,
+            showAdvancedSettings = showAdvancedSettings,
+            duplicatesDismissed = duplicatesDismissed,
+            favoritesHintDismissed = favoritesHintDismissed
         )
     }
 
@@ -779,12 +789,6 @@ class DataStoreSettingsRepository(
         }
     }
 
-    override suspend fun setAnswerGesture(gesture: AnswerGesture) {
-        dataStore.edit { prefs ->
-            prefs[Keys.ANSWER_GESTURE] = gesture.name
-        }
-    }
-
     override suspend fun setAnswerStyle(style: AnswerStyle) {
         dataStore.edit { prefs ->
             prefs[Keys.ANSWER_STYLE] = style.name
@@ -965,6 +969,24 @@ class DataStoreSettingsRepository(
                 .map { it.trim() }
                 .filter { it.isNotEmpty() }
                 .joinToString(";")
+        }
+    }
+
+    override suspend fun setShowAdvancedSettings(show: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.SHOW_ADVANCED_SETTINGS] = show
+        }
+    }
+
+    override suspend fun setDuplicatesDismissed(dismissed: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.DUPLICATES_DISMISSED] = dismissed
+        }
+    }
+
+    override suspend fun setFavoritesHintDismissed(dismissed: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.FAVORITES_HINT_DISMISSED] = dismissed
         }
     }
 

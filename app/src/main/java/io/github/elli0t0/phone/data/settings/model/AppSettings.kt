@@ -142,11 +142,6 @@ enum class CallBackground(val label: String) {
     CUSTOM("Custom")
 }
 
-enum class AnswerGesture(val label: String) {
-    TAP("Tap buttons"),
-    SWIPE("Swipe")
-}
-
 enum class AnswerStyle(val label: String) {
     CLASSIC("Classic"),
     SLIDER("Slider"),
@@ -355,7 +350,6 @@ data class AppSettings(
     val callBackground: CallBackground = CallBackground.DEFAULT,
     val callBackgroundDim: Float = 0f,
     val callBackgroundCustomColor: Long = AccentPreset.ONE_UI_BLUE.colorValue,
-    val answerGesture: AnswerGesture = AnswerGesture.TAP,
     val answerStyle: AnswerStyle = AnswerStyle.CLASSIC,
     val sliderOnlyWhenLocked: Boolean = true,
     val answerSide: AnswerSide = AnswerSide.RIGHT,
@@ -395,7 +389,14 @@ data class AppSettings(
     // App-side blocked prefixes: numbers starting with one of these
     // are rejected on arrival (the platform provider only matches
     // exact numbers, so prefixes live here, not there).
-    val blockedPrefixes: Set<String> = emptySet()
+    val blockedPrefixes: Set<String> = emptySet(),
+    // Restructured Settings (0.16.9): the main page shows eight
+    // section rows; advanced rows hide unless this is on.
+    val showAdvancedSettings: Boolean = false,
+    // Dismissed once, the duplicates banner moves into the Contacts
+    // overflow menu; the favorites hint hides for good.
+    val duplicatesDismissed: Boolean = false,
+    val favoritesHintDismissed: Boolean = false
 ) {
     /**
      * The look screens actually render: the preset for CLASSIC/CLEAN,

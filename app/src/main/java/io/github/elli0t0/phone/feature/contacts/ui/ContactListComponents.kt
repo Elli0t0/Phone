@@ -268,6 +268,7 @@ private fun ContactGroupRow(
 @Composable
 fun FavoritesHintRow(
     onClick: () -> Unit,
+    onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
@@ -314,8 +315,20 @@ fun FavoritesHintRow(
             Text(
                 text = stringResource(id = R.string.contacts_add_favorites),
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
             )
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier.testTag("favorites_hint_dismiss")
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_close),
+                    contentDescription = stringResource(id = R.string.cd_dismiss),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(PhoneDimens.contactsDuplicatesDismissIconSize)
+                )
+            }
         }
     }
 }

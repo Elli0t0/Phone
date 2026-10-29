@@ -213,6 +213,7 @@ fun ContactsScreen(
                         },
                         onShowDuplicates = listViewModel::showDuplicates,
                         onDismissDuplicatesCard = listViewModel::dismissDuplicatesCard,
+                        onDismissFavoritesHint = listViewModel::dismissFavoritesHint,
                         onGroupsClick = { currentDestination = ContactsNavDestination.Groups },
                         onBackFromDuplicates = listViewModel::hideDuplicates,
                         onMergeRequest = listViewModel::requestMerge,

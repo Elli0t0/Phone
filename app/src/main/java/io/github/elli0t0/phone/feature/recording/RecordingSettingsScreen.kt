@@ -384,7 +384,7 @@ fun RecordingSettingsScreen(
                 }
             }
 
-            if (backendKind == RecordingBackendKind.ADB) {
+            if (backendKind == RecordingBackendKind.ADB && LocalAppSettings.current.showAdvancedSettings) {
                 item {
                     Card(
                         colors = CardDefaults.cardColors(

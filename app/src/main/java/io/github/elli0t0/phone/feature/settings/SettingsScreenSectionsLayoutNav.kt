@@ -27,28 +27,18 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 
 /**
- * The Settings LazyColumn sections (Appearance, Liquid glass, Layout,
- * Navigation, Contacts, Calls, Privacy, About, Reset). Extracted from
- * SettingsScreen to keep that file under 400 lines. Each section opens
- * its dialogs via [dialogs]; the dialogs themselves live in the main
- * SettingsScreen function.
+ * The Settings section cards (Layout, Navigation). Each card is one
+ * part of the Layout & navigation page of the restructured Settings.
+ * The rows open their dialogs via [dialogs]; the dialogs themselves
+ * live in the main SettingsScreen function.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
-fun androidx.compose.foundation.lazy.LazyListScope.settingsSectionsLayoutNav(
+@Composable
+fun LayoutCard(
     settings: AppSettings,
     viewModel: SettingsViewModel,
     dialogs: SettingsDialogState,
-    dialerState: io.github.elli0t0.phone.core.telecom.DefaultDialerState,
-    showSupplementaryRow: Boolean,
-    spacing: Spacing,
-    context: Context
+    spacing: Spacing
 ) {
-// Category 2: Layout & Density
-item {
-    SettingsSectionHeader(title = stringResource(id = R.string.settings_cat_layout))
-}
-
-item {
     Card(
         shape = settingsListCardShape(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -74,12 +64,13 @@ item {
     }
 }
 
-// Category 3: Navigation & Behavior
-item {
-    SettingsSectionHeader(title = stringResource(id = R.string.settings_cat_navigation))
-}
-
-item {
+@Composable
+fun NavigationCard(
+    settings: AppSettings,
+    viewModel: SettingsViewModel,
+    dialogs: SettingsDialogState,
+    spacing: Spacing
+) {
     Card(
         shape = settingsListCardShape(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -145,6 +136,4 @@ item {
             )
         }
     }
-}
-
 }

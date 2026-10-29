@@ -168,10 +168,10 @@ fun AppStyleScreen(
                         )
                     }
                 }
-                item {
+                if (settings.showAdvancedSettings) item {
                     SettingsSectionHeader(title = stringResource(id = R.string.settings_app_style_customize))
                 }
-                item {
+                if (settings.showAdvancedSettings) item {
                     Card(
                         shape = settingsListCardShape(),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),

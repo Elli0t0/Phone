@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import io.github.elli0t0.phone.data.settings.SettingsRepository
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
-import io.github.elli0t0.phone.data.settings.model.AnswerGesture
 import io.github.elli0t0.phone.data.settings.model.AnswerStyle
 import io.github.elli0t0.phone.data.settings.model.AnswerSide
 import io.github.elli0t0.phone.data.settings.model.CallerInfoPosition
@@ -132,6 +131,12 @@ class SettingsViewModel(
     fun onShrinkBottomBarOnScrollChanged(shrink: Boolean) {
         viewModelScope.launch {
             settingsRepository.setShrinkBottomBarOnScroll(shrink)
+        }
+    }
+
+    fun onShowAdvancedSettingsChanged(show: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setShowAdvancedSettings(show)
         }
     }
 
@@ -335,12 +340,6 @@ class SettingsViewModel(
     fun onCallBackgroundCustomColorChanged(color: Long) {
         viewModelScope.launch {
             settingsRepository.setCallBackgroundCustomColor(color)
-        }
-    }
-
-    fun onAnswerGestureChanged(gesture: AnswerGesture) {
-        viewModelScope.launch {
-            settingsRepository.setAnswerGesture(gesture)
         }
     }
 

@@ -427,7 +427,6 @@
     <string name="setup_warning_message">Notifications or full-screen alerts are blocked. Allow them so incoming calls always reach you.</string>
     <string name="setup_warning_button">Fix now</string>
     <string name="studio_layout_preset">Layout preset</string>
-    <string name="studio_answer_gesture">Answer gesture</string>
     <string name="studio_answer_side">Answer side</string>
     <string name="studio_answer_button_size">Answer button size</string>
     <string name="studio_quick_replies">Quick replies</string>
@@ -438,7 +437,6 @@
     <string name="studio_caller_info_position">Caller info position</string>
     <string name="studio_preset_classic">Classic</string>
     <string name="studio_preset_left_handed">Left-handed</string>
-    <string name="studio_preset_swipe">Swipe</string>
     <string name="call_bg_control_button_size">Control button size</string>
     <string name="call_bg_keypad_key_size">Keypad key size</string>
     <string name="settings_dialpad_tones">Dialpad tones</string>
@@ -558,5 +556,11 @@
     <string name="settings_bottom_sheets_desc">Open dialogs as bottom sheets with a grabber</string>
     <string name="settings_swipe_actions">Swipe actions</string>
     <string name="settings_swipe_actions_desc">Swipe Recents rows to call back or delete</string>
+    <string name="settings_show_advanced">Show advanced settings</string>
+    <string name="settings_show_advanced_desc">Show advanced options in Glass Studio, Call Studio and recording</string>
+    <string name="settings_cat_layout_nav">Layout &amp; navigation</string>
+    <string name="settings_privacy_granted">All permissions granted</string>
+    <string name="settings_privacy_action_needed">Action needed</string>
+    <string name="duplicates_merge_menu">Merge duplicates</string>
 </resources>
 

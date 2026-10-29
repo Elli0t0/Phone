@@ -79,6 +79,7 @@ fun ContactListScreen(
     onShowFavoritesHint: () -> Unit = {},
     onShowDuplicates: () -> Unit = {},
     onDismissDuplicatesCard: () -> Unit = {},
+    onDismissFavoritesHint: () -> Unit = {},
     onGroupsClick: () -> Unit = {},
     onBackFromDuplicates: () -> Unit,
     onMergeRequest: (DuplicateGroup) -> Unit,
@@ -255,6 +256,18 @@ private fun ContactsContent(
                     enabled = !uiState.isFindingDuplicates,
                     modifier = Modifier.testTag("button_find_duplicates")
                 )
+                // Dismissed once, the banner's action moves here:
+                // shown while duplicates exist and the banner is
+                // gone (dismissed this session or persisted).
+                if (uiState.duplicateGroups.isNotEmpty() &&
+                    (LocalAppSettings.current.duplicatesDismissed || !uiState.showDuplicatesCard)
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(text = stringResource(id = R.string.duplicates_merge_menu)) },
+                        onClick = { menuExpanded = false; onShowDuplicates() },
+                        modifier = Modifier.testTag("button_merge_duplicates")
+                    )
+                }
             }
         }
         val contactsActions: @Composable RowScope.() -> Unit = {
@@ -407,7 +420,9 @@ private fun ContactsContent(
                     bottomContent = topBarPills
                 )
             }
-            if (uiState.showDuplicatesCard && uiState.searchQuery.isEmpty()) {
+            if (uiState.showDuplicatesCard && uiState.searchQuery.isEmpty() &&
+                !LocalAppSettings.current.duplicatesDismissed
+            ) {
                 item(key = "duplicates_card") {
                     DuplicatesCard(
                         duplicateCount = uiState.duplicateGroups.sumOf { it.contacts.size },
@@ -477,10 +492,13 @@ private fun ContactsContent(
                 }
             }
 
-            if (uiState.favorites.isEmpty() && uiState.searchQuery.isEmpty()) {
+            if (uiState.favorites.isEmpty() && uiState.searchQuery.isEmpty() &&
+                !LocalAppSettings.current.favoritesHintDismissed
+            ) {
                 item(key = "favorites_hint") {
                     FavoritesHintRow(
                         onClick = onShowFavoritesHint,
+                        onDismiss = onDismissFavoritesHint,
                         modifier = Modifier
                             .animateItem()
                             .firstLoadReveal(revealIndex++, listRevealed)

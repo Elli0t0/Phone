@@ -233,6 +233,17 @@ class ContactsViewModel(
 
     fun dismissDuplicatesCard() {
         _duplicatesCardDismissed.value = true
+        // Persisted: after a restart the banner stays gone and its
+        // action moves into the Contacts overflow menu instead.
+        settingsRepository?.let { repo ->
+            activeScope.launch { repo.setDuplicatesDismissed(true) }
+        }
+    }
+
+    fun dismissFavoritesHint() {
+        activeScope.launch {
+            settingsRepository?.setFavoritesHintDismissed(true)
+        }
     }
 
     fun requestMerge(group: DuplicateGroup) {

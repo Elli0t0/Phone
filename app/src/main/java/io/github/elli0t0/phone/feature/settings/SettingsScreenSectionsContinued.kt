@@ -36,29 +36,19 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 
 /**
- * The Settings LazyColumn sections (Appearance, Liquid glass, Layout,
- * Navigation, Contacts, Calls, Privacy, About, Reset). Extracted from
- * SettingsScreen to keep that file under 400 lines. Each section opens
- * its dialogs via [dialogs]; the dialogs themselves live in the main
- * SettingsScreen function.
+ * The Settings section cards (Contacts, Calls, Privacy, About,
+ * Reset). Each card is one page of the restructured Settings; the
+ * call-recording row moved to the main page, so it is no longer
+ * part of the Calls card. The rows open their dialogs via [dialogs];
+ * the dialogs themselves live in the main SettingsScreen function.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
-fun androidx.compose.foundation.lazy.LazyListScope.settingsSectionsContinued(
+@Composable
+fun ContactsCard(
     settings: AppSettings,
     viewModel: SettingsViewModel,
     dialogs: SettingsDialogState,
-    dialerState: io.github.elli0t0.phone.core.telecom.DefaultDialerState,
-    showSupplementaryRow: Boolean,
-    runUpdateCheck: () -> Unit,
-    spacing: Spacing,
-    context: Context
+    spacing: Spacing
 ) {
-// Category 4: Contacts Display
-item {
-    SettingsSectionHeader(title = stringResource(id = R.string.settings_cat_contacts))
-}
-
-item {
     Card(
         shape = settingsListCardShape(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -84,12 +74,15 @@ item {
     }
 }
 
-// Calls
-item {
-    SettingsSectionHeader(title = stringResource(id = R.string.settings_cat_calls))
-}
-
-item {
+@Composable
+fun CallsCard(
+    settings: AppSettings,
+    viewModel: SettingsViewModel,
+    dialogs: SettingsDialogState,
+    spacing: Spacing,
+    showSupplementaryRow: Boolean,
+    context: Context
+) {
     Card(
         shape = settingsListCardShape(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -190,52 +183,16 @@ item {
             SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
-            // Live recording status for this row: the backend kind
-            // comes from settings, the status from the controller.
-            // The row refreshes the status on entry, so the subtitle
-            // is current, not the last probe from another screen.
-            val recordingController =
-                (context.applicationContext as PhoneApplication).container.recordingController
-            val recordingStatus by recordingController.backendStatus.collectAsStateWithLifecycle()
-            LaunchedEffect(Unit) { recordingController.refreshBackendStatus() }
-            val recordingBackendLabel = stringResource(
-                id = if (settings.recordingBackend == RecordingBackendKind.ADB) {
-                    R.string.recording_backend_adb
-                } else {
-                    R.string.recording_backend_shizuku
-                }
-            )
-            val recordingStatusWord = when (recordingStatus) {
-                BackendStatus.READY -> stringResource(id = R.string.recording_status_ready)
-                BackendStatus.NOT_PAIRED -> stringResource(id = R.string.recording_status_not_paired_short)
-                BackendStatus.NOT_RUNNING ->
-                    if (settings.recordingBackend == RecordingBackendKind.ADB) {
-                        stringResource(id = R.string.recording_status_needs_wifi)
-                    } else {
-                        null
-                    }
-                else -> null
-            }
-            val recordingSubtitle = if (recordingStatusWord != null) {
-                "$recordingBackendLabel · $recordingStatusWord"
-            } else {
-                recordingBackendLabel
-            }
-            SettingsRow(
-                title = stringResource(id = R.string.settings_call_recording),
-                subtitle = recordingSubtitle,
-                onClick = { dialogs.showRecordingPage = true }
-            )
         }
     }
 }
 
-// Privacy
-item {
-    SettingsSectionHeader(title = stringResource(id = R.string.settings_cat_privacy))
-}
-
-item {
+@Composable
+fun PrivacyCard(
+    dialogs: SettingsDialogState,
+    spacing: Spacing,
+    context: Context
+) {
     Card(
         shape = settingsListCardShape(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -259,12 +216,14 @@ item {
     }
 }
 
-// About
-item {
-    SettingsSectionHeader(title = stringResource(id = R.string.settings_cat_about))
-}
-
-item {
+@Composable
+fun AboutCard(
+    settings: AppSettings,
+    viewModel: SettingsViewModel,
+    dialogs: SettingsDialogState,
+    spacing: Spacing,
+    runUpdateCheck: () -> Unit
+) {
     Card(
         shape = settingsListCardShape(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -283,12 +242,11 @@ item {
     }
 }
 
-// Category 5: Reset
-item {
-    SettingsSectionHeader(title = stringResource(id = R.string.settings_cat_reset))
-}
-
-item {
+@Composable
+fun ResetCard(
+    dialogs: SettingsDialogState,
+    spacing: Spacing
+) {
     Card(
         shape = settingsListCardShape(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -302,9 +260,4 @@ item {
             )
         }
     }
-}
-
-item {
-    Spacer(modifier = Modifier.height(spacing.large))
-}
 }

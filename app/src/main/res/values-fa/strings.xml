@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="studio_layout_preset">پیش‌تنظیم چیدمان</string>
-    <string name="studio_answer_gesture">ژست پاسخ</string>
     <string name="studio_answer_side">سمت پاسخ</string>
     <string name="studio_answer_button_size">اندازه دکمه پاسخ</string>
     <string name="studio_quick_replies">پاسخ‌های سریع</string>
@@ -12,7 +11,6 @@
     <string name="studio_caller_info_position">موقعیت اطلاعات تماس‌گیرنده</string>
     <string name="studio_preset_classic">کلاسیک</string>
     <string name="studio_preset_left_handed">چپ‌دست</string>
-    <string name="studio_preset_swipe">کشویی</string>
     <string name="call_bg_control_button_size">اندازه دکمه کنترل</string>
     <string name="call_bg_keypad_key_size">اندازه کلید صفحه‌کلید</string>
     <string name="settings_dialpad_tones">صدای دکمه‌ها</string>
@@ -169,4 +167,10 @@
     <string name="settings_bottom_sheets_desc">باز کردن پنجره‌ها به‌صورت برگه‌ی پایینی با دستگیره</string>
     <string name="settings_swipe_actions">کنش‌های کشویی</string>
     <string name="settings_swipe_actions_desc">کشیدن ردیف‌های اخیر برای تماس مجدد یا حذف</string>
+    <string name="settings_show_advanced">نمایش تنظیمات پیشرفته</string>
+    <string name="settings_show_advanced_desc">نمایش گزینه‌های پیشرفته در استودیو شیشه، استودیو تماس و ضبط</string>
+    <string name="settings_cat_layout_nav">چیدمان و ناوبری</string>
+    <string name="settings_privacy_granted">همه دسترسی‌ها اعطا شده است</string>
+    <string name="settings_privacy_action_needed">نیاز به اقدام است</string>
+    <string name="duplicates_merge_menu">ادغام موارد تکراری</string>
 </resources>

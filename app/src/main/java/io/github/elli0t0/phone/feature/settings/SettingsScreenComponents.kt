@@ -134,6 +134,60 @@ fun SettingsRow(
     }
 }
 
+// Navigation row: leading icon, title with the current summary as
+// a subtitle, chevron. Tapping opens that section's page.
+@Composable
+fun SettingsNavRow(
+    iconRes: Int,
+    title: String,
+    subtitle: String? = null,
+    onClick: () -> Unit
+) {
+    val rowSource = remember { MutableInteractionSource() }
+    val lightHaptic = rememberLightHaptic()
+    val insetCard = LocalAppSettings.current.effectiveStyle.card == CardStyle.INSET
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .pressScale(rowSource)
+            .clickable(
+                interactionSource = rowSource,
+                indication = if (insetCard) null else ripple()
+            ) { lightHaptic(); onClick() }
+            .then(if (insetCard) Modifier.insetRowPress(rowSource) else Modifier)
+            .padding(vertical = PhoneDimens.settingsRowVerticalPadding),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(id = iconRes),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.width(PhoneDimens.settingsNavRowIconGap))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            if (subtitle != null) {
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.60f)
+                )
+            }
+        }
+        Icon(
+            painter = painterResource(id = R.drawable.ic_chevron_right),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(24.dp)
+        )
+    }
+}
+
 // Switch row: title + description on the left, switch on the right.
 @Composable
 fun SettingsSwitchRow(

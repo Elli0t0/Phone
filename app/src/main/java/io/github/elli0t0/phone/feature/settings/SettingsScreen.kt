@@ -60,6 +60,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -88,6 +89,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.recording.BackendStatus
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.pressScale
@@ -101,6 +103,8 @@ import io.github.elli0t0.phone.core.telecom.UssdSim
 import io.github.elli0t0.phone.feature.recording.RecordingSettingsScreen
 import io.github.elli0t0.phone.feature.setup.SetupChecklist
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
+import io.github.elli0t0.phone.data.settings.model.Backdrop
+import io.github.elli0t0.phone.data.settings.model.RecordingBackendKind
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
 import io.github.elli0t0.phone.data.settings.model.GlassIntensity
@@ -161,6 +165,60 @@ fun SettingsScreen(
     }
 
     val dialogs = remember { SettingsDialogState() }
+
+    // Live recording status for the main Call recording row (moved
+    // from the Calls card): the backend kind comes from settings,
+    // the status from the controller. The row refreshes the status
+    // on entry, so the subtitle is current, not the last probe
+    // from another screen.
+    val recordingController =
+        (context.applicationContext as PhoneApplication).container.recordingController
+    val recordingStatus by recordingController.backendStatus.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) { recordingController.refreshBackendStatus() }
+    val recordingBackendLabel = stringResource(
+        id = if (settings.recordingBackend == RecordingBackendKind.ADB) {
+            R.string.recording_backend_adb
+        } else {
+            R.string.recording_backend_shizuku
+        }
+    )
+    val recordingStatusWord = when (recordingStatus) {
+        BackendStatus.READY -> stringResource(id = R.string.recording_status_ready)
+        BackendStatus.NOT_PAIRED -> stringResource(id = R.string.recording_status_not_paired_short)
+        BackendStatus.NOT_RUNNING ->
+            if (settings.recordingBackend == RecordingBackendKind.ADB) {
+                stringResource(id = R.string.recording_status_needs_wifi)
+            } else {
+                null
+            }
+        else -> null
+    }
+    val recordingSubtitle = if (recordingStatusWord != null) {
+        "$recordingBackendLabel · $recordingStatusWord"
+    } else {
+        recordingBackendLabel
+    }
+
+    // Main-page row summaries: the current value of each section.
+    val accentLabel = AccentPreset.entries.find { it.colorValue == settings.accentColor }?.label
+        ?: stringResource(id = R.string.settings_custom_color)
+    val appearanceSubtitle = "${settings.appStyle.label} · ${settings.themeMode.label} · $accentLabel"
+    val glassSubtitle = "${settings.glassIntensity.label} · " +
+        if (settings.pureBlackDarkMode) {
+            Backdrop.OFF.label
+        } else {
+            settings.backdrop.label
+        }
+    val layoutNavSubtitle = "${settings.listDensity.label} · ${settings.defaultStartTab.label}"
+    val callsSubtitle = "${settings.callDisplay.label} · ${settings.answerStyle.label}"
+    val contactsSubtitle = "${settings.contactSortOrder.label} · ${settings.contactNameFormat.label}"
+    val privacySubtitle = stringResource(
+        id = if (requiredSetupComplete) {
+            R.string.settings_privacy_granted
+        } else {
+            R.string.settings_privacy_action_needed
+        }
+    )
 
     // The system call-settings screen is a dead row when nothing
     // handles its intent, so it is hidden instead of doing nothing.
@@ -242,35 +300,190 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(spacing.medium),
             contentPadding = PaddingValues(bottom = bottomBarListBottomPadding())
         ) {
-            settingsSections(
-                settings = settings,
-                viewModel = viewModel,
-                dialogs = dialogs,
-                dialerState = dialerState,
-                showSupplementaryRow = showSupplementaryRow,
-                requiredSetupComplete = requiredSetupComplete,
-                spacing = spacing,
-                context = context
-            )
-            settingsSectionsLayoutNav(
-                settings = settings,
-                viewModel = viewModel,
-                dialogs = dialogs,
-                dialerState = dialerState,
-                showSupplementaryRow = showSupplementaryRow,
-                spacing = spacing,
-                context = context
-            )
-            settingsSectionsContinued(
-                settings = settings,
-                viewModel = viewModel,
-                dialogs = dialogs,
-                dialerState = dialerState,
-                showSupplementaryRow = showSupplementaryRow,
-                runUpdateCheck = runUpdateCheck,
-                spacing = spacing,
-                context = context
-            )
+            item {
+                Spacer(modifier = Modifier.height(spacing.extraSmall))
+            }
+            // Default Phone App Card: hidden once Phone is the default dialer,
+            // since there is nothing left to do here.
+            if (!dialerState.isDefault) {
+            item {
+                Card(
+                    shape = settingsListCardShape(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("default_phone_app_card")
+                ) {
+                    Column(modifier = Modifier.padding(spacing.medium)) {
+                        Text(
+                            text = stringResource(id = R.string.settings_default_phone_app),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(spacing.extraSmall))
+                        Text(
+                            text = stringResource(id = R.string.settings_default_phone_app_desc),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(spacing.medium))
+
+                        Button(
+                            onClick = dialerState.requestDefaultDialer,
+                            modifier = Modifier.testTag("set_as_default_button")
+                        ) {
+                            Text(text = stringResource(id = R.string.settings_set_as_default))
+                        }
+                    }
+                }
+            }
+            }
+
+            // Permissions & setup: shown only while a required permission or the
+            // default dialer role is missing.
+            if (!requiredSetupComplete) {
+                item {
+                    SettingsSectionHeader(title = stringResource(id = R.string.settings_permissions_setup_title))
+                }
+
+                item {
+                    Card(
+                        shape = settingsListCardShape(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(spacing.medium)) {
+                            Text(
+                                text = stringResource(id = R.string.settings_permissions_setup_desc),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(spacing.medium))
+                            SetupChecklist(
+                                modifier = Modifier.fillMaxWidth(),
+                                scrollable = false
+                            )
+                        }
+                    }
+                }
+            }
+            item {
+                Card(
+                    shape = settingsListCardShape(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(spacing.medium)) {
+                        SettingsNavRow(
+                            iconRes = R.drawable.ic_settings,
+                            title = stringResource(id = R.string.settings_cat_appearance),
+                            subtitle = appearanceSubtitle,
+                            onClick = { dialogs.showAppearancePage = true }
+                        )
+
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        SettingsListDivider()
+                        Spacer(modifier = Modifier.height(spacing.small))
+
+                        SettingsNavRow(
+                            iconRes = R.drawable.ic_filter,
+                            title = stringResource(id = R.string.settings_cat_liquid_glass),
+                            subtitle = glassSubtitle,
+                            onClick = { dialogs.showGlassPage = true }
+                        )
+
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        SettingsListDivider()
+                        Spacer(modifier = Modifier.height(spacing.small))
+
+                        SettingsNavRow(
+                            iconRes = R.drawable.ic_fullscreen,
+                            title = stringResource(id = R.string.settings_cat_layout_nav),
+                            subtitle = layoutNavSubtitle,
+                            onClick = { dialogs.showLayoutNavPage = true }
+                        )
+
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        SettingsListDivider()
+                        Spacer(modifier = Modifier.height(spacing.small))
+
+                        SettingsNavRow(
+                            iconRes = R.drawable.ic_phone,
+                            title = stringResource(id = R.string.settings_cat_calls),
+                            subtitle = callsSubtitle,
+                            onClick = { dialogs.showCallsPage = true }
+                        )
+
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        SettingsListDivider()
+                        Spacer(modifier = Modifier.height(spacing.small))
+
+                        SettingsNavRow(
+                            iconRes = R.drawable.ic_contacts,
+                            title = stringResource(id = R.string.settings_cat_contacts),
+                            subtitle = contactsSubtitle,
+                            onClick = { dialogs.showContactsPage = true }
+                        )
+
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        SettingsListDivider()
+                        Spacer(modifier = Modifier.height(spacing.small))
+
+                        SettingsNavRow(
+                            iconRes = R.drawable.ic_record,
+                            title = stringResource(id = R.string.settings_call_recording),
+                            subtitle = recordingSubtitle,
+                            onClick = { dialogs.showRecordingPage = true }
+                        )
+
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        SettingsListDivider()
+                        Spacer(modifier = Modifier.height(spacing.small))
+
+                        SettingsNavRow(
+                            iconRes = R.drawable.ic_block,
+                            title = stringResource(id = R.string.settings_cat_privacy),
+                            subtitle = privacySubtitle,
+                            onClick = { dialogs.showPrivacyPage = true }
+                        )
+
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        SettingsListDivider()
+                        Spacer(modifier = Modifier.height(spacing.small))
+
+                        SettingsNavRow(
+                            iconRes = R.drawable.ic_info,
+                            title = stringResource(id = R.string.settings_cat_about),
+                            subtitle = currentVersionName,
+                            onClick = { dialogs.showAboutPage = true }
+                        )
+                    }
+                }
+            }
+            item {
+                Card(
+                    shape = settingsListCardShape(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(spacing.medium)) {
+                        SettingsSwitchRow(
+                            title = stringResource(id = R.string.settings_show_advanced),
+                            subtitle = stringResource(id = R.string.settings_show_advanced_desc),
+                            checked = settings.showAdvancedSettings,
+                            onCheckedChange = { viewModel.onShowAdvancedSettingsChanged(it) }
+                        )
+                    }
+                }
+            }
+            item {
+                ResetCard(dialogs = dialogs, spacing = spacing)
+            }
+            item {
+                Spacer(modifier = Modifier.height(spacing.large))
+            }
         }
     }
 
@@ -326,5 +539,85 @@ fun SettingsScreen(
 
     if (dialogs.showRecordingPage) {
         RecordingSettingsScreen(onNavigateBack = { dialogs.showRecordingPage = false })
+    }
+
+    BackHandler(enabled = dialogs.showAppearancePage) { dialogs.showAppearancePage = false }
+    BackHandler(enabled = dialogs.showGlassPage) { dialogs.showGlassPage = false }
+    BackHandler(enabled = dialogs.showLayoutNavPage) { dialogs.showLayoutNavPage = false }
+    BackHandler(enabled = dialogs.showCallsPage) { dialogs.showCallsPage = false }
+    BackHandler(enabled = dialogs.showContactsPage) { dialogs.showContactsPage = false }
+    BackHandler(enabled = dialogs.showPrivacyPage) { dialogs.showPrivacyPage = false }
+    BackHandler(enabled = dialogs.showAboutPage) { dialogs.showAboutPage = false }
+
+    if (dialogs.showAppearancePage) {
+        AppearancePage(
+            settings = settings,
+            viewModel = viewModel,
+            dialogs = dialogs,
+            spacing = spacing,
+            onNavigateBack = { dialogs.showAppearancePage = false }
+        )
+    }
+
+    if (dialogs.showGlassPage) {
+        GlassPage(
+            settings = settings,
+            viewModel = viewModel,
+            dialogs = dialogs,
+            spacing = spacing,
+            onNavigateBack = { dialogs.showGlassPage = false }
+        )
+    }
+
+    if (dialogs.showLayoutNavPage) {
+        LayoutNavPage(
+            settings = settings,
+            viewModel = viewModel,
+            dialogs = dialogs,
+            spacing = spacing,
+            onNavigateBack = { dialogs.showLayoutNavPage = false }
+        )
+    }
+
+    if (dialogs.showCallsPage) {
+        CallsPage(
+            settings = settings,
+            viewModel = viewModel,
+            dialogs = dialogs,
+            showSupplementaryRow = showSupplementaryRow,
+            spacing = spacing,
+            context = context,
+            onNavigateBack = { dialogs.showCallsPage = false }
+        )
+    }
+
+    if (dialogs.showContactsPage) {
+        ContactsPage(
+            settings = settings,
+            viewModel = viewModel,
+            dialogs = dialogs,
+            spacing = spacing,
+            onNavigateBack = { dialogs.showContactsPage = false }
+        )
+    }
+
+    if (dialogs.showPrivacyPage) {
+        PrivacyPage(
+            dialogs = dialogs,
+            spacing = spacing,
+            context = context,
+            onNavigateBack = { dialogs.showPrivacyPage = false }
+        )
+    }
+
+    if (dialogs.showAboutPage) {
+        AboutPage(
+            settings = settings,
+            viewModel = viewModel,
+            dialogs = dialogs,
+            spacing = spacing,
+            runUpdateCheck = runUpdateCheck,
+            onNavigateBack = { dialogs.showAboutPage = false }
+        )
     }
 }
