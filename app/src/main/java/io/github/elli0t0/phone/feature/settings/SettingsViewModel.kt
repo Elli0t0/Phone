@@ -31,6 +31,8 @@ import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.CallDisplay
 import io.github.elli0t0.phone.data.settings.model.DefaultSim
 import io.github.elli0t0.phone.data.settings.model.CardStyle
+import io.github.elli0t0.phone.data.settings.model.KeyStyle
+import io.github.elli0t0.phone.data.settings.model.SwitchStyle
 import io.github.elli0t0.phone.data.settings.model.ContactNameFormat
 import io.github.elli0t0.phone.data.settings.model.ContactSortOrder
 import io.github.elli0t0.phone.data.settings.model.ListDensity
@@ -136,9 +138,15 @@ class SettingsViewModel(
         }
     }
 
-    fun onGlassDialpadChanged(enabled: Boolean) {
+    fun onKeyStyleChanged(style: KeyStyle) {
         viewModelScope.launch {
-            settingsRepository.setGlassDialpad(enabled)
+            settingsRepository.setKeyStyle(style)
+        }
+    }
+
+    fun onSwitchStyleChanged(style: SwitchStyle) {
+        viewModelScope.launch {
+            settingsRepository.setSwitchStyle(style)
         }
     }
 

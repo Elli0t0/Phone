@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import io.github.elli0t0.phone.core.design.GlassSurface
 import io.github.elli0t0.phone.core.design.LiquidGlassPillShape
 import io.github.elli0t0.phone.core.design.LocalAppSettings
@@ -84,7 +85,8 @@ fun PageHeaderItem(
             text = title,
             style = MaterialTheme.typography.headlineLarge.copy(
                 fontSize = PhoneDimens.headerTitleExpandedSize * scale,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                letterSpacing = (-0.4).sp
             ),
             color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,

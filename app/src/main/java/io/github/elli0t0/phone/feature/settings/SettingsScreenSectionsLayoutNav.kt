@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,7 +50,7 @@ item {
 
 item {
     Card(
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = settingsListCardShape(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -63,7 +62,7 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsRow(
@@ -82,7 +81,7 @@ item {
 
 item {
     Card(
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = settingsListCardShape(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -94,7 +93,7 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsSwitchRow(
@@ -105,7 +104,7 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsRow(
@@ -115,7 +114,7 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsRow(
@@ -125,7 +124,7 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsSwitchRow(
@@ -136,7 +135,7 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsRow(

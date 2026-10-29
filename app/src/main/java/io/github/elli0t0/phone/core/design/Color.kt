@@ -18,6 +18,11 @@ val AccentBlue = Color(0xFF2473FE)
 val AccentBlueDark = Color(0xFF3E89FF)
 val OnAccentBlue = Color(0xFFFFFFFF)
 
+// Switch styles: the green style's track colors (thumb stays white,
+// no borders in either style).
+val SwitchGreenTrack = Color(0xFF34C759)
+val SwitchGreenUncheckedTrack = Color(0xFF39393D)
+
 // Bottom bar island: solid pill, follows the theme
 val BottomBarDark = Color(0xFF2C2C2E)
 val BottomBarDarkSelected = Color(0xFF48484A)

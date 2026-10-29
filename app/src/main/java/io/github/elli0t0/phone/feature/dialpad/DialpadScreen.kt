@@ -115,7 +115,7 @@ fun DialpadScreen(
     // @Composable context, so it cannot read a CompositionLocal.
     val defaultSim = LocalAppSettings.current.defaultSim
     val animationOption = LocalAppSettings.current.animationOption
-    val glassDialpad = LocalAppSettings.current.glassDialpad
+    val keyStyle = LocalAppSettings.current.keyStyle
     // Read here, not inside the long-press handler: it runs outside
     // composition and cannot read a CompositionLocal (same reason as
     // dialNumber above).
@@ -454,7 +454,7 @@ fun DialpadScreen(
             tilt = tilt
         )
         DialpadCallButtonRow(
-            glassDialpad = glassDialpad,
+            keyStyle = keyStyle,
             darkTheme = darkTheme,
             onCallClick = {
                 if (uiState.canCall) {

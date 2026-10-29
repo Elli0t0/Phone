@@ -39,6 +39,8 @@ import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.CallDisplay
 import io.github.elli0t0.phone.data.settings.model.DefaultSim
 import io.github.elli0t0.phone.data.settings.model.CardStyle
+import io.github.elli0t0.phone.data.settings.model.KeyStyle
+import io.github.elli0t0.phone.data.settings.model.SwitchStyle
 import io.github.elli0t0.phone.data.settings.model.ContactNameFormat
 import io.github.elli0t0.phone.data.settings.model.ContactSortOrder
 import io.github.elli0t0.phone.data.settings.model.ListDensity
@@ -65,7 +67,8 @@ interface SettingsRepository {
     suspend fun setHeaderSize(size: HeaderSize)
     suspend fun setShrinkBottomBarOnScroll(shrink: Boolean)
     suspend fun setGlassBottomBar(enabled: Boolean)
-    suspend fun setGlassDialpad(enabled: Boolean)
+    suspend fun setKeyStyle(style: KeyStyle)
+    suspend fun setSwitchStyle(style: SwitchStyle)
     suspend fun setGlassHeaders(enabled: Boolean)
     suspend fun setGlassContactDetail(enabled: Boolean)
     suspend fun setGlassCallScreens(enabled: Boolean)
@@ -138,6 +141,10 @@ class DataStoreSettingsRepository(
         val HEADER_SIZE = stringPreferencesKey("header_size")
         val BOTTOM_BAR_SHRINK = booleanPreferencesKey("bottom_bar_shrink")
         val GLASS_BOTTOM_BAR = booleanPreferencesKey("glass_bottom_bar")
+        val KEY_STYLE = stringPreferencesKey("key_style")
+        val SWITCH_STYLE = stringPreferencesKey("switch_style")
+        // Legacy key style flag, read only: migrates to KEY_STYLE when
+        // the new key is absent (true -> Glass, false -> Simple).
         val GLASS_DIALPAD = booleanPreferencesKey("glass_dialpad")
         val GLASS_HEADERS = booleanPreferencesKey("glass_headers")
         val GLASS_CONTACT_DETAIL = booleanPreferencesKey("glass_contact_detail")
@@ -223,7 +230,11 @@ class DataStoreSettingsRepository(
         val barShrink = prefs[Keys.BOTTOM_BAR_SHRINK] ?: false
 
         val glassBottomBar = prefs[Keys.GLASS_BOTTOM_BAR] ?: true
-        val glassDialpad = prefs[Keys.GLASS_DIALPAD] ?: true
+        val keyStyleStr = prefs[Keys.KEY_STYLE]
+        val keyStyle = keyStyleStr?.let { runCatching { KeyStyle.valueOf(it) }.getOrNull() }
+            ?: if (prefs[Keys.GLASS_DIALPAD] ?: true) KeyStyle.GLASS else KeyStyle.SIMPLE
+        val switchStyleStr = prefs[Keys.SWITCH_STYLE]
+        val switchStyle = switchStyleStr?.let { runCatching { SwitchStyle.valueOf(it) }.getOrNull() } ?: SwitchStyle.DEFAULT
         val glassHeaders = prefs[Keys.GLASS_HEADERS] ?: true
         val glassContactDetail = prefs[Keys.GLASS_CONTACT_DETAIL] ?: true
         val glassCallScreens = prefs[Keys.GLASS_CALL_SCREENS] ?: true
@@ -388,7 +399,8 @@ class DataStoreSettingsRepository(
             bottomBarSize = barSize,
             shrinkBottomBarOnScroll = barShrink,
             glassBottomBar = glassBottomBar,
-            glassDialpad = glassDialpad,
+            keyStyle = keyStyle,
+            switchStyle = switchStyle,
             glassHeaders = glassHeaders,
             glassContactDetail = glassContactDetail,
             glassCallScreens = glassCallScreens,
@@ -527,9 +539,15 @@ class DataStoreSettingsRepository(
         }
     }
 
-    override suspend fun setGlassDialpad(enabled: Boolean) {
+    override suspend fun setKeyStyle(style: KeyStyle) {
         dataStore.edit { prefs ->
-            prefs[Keys.GLASS_DIALPAD] = enabled
+            prefs[Keys.KEY_STYLE] = style.name
+        }
+    }
+
+    override suspend fun setSwitchStyle(style: SwitchStyle) {
+        dataStore.edit { prefs ->
+            prefs[Keys.SWITCH_STYLE] = style.name
         }
     }
 

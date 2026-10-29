@@ -154,4 +154,6 @@
     <string name="recording_error_offline_port">درگاه آفلاین باز نشد: %1$s</string>
     <string name="recording_status_not_paired_short">جفت نشده است</string>
     <string name="recording_status_needs_wifi">به Wi-Fi نیاز دارد</string>
+    <string name="settings_key_style">سبک کلیدها</string>
+    <string name="settings_switch_style">سبک سوییچ</string>
 </resources>

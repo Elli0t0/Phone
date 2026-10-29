@@ -39,6 +39,9 @@ import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.SwitchGreenTrack
+import io.github.elli0t0.phone.core.design.SwitchGreenUncheckedTrack
+import io.github.elli0t0.phone.data.settings.model.SwitchStyle
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 /**
  * One settings group as a solid card: an optional title plus the
@@ -115,8 +118,13 @@ fun AppSwitch(
             )
             .clip(RoundedCornerShape(PhoneDimens.settingsSwitchCornerPercent))
             .background(
-                if (checked) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.surfaceVariant
+                if (LocalAppSettings.current.switchStyle == SwitchStyle.GREEN) {
+                    if (checked) SwitchGreenTrack else SwitchGreenUncheckedTrack
+                } else if (checked) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant
+                }
             )
             .toggleable(
                 value = checked,

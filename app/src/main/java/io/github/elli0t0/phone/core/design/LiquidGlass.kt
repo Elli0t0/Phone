@@ -1,6 +1,7 @@
 package io.github.elli0t0.phone.core.design
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -42,6 +43,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
+import io.github.elli0t0.phone.data.settings.model.CardStyle
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Outline
@@ -742,6 +744,26 @@ fun Modifier.glassPress(source: MutableInteractionSource): Modifier = composed {
 }
 
 /**
+ * Row press for inset list cards: an instant white 10% highlight
+ * that fades out over 300ms on release. No scale, no ripple; the
+ * caller passes the same source its clickable uses, and sets the
+ * clickable's indication to null when this is applied.
+ */
+fun Modifier.insetRowPress(source: MutableInteractionSource): Modifier = composed {
+    val pressed by source.collectIsPressedAsState()
+    val highlight by animateFloatAsState(
+        targetValue = if (pressed) 1f else 0f,
+        animationSpec = if (pressed) snap() else tween(durationMillis = 300),
+        label = "insetRowPress"
+    )
+    this.drawWithContent {
+        drawContent()
+        if (highlight > 0f) {
+            drawRect(Color.White.copy(alpha = 0.10f * highlight))
+        }
+    }
+}
+/**
  * Dialog enter: the popup scales 0.92→1 and fades in (Medium
  * duration, Emphasized easing). Enter-only; dismiss is instant.
  * Inactive when the Animations setting is OFF.
@@ -814,7 +836,25 @@ fun GlassListCard(
     shape: Shape = RoundedCornerShape(24.dp),
     content: @Composable ColumnScope.() -> Unit
 ) {
-    if (LocalAppSettings.current.glassCards) {
+    if (LocalAppSettings.current.cardStyle == CardStyle.INSET) {
+        // Inset list card: solid 14dp card, never glass, whatever
+        // shape the caller passed.
+        Card(
+            modifier = modifier,
+            shape = RoundedCornerShape(14.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            content = {
+                CompositionLocalProvider(
+                    LocalContentColor provides MaterialTheme.colorScheme.onSurface
+                ) {
+                    content()
+                }
+            }
+        )
+    } else if (LocalAppSettings.current.glassCards) {
         LiquidGlassCard(modifier = modifier, shape = shape, content = content)
     } else {
         Card(

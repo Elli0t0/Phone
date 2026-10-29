@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -61,7 +60,7 @@ item {
 
 item {
     Card(
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = settingsListCardShape(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -73,7 +72,7 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsRow(
@@ -92,7 +91,7 @@ item {
 
 item {
     Card(
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = settingsListCardShape(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -104,7 +103,7 @@ item {
 
             if (showSupplementaryRow) {
                 Spacer(modifier = Modifier.height(spacing.small))
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                SettingsListDivider()
                 Spacer(modifier = Modifier.height(spacing.small))
 
                 SettingsRow(
@@ -120,7 +119,7 @@ item {
             }
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             // Call waiting is a carrier supplementary service:
@@ -131,7 +130,7 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsRow(
@@ -141,7 +140,7 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsRow(
@@ -159,7 +158,7 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsRow(
@@ -169,7 +168,7 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsRow(
@@ -179,7 +178,7 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsRow(
@@ -188,7 +187,7 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             // Live recording status for this row: the backend kind
@@ -238,7 +237,7 @@ item {
 
 item {
     Card(
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = settingsListCardShape(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -267,7 +266,7 @@ item {
 
 item {
     Card(
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = settingsListCardShape(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -291,7 +290,7 @@ item {
 
 item {
     Card(
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = settingsListCardShape(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier.fillMaxWidth()
     ) {

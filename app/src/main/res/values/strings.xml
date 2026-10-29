@@ -543,5 +543,7 @@
     <string name="recording_error_offline_port">Could not open the offline port: %1$s</string>
     <string name="recording_status_not_paired_short">Not paired</string>
     <string name="recording_status_needs_wifi">Needs Wi-Fi</string>
+    <string name="settings_key_style">Key style</string>
+    <string name="settings_switch_style">Switch style</string>
 </resources>
 

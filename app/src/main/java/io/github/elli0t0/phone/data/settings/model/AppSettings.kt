@@ -20,7 +20,19 @@ enum class ListDensity(val verticalPaddingDp: Int, val label: String) {
 enum class CardStyle(val label: String) {
     ROUNDED("Rounded"),
     SQUARE("Square"),
-    OUTLINED("Outlined")
+    OUTLINED("Outlined"),
+    INSET("Inset")
+}
+
+enum class KeyStyle(val label: String) {
+    GLASS("Glass"),
+    SIMPLE("Simple"),
+    FLAT("Flat")
+}
+
+enum class SwitchStyle(val label: String) {
+    DEFAULT("Default"),
+    GREEN("Green")
 }
 
 enum class AnimationOption(val label: String) {    ON("On"),
@@ -240,7 +252,8 @@ data class AppSettings(
     // active on API 33+ without Reduce transparency; otherwise the
     // current Haze bar is used unchanged.
     val lensBar: Boolean = true,
-    val glassDialpad: Boolean = true,
+    val keyStyle: KeyStyle = KeyStyle.GLASS,
+    val switchStyle: SwitchStyle = SwitchStyle.DEFAULT,
     val glassHeaders: Boolean = true,
     val glassContactDetail: Boolean = true,
     val glassCallScreens: Boolean = true,

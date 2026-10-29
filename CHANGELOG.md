@@ -164,6 +164,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.16.0]
+
+- Type scale: large title 34sp Bold with -0.4sp tracking, row title 17sp Regular, row subtitle 15sp at 60% alpha, section header 13sp Medium at 55% alpha, on the system font for now (Inter wiring follows once the font files land in res/font).
+- New Card style "Inset": solid 14dp cards with 0.5dp hairline dividers at text start (72dp for avatar rows, 16dp in Settings) and an instant white 10% row highlight fading out over 300ms; applied to Recents, Contacts and Settings list containers.
+- New Key style "Flat": 78dp solid keys (dark #333336, light #E5E5EA), 36sp Light digits, 10sp Bold letters with 2sp tracking at 60% alpha, instant press fill fading back over 350ms, and a 78dp green call button. Glass keys stay the default; the previous bare-key look is now "Simple".
+- New Switch style "Green": green checked track, white thumb, dark unchecked track, no borders; applied to the app switch and the recording switch.
+- Settings: Key style picker replaces the old glass-dialpad switch in the glass section; Switch style picker added to Glass Studio; Inset joins the existing Card style picker.
+
 ## [0.15.10]
 
 - Lens bar: the droplet area in lens mode draws only the lens droplet (the accent glow moved to the Haze path), and the lens droplet is clipped to the fully rounded pill shape; size (item minus the 4dp inset) and rest centering on the selected tab are unchanged.

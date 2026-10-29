@@ -52,6 +52,7 @@ import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
 import io.github.elli0t0.phone.data.settings.model.CallDisplay
 import io.github.elli0t0.phone.data.settings.model.DefaultSim
 import io.github.elli0t0.phone.data.settings.model.CardStyle
+import io.github.elli0t0.phone.data.settings.model.KeyStyle
 import io.github.elli0t0.phone.data.settings.model.ContactNameFormat
 import io.github.elli0t0.phone.data.settings.model.ContactSortOrder
 import io.github.elli0t0.phone.data.settings.model.ListDensity
@@ -260,6 +261,16 @@ if (dialogs.showCardStyleDialog) {
         selected = settings.cardStyle,
         onSelect = { viewModel.onCardStyleChanged(it); dialogs.showCardStyleDialog = false },
         onDismiss = { dialogs.showCardStyleDialog = false }
+    )
+}
+
+if (dialogs.showKeyStyleDialog) {
+    SettingsChoiceDialog(
+        title = stringResource(id = R.string.settings_key_style),
+        options = KeyStyle.entries.map { it.label to it },
+        selected = settings.keyStyle,
+        onSelect = { viewModel.onKeyStyleChanged(it); dialogs.showKeyStyleDialog = false },
+        onDismiss = { dialogs.showKeyStyleDialog = false }
     )
 }
 

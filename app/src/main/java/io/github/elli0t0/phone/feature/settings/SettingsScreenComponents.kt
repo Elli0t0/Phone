@@ -21,6 +21,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -38,14 +39,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.text.font.FontWeight
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.insetRowPress
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
+import io.github.elli0t0.phone.data.settings.model.CardStyle
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.telecom.UssdHelper
 import io.github.elli0t0.phone.core.telecom.UssdSim
@@ -54,10 +60,39 @@ import io.github.elli0t0.phone.core.telecom.UssdSim
 fun SettingsSectionHeader(title: String) {
     Text(
         text = title,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
         modifier = Modifier.padding(vertical = PhoneDimens.settingsSectionHeaderVerticalPadding)
     )
+}
+
+// Settings list containers: 14dp corners when the Inset card style
+// is on, else the default large shape.
+@Composable
+fun settingsListCardShape(): Shape =
+    if (LocalAppSettings.current.cardStyle == CardStyle.INSET) {
+        RoundedCornerShape(14.dp)
+    } else {
+        MaterialTheme.shapes.extraLarge
+    }
+
+// Divider between rows of a settings list card: a 0.5dp hairline
+// inset 16dp (settings rows have no avatar) for Inset, else the
+// default full-width divider.
+@Composable
+fun SettingsListDivider(modifier: Modifier = Modifier) {
+    if (LocalAppSettings.current.cardStyle == CardStyle.INSET) {
+        HorizontalDivider(
+            modifier = modifier.padding(start = 16.dp),
+            thickness = 0.5.dp,
+            color = Color.White.copy(alpha = 0.12f)
+        )
+    } else {
+        HorizontalDivider(
+            modifier = modifier,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        )
+    }
 }
 
 // Settings row: title with the current value as a subtitle.
@@ -71,26 +106,28 @@ fun SettingsRow(
 ) {
     val rowSource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
+    val insetCard = LocalAppSettings.current.cardStyle == CardStyle.INSET
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .pressScale(rowSource)
             .clickable(
                 interactionSource = rowSource,
-                indication = ripple()
+                indication = if (insetCard) null else ripple()
             ) { lightHaptic(); onClick() }
+            .then(if (insetCard) Modifier.insetRowPress(rowSource) else Modifier)
             .padding(vertical = PhoneDimens.settingsRowVerticalPadding)
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+            style = MaterialTheme.typography.titleMedium,
             color = titleColor
         )
         if (subtitle != null) {
             Text(
                 text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.60f)
             )
         }
     }
@@ -114,13 +151,13 @@ fun SettingsSwitchRow(
         Column(modifier = Modifier.weight(1f).padding(end = PhoneDimens.settingsSwitchRowTextEndPadding)) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
+                style = MaterialTheme.typography.titleMedium
             )
             if (subtitle != null) {
                 Text(
                     text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.60f)
                 )
             }
         }

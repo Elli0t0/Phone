@@ -169,7 +169,7 @@ fun BlockedNumbersScreen(
             )
             if (!uiState.canBlock) {
                 Card(
-                    shape = MaterialTheme.shapes.extraLarge,
+                    shape = settingsListCardShape(),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainer
                     ),
@@ -243,7 +243,7 @@ fun BlockedNumbersScreen(
                         key = { _, entry -> "${entry.isPrefix}:${entry.number}" }
                     ) { index, entry ->
                         Card(
-                            shape = MaterialTheme.shapes.extraLarge,
+                            shape = settingsListCardShape(),
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.surfaceContainer
                             ),

@@ -32,6 +32,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -41,6 +42,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -56,11 +58,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.SwitchGreenTrack
+import io.github.elli0t0.phone.core.design.SwitchGreenUncheckedTrack
 import io.github.elli0t0.phone.core.recording.BackendStatus
 import io.github.elli0t0.phone.core.recording.PairResult
 import io.github.elli0t0.phone.core.recording.RecordingSession
 import io.github.elli0t0.phone.data.recordings.RecordingEntity
 import io.github.elli0t0.phone.data.settings.model.RecordingBackendKind
+import io.github.elli0t0.phone.data.settings.model.SwitchStyle
 import io.github.elli0t0.phone.navigation.InnerTopBar
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -429,7 +435,19 @@ fun RecordingSettingsScreen(
                                 Switch(
                                     checked = offlineMode,
                                     onCheckedChange = { viewModel.setOfflineMode(it) },
-                                    enabled = !busy
+                                    enabled = !busy,
+                                    colors = if (LocalAppSettings.current.switchStyle == SwitchStyle.GREEN) {
+                                        SwitchDefaults.colors(
+                                            checkedTrackColor = SwitchGreenTrack,
+                                            checkedThumbColor = Color.White,
+                                            checkedBorderColor = Color.Transparent,
+                                            uncheckedTrackColor = SwitchGreenUncheckedTrack,
+                                            uncheckedThumbColor = Color.White,
+                                            uncheckedBorderColor = Color.Transparent
+                                        )
+                                    } else {
+                                        SwitchDefaults.colors()
+                                    }
                                 )
                             }
                             Spacer(modifier = Modifier.height(4.dp))

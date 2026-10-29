@@ -1,5 +1,8 @@
 package io.github.elli0t0.phone.feature.dialpad
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -8,6 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import kotlinx.coroutines.flow.collect
 import androidx.compose.ui.res.painterResource
@@ -57,9 +62,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.bidiWrap
 import io.github.elli0t0.phone.core.design.LiquidGlassChip
+import io.github.elli0t0.phone.data.settings.model.KeyStyle
 import io.github.elli0t0.phone.core.design.LiquidGlassPill
 import io.github.elli0t0.phone.core.design.KeypadKeyLightRim
 import io.github.elli0t0.phone.core.design.LiquidGlassPillShape
@@ -115,8 +122,9 @@ fun DialKeyView(
             if (interaction is PressInteraction.Press) lightHaptic()
         }
     }
-    val glassDialpad = LocalAppSettings.current.glassDialpad
-    // Key content shared by the glass and flat branches.
+    val keyStyle = LocalAppSettings.current.keyStyle
+    // Key content shared by the glass and simple branches; the flat
+    // branch has its own content (different sizes and weights).
     val keyContent: @Composable () -> Unit = {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -152,7 +160,70 @@ fun DialKeyView(
             )
         }
     }
-    if (glassDialpad) {
+    if (keyStyle == KeyStyle.FLAT) {
+        // Flat key: solid circle, digit 36sp Light, letters 10sp
+        // Bold with 2sp tracking at 60% alpha. Press fills instantly
+        // and fades back over 350ms; no scale, no ripple.
+        val flatPressed by keySource.collectIsPressedAsState()
+        val darkFlatKey = isDarkGlassTheme()
+        val flatBg by animateColorAsState(
+            targetValue = if (flatPressed) {
+                Color(0xFF7A7A80)
+            } else if (darkFlatKey) {
+                Color(0xFF333336)
+            } else {
+                Color(0xFFE5E5EA)
+            },
+            animationSpec = if (flatPressed) snap() else tween(350),
+            label = "flatKeyBg"
+        )
+        Box(
+            modifier = modifier
+                .size(78.dp)
+                .clip(CircleShape)
+                .background(flatBg)
+                .combinedClickable(
+                    interactionSource = keySource,
+                    indication = null,
+                    onClick = onClick,
+                    onLongClick = {
+                        if (onLongClick != null) onLongClick() else onClick()
+                    }
+                )
+                .testTag("dial_key_$keyTag"),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                if (dialKey.digit == '*') {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_asterisk),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(PhoneDimens.keypadAsteriskSize)
+                    )
+                } else {
+                    Text(
+                        text = dialKey.digit.toString(),
+                        fontSize = 36.sp,
+                        fontWeight = FontWeight.Light,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                // Always emit the letters line, even when empty, so
+                // every key has the same height and digits align.
+                Text(
+                    text = dialKey.letters,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 2.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.60f)
+                )
+            }
+        }
+    } else if (keyStyle == KeyStyle.GLASS) {
         // Light keys: the glass fill alone is near-invisible on a
         // light background, so light keys get a slightly darker fill
         // and a 1dp 12% black rim to read as keys.
@@ -178,7 +249,7 @@ fun DialKeyView(
             keyContent()
         }
     } else {
-        // Flat key: bare digits with press-scale and a circle-clipped ripple.
+        // Simple key: bare digits with press-scale and a circle-clipped ripple.
         Box(
             modifier = modifier
                 .size(PhoneDimens.keypadTouchSize)
@@ -387,7 +458,7 @@ fun DialpadNoMatchActions(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.height(12.dp))
-        if (LocalAppSettings.current.glassDialpad) {
+        if (LocalAppSettings.current.keyStyle == KeyStyle.GLASS) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -615,7 +686,7 @@ fun QuickRedialChips(
                 .weight(1f)
                 .heightIn(min = 44.dp)
                 .testTag("dialpad_quick_redial_$index")
-            if (LocalAppSettings.current.glassDialpad) {
+            if (LocalAppSettings.current.keyStyle == KeyStyle.GLASS) {
                 val source = remember { MutableInteractionSource() }
                 LiquidGlassPill(
                     tint = MaterialTheme.colorScheme.primary,
@@ -751,7 +822,7 @@ fun ClipboardChip(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = spacing.small)
         )
-        if (LocalAppSettings.current.glassDialpad) {
+        if (LocalAppSettings.current.keyStyle == KeyStyle.GLASS) {
             val source = remember { MutableInteractionSource() }
             LiquidGlassPill(
                 tint = MaterialTheme.colorScheme.primary,

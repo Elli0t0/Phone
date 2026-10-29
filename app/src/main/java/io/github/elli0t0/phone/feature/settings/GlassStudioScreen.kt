@@ -20,7 +20,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -52,6 +51,7 @@ import io.github.elli0t0.phone.data.settings.model.Backdrop
 import io.github.elli0t0.phone.data.settings.model.DropletStretch
 import io.github.elli0t0.phone.data.settings.model.EdgeLight
 import io.github.elli0t0.phone.data.settings.model.GlassHapticFeedback
+import io.github.elli0t0.phone.data.settings.model.SwitchStyle
 import io.github.elli0t0.phone.navigation.InnerTopBar
 import io.github.elli0t0.phone.navigation.Screen
 import java.util.Locale
@@ -79,6 +79,7 @@ fun GlassStudioScreen(
     var showDropletStretchDialog by remember { mutableStateOf(false) }
     var showHapticDialog by remember { mutableStateOf(false) }
     var showBackdropDialog by remember { mutableStateOf(false) }
+    var showSwitchStyleDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier.fillMaxSize().testTag("glass_studio_screen")
@@ -161,7 +162,7 @@ fun GlassStudioScreen(
                 }
                 item {
                     Card(
-                        shape = MaterialTheme.shapes.extraLarge,
+                        shape = settingsListCardShape(),
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surface
                         ),
@@ -184,9 +185,7 @@ fun GlassStudioScreen(
                             )
 
                             Spacer(modifier = Modifier.height(spacing.small))
-                            HorizontalDivider(
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                            )
+                            SettingsListDivider()
                             Spacer(modifier = Modifier.height(spacing.small))
 
                             GlassSliderRow(
@@ -203,9 +202,7 @@ fun GlassStudioScreen(
                             )
 
                             Spacer(modifier = Modifier.height(spacing.small))
-                            HorizontalDivider(
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                            )
+                            SettingsListDivider()
                             Spacer(modifier = Modifier.height(spacing.small))
 
                             GlassSliderRow(
@@ -227,7 +224,7 @@ fun GlassStudioScreen(
                 }
                 item {
                     Card(
-                        shape = MaterialTheme.shapes.extraLarge,
+                        shape = settingsListCardShape(),
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surface
                         ),
@@ -241,9 +238,7 @@ fun GlassStudioScreen(
                             )
 
                             Spacer(modifier = Modifier.height(spacing.small))
-                            HorizontalDivider(
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                            )
+                            SettingsListDivider()
                             Spacer(modifier = Modifier.height(spacing.small))
 
                             SettingsSwitchRow(
@@ -254,9 +249,7 @@ fun GlassStudioScreen(
                             )
 
                             Spacer(modifier = Modifier.height(spacing.small))
-                            HorizontalDivider(
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                            )
+                            SettingsListDivider()
                             Spacer(modifier = Modifier.height(spacing.small))
 
                             SettingsSwitchRow(
@@ -267,9 +260,7 @@ fun GlassStudioScreen(
                             )
 
                             Spacer(modifier = Modifier.height(spacing.small))
-                            HorizontalDivider(
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                            )
+                            SettingsListDivider()
                             Spacer(modifier = Modifier.height(spacing.small))
 
                             SettingsSwitchRow(
@@ -280,9 +271,7 @@ fun GlassStudioScreen(
                             )
 
                             Spacer(modifier = Modifier.height(spacing.small))
-                            HorizontalDivider(
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                            )
+                            SettingsListDivider()
                             Spacer(modifier = Modifier.height(spacing.small))
 
                             SettingsRow(
@@ -292,9 +281,7 @@ fun GlassStudioScreen(
                             )
 
                             Spacer(modifier = Modifier.height(spacing.small))
-                            HorizontalDivider(
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                            )
+                            SettingsListDivider()
                             Spacer(modifier = Modifier.height(spacing.small))
 
                             SettingsRow(
@@ -304,9 +291,7 @@ fun GlassStudioScreen(
                             )
 
                             Spacer(modifier = Modifier.height(spacing.small))
-                            HorizontalDivider(
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                            )
+                            SettingsListDivider()
                             Spacer(modifier = Modifier.height(spacing.small))
 
                             SettingsRow(
@@ -318,6 +303,16 @@ fun GlassStudioScreen(
                                     settings.backdrop.label
                                 },
                                 onClick = { showBackdropDialog = true }
+                            )
+
+                            Spacer(modifier = Modifier.height(spacing.small))
+                            SettingsListDivider()
+                            Spacer(modifier = Modifier.height(spacing.small))
+
+                            SettingsRow(
+                                title = stringResource(id = R.string.settings_switch_style),
+                                subtitle = settings.switchStyle.label,
+                                onClick = { showSwitchStyleDialog = true }
                             )
                         }
                     }
@@ -368,6 +363,16 @@ fun GlassStudioScreen(
             selected = settings.backdrop,
             onSelect = { viewModel.onBackdropChanged(it); showBackdropDialog = false },
             onDismiss = { showBackdropDialog = false }
+        )
+    }
+
+    if (showSwitchStyleDialog) {
+        SettingsChoiceDialog(
+            title = stringResource(id = R.string.settings_switch_style),
+            options = SwitchStyle.entries.map { it.label to it },
+            selected = settings.switchStyle,
+            onSelect = { viewModel.onSwitchStyleChanged(it); showSwitchStyleDialog = false },
+            onDismiss = { showSwitchStyleDialog = false }
         )
     }
 }

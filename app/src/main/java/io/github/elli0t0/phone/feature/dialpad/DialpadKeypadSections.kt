@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -37,6 +38,7 @@ import io.github.elli0t0.phone.core.design.OnAccentBlue
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.design.bouncyClick
+import io.github.elli0t0.phone.data.settings.model.KeyStyle
 
 @Composable
 fun DialpadKeypadGrid(
@@ -77,7 +79,7 @@ fun DialpadKeypadGrid(
 
 @Composable
 fun DialpadCallButtonRow(
-    glassDialpad: Boolean,
+    keyStyle: KeyStyle,
     darkTheme: Boolean,
     onCallClick: () -> Unit
 ) {
@@ -92,11 +94,36 @@ fun DialpadCallButtonRow(
         // Placeholder empty box for balance (same size as backspace)
         Box(modifier = Modifier.size(56.dp))
 
-        // Call button: glossy liquid-glass emerald, or the flat green
-        // FAB when the dialpad's liquid glass is off. With no digits
-        // it does nothing.
+        // Call button: glossy liquid-glass emerald, a plain green
+        // circle for the flat keys, or the flat green FAB when the
+        // dialpad's liquid glass is off. With no digits it does nothing.
         val callButtonSource = remember { MutableInteractionSource() }
-        if (glassDialpad) {
+        if (keyStyle == KeyStyle.FLAT) {
+        Box(
+            modifier = Modifier
+                .size(78.dp)
+                .clip(CircleShape)
+                .clickable(
+                    interactionSource = callButtonSource,
+                    indication = null
+                ) {
+                    onCallClick()
+                }
+                .background(
+                    color = Color(0xFF34C759),
+                    shape = CircleShape
+                )
+                .testTag("btn_call"),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_phone),
+                contentDescription = stringResource(id = R.string.cd_call_button),
+                tint = Color.White,
+                modifier = Modifier.size(32.dp)
+            )
+        }
+        } else if (keyStyle == KeyStyle.GLASS) {
         Box(
             modifier = Modifier
                 .size(PhoneDimens.callButtonSize)

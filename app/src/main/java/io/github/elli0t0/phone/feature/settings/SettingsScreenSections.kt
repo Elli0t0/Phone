@@ -18,7 +18,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -76,7 +75,7 @@ item {
 if (!dialerState.isDefault) {
 item {
     Card(
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = settingsListCardShape(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
@@ -118,7 +117,7 @@ if (!requiredSetupComplete) {
 
     item {
         Card(
-            shape = MaterialTheme.shapes.extraLarge,
+            shape = settingsListCardShape(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -145,7 +144,7 @@ item {
 
 item {
     Card(
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = settingsListCardShape(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -157,7 +156,7 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             // Dynamic Color (Android 12+)
@@ -169,7 +168,7 @@ item {
                     onCheckedChange = { viewModel.onDynamicColorChanged(it) }
                 )
                 Spacer(modifier = Modifier.height(spacing.small))
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                SettingsListDivider()
                 Spacer(modifier = Modifier.height(spacing.small))
             }
 
@@ -181,7 +180,7 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsSwitchRow(
@@ -192,7 +191,7 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             // Font size scale
@@ -269,7 +268,7 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsRow(
@@ -288,7 +287,7 @@ item {
 
 item {
     Card(
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = settingsListCardShape(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -301,18 +300,17 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
-            SettingsSwitchRow(
-                title = stringResource(id = R.string.settings_glass_dialpad),
-                subtitle = stringResource(id = R.string.settings_glass_dialpad_desc),
-                checked = settings.glassDialpad,
-                onCheckedChange = { viewModel.onGlassDialpadChanged(it) }
+            SettingsRow(
+                title = stringResource(id = R.string.settings_key_style),
+                subtitle = settings.keyStyle.label,
+                onClick = { dialogs.showKeyStyleDialog = true }
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsSwitchRow(
@@ -323,7 +321,7 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsSwitchRow(
@@ -334,7 +332,7 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsSwitchRow(
@@ -345,7 +343,7 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsRow(
@@ -355,7 +353,7 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsSwitchRow(
@@ -366,7 +364,7 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsSwitchRow(
@@ -377,7 +375,7 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsSwitchRow(
@@ -388,7 +386,7 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsRow(
@@ -403,7 +401,7 @@ item {
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsRow(

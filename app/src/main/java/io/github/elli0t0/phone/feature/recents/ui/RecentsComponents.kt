@@ -72,7 +72,9 @@ import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.OnAccentBlue
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.bouncyClick
+import io.github.elli0t0.phone.core.design.insetRowPress
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
+import io.github.elli0t0.phone.data.settings.model.CardStyle
 import io.github.elli0t0.phone.data.calllog.model.CallGroup
 import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import io.github.elli0t0.phone.data.calllog.model.CallType
@@ -156,6 +158,7 @@ fun CallLogRow(
     // same press state, so the row bounces (0.90) while pressed and ripples.
     val rowSource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
+    val insetCard = LocalAppSettings.current.cardStyle == CardStyle.INSET
 
     // Icon color by call type.
     val typeColor = callTypeColor(group.type)
@@ -235,14 +238,15 @@ fun CallLogRow(
                     .bouncyClick(rowSource)
                     .combinedClickable(
                         interactionSource = rowSource,
-                        indication = ripple(),
+                        indication = if (insetCard) null else ripple(),
                         onClick = onRowClick,
                         // Collapse first (this row or any other),
                         // then open the menu: expand and menu never
                         // coexist, so the menu can never cover
                         // expanded details text.
                         onLongClick = { onCollapse(); onShowMenu() }
-                    ),
+                    )
+                    .then(if (insetCard) Modifier.insetRowPress(rowSource) else Modifier),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Call Type Icon
@@ -268,7 +272,7 @@ fun CallLogRow(
                     ) {
                         Text(
                             text = bidiWrap(group.displayTitle),
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium, textDirection = TextDirection.Content),
+                            style = MaterialTheme.typography.titleMedium.copy(textDirection = TextDirection.Content),
                             color = nameColor,
                             textAlign = TextAlign.Start,
                             maxLines = 1,
@@ -293,8 +297,8 @@ fun CallLogRow(
                     }
                     Text(
                         text = bidiWrap(subtitleParts.joinToString(" · ")),
-                        style = MaterialTheme.typography.bodySmall.copy(textDirection = TextDirection.Content),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.60f),
                         textAlign = TextAlign.Start,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -403,6 +407,7 @@ fun DaySectionCard(
     rowContent: @Composable (CallGroup) -> Unit
 ) {
     val spacing = LocalSpacing.current
+    val insetCard = LocalAppSettings.current.cardStyle == CardStyle.INSET
     GlassListCard(
         modifier = modifier
             .fillMaxWidth()
@@ -412,15 +417,27 @@ fun DaySectionCard(
         calls.forEachIndexed { index, group ->
             rowContent(group)
             if (index < calls.lastIndex) {
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = PhoneDimens.recentsDividerAlpha),
-                    modifier = Modifier.padding(
-                        // Divider starts at the text, not at the row edge:
-                        // row padding + icon + gap.
-                        start = spacing.medium + PhoneDimens.recentsRowIconSize + spacing.medium,
-                        end = spacing.medium
+                if (insetCard) {
+                    HorizontalDivider(
+                        thickness = 0.5.dp,
+                        color = Color.White.copy(alpha = 0.12f),
+                        modifier = Modifier.padding(
+                            // Divider starts at the text, not at the row edge:
+                            // row padding + icon + gap.
+                            start = spacing.medium + PhoneDimens.recentsRowIconSize + spacing.medium
+                        )
                     )
-                )
+                } else {
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = PhoneDimens.recentsDividerAlpha),
+                        modifier = Modifier.padding(
+                            // Divider starts at the text, not at the row edge:
+                            // row padding + icon + gap.
+                            start = spacing.medium + PhoneDimens.recentsRowIconSize + spacing.medium,
+                            end = spacing.medium
+                        )
+                    )
+                }
             }
         }
     }

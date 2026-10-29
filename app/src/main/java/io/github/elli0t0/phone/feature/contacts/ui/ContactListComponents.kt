@@ -48,12 +48,15 @@ import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.FavoriteCardGradients
 import io.github.elli0t0.phone.core.design.FavoriteHintOrange
 import io.github.elli0t0.phone.core.design.GlassListCard
+import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LiquidGlassCard
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.bouncyClick
+import io.github.elli0t0.phone.core.design.insetRowPress
 import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
+import io.github.elli0t0.phone.data.settings.model.CardStyle
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 import io.github.elli0t0.phone.core.common.bidiWrap
 import io.github.elli0t0.phone.core.common.textAlignFor
@@ -120,6 +123,7 @@ fun ContactRow(
     }
     val rowSource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
+    val insetCard = LocalAppSettings.current.cardStyle == CardStyle.INSET
 
     GlassListCard(
         modifier = modifier
@@ -128,8 +132,9 @@ fun ContactRow(
             .bouncyClick(rowSource)
             .clickable(
                 interactionSource = rowSource,
-                indication = ripple()
+                indication = if (insetCard) null else ripple()
             ) { lightHaptic(); onClick() }
+            .then(if (insetCard) Modifier.insetRowPress(rowSource) else Modifier)
             .testTag("contact_item_${contact.id}"),
         shape = MaterialTheme.shapes.extraLarge
     ) {
@@ -155,7 +160,7 @@ fun ContactRow(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = bidiWrap(displayName),
-                    style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Content),
+                    style = MaterialTheme.typography.titleMedium.copy(textDirection = TextDirection.Content),
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = textAlignFor(displayName),
                     modifier = Modifier.fillMaxWidth()
@@ -172,6 +177,7 @@ fun ContactGroupCard(
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
+    val insetCard = LocalAppSettings.current.cardStyle == CardStyle.INSET
     GlassListCard(
         modifier = modifier
             .fillMaxWidth()
@@ -184,17 +190,30 @@ fun ContactGroupCard(
                 onClick = { onContactClick(contact) }
             )
             if (index < contacts.lastIndex) {
-                HorizontalDivider(
-                    // Subtle divider like Recents and History.
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(
-                        alpha = PhoneDimens.recentsDividerAlpha
-                    ),
-                    // Divider starts at the text: row padding + avatar + spacer.
-                    modifier = Modifier.padding(
-                        start = spacing.medium +
-                            PhoneDimens.contactsRowAvatarSize + spacing.medium
+                if (insetCard) {
+                    HorizontalDivider(
+                        thickness = 0.5.dp,
+                        color = Color.White.copy(alpha = 0.12f),
+                        // Divider starts at the text: row padding +
+                        // avatar + spacer (72dp).
+                        modifier = Modifier.padding(
+                            start = spacing.medium +
+                                PhoneDimens.contactsRowAvatarSize + spacing.medium
+                        )
                     )
-                )
+                } else {
+                    HorizontalDivider(
+                        // Subtle divider like Recents and History.
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(
+                            alpha = PhoneDimens.recentsDividerAlpha
+                        ),
+                        // Divider starts at the text: row padding + avatar + spacer.
+                        modifier = Modifier.padding(
+                            start = spacing.medium +
+                                PhoneDimens.contactsRowAvatarSize + spacing.medium
+                        )
+                    )
+                }
             }
         }
     }
@@ -212,14 +231,16 @@ private fun ContactGroupRow(
     }
     val rowSource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
+    val insetCard = LocalAppSettings.current.cardStyle == CardStyle.INSET
     Row(
         modifier = modifier
             .fillMaxWidth()
             .bouncyClick(rowSource)
             .clickable(
                 interactionSource = rowSource,
-                indication = ripple()
+                indication = if (insetCard) null else ripple()
             ) { lightHaptic(); onClick() }
+            .then(if (insetCard) Modifier.insetRowPress(rowSource) else Modifier)
             .testTag("contact_item_${contact.id}")
             .padding(
                 horizontal = spacing.medium,
@@ -237,7 +258,7 @@ private fun ContactGroupRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = bidiWrap(displayName),
-                style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Content),
+                style = MaterialTheme.typography.titleMedium.copy(textDirection = TextDirection.Content),
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
@@ -252,6 +273,7 @@ fun FavoritesHintRow(
     val spacing = LocalSpacing.current
     val hintSource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
+    val insetCard = LocalAppSettings.current.cardStyle == CardStyle.INSET
     GlassListCard(
         modifier = modifier
             .fillMaxWidth()
@@ -259,8 +281,9 @@ fun FavoritesHintRow(
             .bouncyClick(hintSource)
             .clickable(
                 interactionSource = hintSource,
-                indication = ripple()
+                indication = if (insetCard) null else ripple()
             ) { lightHaptic(); onClick() }
+            .then(if (insetCard) Modifier.insetRowPress(hintSource) else Modifier)
             .testTag("favorites_hint_row"),
         shape = RoundedCornerShape(PhoneDimens.contactsPillCornerPercent)
     ) {
@@ -345,7 +368,7 @@ fun ProfileRow(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = bidiWrap(displayName),
-                    style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Content),
+                    style = MaterialTheme.typography.titleMedium.copy(textDirection = TextDirection.Content),
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = textAlignFor(displayName),
                     modifier = Modifier.fillMaxWidth()
