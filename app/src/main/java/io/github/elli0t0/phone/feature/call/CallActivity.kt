@@ -115,10 +115,49 @@ class CallActivity : ComponentActivity() {
                 }
             }
 
+            // Quick reply SMS permission: asked once, on the first
+            // quick-reply tap. Denied (or asked already) falls back
+            // to the system reject-with-message path, which may
+            // silently drop the SMS on some devices.
+            var hasSmsPermission by remember {
+                mutableStateOf(
+                    ContextCompat.checkSelfPermission(
+                        this@CallActivity,
+                        Manifest.permission.SEND_SMS
+                    ) == PackageManager.PERMISSION_GRANTED
+                )
+            }
+            var smsPermissionRequested by remember { mutableStateOf(false) }
+            var pendingQuickReply by remember { mutableStateOf<String?>(null) }
+            val smsPermissionLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.RequestPermission()
+            ) { granted ->
+                hasSmsPermission = granted
+                val message = pendingQuickReply
+                pendingQuickReply = null
+                // The number is read here, not captured above: the
+                // call model is declared later in this scope, and the
+                // call is still ringing while the dialog is up.
+                val number = CallRepository.ongoingCallModel.value?.number ?: ""
+                if (message != null) {
+                    if (granted && number.isNotBlank()) {
+                        CallRepository.rejectCallWithMessage(
+                            this@CallActivity,
+                            number,
+                            message
+                        )
+                    } else {
+                        CallRepository.rejectCallWithMessageFallback(message)
+                    }
+                }
+            }
+
             val quickDeclineMessages = listOf(
                 R.string.quick_reply_cant_talk,
                 R.string.quick_reply_call_back,
-                R.string.quick_reply_in_meeting
+                R.string.quick_reply_in_meeting,
+                R.string.quick_reply_on_my_way,
+                R.string.quick_reply_call_later
             ).mapIndexed { index, res ->
                 settings.quickDeclineOverrides.getOrNull(index)
                     ?.takeIf { it.isNotBlank() }
@@ -310,7 +349,27 @@ class CallActivity : ComponentActivity() {
                                                 dismissKeyguardAfterAnswer()
                                             },
                                             onDecline = { CallRepository.rejectCall() },
-                                            onDeclineWithMessage = { CallRepository.rejectCallWithMessage(it) },
+                                            onDeclineWithMessage = { message ->
+                                                when {
+                                                    hasSmsPermission -> {
+                                                        CallRepository.rejectCallWithMessage(
+                                                            this@CallActivity,
+                                                            currentModel.number,
+                                                            message
+                                                        )
+                                                    }
+                                                    !smsPermissionRequested -> {
+                                                        smsPermissionRequested = true
+                                                        pendingQuickReply = message
+                                                        smsPermissionLauncher.launch(
+                                                            Manifest.permission.SEND_SMS
+                                                        )
+                                                    }
+                                                    else -> {
+                                                        CallRepository.rejectCallWithMessageFallback(message)
+                                                    }
+                                                }
+                                            },
                                             quickDeclineMessages = quickDeclineMessages,
                                             callBackground = settings.callBackground,
                                             accentColor = if (settings.callBackground == CallBackground.CUSTOM) {
@@ -350,6 +409,7 @@ class CallActivity : ComponentActivity() {
                                             isRecording = recordingSession is RecordingSession.Recording,
                                             recordingLevel = recordingLevel,
                                             recordingArmed = recordingArmed,
+                                            recordingStartedAtMs = (recordingSession as? RecordingSession.Recording)?.startedAt ?: 0L,
                                             onRecordToggle = {
                                                 recordingScope.launch {
                                                     val controller = recordingController

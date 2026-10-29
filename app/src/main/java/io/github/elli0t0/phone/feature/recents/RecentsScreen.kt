@@ -103,7 +103,7 @@ import io.github.elli0t0.phone.feature.recents.ui.CallLogRow
 import io.github.elli0t0.phone.feature.recents.ui.DaySectionCard
 import io.github.elli0t0.phone.feature.recents.ui.RecentsEmptyState
 
-import io.github.elli0t0.phone.navigation.CollapsedHeaderBar
+import io.github.elli0t0.phone.navigation.StatusBarGradientScrim
 import io.github.elli0t0.phone.navigation.FloatingActionsPill
 import io.github.elli0t0.phone.navigation.PageHeaderItem
 import java.time.Instant
@@ -721,15 +721,13 @@ fun RecentsScreen(
             }
             }
         }
-        // Collapsed header bar: the title over a blur bar once the
-        // large header has scrolled off. Hidden while search is
-        // open (the header item does not exist then). The pill
-        // below draws above it at the top-right.
-        CollapsedHeaderBar(
+        // Status-bar gradient only (no title, no hairline, no band):
+        // keeps the status icons readable over scrolling rows, shown
+        // only while the floating pill is visible. The pill below
+        // draws above it at the top-right.
+        StatusBarGradientScrim(
             listState = listState,
-            title = stringResource(id = R.string.app_name),
-            modifier = Modifier.align(Alignment.TopStart),
-            extraVisible = !searchVisible
+            modifier = Modifier.align(Alignment.TopStart)
         )
         // Floating actions pill: the header's buttons, overlaid at
         // the top-right once the header has scrolled off. No title,
@@ -739,8 +737,7 @@ fun RecentsScreen(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .statusBarsPadding()
-                .height(PhoneDimens.collapsedBarRowHeight)
-                .padding(end = 16.dp),
+                .padding(end = 16.dp, top = 8.dp),
             actions = headerActions
         )
         }

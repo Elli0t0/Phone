@@ -46,6 +46,12 @@ interface AppContainer {
     val recordingsRepository: RecordingsRepository
     val recordingController: RecordingController
     val dialRequests: MutableSharedFlow<DialRequest>
+    /**
+     * Auto-record failure taps (notification): the id lets the
+     * collector ignore replays of an already-handled request, like
+     * dialRequests above.
+     */
+    val openRecordingRequests: MutableSharedFlow<Long>
 }
 
 class DefaultAppContainer(private val context: Context) : AppContainer {
@@ -95,6 +101,10 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
     }
 
     override val dialRequests: MutableSharedFlow<DialRequest> by lazy {
+        MutableSharedFlow(replay = 1, extraBufferCapacity = 1)
+    }
+
+    override val openRecordingRequests: MutableSharedFlow<Long> by lazy {
         MutableSharedFlow(replay = 1, extraBufferCapacity = 1)
     }
 }

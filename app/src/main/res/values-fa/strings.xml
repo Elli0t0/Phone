@@ -13,6 +13,7 @@
     <string name="studio_preset_left_handed">چپ‌دست</string>
     <string name="call_bg_control_button_size">اندازه دکمه کنترل</string>
     <string name="call_bg_keypad_key_size">اندازه کلید صفحه‌کلید</string>
+    <string name="call_button_size">اندازه دکمه</string>
     <string name="settings_dialpad_tones">صدای دکمه‌ها</string>
     <string name="dtmf_clear">پاک کردن</string>
     <string name="post_dial_title">این بوق‌ها ارسال شوند؟</string>
@@ -91,6 +92,11 @@
     <string name="recording_silent_badge">بی‌صدا</string>
     <string name="recording_armed">ضبط با وصل شدن تماس آغاز می‌شود</string>
     <string name="recording_active">در حال ضبط</string>
+    <string name="recording_rec">REC</string>
+    <string name="quick_reply_on_my_way">در راهم</string>
+    <string name="quick_reply_call_later">بعداً تماس می‌گیرم</string>
+    <string name="quick_reply_sent">پیام به %1$s ارسال شد</string>
+    <string name="quick_reply_failed">ارسال پیام ناموفق بود</string>
     <string name="recording_active_call">در حال ضبط این تماس</string>
     <string name="recording_notification_channel">ضبط تماس</string>
     <string name="recording_notification_title">در حال ضبط تماس</string>
@@ -138,6 +144,10 @@
     <string name="recording_reset_hint">پیش از جفت کردن دوباره، «Phone» را در فهرست دستگاه‌های جفت‌شده‌ی سامانه فراموش کنید.</string>
     <string name="recording_adb_needs_wifi">به Wi-Fi نیاز دارد. اشکال‌زدایی بی‌سیم را روشن نگه دارید. اگر پس از خاموش کردن آن ضبط متوقف شد، اشکال‌زدایی USB را فعال کنید (به کابل نیاز نیست): ضبط‌کننده را زنده نگه می‌دارد.</string>
     <string name="recording_offline_mode_title">ضبط بدون Wi-Fi (آزمایشی)</string>
+    <string name="recording_auto">خودکار</string>
+    <string name="recording_auto_record">ضبط خودکار همه تماس‌ها</string>
+    <string name="recording_auto_note">پس از هر راه‌اندازی مجدد، یک بار به Wi-Fi نیاز دارد</string>
+    <string name="recording_auto_failed">ضبط خودکار شروع نشد. «Phone > ضبط تماس» را باز کنید.</string>
     <string name="recording_offline_mode_desc">پس از هر بار راه‌اندازی مجدد، یک بار به Wi-Fi نیاز دارد. یک درگاه اشکال‌زدایی محلی (5555) باز می‌کند که با کلید جفت‌سازی محافظت می‌شود.</string>
     <string name="recording_status_offline_active">درگاه آفلاین فعال است (تا راه‌اندازی مجدد)</string>
     <string name="recording_error_offline_needs_wifi">برای فعال‌سازی دوباره‌ی ضبط آفلاین، یک بار به Wi-Fi وصل شوید.</string>
@@ -181,4 +191,6 @@
     <string name="search_keywords_recording_pair">جفت‌سازی کد همتا اشکال‌زدایی بی‌سیم وای‌فای</string>
     <string name="search_keywords_recording_port">درگاه دستی</string>
     <string name="search_keywords_recording_offline">آفلاین بدون وای‌فای راه‌اندازی مجدد</string>
+    <string name="settings_accent_presets">از پیش تعیین‌شده</string>
+    <string name="settings_glass_master_desc">شیشه‌ای شدن سربرگ‌ها، جزئیات مخاطب، صفحه‌های تماس و نوار پایینی با هم</string>
 </resources>

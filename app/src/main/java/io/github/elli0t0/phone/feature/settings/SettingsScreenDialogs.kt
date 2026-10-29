@@ -1,4 +1,5 @@
 package io.github.elli0t0.phone.feature.settings
+import android.os.Build
 import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -43,12 +44,13 @@ import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.WrappingRow
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
+import io.github.elli0t0.phone.data.settings.model.AccentChoice
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
+import io.github.elli0t0.phone.data.settings.model.BottomBarChoice
 import io.github.elli0t0.phone.data.settings.model.Backdrop
 import io.github.elli0t0.phone.data.settings.model.GlassIntensity
 import io.github.elli0t0.phone.data.settings.model.HeaderSize
-import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
 import io.github.elli0t0.phone.data.settings.model.CallDisplay
 import io.github.elli0t0.phone.data.settings.model.DefaultSim
 import io.github.elli0t0.phone.data.settings.model.CardStyle
@@ -168,8 +170,42 @@ if (dialogs.showThemeDialog) {
 }
 
 if (dialogs.showAccentDialog) {
+    // Single accent picker: Dynamic / Presets / Custom. Dynamic
+    // applies immediately; Presets opens the swatch dialog; Custom
+    // opens the hex picker. Dynamic needs Android 12+, like the
+    // old switch did.
+    SettingsChoiceDialog(
+        title = stringResource(id = R.string.settings_accent_color),
+        options = buildList {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                add(stringResource(id = R.string.settings_dynamic_color) to AccentChoice.DYNAMIC)
+            }
+            add(stringResource(id = R.string.settings_accent_presets) to AccentChoice.PRESETS)
+            add(stringResource(id = R.string.settings_custom_color) to AccentChoice.CUSTOM)
+        },
+        selected = settings.accentChoice,
+        onSelect = { choice ->
+            dialogs.showAccentDialog = false
+            when (choice) {
+                AccentChoice.DYNAMIC -> viewModel.onAccentChoiceChanged(choice)
+                AccentChoice.PRESETS -> {
+                    viewModel.onAccentChoiceChanged(choice)
+                    dialogs.showAccentPresetsDialog = true
+                }
+                AccentChoice.CUSTOM -> {
+                    viewModel.onAccentChoiceChanged(choice)
+                    dialogs.customColorHexInput = String.format("#%06X", 0xFFFFFF and settings.accentColor.toInt())
+                    dialogs.showCustomColorDialog = true
+                }
+            }
+        },
+        onDismiss = { dialogs.showAccentDialog = false }
+    )
+}
+
+if (dialogs.showAccentPresetsDialog) {
     AlertDialog(
-        onDismissRequest = { dialogs.showAccentDialog = false },
+        onDismissRequest = { dialogs.showAccentPresetsDialog = false },
         title = { Text(text = stringResource(id = R.string.settings_accent_color)) },
         text = {
             Column {
@@ -195,7 +231,7 @@ if (dialogs.showAccentDialog) {
                                 ) {
                                     lightHaptic()
                                     viewModel.onAccentColorSelected(preset.colorValue, isCustom = false)
-                                    dialogs.showAccentDialog = false
+                                    dialogs.showAccentPresetsDialog = false
                                 }
                                 .border(
                                     width = if (isSelected) PhoneDimens.settingsAccentSwatchBorderSelected else PhoneDimens.settingsAccentSwatchBorderUnselected,
@@ -216,7 +252,7 @@ if (dialogs.showAccentDialog) {
                     }
                     OutlinedButton(
                         onClick = {
-                            dialogs.showAccentDialog = false
+                            dialogs.showAccentPresetsDialog = false
                             dialogs.customColorHexInput = String.format("#%06X", 0xFFFFFF and settings.accentColor.toInt())
                             dialogs.showCustomColorDialog = true
                         },
@@ -237,7 +273,7 @@ if (dialogs.showAccentDialog) {
         },
         confirmButton = {},
         dismissButton = {
-            TextButton(onClick = { dialogs.showAccentDialog = false }) {
+            TextButton(onClick = { dialogs.showAccentPresetsDialog = false }) {
                 Text(text = stringResource(id = R.string.action_cancel))
             }
         }
@@ -297,9 +333,9 @@ if (dialogs.showAnimDialog) {
 if (dialogs.showBottomBarStyleDialog) {
     SettingsChoiceDialog(
         title = stringResource(id = R.string.settings_bottom_bar_style),
-        options = BottomBarStyle.entries.map { it.label to it },
-        selected = settings.bottomBarStyle,
-        onSelect = { viewModel.onBottomBarStyleChanged(it); dialogs.showBottomBarStyleDialog = false },
+        options = BottomBarChoice.entries.map { it.label to it },
+        selected = settings.bottomBarChoice,
+        onSelect = { viewModel.onBottomBarChoiceChanged(it); dialogs.showBottomBarStyleDialog = false },
         onDismiss = { dialogs.showBottomBarStyleDialog = false }
     )
 }
@@ -399,7 +435,9 @@ if (dialogs.showQuickDeclineDialog) {
     val defaultMessages = listOf(
         stringResource(id = R.string.quick_reply_cant_talk),
         stringResource(id = R.string.quick_reply_call_back),
-        stringResource(id = R.string.quick_reply_in_meeting)
+        stringResource(id = R.string.quick_reply_in_meeting),
+        stringResource(id = R.string.quick_reply_on_my_way),
+        stringResource(id = R.string.quick_reply_call_later)
     )
     val effectiveMessages = defaultMessages.mapIndexed { index, default ->
         settings.quickDeclineOverrides.getOrNull(index)

@@ -33,7 +33,9 @@ fun PhoneNavHost(
     transitionStyle: TransitionStyle = TransitionStyle.PUSH,
     onContactsBarVisibilityChanged: (Boolean) -> Unit = {},
     pendingDialNumber: String? = null,
-    onDialNumberConsumed: () -> Unit = {}
+    onDialNumberConsumed: () -> Unit = {},
+    pendingOpenRecordingPage: Boolean = false,
+    onRecordingPageConsumed: () -> Unit = {}
 ) {
     // Tab transitions: a short 180ms cross-fade only through Motion;
     // REDUCED fades shorter, OFF is instant. The bottom bar lives
@@ -191,7 +193,9 @@ fun PhoneNavHost(
             popExitTransition = innerPopExitTransition
         ) {
             io.github.elli0t0.phone.feature.settings.SettingsScreen(
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                openRecordingPage = pendingOpenRecordingPage,
+                onRecordingPageConsumed = onRecordingPageConsumed
             )
         }
     }

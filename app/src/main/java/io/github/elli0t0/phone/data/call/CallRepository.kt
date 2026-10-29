@@ -1,12 +1,22 @@
 package io.github.elli0t0.phone.data.call
 
+import android.app.Activity
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
 import android.os.SystemClock
 import android.telecom.Call
 import android.telecom.CallAudioState
 import android.telecom.VideoProfile
+import android.telephony.SmsManager
+import android.widget.Toast
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.telecom.PhoneNavLog
 
 object CallRepository {
@@ -207,9 +217,88 @@ object CallRepository {
         }
     }
 
-    /** Declines a ringing call and sends the given text as a reply SMS. */
-    fun rejectCallWithMessage(message: String) {
+    /**
+     * Declines a ringing call and sends the given text as a reply SMS
+     * with SmsManager for the SIM the call came in on (subscription
+     * id from the call's PhoneAccountHandle, default SMS sub as a
+     * fallback). The system reject-with-message path leaves delivery
+     * to the carrier and silently drops it on some devices, so the
+     * SMS is sent directly and the result is toasted + logged. A
+     * per-part sent intent counts all parts before reporting, so a
+     * multi-part message reports once, not per part.
+     */
+    fun rejectCallWithMessage(context: Context, number: String, message: String) {
         PhoneNavLog.log("CallRepository rejectCallWithMessage")
+        val call = _currentCall.value
+        if (call != null && call.state == Call.STATE_RINGING) {
+            call.reject(false, null)
+        } else {
+            call?.disconnect()
+            return
+        }
+        if (number.isBlank()) return
+        val appContext = context.applicationContext
+        val name = _ongoingCallModel.value?.displayName?.takeIf { it.isNotBlank() } ?: number
+        val subId = call.details?.accountHandle?.id?.toIntOrNull()
+            ?: SmsManager.getDefaultSmsSubscriptionId()
+        val sms = if (Build.VERSION.SDK_INT >= 31) {
+            appContext.getSystemService(SmsManager::class.java).createForSubscriptionId(subId)
+        } else {
+            SmsManager.getSmsManagerForSubscriptionId(subId)
+        }
+        val parts = sms.divideMessage(message)
+        if (parts.isEmpty()) return
+        val action = "io.github.elli0t0.phone.QUICK_REPLY_SENT_${System.nanoTime()}"
+        var remaining = parts.size
+        var failed = false
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(c: Context, intent: Intent) {
+                if (resultCode != Activity.RESULT_OK) failed = true
+                if (--remaining == 0) {
+                    try {
+                        appContext.unregisterReceiver(this)
+                    } catch (_: Exception) {
+                        // Already unregistered on the send-failure path.
+                    }
+                    val text = if (!failed) {
+                        appContext.getString(R.string.quick_reply_sent, name)
+                    } else {
+                        appContext.getString(R.string.quick_reply_failed)
+                    }
+                    Toast.makeText(appContext, text, Toast.LENGTH_SHORT).show()
+                    PhoneNavLog.log("CallRepository quick reply SMS ${if (!failed) "sent" else "failed"}")
+                }
+            }
+        }
+        if (Build.VERSION.SDK_INT >= 33) {
+            appContext.registerReceiver(receiver, IntentFilter(action), Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            appContext.registerReceiver(receiver, IntentFilter(action))
+        }
+        val sentIntents = parts.mapIndexed { index, _ ->
+            PendingIntent.getBroadcast(
+                appContext,
+                index,
+                Intent(action),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        }
+        try {
+            sms.sendMultipartTextMessage(number, null, parts, sentIntents, null)
+        } catch (e: Exception) {
+            try {
+                appContext.unregisterReceiver(receiver)
+            } catch (_: Exception) {
+                // Never registered or already unregistered.
+            }
+            Toast.makeText(appContext, R.string.quick_reply_failed, Toast.LENGTH_SHORT).show()
+            PhoneNavLog.log("CallRepository quick reply SMS failed: ${e.message}")
+        }
+    }
+
+    /** System reply path, used only when SEND_SMS is denied. */
+    fun rejectCallWithMessageFallback(message: String) {
+        PhoneNavLog.log("CallRepository rejectCallWithMessageFallback")
         val call = _currentCall.value ?: return
         if (call.state == Call.STATE_RINGING) {
             call.reject(true, message)

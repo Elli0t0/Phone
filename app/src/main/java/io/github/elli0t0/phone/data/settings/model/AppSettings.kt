@@ -227,6 +227,41 @@ enum class BottomBarStyle(val label: String) {
     SOLID("Solid")
 }
 
+/**
+ * The single bottom-bar picker (0.17.7): three choices derived from
+ * the overlapping bottomBarStyle / glassBottomBar / lensBar fields.
+ * SOLID reads from the style alone; LENS needs GLASS + lens on.
+ */
+enum class BottomBarChoice(val label: String) {
+    LENS("Lens glass"),
+    GLASS("Glass"),
+    SOLID("Solid")
+}
+
+val AppSettings.bottomBarChoice: BottomBarChoice
+    get() = when {
+        bottomBarStyle == BottomBarStyle.SOLID -> BottomBarChoice.SOLID
+        lensBar -> BottomBarChoice.LENS
+        else -> BottomBarChoice.GLASS
+    }
+
+/**
+ * The single accent picker (0.17.7): Dynamic / Presets / Custom,
+ * derived from the dynamicColor / isCustomAccent flags.
+ */
+enum class AccentChoice(val label: String) {
+    DYNAMIC("Dynamic"),
+    PRESETS("Presets"),
+    CUSTOM("Custom")
+}
+
+val AppSettings.accentChoice: AccentChoice
+    get() = when {
+        dynamicColor -> AccentChoice.DYNAMIC
+        isCustomAccent -> AccentChoice.CUSTOM
+        else -> AccentChoice.PRESETS
+    }
+
 enum class BottomBarSize(val label: String) {
     SMALL("Small"),
     MEDIUM("Medium"),
@@ -367,6 +402,8 @@ data class AppSettings(
     val adbLastKnownPort: Int? = null,
     /** Offline ADB recording: prefer a local debugging port (5555) over Wi-Fi. */
     val adbOfflineMode: Boolean = false,
+    /** Auto-record every call once it connects (0.17.7). */
+    val autoRecordCalls: Boolean = false,
     /** Loopback recorder-helper port/token: an already running helper
      * can be reused after an app restart instead of relaunching. */
     val adbHelperPort: Int? = null,

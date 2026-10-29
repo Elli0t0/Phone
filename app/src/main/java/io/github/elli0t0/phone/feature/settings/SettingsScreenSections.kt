@@ -1,5 +1,4 @@
 package io.github.elli0t0.phone.feature.settings
-import android.os.Build
 import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -39,6 +38,7 @@ import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.feature.setup.SetupChecklist
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
+import io.github.elli0t0.phone.data.settings.model.AccentChoice
 import kotlin.math.roundToInt
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.Backdrop
@@ -90,25 +90,15 @@ fun AppearanceCard(
             SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
-            // Dynamic Color (Android 12+)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                SettingsSwitchRow(
-                    title = stringResource(id = R.string.settings_dynamic_color),
-                    searchId = "dynamic_color",
-                    subtitle = stringResource(id = R.string.settings_dynamic_color_desc),
-                    checked = settings.dynamicColor,
-                    onCheckedChange = { viewModel.onDynamicColorChanged(it) }
-                )
-                Spacer(modifier = Modifier.height(spacing.small))
-                SettingsListDivider()
-                Spacer(modifier = Modifier.height(spacing.small))
-            }
-
             SettingsRow(
                 title = stringResource(id = R.string.settings_accent_color),
                 searchId = "accent",
-                subtitle = AccentPreset.entries.find { it.colorValue == settings.accentColor }?.label
-                    ?: stringResource(id = R.string.settings_custom_color),
+                subtitle = when (settings.accentChoice) {
+                    AccentChoice.DYNAMIC -> stringResource(id = R.string.settings_dynamic_color)
+                    AccentChoice.PRESETS -> AccentPreset.entries.find { it.colorValue == settings.accentColor }?.label
+                        ?: stringResource(id = R.string.settings_custom_color)
+                    AccentChoice.CUSTOM -> stringResource(id = R.string.settings_custom_color)
+                },
                 onClick = { dialogs.showAccentDialog = true }
             )
 
@@ -224,12 +214,30 @@ fun GlassCard(
     dialogs: SettingsDialogState,
     spacing: Spacing
 ) {
+    // Individual glass switches hide unless advanced settings are on
+    // (or the page was opened from a search result); the master
+    // switch below always shows.
+    val advanced = settings.showAdvancedSettings || LocalSearchAdvanced.current
     Card(
         shape = settingsListCardShape(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(spacing.medium)) {
+            SettingsSwitchRow(
+                title = stringResource(id = R.string.settings_cat_liquid_glass),
+                searchId = "glass_master",
+                subtitle = stringResource(id = R.string.settings_glass_master_desc),
+                checked = settings.glassHeaders || settings.glassContactDetail ||
+                    settings.glassCallScreens || settings.glassBottomBar,
+                onCheckedChange = { viewModel.onGlassMasterChanged(it) }
+            )
+
+            Spacer(modifier = Modifier.height(spacing.small))
+            SettingsListDivider()
+            Spacer(modifier = Modifier.height(spacing.small))
+
+            if (advanced) {
             SettingsSwitchRow(
                 title = stringResource(id = R.string.settings_glass_bottom_bar),
                 searchId = "glass_bottom_bar",
@@ -241,6 +249,7 @@ fun GlassCard(
             Spacer(modifier = Modifier.height(spacing.small))
             SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
+            }
 
             SettingsRow(
                 title = stringResource(id = R.string.settings_key_style),
@@ -253,6 +262,7 @@ fun GlassCard(
             SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
+            if (advanced) {
             SettingsSwitchRow(
                 title = stringResource(id = R.string.settings_glass_headers),
                 searchId = "glass_headers",
@@ -264,7 +274,9 @@ fun GlassCard(
             Spacer(modifier = Modifier.height(spacing.small))
             SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
+            }
 
+            if (advanced) {
             SettingsSwitchRow(
                 title = stringResource(id = R.string.settings_glass_contact_detail),
                 searchId = "glass_contact_detail",
@@ -276,7 +288,9 @@ fun GlassCard(
             Spacer(modifier = Modifier.height(spacing.small))
             SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
+            }
 
+            if (advanced) {
             SettingsSwitchRow(
                 title = stringResource(id = R.string.settings_glass_call_screens),
                 searchId = "glass_call_screens",
@@ -288,6 +302,7 @@ fun GlassCard(
             Spacer(modifier = Modifier.height(spacing.small))
             SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
+            }
 
             SettingsRow(
                 title = stringResource(id = R.string.settings_glass_intensity),
@@ -312,6 +327,7 @@ fun GlassCard(
             SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
+            if (advanced) {
             SettingsSwitchRow(
                 title = stringResource(id = R.string.settings_glass_cards),
                 searchId = "glass_cards",
@@ -323,6 +339,7 @@ fun GlassCard(
             Spacer(modifier = Modifier.height(spacing.small))
             SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
+            }
 
             SettingsSwitchRow(
                 title = stringResource(id = R.string.settings_dynamic_highlights),

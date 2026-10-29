@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -20,6 +21,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.data.settings.model.AppSettings
+import io.github.elli0t0.phone.data.settings.model.BottomBarChoice
 import androidx.compose.runtime.Composable
 import io.github.elli0t0.phone.core.design.Spacing
 import android.content.Context
@@ -105,9 +107,20 @@ fun NavigationCard(
             SettingsRow(
                 title = stringResource(id = R.string.settings_bottom_bar_style),
                 searchId = "bottom_bar_style",
-                subtitle = settings.bottomBarStyle.label,
+                subtitle = settings.bottomBarChoice.label,
                 onClick = { dialogs.showBottomBarStyleDialog = true }
             )
+
+            // Lens glass needs Android 13; below it the lens bar
+            // falls back to the glass bar.
+            if (settings.bottomBarChoice == BottomBarChoice.LENS) {
+                Text(
+                    text = stringResource(id = R.string.settings_lens_bar_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = spacing.small)
+                )
+            }
 
             Spacer(modifier = Modifier.height(spacing.small))
             SettingsListDivider()

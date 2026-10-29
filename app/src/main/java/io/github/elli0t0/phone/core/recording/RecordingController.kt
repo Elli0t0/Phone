@@ -3,10 +3,16 @@ package io.github.elli0t0.phone.core.recording
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.net.Uri
 import android.os.Environment
 import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
+import androidx.core.app.NotificationCompat
+import io.github.elli0t0.phone.MainActivity
+import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.recording.adb.AdbRecordingBackend
 import io.github.elli0t0.phone.core.recording.CaptureSource
 import io.github.elli0t0.phone.data.call.CallRepository
@@ -64,6 +70,10 @@ class RecordingController(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val sessionMutex = Mutex()
 
+    companion object {
+        private const val AUTO_RECORD_NOTIFICATION_ID = 4403
+    }
+
     private val _state = MutableStateFlow<RecordingSession>(RecordingSession.Idle)
     val state: StateFlow<RecordingSession> = _state.asStateFlow()
 
@@ -117,6 +127,23 @@ class RecordingController(
         .map { it.adbOfflineMode }
         .stateIn(scope, SharingStarted.Eagerly, false)
 
+    /** Auto-record switch from Settings (0.17.7). */
+    val autoRecordCalls: StateFlow<Boolean> = settingsRepository.settingsFlow
+        .map { it.autoRecordCalls }
+        .stateIn(scope, SharingStarted.Eagerly, false)
+
+    suspend fun setAutoRecordCalls(enabled: Boolean) {
+        settingsRepository.setAutoRecordCalls(enabled)
+    }
+
+    /**
+     * Id of the call auto-record already handled (started or failed):
+     * a manual stop mid-call must not trigger a restart, and a failed
+     * auto start must not retry, in the same call. Cleared when the
+     * call model goes away.
+     */
+    private var autoHandledCallId: String? = null
+
     /** True when the last successful ADB probe used the local offline port. */
     val offlinePortActive: StateFlow<Boolean> = adbBackend.offlinePortActive
 
@@ -169,6 +196,7 @@ class RecordingController(
     init {
         scope.launch {
             CallRepository.ongoingCallModel.collect { model ->
+                if (model == null) autoHandledCallId = null
                 val recording = active
                 if (recording != null && !recording.isTest &&
                     (model == null || model.state == CallState.DISCONNECTED)
@@ -189,6 +217,32 @@ class RecordingController(
                         _pendingRecording.value = false
                         startSession(pending.first, pending.second, isTest = false)
                             .onFailure { _lastError.value = it.message }
+                    }
+                }
+                // Auto-record (0.17.7): on connect, with nothing
+                // recording and no armed request, start a normal
+                // (non-test) session for this call id. The id is
+                // claimed before launching so a manual stop, or a
+                // failed start, never restarts it in the same call.
+                if (model != null && model.state == CallState.ACTIVE &&
+                    active == null && pendingCall == null &&
+                    autoRecordCalls.value && model.id != autoHandledCallId
+                ) {
+                    autoHandledCallId = model.id
+                    scope.launch {
+                        if (adbBackend.status.value != BackendStatus.READY) {
+                            adbBackend.refreshStatus()
+                        }
+                        startSession(model.number, model.displayName, isTest = false)
+                            .onFailure {
+                                // A session that appeared meanwhile
+                                // means a manual start won the race:
+                                // that is not a failure to report.
+                                if (active == null) {
+                                    _lastError.value = it.message
+                                    postAutoRecordFailedNotification()
+                                }
+                            }
                     }
                 }
             }
@@ -289,6 +343,49 @@ class RecordingController(
             }
             Unit
         }
+    }.also { result ->
+        // A started non-test session marks its call handled for
+        // auto-record: a manual start (any path) must not be followed
+        // by an auto start later in the same call.
+        if (result.isSuccess && !isTest) {
+            CallRepository.ongoingCallModel.value?.id?.let { autoHandledCallId = it }
+        }
+    }
+
+    /**
+     * Low-priority failure note for a failed auto start, on the
+     * existing recording channel. Tapping it opens the Call
+     * recording page.
+     */
+    private fun postAutoRecordFailedNotification() {
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (manager.getNotificationChannel(RecordingForegroundService.CHANNEL_ID) == null) {
+            manager.createNotificationChannel(
+                NotificationChannel(
+                    RecordingForegroundService.CHANNEL_ID,
+                    context.getString(R.string.recording_notification_channel),
+                    NotificationManager.IMPORTANCE_LOW
+                )
+            )
+        }
+        val openIntent = Intent(context, MainActivity::class.java).apply {
+            putExtra(MainActivity.EXTRA_OPEN_RECORDING, true)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        val pending = PendingIntent.getActivity(
+            context,
+            AUTO_RECORD_NOTIFICATION_ID,
+            openIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val notification = NotificationCompat.Builder(context, RecordingForegroundService.CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_phone)
+            .setContentTitle(context.getString(R.string.settings_call_recording))
+            .setContentText(context.getString(R.string.recording_auto_failed))
+            .setContentIntent(pending)
+            .setAutoCancel(true)
+            .build()
+        manager.notify(AUTO_RECORD_NOTIFICATION_ID, notification)
     }
 
     suspend fun stopRecording(): Result<Unit> {

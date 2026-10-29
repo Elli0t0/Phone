@@ -140,6 +140,7 @@ fun RecordingSettingsScreen(
     val manualPort by viewModel.manualPort.collectAsStateWithLifecycle()
     val detectResult by viewModel.detectResult.collectAsStateWithLifecycle()
     val offlineMode by viewModel.offlineMode.collectAsStateWithLifecycle()
+    val autoRecordCalls by viewModel.autoRecordCalls.collectAsStateWithLifecycle()
     val offlinePortActive by viewModel.offlinePortActive.collectAsStateWithLifecycle()
     val keyAccepted by viewModel.keyAccepted.collectAsStateWithLifecycle()
     val clipboardManager = LocalClipboardManager.current
@@ -188,6 +189,51 @@ fun RecordingSettingsScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.recording_auto_record),
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Switch(
+                                checked = autoRecordCalls,
+                                onCheckedChange = { viewModel.setAutoRecordCalls(it) },
+                                enabled = !busy,
+                                colors = if (LocalAppSettings.current.effectiveStyle.switch == SwitchStyle.GREEN) {
+                                    SwitchDefaults.colors(
+                                        checkedTrackColor = SwitchGreenTrack,
+                                        checkedThumbColor = Color.White,
+                                        checkedBorderColor = Color.Transparent,
+                                        uncheckedTrackColor = SwitchGreenUncheckedTrack,
+                                        uncheckedThumbColor = Color.White,
+                                        uncheckedBorderColor = Color.Transparent
+                                    )
+                                } else {
+                                    SwitchDefaults.colors()
+                                }
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = stringResource(id = R.string.recording_auto_note),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            }
 
             item {
                 Card(

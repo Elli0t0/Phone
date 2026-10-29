@@ -260,7 +260,7 @@ fun IncomingCallScreen(
 
         // Quick replies position: above (default) or below the answer buttons.
         val quickRepliesBelow = LocalAppSettings.current.quickRepliesBelowButtons
-        if (!quickRepliesBelow) QuickRepliesSection(quickDeclineMessages = quickDeclineMessages, onDeclineWithMessage = onDeclineWithMessage)
+        if (!quickRepliesBelow) QuickRepliesSection(quickDeclineMessages = quickDeclineMessages, callerNumber = callModel.number, onDeclineWithMessage = onDeclineWithMessage)
         AnswerControls(
             style = effectiveStyle,
             onAnswer = onAnswer,
@@ -269,22 +269,25 @@ fun IncomingCallScreen(
                 .fillMaxWidth()
                 .padding(bottom = PhoneDimens.incomingActionsBottomPadding)
         )
-        if (quickRepliesBelow) QuickRepliesSection(quickDeclineMessages = quickDeclineMessages, onDeclineWithMessage = onDeclineWithMessage)
+        if (quickRepliesBelow) QuickRepliesSection(quickDeclineMessages = quickDeclineMessages, callerNumber = callModel.number, onDeclineWithMessage = onDeclineWithMessage)
         }
     }
 }
 
 /**
  * Quick replies: decline the call and send the message as a reply SMS.
- * Hidden when the quick-replies setting is off.
+ * Hidden when the quick-replies setting is off, or when the caller
+ * number is blank/private — there is nobody to reply to.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun QuickRepliesSection(
     quickDeclineMessages: List<String>,
+    callerNumber: String = "",
     onDeclineWithMessage: (String) -> Unit
 ) {
     if (!LocalAppSettings.current.showQuickReplies) return
+    if (callerNumber.isBlank()) return
     val glassCallScreens = LocalAppSettings.current.glassCallScreens
     val spacing = LocalSpacing.current
     Column(

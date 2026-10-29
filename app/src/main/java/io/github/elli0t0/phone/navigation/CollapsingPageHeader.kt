@@ -1,9 +1,10 @@
 package io.github.elli0t0.phone.navigation
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -22,24 +23,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeEffect
-import io.github.elli0t0.phone.core.design.GlassBlurTintDark
-import io.github.elli0t0.phone.core.design.GlassBlurTintLight
 import io.github.elli0t0.phone.core.design.GlassSurface
 import io.github.elli0t0.phone.core.design.LiquidGlassPillShape
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalHazeState
 import io.github.elli0t0.phone.core.design.PhoneDimens
-import io.github.elli0t0.phone.core.design.isDarkGlassTheme
-import io.github.elli0t0.phone.data.settings.model.GlassIntensity
 import io.github.elli0t0.phone.data.settings.model.HeaderSize
 
 /**
@@ -146,7 +141,7 @@ fun FloatingActionsPill(
         }
     }
     if (!pillVisible) return
-    Box(modifier = modifier, contentAlignment = Alignment.CenterEnd) {
+    Box(modifier = modifier) {
         // The pill content is shared by the glass and flat branches.
         val pillContent: @Composable () -> Unit = {
             Row(
@@ -181,98 +176,33 @@ fun FloatingActionsPill(
 }
 
 
-
 /**
- * Collapsed header bar: once the large title has scrolled off (the
- * same reveal condition as the floating actions pill), the top area
- * becomes a full-width bar with a solid base behind the blur, so list
- * rows never show through, and a 0.5dp hairline at the bottom. The
- * title is start-aligned at a fixed 20sp SemiBold, capped at 45% of
- * the width so it never sits under the floating pill, in a 60dp row
- * the pill shares. It reads the shared haze state like the pill
- * (never the list's own state), so it cannot hit the haze/hazeChild
- * crash. Without blur (reduce transparency, API < 31, no state) the
- * base is near-opaque on its own.
+ * Status-bar gradient scrim: a fade of the page background behind
+ * the status bar only (no title, no hairline, no band), so the
+ * status icons stay readable over scrolling rows. Shown only when
+ * the floating actions pill is visible, i.e. once the large header
+ * has scrolled off — the same reveal condition as the pill.
  */
 @Composable
-fun CollapsedHeaderBar(
+fun StatusBarGradientScrim(
     listState: LazyListState,
-    title: String,
-    modifier: Modifier = Modifier,
-    extraVisible: Boolean = true
+    modifier: Modifier = Modifier
 ) {
-    val scrolled by remember {
+    val visible by remember {
         derivedStateOf { listState.firstVisibleItemIndex > 0 }
     }
-    if (!extraVisible || !scrolled) return
-    val dark = isDarkGlassTheme()
-    val settings = LocalAppSettings.current
-    val hazeState = LocalHazeState.current
-    val blurOn = hazeState != null &&
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-        !settings.reduceTransparency
-    val tint = (if (dark) GlassBlurTintDark else GlassBlurTintLight).copy(alpha = 0.35f)
-    val radius = (when (settings.glassIntensity) {
-        GlassIntensity.SUBTLE -> PhoneDimens.glassBlurRadiusSubtle
-        GlassIntensity.STANDARD -> PhoneDimens.glassBlurRadiusStandard
-        GlassIntensity.STRONG -> PhoneDimens.glassBlurRadiusStrong
-    }) * settings.glassBlurAmount
-    // Solid base first so list rows never show through, then the blur
-    // on top of it (near-opaque when blur is off).
+    if (!visible) return
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .height(WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 8.dp)
             .background(
-                MaterialTheme.colorScheme.background.copy(alpha = if (blurOn) 0.82f else 0.96f)
-            )
-            .then(
-                if (blurOn) {
-                    Modifier.hazeEffect(
-                        state = hazeState!!,
-                        style = HazeStyle(
-                            backgroundColor = Color.Transparent,
-                            tint = HazeTint(tint),
-                            blurRadius = radius
-                        )
+                Brush.verticalGradient(
+                    listOf(
+                        MaterialTheme.colorScheme.background.copy(alpha = 0.9f),
+                        Color.Transparent
                     )
-                } else {
-                    Modifier
-                }
-            )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-        ) {
-            // One 60dp row shared with the floating pill: the title is
-            // start-aligned and capped at 45% width so it can never sit
-            // under the pill, whatever the header-size setting is (the
-            // collapsed title is a fixed 20sp, not scaled).
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(PhoneDimens.collapsedBarRowHeight)
-            ) {
-                Text(
-                    text = title,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Start,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .padding(start = 20.dp)
-                        .fillMaxWidth(0.45f)
                 )
-            }
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(0.5.dp)
-                    .background(MaterialTheme.colorScheme.outlineVariant)
             )
-        }
-    }
+    )
 }

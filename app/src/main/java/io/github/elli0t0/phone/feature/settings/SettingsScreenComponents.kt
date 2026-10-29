@@ -546,6 +546,8 @@ fun QuickDeclineMessagesDialog(
     var message1 by remember { mutableStateOf(initialMessages.getOrNull(0) ?: "") }
     var message2 by remember { mutableStateOf(initialMessages.getOrNull(1) ?: "") }
     var message3 by remember { mutableStateOf(initialMessages.getOrNull(2) ?: "") }
+    var message4 by remember { mutableStateOf(initialMessages.getOrNull(3) ?: "") }
+    var message5 by remember { mutableStateOf(initialMessages.getOrNull(4) ?: "") }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = stringResource(id = R.string.settings_quick_decline)) },
@@ -572,10 +574,24 @@ fun QuickDeclineMessagesDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+                OutlinedTextField(
+                    value = message4,
+                    onValueChange = { message4 = it },
+                    label = { Text(text = "4") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = message5,
+                    onValueChange = { message5 = it },
+                    label = { Text(text = "5") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         },
         confirmButton = {
-            Button(onClick = { onSave(listOf(message1, message2, message3)) }) {
+            Button(onClick = { onSave(listOf(message1, message2, message3, message4, message5)) }) {
                 Text(text = stringResource(id = R.string.action_save))
             }
         },

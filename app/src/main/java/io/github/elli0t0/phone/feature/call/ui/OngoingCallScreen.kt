@@ -115,6 +115,7 @@ fun OngoingCallScreen(
     isRecording: Boolean = false,
     recordingLevel: Float = 0f,
     recordingArmed: Boolean = false,
+    recordingStartedAtMs: Long = 0L,
     onRecordToggle: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -129,6 +130,33 @@ fun OngoingCallScreen(
         val mins = callModel.durationSeconds / 60
         val secs = callModel.durationSeconds % 60
         String.format("%02d:%02d", mins, secs)
+    }
+
+    // REC pulse (0.17.7): the dot breathes 1f <-> 0.3f on an 800ms
+    // reverse loop. Hoisted so the transition survives the
+    // isRecording branch; it only paints while recording. Off means
+    // a static dot (fades are allowed under Reduced).
+    val recTransition = rememberInfiniteTransition(label = "recPulse")
+    val recPulse by recTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0.3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 800),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "recPulseAlpha"
+    )
+    val recDotAlpha = if (LocalAppSettings.current.animationOption == AnimationOption.OFF) {
+        1f
+    } else {
+        recPulse
+    }
+    // Recording timer: wall-clock elapsed since the session
+    // started. Recomputed on the call-duration tick (1s), so it
+    // advances without its own ticker.
+    val recordingElapsed = remember(callModel.durationSeconds, recordingStartedAtMs) {
+        val elapsed = ((System.currentTimeMillis() - recordingStartedAtMs) / 1000).coerceAtLeast(0L)
+        String.format("%02d:%02d", elapsed / 60, elapsed % 60)
     }
 
     val stateText = when (callModel.state) {
@@ -298,13 +326,22 @@ fun OngoingCallScreen(
                         Box(
                             modifier = Modifier
                                 .size(8.dp)
-                                .background(MaterialTheme.colorScheme.error, CircleShape)
+                                .background(
+                                    MaterialTheme.colorScheme.error.copy(alpha = recDotAlpha),
+                                    CircleShape
+                                )
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = stringResource(id = R.string.recording_active),
+                            text = stringResource(id = R.string.recording_rec),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = recordingElapsed,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.7f)
                         )
                     }
                     // Live level meter: the same peak the backend

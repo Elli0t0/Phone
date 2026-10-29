@@ -61,6 +61,7 @@ class SettingsDialogState {
     var showCustomColorDialog by mutableStateOf(false)
     var showThemeDialog by mutableStateOf(false)
     var showAccentDialog by mutableStateOf(false)
+    var showAccentPresetsDialog by mutableStateOf(false)
     var showDensityDialog by mutableStateOf(false)
     var showCardStyleDialog by mutableStateOf(false)
     var showKeyStyleDialog by mutableStateOf(false)

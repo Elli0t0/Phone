@@ -53,6 +53,7 @@ class RecordingSettingsViewModel(
     val manualPort: StateFlow<Int?> = controller.manualPort
     val detectResult: StateFlow<String?> = controller.detectResult
     val offlineMode: StateFlow<Boolean> = controller.offlineMode
+    val autoRecordCalls: StateFlow<Boolean> = controller.autoRecordCalls
     val offlinePortActive: StateFlow<Boolean> = controller.offlinePortActive
     val keyAccepted: StateFlow<Boolean> = controller.adbKeyAccepted
     val session: StateFlow<RecordingSession> = controller.state
@@ -132,6 +133,10 @@ class RecordingSettingsViewModel(
             controller.setOfflineMode(enabled)
             refresh()
         }
+    }
+
+    fun setAutoRecordCalls(enabled: Boolean) {
+        viewModelScope.launch { controller.setAutoRecordCalls(enabled) }
     }
 
     fun detectPort() {

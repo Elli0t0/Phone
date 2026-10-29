@@ -99,6 +99,10 @@
     <string name="quick_reply_cant_talk">Can\'t talk now</string>
     <string name="quick_reply_call_back">I\'ll call you back</string>
     <string name="quick_reply_in_meeting">I\'m in a meeting</string>
+    <string name="quick_reply_on_my_way">On my way</string>
+    <string name="quick_reply_call_later">Call you later</string>
+    <string name="quick_reply_sent">Message sent to %1$s</string>
+    <string name="quick_reply_failed">Message failed to send</string>
 
     <!-- Groups -->
     <string name="groups_title">Groups</string>
@@ -280,6 +284,7 @@
     <string name="settings_dynamic_color_desc">Match app colors to your system wallpaper theme</string>
     <string name="settings_accent_color">Accent color</string>
     <string name="settings_accent_color_desc">Choose a primary accent for buttons, icons, and highlights</string>
+    <string name="settings_accent_presets">Presets</string>
     <string name="settings_custom_color">Custom color</string>
     <string name="settings_custom_color_dialog_title">Enter Hex Color (#RRGGBB)</string>
     <string name="settings_pure_black">Pure black dark mode</string>
@@ -290,6 +295,7 @@
     <string name="settings_cat_liquid_glass">Liquid glass</string>
     <string name="settings_glass_bottom_bar">Bottom bar</string>
     <string name="settings_glass_bottom_bar_desc">Glass bar and sliding glass tab indicator</string>
+    <string name="settings_glass_master_desc">Glass headers, contact details, call screens and bottom bar together</string>
     <string name="settings_glass_dialpad">Dialpad</string>
     <string name="settings_glass_dialpad_desc">Glass keys, Call button, no-match pills, and T9 chips</string>
     <string name="settings_glass_headers">Headers</string>
@@ -439,6 +445,7 @@
     <string name="studio_preset_left_handed">Left-handed</string>
     <string name="call_bg_control_button_size">Control button size</string>
     <string name="call_bg_keypad_key_size">Keypad key size</string>
+    <string name="call_button_size">Button size</string>
     <string name="settings_dialpad_tones">Dialpad tones</string>
     <string name="dtmf_clear">Clear</string>
     <string name="post_dial_title">Send these tones?</string>
@@ -480,8 +487,13 @@
     <string name="recording_silent_badge">Silent</string>
     <string name="recording_armed">Recording starts when the call connects</string>
     <string name="recording_active">Recording</string>
+    <string name="recording_rec">REC</string>
     <string name="recording_active_call">Recording this call</string>
     <string name="recording_notification_channel">Call recording</string>
+    <string name="recording_auto">Auto</string>
+    <string name="recording_auto_record">Record all calls automatically</string>
+    <string name="recording_auto_note">Needs Wi-Fi once after every reboot</string>
+    <string name="recording_auto_failed">Auto-recording could not start. Open Phone > Call recording.</string>
     <string name="recording_notification_title">Recording call</string>
     <string name="recording_notification_text">Call recording in progress</string>
     <string name="recording_stop">Stop</string>

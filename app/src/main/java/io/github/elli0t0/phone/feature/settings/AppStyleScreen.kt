@@ -63,8 +63,9 @@ import io.github.elli0t0.phone.data.settings.model.TransitionStyle
  * The App style page: two preset cards (Classic, Clean) with a mini
  * mock of each look, a "Try it" preview of the current look, and a
  * Customize section with the individual options. Picking a preset
- * applies it immediately (settings apply live); changing any
- * individual option flips the style to Custom.
+ * applies it immediately (settings apply live); preset users see a
+ * Customize entry that flips to Custom keeping the preset's values,
+ * and changing any individual option flips the style to Custom.
  */
 @Composable
 fun AppStyleScreen(
@@ -76,7 +77,11 @@ fun AppStyleScreen(
     val spacing = LocalSpacing.current
     // LazyColumn item conditions are not a @Composable scope, so the
     // search-override read is hoisted here (0.16.9 lesson, repeated).
-    val showCustomize = settings.showAdvancedSettings || LocalSearchAdvanced.current
+    // Individual options show only for Custom (0.17.7): preset users
+    // see a Customize entry row instead, which flips to Custom
+    // keeping the preset's values. Search still force-shows them so
+    // a searched option can be found from any style.
+    val showCustomize = settings.appStyle == AppStyle.CUSTOM || LocalSearchAdvanced.current
     var showFontDialog by remember { mutableStateOf(false) }
     var showCardDialog by remember { mutableStateOf(false) }
     var showKeyDialog by remember { mutableStateOf(false) }
@@ -173,6 +178,21 @@ fun AppStyleScreen(
                 }
                 if (showCustomize) item {
                     SettingsSectionHeader(title = stringResource(id = R.string.settings_app_style_customize))
+                }
+                if (settings.appStyle != AppStyle.CUSTOM) item {
+                    Card(
+                        shape = settingsListCardShape(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(spacing.medium)) {
+                            SettingsRow(
+                                title = stringResource(id = R.string.settings_app_style_customize),
+                                subtitle = settings.appStyle.label,
+                                onClick = { viewModel.onAppStyleChanged(AppStyle.CUSTOM) }
+                            )
+                        }
+                    }
                 }
                 if (showCustomize) item {
                     Card(

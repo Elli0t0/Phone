@@ -143,7 +143,9 @@ import org.json.JSONArray
 @Composable
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    openRecordingPage: Boolean = false,
+    onRecordingPageConsumed: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val app = context.applicationContext as PhoneApplication
@@ -175,6 +177,14 @@ fun SettingsScreen(
     }
 
     val dialogs = remember { SettingsDialogState() }
+
+    // Auto-record failure tap: open the Call recording page once.
+    LaunchedEffect(openRecordingPage) {
+        if (openRecordingPage) {
+            dialogs.showRecordingPage = true
+            onRecordingPageConsumed()
+        }
+    }
 
     // Settings search (0.17.3): the field lives at the top of the main
     // page; while the query is non-empty the results replace the list.
@@ -241,6 +251,10 @@ fun SettingsScreen(
         "$recordingBackendLabel · $recordingStatusWord"
     } else {
         recordingBackendLabel
+    } + if (settings.autoRecordCalls) {
+        " · " + stringResource(id = R.string.recording_auto)
+    } else {
+        ""
     }
 
     // Main-page row summaries: the current value of each section.

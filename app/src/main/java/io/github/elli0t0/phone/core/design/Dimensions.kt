@@ -40,9 +40,6 @@ object PhoneDimens {
     // Large size) + gap (12dp) + 16dp, plus the navigation-bar inset
     // added at the call site.
     val bottomBarReservedHeight = 96.dp
-    // Collapsed header bar row: status-bar inset sits above this row;
-    // the floating actions pill (48dp buttons) centers inside it.
-    val collapsedBarRowHeight = 60.dp
     // Bottom scrim: page color fades from 0% to this alpha over the
     // fade zone above the bar, then stays at this alpha under the bar.
     // Light enough that list content scrolling behind the glass bar

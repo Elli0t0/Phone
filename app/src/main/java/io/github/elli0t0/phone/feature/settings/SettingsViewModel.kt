@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import io.github.elli0t0.phone.data.settings.SettingsRepository
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
+import io.github.elli0t0.phone.data.settings.model.AccentChoice
 import io.github.elli0t0.phone.data.settings.model.AnswerStyle
 import io.github.elli0t0.phone.data.settings.model.AnswerSide
 import io.github.elli0t0.phone.data.settings.model.CallerInfoPosition
@@ -26,6 +27,7 @@ import io.github.elli0t0.phone.data.settings.model.GlassHapticFeedback
 import io.github.elli0t0.phone.data.settings.model.GlassIntensity
 import io.github.elli0t0.phone.data.settings.model.HeaderSize
 import io.github.elli0t0.phone.data.settings.model.BottomBarStyle
+import io.github.elli0t0.phone.data.settings.model.BottomBarChoice
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.CallDisplay
 import io.github.elli0t0.phone.data.settings.model.DefaultSim
@@ -65,6 +67,29 @@ class SettingsViewModel(
     fun onAccentColorSelected(colorValue: Long, isCustom: Boolean = false) {
         viewModelScope.launch {
             settingsRepository.setAccentColor(colorValue, isCustom)
+        }
+    }
+
+    // Single accent picker (0.17.7): one choice drives the
+    // dynamicColor / isCustomAccent flags together. The color value
+    // itself is kept; Presets/Custom only change which source wins.
+    fun onAccentChoiceChanged(choice: AccentChoice) {
+        viewModelScope.launch {
+            val current = settingsState.value.accentColor
+            when (choice) {
+                AccentChoice.DYNAMIC -> {
+                    settingsRepository.setDynamicColor(true)
+                    settingsRepository.setAccentColor(current, false)
+                }
+                AccentChoice.PRESETS -> {
+                    settingsRepository.setDynamicColor(false)
+                    settingsRepository.setAccentColor(current, false)
+                }
+                AccentChoice.CUSTOM -> {
+                    settingsRepository.setDynamicColor(false)
+                    settingsRepository.setAccentColor(current, true)
+                }
+            }
         }
     }
 
@@ -116,6 +141,30 @@ class SettingsViewModel(
         }
     }
 
+    // Single bottom-bar picker (0.17.7): one choice drives the
+    // bottomBarStyle / glassBottomBar / lensBar fields together.
+    // Solid only changes the style; the other two fields are
+    // irrelevant while the style is solid.
+    fun onBottomBarChoiceChanged(choice: BottomBarChoice) {
+        viewModelScope.launch {
+            when (choice) {
+                BottomBarChoice.LENS -> {
+                    settingsRepository.setBottomBarStyle(BottomBarStyle.GLASS)
+                    settingsRepository.setGlassBottomBar(true)
+                    settingsRepository.setLensBar(true)
+                }
+                BottomBarChoice.GLASS -> {
+                    settingsRepository.setBottomBarStyle(BottomBarStyle.GLASS)
+                    settingsRepository.setGlassBottomBar(true)
+                    settingsRepository.setLensBar(false)
+                }
+                BottomBarChoice.SOLID -> {
+                    settingsRepository.setBottomBarStyle(BottomBarStyle.SOLID)
+                }
+            }
+        }
+    }
+
     fun onBottomBarSizeChanged(size: BottomBarSize) {
         viewModelScope.launch {
             settingsRepository.setBottomBarSize(size)
@@ -142,6 +191,18 @@ class SettingsViewModel(
 
     fun onGlassBottomBarChanged(enabled: Boolean) {
         viewModelScope.launch {
+            settingsRepository.setGlassBottomBar(enabled)
+        }
+    }
+
+    // Liquid-glass master switch (0.17.7): one switch drives the
+    // headers, contact-detail, call-screen and bottom-bar glass
+    // flags together.
+    fun onGlassMasterChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setGlassHeaders(enabled)
+            settingsRepository.setGlassContactDetail(enabled)
+            settingsRepository.setGlassCallScreens(enabled)
             settingsRepository.setGlassBottomBar(enabled)
         }
     }
@@ -408,6 +469,18 @@ class SettingsViewModel(
     fun onDtmfKeySizeChanged(size: DtmfKeySize) {
         viewModelScope.launch {
             settingsRepository.setDtmfKeySize(size)
+        }
+    }
+
+    // Single call-button size (0.17.7): one level drives the end-call,
+    // answer, control and keypad sizes together. The four enums share
+    // the SMALL / MEDIUM / LARGE names, so the level maps by name.
+    fun onCallButtonSizeChanged(size: EndCallButtonSize) {
+        viewModelScope.launch {
+            settingsRepository.setEndCallButtonSize(size)
+            settingsRepository.setAnswerButtonSize(AnswerButtonSize.valueOf(size.name))
+            settingsRepository.setControlButtonSize(ControlButtonSize.valueOf(size.name))
+            settingsRepository.setDtmfKeySize(DtmfKeySize.valueOf(size.name))
         }
     }
 

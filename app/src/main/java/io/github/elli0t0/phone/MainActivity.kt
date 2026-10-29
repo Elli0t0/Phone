@@ -84,10 +84,16 @@ import io.github.elli0t0.phone.navigation.Screen
 import io.github.elli0t0.phone.core.telecom.PhoneNavLog
 
 class MainActivity : ComponentActivity() {
+    companion object {
+        /** Notification taps pass this to open the Call recording page. */
+        const val EXTRA_OPEN_RECORDING = "open_recording_page"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         PhoneNavLog.log("MainActivity onCreate taskId=$taskId isFinishing=$isFinishing")
         handleDialIntent(intent)
+        handleRecordingIntent(intent)
         enableEdgeToEdge()
         val app = application as PhoneApplication
         setContent {
@@ -117,6 +123,7 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
         PhoneNavLog.log("MainActivity onNewIntent taskId=$taskId isFinishing=$isFinishing")
         handleDialIntent(intent)
+        handleRecordingIntent(intent)
     }
 
     override fun onStart() {
@@ -153,6 +160,18 @@ class MainActivity : ComponentActivity() {
         val app = application as PhoneApplication
         app.container.dialRequests.tryEmit(DialRequest(number, System.nanoTime()))
         intent.data = null
+    }
+
+    /**
+     * Auto-record failure notification tap: open the Call recording
+     * page. The extra is consumed so a recreate / rotation does not
+     * re-apply it; the flow's replay + id dedup covers the rest.
+     */
+    private fun handleRecordingIntent(intent: Intent?) {
+        if (intent?.getBooleanExtra(EXTRA_OPEN_RECORDING, false) != true) return
+        intent.removeExtra(EXTRA_OPEN_RECORDING)
+        val app = application as PhoneApplication
+        app.container.openRecordingRequests.tryEmit(System.nanoTime())
     }
 
 
@@ -195,6 +214,24 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
                 }
             }
             if (request.number.isNotEmpty()) pendingDialNumber = request.number
+        }
+    }
+
+    // Auto-record failure taps: navigate to Settings and open the
+    // Call recording page once, same replay + id dedup as dials.
+    var pendingOpenRecordingPage by remember { mutableStateOf(false) }
+    var lastHandledRecordingId by remember { mutableStateOf<Long?>(null) }
+    LaunchedEffect(navController) {
+        (context.applicationContext as PhoneApplication).container.openRecordingRequests.collect { id ->
+            if (id == lastHandledRecordingId) return@collect
+            lastHandledRecordingId = id
+            navController.navigate(Screen.Settings.route) {
+                launchSingleTop = true
+                popUpTo(navController.graph.findStartDestination().id) {
+                    saveState = true
+                }
+            }
+            pendingOpenRecordingPage = true
         }
     }
 
@@ -329,6 +366,8 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
                 onContactsBarVisibilityChanged = { showContactsBar = it },
                 pendingDialNumber = pendingDialNumber,
                 onDialNumberConsumed = { pendingDialNumber = null },
+                pendingOpenRecordingPage = pendingOpenRecordingPage,
+                onRecordingPageConsumed = { pendingOpenRecordingPage = false },
                 modifier = Modifier.fillMaxSize()
             )
         }

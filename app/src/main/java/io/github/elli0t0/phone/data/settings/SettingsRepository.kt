@@ -118,6 +118,7 @@ interface SettingsRepository {
     suspend fun setAdbManualPort(port: Int?)
     suspend fun setAdbLastKnownPort(port: Int?)
     suspend fun setAdbOfflineMode(enabled: Boolean)
+    suspend fun setAutoRecordCalls(enabled: Boolean)
     suspend fun setAdbHelperPort(port: Int?)
     suspend fun setAdbHelperToken(token: String?)
     suspend fun setShowNumberOnCallScreen(show: Boolean)
@@ -207,6 +208,7 @@ class DataStoreSettingsRepository(
         val ADB_MANUAL_PORT = intPreferencesKey("adb_manual_port")
         val ADB_LAST_KNOWN_PORT = intPreferencesKey("adb_last_known_port")
         val ADB_OFFLINE_MODE = booleanPreferencesKey("adb_offline_mode")
+        val AUTO_RECORD_CALLS = booleanPreferencesKey("auto_record_calls")
         val ADB_HELPER_PORT = intPreferencesKey("adb_helper_port")
         val ADB_HELPER_TOKEN = stringPreferencesKey("adb_helper_token")
         val SHOW_NUMBER_ON_CALL_SCREEN = booleanPreferencesKey("show_number_on_call_screen")
@@ -379,6 +381,7 @@ class DataStoreSettingsRepository(
         val adbManualPort = prefs[Keys.ADB_MANUAL_PORT]?.takeIf { it in 1..65535 }
         val adbLastKnownPort = prefs[Keys.ADB_LAST_KNOWN_PORT]?.takeIf { it in 1..65535 }
         val adbOfflineMode = prefs[Keys.ADB_OFFLINE_MODE] ?: false
+        val autoRecordCalls = prefs[Keys.AUTO_RECORD_CALLS] ?: false
 
         val adbHelperPort = prefs[Keys.ADB_HELPER_PORT]?.takeIf { it in 20000..60000 }
         val adbHelperToken = prefs[Keys.ADB_HELPER_TOKEN]?.takeIf { it.isNotBlank() }
@@ -389,8 +392,8 @@ class DataStoreSettingsRepository(
         val defaultSim = defaultSimStr?.let { runCatching { DefaultSim.valueOf(it) }.getOrNull() } ?: DefaultSim.ASK
 
         val quickDeclineStored = prefs[Keys.QUICK_DECLINE_MESSAGES] ?: ""
-        val quickDeclineOverrides = (quickDeclineStored.split("\n") + listOf("", "", ""))
-            .take(3)
+        val quickDeclineOverrides = (quickDeclineStored.split("\n") + listOf("", "", "", "", ""))
+            .take(5)
 
         // "2=+98912...;3=021..." — digits and '+' never collide
         // with the ';' and '=' separators.
@@ -477,6 +480,7 @@ class DataStoreSettingsRepository(
             adbManualPort = adbManualPort,
             adbLastKnownPort = adbLastKnownPort,
             adbOfflineMode = adbOfflineMode,
+            autoRecordCalls = autoRecordCalls,
             adbHelperPort = adbHelperPort,
             adbHelperToken = adbHelperToken,
             showNumberOnCallScreen = showNumberOnCallScreen,
@@ -900,6 +904,10 @@ class DataStoreSettingsRepository(
         dataStore.edit { prefs -> prefs[Keys.ADB_OFFLINE_MODE] = enabled }
     }
 
+    override suspend fun setAutoRecordCalls(enabled: Boolean) {
+        dataStore.edit { prefs -> prefs[Keys.AUTO_RECORD_CALLS] = enabled }
+    }
+
     override suspend fun setAdbHelperPort(port: Int?) {
         dataStore.edit { prefs ->
             if (port == null) {
@@ -934,8 +942,8 @@ class DataStoreSettingsRepository(
 
     override suspend fun setQuickDeclineMessages(messages: List<String>) {
         dataStore.edit { prefs ->
-            prefs[Keys.QUICK_DECLINE_MESSAGES] = (messages.map { it.replace("\n", " ") } + listOf("", "", ""))
-                .take(3)
+            prefs[Keys.QUICK_DECLINE_MESSAGES] = (messages.map { it.replace("\n", " ") } + listOf("", "", "", "", ""))
+                .take(5)
                 .joinToString("\n")
         }
     }

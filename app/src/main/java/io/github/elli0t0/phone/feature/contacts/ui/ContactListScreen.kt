@@ -63,7 +63,7 @@ import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 import io.github.elli0t0.phone.data.contacts.model.DuplicateGroup
 import io.github.elli0t0.phone.feature.contacts.ContactsUiState
 
-import io.github.elli0t0.phone.navigation.CollapsedHeaderBar
+import io.github.elli0t0.phone.navigation.StatusBarGradientScrim
 import io.github.elli0t0.phone.navigation.FloatingActionsPill
 import io.github.elli0t0.phone.navigation.PageHeaderItem
 
@@ -563,12 +563,12 @@ private fun ContactsContent(
             }
         }
         }
-        // Collapsed header bar: the title over a blur bar once the
-        // large header has scrolled off. The pill below draws above
-        // it at the top-right.
-        CollapsedHeaderBar(
+        // Status-bar gradient only (no title, no hairline, no band):
+        // keeps the status icons readable over scrolling rows, shown
+        // only while the floating pill is visible. The pill below
+        // draws above it at the top-right.
+        StatusBarGradientScrim(
             listState = listState,
-            title = stringResource(id = R.string.tab_contacts),
             modifier = Modifier.align(Alignment.TopStart)
         )
         // Floating actions pill: Groups + header buttons, overlaid
@@ -579,8 +579,7 @@ private fun ContactsContent(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .statusBarsPadding()
-                .height(PhoneDimens.collapsedBarRowHeight)
-                .padding(end = 16.dp),
+                .padding(end = 16.dp, top = 8.dp),
             actions = {
                 groupsIconButton()
                 compactContactsActions()
