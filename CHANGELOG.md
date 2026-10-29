@@ -164,6 +164,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.17.0]
+
+- Bottom bar lens artifacts: chromatic aberration is off in both lens surfaces (droplet and whole bar) — it fringed the selected droplet's rim rainbow and separated a green channel blob beside it. The lens bend itself is unchanged.
+- The moving droplet container is now clipped to its pill shape in lens mode, so any lens-effect overshoot past the surface box cannot paint past the pill or read as a ghost behind nearby tabs. The Haze branch is untouched (its glow is meant to extend past the pill and fade). Verified in code that lens mode draws exactly one droplet: the Haze accent glow lives only in the non-lens branch.
+
 ## [0.16.10]
 
 - Recording test fixed: the settings test now records 3s from the microphone (helper `START MIC`) instead of VOICE_CALL, which is silent outside an active call. The button reads "Test recording (3s, microphone)" and shows bytes, duration and peak level; below 2% peak it says the microphone returned silence and names the RECORD_AUDIO / mic-in-use check; on success it says the recorder works and a call test needs a real call. Shizuku keeps its old call-source test.

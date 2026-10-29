@@ -45,7 +45,15 @@ fun LensBarSurface(
             effects = {
                 vibrancy()
                 blur(10.dp.toPx() * blurAmount)
-                lens(10.dp.toPx(), min(20.dp.toPx(), size.minDimension))
+                // Aberration off, explicitly: the library default must
+                // not separate channels behind the tabs (a green
+                // fringe over bright page content reads as a glow
+                // blob, and it is not the bar's own color).
+                lens(
+                    10.dp.toPx(),
+                    min(20.dp.toPx(), size.minDimension),
+                    chromaticAberration = false
+                )
             },
             onDrawSurface = {
                 drawRect(Color.Black.copy(alpha = 0.20f * tintAmount))
@@ -88,13 +96,17 @@ fun LensDropletSurface(
             effects = {
                 vibrancy()
                 val lift = liftValue()
+                // Aberration OFF: with it on, the channel separation
+                // fringed the droplet's rim rainbow and threw a green
+                // channel blob beside it. The bend itself (refraction)
+                // is unchanged, so the lens look stays.
                 lens(
                     refractionHeight = 12.dp.toPx() * (1f + 0.5f * lift),
                     refractionAmount = min(
                         28.dp.toPx() * (1f + 0.6f * lift),
                         size.minDimension
                     ),
-                    chromaticAberration = true
+                    chromaticAberration = false
                 )
             },
             onDrawSurface = {

@@ -397,6 +397,16 @@ fun PhoneBottomBar(
                     .width(pillWidth)
                     .fillMaxHeight()
                     .padding(vertical = PhoneDimens.bottomBarItemInset)
+                    // Lens only: contain the droplet's effect strictly
+                    // to its pill. The surface clips itself, but an
+                    // effect overshoot (refraction spread past the
+                    // surface box) would otherwise paint past the
+                    // pill and read as a ghost behind nearby tabs.
+                    // The Haze branch is untouched: its glow is meant
+                    // to extend past the pill and fade.
+                    .then(
+                        if (lensBackdrop != null) Modifier.clip(pillShape) else Modifier
+                    )
             ) {
                 if (lensBackdrop != null) {
                     // Lens mode draws only the lens droplet: no Haze
