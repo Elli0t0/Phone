@@ -135,6 +135,7 @@ fun ContactListScreen(
                         onShowFavoritesHint = onShowFavoritesHint,
                         onShowDuplicates = onShowDuplicates,
                         onDismissDuplicatesCard = onDismissDuplicatesCard,
+                        onDismissFavoritesHint = onDismissFavoritesHint,
                         onGroupsClick = onGroupsClick
                     )
                 }
@@ -174,9 +175,15 @@ private fun ContactsContent(
     onShowFavoritesHint: () -> Unit,
     onShowDuplicates: () -> Unit,
     onDismissDuplicatesCard: () -> Unit,
+    onDismissFavoritesHint: () -> Unit,
     onGroupsClick: () -> Unit
 ) {
     val spacing = LocalSpacing.current
+    // Hoisted: the banner/hint conditions sit at LazyListScope
+    // level (not a @Composable scope), so these settings reads
+    // must happen here in the function body, not in the conditions.
+    val duplicatesDismissed = LocalAppSettings.current.duplicatesDismissed
+    val favoritesHintDismissed = LocalAppSettings.current.favoritesHintDismissed
     var searchVisible by remember { mutableStateOf(uiState.searchQuery.isNotEmpty()) }
     var menuExpanded by remember { mutableStateOf(false) }
     // First-load reveal: flips true when the first contacts arrive.
@@ -260,7 +267,7 @@ private fun ContactsContent(
                 // shown while duplicates exist and the banner is
                 // gone (dismissed this session or persisted).
                 if (uiState.duplicateGroups.isNotEmpty() &&
-                    (LocalAppSettings.current.duplicatesDismissed || !uiState.showDuplicatesCard)
+                    (duplicatesDismissed || !uiState.showDuplicatesCard)
                 ) {
                     DropdownMenuItem(
                         text = { Text(text = stringResource(id = R.string.duplicates_merge_menu)) },
@@ -421,7 +428,7 @@ private fun ContactsContent(
                 )
             }
             if (uiState.showDuplicatesCard && uiState.searchQuery.isEmpty() &&
-                !LocalAppSettings.current.duplicatesDismissed
+                !duplicatesDismissed
             ) {
                 item(key = "duplicates_card") {
                     DuplicatesCard(
@@ -493,7 +500,7 @@ private fun ContactsContent(
             }
 
             if (uiState.favorites.isEmpty() && uiState.searchQuery.isEmpty() &&
-                !LocalAppSettings.current.favoritesHintDismissed
+                !favoritesHintDismissed
             ) {
                 item(key = "favorites_hint") {
                     FavoritesHintRow(

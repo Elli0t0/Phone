@@ -94,6 +94,10 @@ fun RecordingSettingsScreen(
     )
     val status by viewModel.backendStatus.collectAsStateWithLifecycle()
     val backendKind by viewModel.backendKind.collectAsStateWithLifecycle()
+    // Hoisted: the Advanced card's condition sits at LazyListScope
+    // level (not a @Composable scope), so the settings read must
+    // happen here in the function body, not in the condition.
+    val showAdvancedSettings = LocalAppSettings.current.showAdvancedSettings
     val session by viewModel.session.collectAsStateWithLifecycle()
     val lastError by viewModel.lastError.collectAsStateWithLifecycle()
     val recordings by viewModel.recordings.collectAsStateWithLifecycle()
@@ -384,7 +388,7 @@ fun RecordingSettingsScreen(
                 }
             }
 
-            if (backendKind == RecordingBackendKind.ADB && LocalAppSettings.current.showAdvancedSettings) {
+            if (backendKind == RecordingBackendKind.ADB && showAdvancedSettings) {
                 item {
                     Card(
                         colors = CardDefaults.cardColors(
