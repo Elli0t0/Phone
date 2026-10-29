@@ -146,7 +146,7 @@ fun FloatingActionsPill(
         }
     }
     if (!pillVisible) return
-    Box(modifier = modifier) {
+    Box(modifier = modifier, contentAlignment = Alignment.CenterEnd) {
         // The pill content is shared by the glass and flat branches.
         val pillContent: @Composable () -> Unit = {
             Row(
@@ -185,12 +185,14 @@ fun FloatingActionsPill(
 /**
  * Collapsed header bar: once the large title has scrolled off (the
  * same reveal condition as the floating actions pill), the top area
- * becomes a full-width translucent blur bar with the screen title
- * centered at 17sp SemiBold and a 0.5dp hairline at the bottom.
- * It reads the shared haze state like the pill (never the list's
- * own state), so it cannot hit the haze/hazeChild crash. Without
- * blur (reduce transparency, API < 31, no state) it falls back to
- * a near-opaque fill.
+ * becomes a full-width bar with a solid base behind the blur, so list
+ * rows never show through, and a 0.5dp hairline at the bottom. The
+ * title is start-aligned at a fixed 20sp SemiBold, capped at 45% of
+ * the width so it never sits under the floating pill, in a 60dp row
+ * the pill shares. It reads the shared haze state like the pill
+ * (never the list's own state), so it cannot hit the haze/hazeChild
+ * crash. Without blur (reduce transparency, API < 31, no state) the
+ * base is near-opaque on its own.
  */
 @Composable
 fun CollapsedHeaderBar(
@@ -215,9 +217,14 @@ fun CollapsedHeaderBar(
         GlassIntensity.STANDARD -> PhoneDimens.glassBlurRadiusStandard
         GlassIntensity.STRONG -> PhoneDimens.glassBlurRadiusStrong
     }) * settings.glassBlurAmount
+    // Solid base first so list rows never show through, then the blur
+    // on top of it (near-opaque when blur is off).
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .background(
+                MaterialTheme.colorScheme.background.copy(alpha = if (blurOn) 0.82f else 0.96f)
+            )
             .then(
                 if (blurOn) {
                     Modifier.hazeEffect(
@@ -229,10 +236,7 @@ fun CollapsedHeaderBar(
                         )
                     )
                 } else {
-                    Modifier.background(
-                        (if (dark) GlassBlurTintDark else MaterialTheme.colorScheme.surface)
-                            .copy(alpha = 0.92f)
-                    )
+                    Modifier
                 }
             )
     ) {
@@ -241,17 +245,28 @@ fun CollapsedHeaderBar(
                 .fillMaxWidth()
                 .statusBarsPadding()
         ) {
-            Text(
-                text = title,
-                fontSize = 17.sp,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+            // One 60dp row shared with the floating pill: the title is
+            // start-aligned and capped at 45% width so it can never sit
+            // under the pill, whatever the header-size setting is (the
+            // collapsed title is a fixed 20sp, not scaled).
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
-            )
+                    .height(PhoneDimens.collapsedBarRowHeight)
+            ) {
+                Text(
+                    text = title,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Start,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .padding(start = 20.dp)
+                        .fillMaxWidth(0.45f)
+                )
+            }
             Box(
                 modifier = Modifier
                     .fillMaxWidth()

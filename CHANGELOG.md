@@ -164,6 +164,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.17.6]
+
+- Collapsed header bar (Recents and Contacts): the bar now draws a solid background behind the blur (82% opaque with blur on, 96% with blur off) so list rows never show through it and collide with the status icons; the title is start-aligned at 20sp SemiBold, capped at 45% width, in a shared 60dp row, so it can never sit under the floating pill. The floating pill now centers vertically in that same 60dp row instead of hanging below the hairline (its 48dp buttons are already under the 52dp cap, so no padding change was needed). Layout holds for dark theme, glass headers on and off, and all header sizes, since the collapsed title and row height are fixed.
+- Settings search is now behind a top-bar magnifier like Recents/Contacts: tapping it reveals the search field (and focuses it), tapping again or Back closes it and clears the query; tapping a result also closes it. When closed, the field takes no space, so the first card starts right under the top bar. All search entries, the highlight pulse, and the advanced-settings force-show are unchanged.
+
 ## [0.17.5]
 
 - Recents header actions now sit in a pill like the Contacts actions toolbar: the filter, search, and menu buttons were bare icons; they now render inside the same pill container (glass when the glass-headers switch is on, flat surface + soft shadow when off), shared with Contacts instead of duplicated. Tapping the search button inside the pill still reveals the search bar exactly as before. The floating actions pill shown after scrolling keeps the bare actions, so nothing double-pills.

@@ -8,6 +8,11 @@ import android.provider.Settings
 import android.telecom.TelecomManager
 import android.telephony.TelephonyManager
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -67,10 +72,13 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -171,17 +179,26 @@ fun SettingsScreen(
     // Settings search (0.17.3): the field lives at the top of the main
     // page; while the query is non-empty the results replace the list.
     // Results run on a 150ms-debounced query, not every keystroke.
+    // Since 0.17.6 the field is hidden behind a top-bar magnifier
+    // (Recents/Contacts pattern): tapping it reveals the field,
+    // tapping again or Back closes it and clears the query.
     var searchQuery by remember { mutableStateOf("") }
     var debouncedQuery by remember { mutableStateOf("") }
+    var searchVisible by rememberSaveable { mutableStateOf(false) }
+    val searchFocus = remember { FocusRequester() }
     LaunchedEffect(searchQuery) {
         delay(150)
         debouncedQuery = searchQuery
+    }
+    LaunchedEffect(searchVisible) {
+        if (searchVisible) searchFocus.requestFocus()
     }
     val keyboardController = LocalSoftwareKeyboardController.current
     fun openSearchResult(entry: SettingEntry) {
         keyboardController?.hide()
         searchQuery = ""
         debouncedQuery = ""
+        searchVisible = false
         if (entry.advanced) dialogs.searchForceAdvanced = true
         dialogs.searchHighlightId = entry.anchor
         openSettingsPage(dialogs, entry.page)
@@ -318,6 +335,21 @@ fun SettingsScreen(
                             contentDescription = stringResource(id = R.string.cd_back)
                         )
                     }
+                },
+                actions = {
+                    IconButton(onClick = {
+                        if (searchVisible) {
+                            searchQuery = ""
+                            searchVisible = false
+                        } else {
+                            searchVisible = true
+                        }
+                    }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_search),
+                            contentDescription = stringResource(id = R.string.cd_search)
+                        )
+                    }
                 }
             )
         }
@@ -328,14 +360,20 @@ fun SettingsScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
         ) {
-            SettingsSearchField(
-                query = searchQuery,
-                onQueryChange = { searchQuery = it },
-                modifier = Modifier.padding(
-                    horizontal = spacing.screenHorizontalPadding,
-                    vertical = spacing.small
+            AnimatedVisibility(
+                visible = searchVisible,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                SettingsSearchField(
+                    query = searchQuery,
+                    onQueryChange = { searchQuery = it },
+                    modifier = Modifier.padding(
+                        horizontal = spacing.screenHorizontalPadding,
+                        vertical = spacing.small
+                    ).focusRequester(searchFocus)
                 )
-            )
+            }
             if (searchQuery.isBlank()) {
         LazyColumn(
             modifier = Modifier
@@ -589,6 +627,12 @@ fun SettingsScreen(
     }
     }
 
+    // Search close is registered before the page handlers: the last
+    // registered handler wins, so an open page closes before search.
+    BackHandler(enabled = searchVisible) {
+        searchQuery = ""
+        searchVisible = false
+    }
     BackHandler(enabled = dialogs.showAppearancePage) { dialogs.showAppearancePage = false }
     BackHandler(enabled = dialogs.showGlassPage) { dialogs.showGlassPage = false }
     BackHandler(enabled = dialogs.showLayoutNavPage) { dialogs.showLayoutNavPage = false }

@@ -578,7 +578,8 @@ private fun ContactsContent(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .statusBarsPadding()
-                .padding(end = 16.dp, top = 8.dp),
+                .height(PhoneDimens.collapsedBarRowHeight)
+                .padding(end = 16.dp),
             actions = {
                 groupsIconButton()
                 compactContactsActions()
