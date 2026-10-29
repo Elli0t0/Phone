@@ -130,6 +130,7 @@ fun PhoneTheme(
             extraLarge = RoundedCornerShape(24.dp)
         )
         CardStyle.ROUNDED -> PhoneShapes
+        CardStyle.INSET -> PhoneShapes.copy(extraLarge = RoundedCornerShape(14.dp))
     }
 
     val dynamicSpacing = Spacing(
