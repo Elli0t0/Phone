@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.16.1]
+
+- Typeface: Inter (open source, OFL) is now the app font family; Persian text keeps the system font via automatic fallback.
+
 ## [0.16.0]
 
 - Type scale: large title 34sp Bold with -0.4sp tracking, row title 17sp Regular, row subtitle 15sp at 60% alpha, section header 13sp Medium at 55% alpha, on the system font for now (Inter wiring follows once the font files land in res/font).
