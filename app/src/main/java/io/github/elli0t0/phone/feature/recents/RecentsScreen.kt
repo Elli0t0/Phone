@@ -484,7 +484,10 @@ fun RecentsScreen(
                     .padding(bottom = spacing.small)
             )
 
-            // Search Bar with "Search calls" placeholder, shown when the search icon is tapped
+            // Search Bar with "Search calls" placeholder, shown when the search icon is tapped.
+            // Same top inset as the Contacts search bar: without it the
+            // pill sits under the status bar whenever search is open
+            // (the header, which self-insets, is hidden while searching).
             if (searchVisible) {
                 ContactSearchBar(
                     query = uiState.searchQuery,
@@ -496,7 +499,8 @@ fun RecentsScreen(
                     placeholderText = stringResource(id = R.string.recents_search_hint),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = spacing.small)
+                        .statusBarsPadding()
+                        .padding(top = spacing.small, bottom = spacing.small)
                 )
             }
 
