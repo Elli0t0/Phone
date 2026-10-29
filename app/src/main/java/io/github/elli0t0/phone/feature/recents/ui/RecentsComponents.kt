@@ -161,7 +161,8 @@ fun CallLogRow(
     // same press state, so the row bounces (0.90) while pressed and ripples.
     val rowSource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
-    val insetCard = LocalAppSettings.current.cardStyle == CardStyle.INSET
+    val insetCard = LocalAppSettings.current.effectiveStyle.card == CardStyle.INSET
+    val swipeEnabled = LocalAppSettings.current.effectiveStyle.swipeActions
 
     // Icon color by call type.
     val typeColor = callTypeColor(group.type)
@@ -202,32 +203,7 @@ fun CallLogRow(
     Column(
         modifier = modifier.fillMaxWidth()
     ) {
-        SwipeToDismissBox(
-            state = dismissState,
-            backgroundContent = {
-                val target = dismissState.targetValue
-                if (target != SwipeToDismissBoxValue.Settled) {
-                    val isCall = target == SwipeToDismissBoxValue.StartToEnd
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(if (isCall) SwipeCallGreen else SwipeDeleteRed),
-                        contentAlignment = if (isCall) Alignment.CenterStart else Alignment.CenterEnd
-                    ) {
-                        Icon(
-                            painter = painterResource(
-                                id = if (isCall) R.drawable.ic_phone else R.drawable.ic_delete
-                            ),
-                            contentDescription = null,
-                            tint = OnAccentBlue,
-                            modifier = Modifier
-                                .padding(horizontal = spacing.medium)
-                                .size(PhoneDimens.recentsSwipeRevealIconSize)
-                        )
-                    }
-                }
-            }
-        ) {
+        val rowContent: @Composable () -> Unit = {
             // No clickable on this column anymore: the header row
             // below owns tap/long-press, so the ripple stays bounded
             // to it instead of covering the whole expanded card.
@@ -394,6 +370,38 @@ fun CallLogRow(
                 }
             }
         }
+        if (swipeEnabled) {
+            SwipeToDismissBox(
+                state = dismissState,
+                backgroundContent = {
+                    val target = dismissState.targetValue
+                    if (target != SwipeToDismissBoxValue.Settled) {
+                        val isCall = target == SwipeToDismissBoxValue.StartToEnd
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(if (isCall) SwipeCallGreen else SwipeDeleteRed),
+                            contentAlignment = if (isCall) Alignment.CenterStart else Alignment.CenterEnd
+                        ) {
+                            Icon(
+                                painter = painterResource(
+                                    id = if (isCall) R.drawable.ic_phone else R.drawable.ic_delete
+                                ),
+                                contentDescription = null,
+                                tint = OnAccentBlue,
+                                modifier = Modifier
+                                    .padding(horizontal = spacing.medium)
+                                    .size(PhoneDimens.recentsSwipeRevealIconSize)
+                            )
+                        }
+                    }
+                }
+            ) {
+                rowContent()
+            }
+        } else {
+            rowContent()
+        }
         if (showDivider) {
             HorizontalDivider(
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = PhoneDimens.recentsDividerAlpha),
@@ -417,7 +425,7 @@ fun DaySectionCard(
     rowContent: @Composable (CallGroup) -> Unit
 ) {
     val spacing = LocalSpacing.current
-    val insetCard = LocalAppSettings.current.cardStyle == CardStyle.INSET
+    val insetCard = LocalAppSettings.current.effectiveStyle.card == CardStyle.INSET
     GlassListCard(
         modifier = modifier
             .fillMaxWidth()

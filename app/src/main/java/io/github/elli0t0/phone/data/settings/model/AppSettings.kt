@@ -35,6 +35,66 @@ enum class SwitchStyle(val label: String) {
     GREEN("Green")
 }
 
+/**
+ * Master look preset. Classic is the default: nothing changes for
+ * existing users. Clean is the newer look. Custom means at least one
+ * individual option was changed away from the selected preset (see
+ * [StylePreset]); the stored individual values are the look then.
+ */
+enum class AppStyle(val label: String) {
+    CLASSIC("Classic"),
+    CLEAN("Clean"),
+    CUSTOM("Custom")
+}
+
+/** Typeface family for the app typography (see Type.kt). */
+enum class FontStyle(val label: String) {
+    SYSTEM("System"),
+    INTER("Inter")
+}
+
+/** Push-screen transition: a plain fade, or the sliding push. */
+enum class TransitionStyle(val label: String) {
+    FADE("Fade"),
+    PUSH("Push")
+}
+
+/**
+ * One look, as seven independent options. The presets below are the
+ * two built-in looks; [AppSettings.effectiveStyle] resolves CUSTOM
+ * to the individually stored values.
+ */
+data class StylePreset(
+    val font: FontStyle,
+    val card: CardStyle,
+    val keys: KeyStyle,
+    val switch: SwitchStyle,
+    val transitions: TransitionStyle,
+    val sheets: Boolean,
+    val swipeActions: Boolean
+) {
+    companion object {
+        val CLASSIC = StylePreset(
+            font = FontStyle.SYSTEM,
+            card = CardStyle.ROUNDED,
+            keys = KeyStyle.GLASS,
+            switch = SwitchStyle.DEFAULT,
+            transitions = TransitionStyle.FADE,
+            sheets = false,
+            swipeActions = false
+        )
+        val CLEAN = StylePreset(
+            font = FontStyle.INTER,
+            card = CardStyle.INSET,
+            keys = KeyStyle.FLAT,
+            switch = SwitchStyle.GREEN,
+            transitions = TransitionStyle.PUSH,
+            sheets = true,
+            swipeActions = true
+        )
+    }
+}
+
 enum class AnimationOption(val label: String) {    ON("On"),
     REDUCED("Reduced"),
     OFF("Off")
@@ -254,6 +314,15 @@ data class AppSettings(
     val lensBar: Boolean = true,
     val keyStyle: KeyStyle = KeyStyle.GLASS,
     val switchStyle: SwitchStyle = SwitchStyle.DEFAULT,
+    // Master look preset (see StylePreset). The individual values
+    // below are the look when appStyle is CUSTOM, and are copied from
+    // the preset whenever a preset is picked, so switching to Custom
+    // later starts from the preset that was showing.
+    val appStyle: AppStyle = AppStyle.CLASSIC,
+    val fontStyle: FontStyle = FontStyle.SYSTEM,
+    val transitionStyle: TransitionStyle = TransitionStyle.FADE,
+    val bottomSheets: Boolean = false,
+    val swipeActions: Boolean = false,
     val glassHeaders: Boolean = true,
     val glassContactDetail: Boolean = true,
     val glassCallScreens: Boolean = true,
@@ -323,4 +392,24 @@ data class AppSettings(
     // are rejected on arrival (the platform provider only matches
     // exact numbers, so prefixes live here, not there).
     val blockedPrefixes: Set<String> = emptySet()
-)
+) {
+    /**
+     * The look screens actually render: the preset for CLASSIC/CLEAN,
+     * the individually stored values for CUSTOM. Screens read this,
+     * never the raw fields, so presets and custom values always agree.
+     */
+    val effectiveStyle: StylePreset
+        get() = when (appStyle) {
+            AppStyle.CLASSIC -> StylePreset.CLASSIC
+            AppStyle.CLEAN -> StylePreset.CLEAN
+            AppStyle.CUSTOM -> StylePreset(
+                font = fontStyle,
+                card = cardStyle,
+                keys = keyStyle,
+                switch = switchStyle,
+                transitions = transitionStyle,
+                sheets = bottomSheets,
+                swipeActions = swipeActions
+            )
+        }
+}

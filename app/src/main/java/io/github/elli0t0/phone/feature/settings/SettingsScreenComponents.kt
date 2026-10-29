@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -41,6 +43,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.window.Dialog
 import io.github.elli0t0.phone.core.design.PhoneBottomSheet
 import androidx.compose.ui.text.font.FontWeight
 import io.github.elli0t0.phone.R
@@ -68,7 +71,7 @@ fun SettingsSectionHeader(title: String) {
 // is on, else the default large shape.
 @Composable
 fun settingsListCardShape(): Shape =
-    if (LocalAppSettings.current.cardStyle == CardStyle.INSET) {
+    if (LocalAppSettings.current.effectiveStyle.card == CardStyle.INSET) {
         RoundedCornerShape(14.dp)
     } else {
         MaterialTheme.shapes.extraLarge
@@ -79,7 +82,7 @@ fun settingsListCardShape(): Shape =
 // default full-width divider.
 @Composable
 fun SettingsListDivider(modifier: Modifier = Modifier) {
-    if (LocalAppSettings.current.cardStyle == CardStyle.INSET) {
+    if (LocalAppSettings.current.effectiveStyle.card == CardStyle.INSET) {
         HorizontalDivider(
             modifier = modifier.padding(start = 16.dp),
             thickness = 0.5.dp,
@@ -104,7 +107,7 @@ fun SettingsRow(
 ) {
     val rowSource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
-    val insetCard = LocalAppSettings.current.cardStyle == CardStyle.INSET
+    val insetCard = LocalAppSettings.current.effectiveStyle.card == CardStyle.INSET
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -296,12 +299,9 @@ fun CallWaitingDialog(
     ussdState: UssdState? = null
 ) {
     val spacing = LocalSpacing.current
-    PhoneBottomSheet(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier
-                .padding(horizontal = spacing.large)
-                .padding(bottom = spacing.large)
-        ) {
+    // Classic shows the old centered dialog; Clean shows the sheet.
+    val sheets = LocalAppSettings.current.effectiveStyle.sheets
+    val content: @Composable ColumnScope.() -> Unit = {
             Text(
                 text = stringResource(id = R.string.settings_call_waiting),
                 style = MaterialTheme.typography.titleLarge
@@ -361,6 +361,28 @@ fun CallWaitingDialog(
                     Text(text = stringResource(id = R.string.action_cancel))
                 }
             }
+    }
+    if (sheets) {
+        PhoneBottomSheet(onDismissRequest = onDismiss) {
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = spacing.large)
+                    .padding(bottom = spacing.large)
+            ) {
+                content()
+            }
+        }
+    } else {
+        Dialog(onDismissRequest = onDismiss) {
+            Card {
+                Column(
+                    modifier = Modifier
+                        .padding(horizontal = spacing.large)
+                        .padding(bottom = spacing.large)
+                ) {
+                    content()
+                }
+            }
         }
     }
 }
@@ -374,17 +396,9 @@ fun UssdSimPickerDialog(
 ) {
     val spacing = LocalSpacing.current
     val lightHaptic = rememberLightHaptic()
-    PhoneBottomSheet(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier
-                .padding(horizontal = spacing.large)
-                .padding(bottom = spacing.large)
-        ) {
-            Text(
-                text = stringResource(id = R.string.call_sim_picker_title),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = spacing.medium)
-            )
+    // Classic shows the old alert dialog; Clean shows the sheet.
+    val sheets = LocalAppSettings.current.effectiveStyle.sheets
+    val simRows: @Composable ColumnScope.() -> Unit = {
             sims.forEach { sim ->
                 val simSource = remember { MutableInteractionSource() }
                 Row(
@@ -416,15 +430,48 @@ fun UssdSimPickerDialog(
                     )
                 }
             }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End
-        ) {
-            TextButton(onClick = onDismiss) {
-                Text(text = stringResource(id = R.string.action_cancel))
+    }
+    if (sheets) {
+        PhoneBottomSheet(onDismissRequest = onDismiss) {
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = spacing.large)
+                    .padding(bottom = spacing.large)
+            ) {
+                Text(
+                    text = stringResource(id = R.string.call_sim_picker_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = spacing.medium)
+                )
+                simRows()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text(text = stringResource(id = R.string.action_cancel))
+                    }
+                }
             }
         }
-        }
+    } else {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = {
+                Text(text = stringResource(id = R.string.call_sim_picker_title))
+            },
+            text = {
+                Column {
+                    simRows()
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text(text = stringResource(id = R.string.action_cancel))
+                }
+            },
+            confirmButton = {}
+        )
     }
 }
 

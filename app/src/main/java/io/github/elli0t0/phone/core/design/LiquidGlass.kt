@@ -836,7 +836,7 @@ fun GlassListCard(
     shape: Shape = RoundedCornerShape(24.dp),
     content: @Composable ColumnScope.() -> Unit
 ) {
-    if (LocalAppSettings.current.cardStyle == CardStyle.INSET) {
+    if (LocalAppSettings.current.effectiveStyle.card == CardStyle.INSET) {
         // Inset list card: solid 14dp card, never glass, whatever
         // shape the caller passed.
         Card(

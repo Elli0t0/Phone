@@ -7,6 +7,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.data.settings.model.FontStyle
 
 // App typeface: Inter (OFL, see assets/inter/LICENSE.txt) for Latin
 // text. Inter has no Arabic-script glyphs, so Persian text falls
@@ -18,85 +19,92 @@ val PhoneFontFamily = FontFamily(
     Font(R.font.inter_bold, FontWeight.Bold)
 )
 
-// App typographic scale
-val PhoneTypography = Typography(
+/** Typeface for a [FontStyle]: Inter, or the system font. */
+fun fontFamilyFor(fontStyle: FontStyle): FontFamily =
+    if (fontStyle == FontStyle.INTER) PhoneFontFamily else FontFamily.Default
+
+// App typographic scale, in the effective font.
+fun phoneTypography(fontStyle: FontStyle): Typography {
+    val family = fontFamilyFor(fontStyle)
+    return Typography(
     displayLarge = TextStyle(
-        fontFamily = PhoneFontFamily,
+        fontFamily = family,
         fontWeight = FontWeight.Bold,
         fontSize = 34.sp,
         lineHeight = 40.sp,
         letterSpacing = (-0.4).sp
     ),
     displayMedium = TextStyle(
-        fontFamily = PhoneFontFamily,
+        fontFamily = family,
         fontWeight = FontWeight.Normal,
         fontSize = 45.sp,
         lineHeight = 52.sp
     ),
     displaySmall = TextStyle(
-        fontFamily = PhoneFontFamily,
+        fontFamily = family,
         fontWeight = FontWeight.Normal,
         fontSize = 36.sp,
         lineHeight = 44.sp
     ),
     headlineLarge = TextStyle(
-        fontFamily = PhoneFontFamily,
+        fontFamily = family,
         fontWeight = FontWeight.Normal,
         fontSize = 32.sp,
         lineHeight = 40.sp
     ),
     headlineMedium = TextStyle(
-        fontFamily = PhoneFontFamily,
+        fontFamily = family,
         fontWeight = FontWeight.SemiBold,
         fontSize = 28.sp,
         lineHeight = 34.sp
     ),
     titleLarge = TextStyle(
-        fontFamily = PhoneFontFamily,
+        fontFamily = family,
         fontWeight = FontWeight.SemiBold,
         fontSize = 22.sp,
         lineHeight = 28.sp
     ),
     titleMedium = TextStyle(
-        fontFamily = PhoneFontFamily,
+        fontFamily = family,
         fontWeight = FontWeight.Normal,
         fontSize = 17.sp,
         lineHeight = 22.sp
     ),
     titleSmall = TextStyle(
-        fontFamily = PhoneFontFamily,
+        fontFamily = family,
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 20.sp
     ),
     bodyLarge = TextStyle(
-        fontFamily = PhoneFontFamily,
+        fontFamily = family,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         lineHeight = 24.sp
     ),
     bodyMedium = TextStyle(
-        fontFamily = PhoneFontFamily,
+        fontFamily = family,
         fontWeight = FontWeight.Normal,
         fontSize = 15.sp,
         lineHeight = 20.sp
     ),
     bodySmall = TextStyle(
-        fontFamily = PhoneFontFamily,
+        fontFamily = family,
         fontWeight = FontWeight.Normal,
         fontSize = 12.sp,
         lineHeight = 16.sp
     ),
     labelLarge = TextStyle(
-        fontFamily = PhoneFontFamily,
+        fontFamily = family,
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 20.sp
     ),
     labelMedium = TextStyle(
-        fontFamily = PhoneFontFamily,
+        fontFamily = family,
         fontWeight = FontWeight.Medium,
         fontSize = 13.sp,
         lineHeight = 16.sp
     )
 )
+}

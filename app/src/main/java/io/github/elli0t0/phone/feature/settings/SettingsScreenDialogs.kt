@@ -365,13 +365,24 @@ if (dialogs.showFormatDialog) {
 }
 
 if (dialogs.showCallDisplayDialog) {
-    SettingsChoiceSheet(
-        title = stringResource(id = R.string.settings_call_display),
-        options = CallDisplay.entries.map { it.label to it },
-        selected = settings.callDisplay,
-        onSelect = { viewModel.setCallDisplay(it); dialogs.showCallDisplayDialog = false },
-        onDismiss = { dialogs.showCallDisplayDialog = false }
-    )
+    // Classic shows the old choice dialog; Clean shows the sheet.
+    if (settings.effectiveStyle.sheets) {
+        SettingsChoiceSheet(
+            title = stringResource(id = R.string.settings_call_display),
+            options = CallDisplay.entries.map { it.label to it },
+            selected = settings.callDisplay,
+            onSelect = { viewModel.setCallDisplay(it); dialogs.showCallDisplayDialog = false },
+            onDismiss = { dialogs.showCallDisplayDialog = false }
+        )
+    } else {
+        SettingsChoiceDialog(
+            title = stringResource(id = R.string.settings_call_display),
+            options = CallDisplay.entries.map { it.label to it },
+            selected = settings.callDisplay,
+            onSelect = { viewModel.setCallDisplay(it); dialogs.showCallDisplayDialog = false },
+            onDismiss = { dialogs.showCallDisplayDialog = false }
+        )
+    }
 }
 
 if (dialogs.showDefaultSimDialog) {

@@ -114,7 +114,7 @@ fun PhoneTheme(
         fontScale = currentDensity.fontScale * appSettings.fontSizeScale
     )
 
-    val shapes = when (appSettings.cardStyle) {
+    val shapes = when (appSettings.effectiveStyle.card) {
         CardStyle.SQUARE -> Shapes(
             extraSmall = RoundedCornerShape(2.dp),
             small = RoundedCornerShape(4.dp),
@@ -146,7 +146,7 @@ fun PhoneTheme(
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = PhoneTypography,
+            typography = phoneTypography(appSettings.effectiveStyle.font),
             shapes = shapes,
             content = content
         )

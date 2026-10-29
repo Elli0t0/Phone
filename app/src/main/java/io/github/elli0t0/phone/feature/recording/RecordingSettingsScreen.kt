@@ -436,7 +436,7 @@ fun RecordingSettingsScreen(
                                     checked = offlineMode,
                                     onCheckedChange = { viewModel.setOfflineMode(it) },
                                     enabled = !busy,
-                                    colors = if (LocalAppSettings.current.switchStyle == SwitchStyle.GREEN) {
+                                    colors = if (LocalAppSettings.current.effectiveStyle.switch == SwitchStyle.GREEN) {
                                         SwitchDefaults.colors(
                                             checkedTrackColor = SwitchGreenTrack,
                                             checkedThumbColor = Color.White,

@@ -99,9 +99,10 @@ fun ContactsScreen(
     val permissionState = rememberContactsPermissionState()
 
     var currentDestination by remember { mutableStateOf<ContactsNavDestination>(ContactsNavDestination.List) }
-    // Create/edit no longer navigate: the editor opens as a bottom
-    // sheet over the list (or detail) underneath.
+    // Classic opens the editor as a destination; Clean as a sheet
+    // over the list (or detail) underneath.
     var editSheet by remember { mutableStateOf<ContactsNavDestination?>(null) }
+    val useSheets = LocalAppSettings.current.effectiveStyle.sheets
     // App-level snackbar host (MainActivity): one host above the
     // floating bar for every screen, no per-screen host under the bar.
     val snackbarHostState = LocalAppSnackbarHostState.current
@@ -112,11 +113,12 @@ fun ContactsScreen(
     // source provided them), then clears the pending value.
     LaunchedEffect(pendingCreateRequest) {
         if (pendingCreateRequest != null) {
-            editSheet = ContactsNavDestination.Create(
+            val create = ContactsNavDestination.Create(
                 pendingCreateRequest.phone,
                 pendingCreateRequest.name,
                 pendingCreateRequest.email
             )
+            if (useSheets) editSheet = create else currentDestination = create
             onPendingCreateRequestConsumed()
         }
     }
@@ -148,6 +150,7 @@ fun ContactsScreen(
     // Read here, not inside transitionSpec: the spec lambda is not a
     // @Composable context, so it cannot read a CompositionLocal.
     val animationOption = LocalAppSettings.current.animationOption
+    val transitionStyle = LocalAppSettings.current.effectiveStyle.transitions
 
     // Show user message from listViewModel if any
     val userMessageRes = uiState.userMessageRes
@@ -180,7 +183,7 @@ fun ContactsScreen(
                 targetState = currentDestination,
                 transitionSpec = {
                     val direction = destinationDepth(targetState) - destinationDepth(initialState)
-                    Motion.innerContentTransform(animationOption, direction)
+                    Motion.innerContentTransform(animationOption, transitionStyle, direction)
                 },
                 label = "contacts_destination"
             ) { dest ->
@@ -196,7 +199,11 @@ fun ContactsScreen(
                             currentDestination = ContactsNavDestination.Detail(contact.id, contact.lookupKey)
                         },
                         onAddContactClick = {
-                            editSheet = ContactsNavDestination.Create()
+                            if (useSheets) {
+                                editSheet = ContactsNavDestination.Create()
+                            } else {
+                                currentDestination = ContactsNavDestination.Create()
+                            }
                         },
                         onFindDuplicates = listViewModel::findDuplicates,
                         onShowFavoritesHint = {
@@ -246,7 +253,11 @@ fun ContactsScreen(
                         onBackClick = { currentDestination = ContactsNavDestination.List },
                         onEditClick = {
                             detailUiState.contact?.let { contact ->
-                                editSheet = ContactsNavDestination.Edit(contact)
+                                if (useSheets) {
+                                    editSheet = ContactsNavDestination.Edit(contact)
+                                } else {
+                                    currentDestination = ContactsNavDestination.Edit(contact)
+                                }
                             }
                         },
                         onFavoriteToggle = { detailViewModel.toggleFavorite() },
@@ -306,11 +317,12 @@ fun ContactsScreen(
                                 val detail = repository.getContactDetail(contact.lookupKey, contact.id).first()
                                 listViewModel.clearSearchQuery()
                                 if (detail != null) {
-                                    editSheet = ContactsNavDestination.Edit(
+                                    val edit = ContactsNavDestination.Edit(
                                         detail,
                                         appendPhone = dest.number,
                                         returnToList = true
                                     )
+                                    if (useSheets) editSheet = edit else currentDestination = edit
                                 }
                             }
                         },
@@ -321,12 +333,110 @@ fun ContactsScreen(
                     )
                 }
 
-                // Create/edit are no longer destinations: the editor
-                // opens as a bottom sheet (editSheet) instead. These
-                // branches exist only because this when must be
-                // exhaustive; no setter enters them anymore.
-                is ContactsNavDestination.Create,
-                is ContactsNavDestination.Edit -> Unit
+                // Classic only: the editor as a destination (Clean
+                // opens it as a sheet instead, see editSheet below).
+                is ContactsNavDestination.Create -> {
+                    val createViewModel: ContactEditViewModel = viewModel(
+                        // Keyed by the prefilled values: a fresh editor
+                        // for each request, never a stale previous input.
+                        key = "create_contact_${dest.initialPhone}_${dest.initialName.hashCode()}_${dest.initialEmail.hashCode()}",
+                        factory = ContactEditViewModel.provideFactory(
+                            repository,
+                            null,
+                            dest.initialPhone,
+                            dest.initialName,
+                            dest.initialEmail
+                        )
+                    )
+                    val createUiState by createViewModel.uiState.collectAsStateWithLifecycle()
+
+                    ContactEditScreen(
+                        uiState = createUiState,
+                        onNameChanged = createViewModel::onNameChanged,
+                        onOrganizationChanged = createViewModel::onOrganizationChanged,
+                        onPhoneNumberChanged = createViewModel::onPhoneNumberChanged,
+                        onPhoneTypeChanged = createViewModel::onPhoneTypeChanged,
+                        onAddPhone = createViewModel::addPhoneRow,
+                        onRemovePhone = createViewModel::removePhoneRow,
+                        onEmailAddressChanged = createViewModel::onEmailAddressChanged,
+                        onEmailTypeChanged = createViewModel::onEmailTypeChanged,
+                        onAddEmail = createViewModel::addEmailRow,
+                        onRemoveEmail = createViewModel::removeEmailRow,
+                        onSaveClick = {
+                            createViewModel.saveContact { newId ->
+                                currentDestination = ContactsNavDestination.Detail(newId, "")
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar(context.getString(R.string.snackbar_contact_created))
+                                }
+                            }
+                        },
+                        onCancelClick = { currentDestination = ContactsNavDestination.List },
+                        onPhotoPicked = createViewModel::onPhotoPickedForPreview,
+                        onConfirmSaveCroppedPhoto = createViewModel::onConfirmSaveCroppedPhoto,
+                        onDiscardPendingCropPhoto = createViewModel::onDiscardPendingCropPhoto,
+                        onRemovePhoto = createViewModel::onRemovePhoto,
+                        onPhotoPreviewRequest = { createViewModel.setPhotoPreviewVisible(true) },
+                        onDismissPhotoPreview = { createViewModel.setPhotoPreviewVisible(false) },
+                        onPhotoOptionsRequest = { createViewModel.setPhotoOptionsDialogVisible(true) },
+                        onDismissPhotoOptions = { createViewModel.setPhotoOptionsDialogVisible(false) },
+                        onRingtoneSelected = createViewModel::onRingtoneSelected
+                    )
+                }
+                is ContactsNavDestination.Edit -> {
+                    val editViewModel: ContactEditViewModel = viewModel(
+                        key = "edit_${dest.contact.id}_${dest.appendPhone}",
+                        factory = ContactEditViewModel.provideFactory(repository, dest.contact, dest.appendPhone)
+                    )
+                    val editUiState by editViewModel.uiState.collectAsStateWithLifecycle()
+
+                    ContactEditScreen(
+                        uiState = editUiState,
+                        onNameChanged = editViewModel::onNameChanged,
+                        onOrganizationChanged = editViewModel::onOrganizationChanged,
+                        onPhoneNumberChanged = editViewModel::onPhoneNumberChanged,
+                        onPhoneTypeChanged = editViewModel::onPhoneTypeChanged,
+                        onAddPhone = editViewModel::addPhoneRow,
+                        onRemovePhone = editViewModel::removePhoneRow,
+                        onEmailAddressChanged = editViewModel::onEmailAddressChanged,
+                        onEmailTypeChanged = editViewModel::onEmailTypeChanged,
+                        onAddEmail = editViewModel::addEmailRow,
+                        onRemoveEmail = editViewModel::removeEmailRow,
+                        onSaveClick = {
+                            editViewModel.saveContact { savedId ->
+                                if (dest.returnToList) {
+                                    currentDestination = ContactsNavDestination.List
+                                } else {
+                                    currentDestination = ContactsNavDestination.Detail(
+                                        dest.contact.id,
+                                        dest.contact.lookupKey
+                                    )
+                                }
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar(context.getString(R.string.snackbar_contact_updated))
+                                }
+                            }
+                        },
+                        onCancelClick = {
+                            if (dest.returnToList) {
+                                currentDestination = ContactsNavDestination.List
+                            } else {
+                                currentDestination = ContactsNavDestination.Detail(
+                                    dest.contact.id,
+                                    dest.contact.lookupKey
+                                )
+                            }
+                        },
+                        onPhotoPicked = editViewModel::onPhotoPickedForPreview,
+                        onConfirmSaveCroppedPhoto = editViewModel::onConfirmSaveCroppedPhoto,
+                        onDiscardPendingCropPhoto = editViewModel::onDiscardPendingCropPhoto,
+                        onRemovePhoto = editViewModel::onRemovePhoto,
+                        onPhotoPreviewRequest = { editViewModel.setPhotoPreviewVisible(true) },
+                        onDismissPhotoPreview = { editViewModel.setPhotoPreviewVisible(false) },
+                        onPhotoOptionsRequest = { editViewModel.setPhotoOptionsDialogVisible(true) },
+                        onDismissPhotoOptions = { editViewModel.setPhotoOptionsDialogVisible(false) },
+                        onRingtoneSelected = editViewModel::onRingtoneSelected
+                    )
+                }
 
                 }
             }

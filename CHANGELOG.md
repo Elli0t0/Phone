@@ -164,6 +164,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.16.3]
+
+- New "App style" setting at the top of Appearance & Display: Classic (system font, rounded cards, glass keys, default switches, fade transitions, dialogs, no swipe actions) and Clean (Inter, inset cards, flat keys, green switches, push transitions, bottom sheets, swipe actions). Picking a preset applies it live across the app.
+- The App style page shows both presets as preview cards with a mini mock of a list row, a keypad key and a switch in each look, a "Try it" preview of the current look, and a Customize section; changing any individual option there flips the style to Custom (with a badge on the title). Reset to defaults restores Classic.
+- Bottom bar, glass sliders and Glass Studio are untouched and apply in both styles.
+
 ## [0.16.2]
 
 - Recents swipe: start->end calls back (green), end->start deletes (red) with an Undo snackbar; light haptic when the swipe crosses the threshold; directions follow the layout direction (RTL swaps them).

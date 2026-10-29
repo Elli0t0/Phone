@@ -20,12 +20,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.LiquidGlassPopupSurface
 import io.github.elli0t0.phone.core.design.PhoneBottomSheet
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.telecom.SimAccountInfo
@@ -38,13 +42,9 @@ fun CallingSimDialog(
     onDismiss: () -> Unit
 ) {
     val spacing = LocalSpacing.current
-    PhoneBottomSheet(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier
-                .padding(horizontal = spacing.large)
-                .padding(bottom = spacing.large)
-                .testTag("calling_sim_dialog")
-        ) {
+    // Classic shows the old centered dialog; Clean shows the sheet.
+    val sheets = LocalAppSettings.current.effectiveStyle.sheets
+    val content: @Composable ColumnScope.() -> Unit = {
             Text(
                 text = stringResource(id = R.string.contact_calling_sim_title),
                 style = MaterialTheme.typography.titleMedium,
@@ -75,6 +75,28 @@ fun CallingSimDialog(
                 TextButton(onClick = onDismiss) {
                     Text(text = stringResource(id = R.string.action_cancel))
                 }
+            }
+    }
+    if (sheets) {
+        PhoneBottomSheet(onDismissRequest = onDismiss) {
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = spacing.large)
+                    .padding(bottom = spacing.large)
+                    .testTag("calling_sim_dialog")
+            ) {
+                content()
+            }
+        }
+    } else {
+        Dialog(onDismissRequest = onDismiss) {
+            LiquidGlassPopupSurface(
+                modifier = Modifier
+                    .padding(horizontal = spacing.large)
+                    .padding(bottom = spacing.large)
+                    .testTag("calling_sim_dialog")
+            ) {
+                content()
             }
         }
     }

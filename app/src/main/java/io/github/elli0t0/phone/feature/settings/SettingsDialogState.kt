@@ -76,6 +76,7 @@ class SettingsDialogState {
     var showCallDisplayDialog by mutableStateOf(false)
     var showCallBackgroundPage by mutableStateOf(false)
     var showAnswerStylePage by mutableStateOf(false)
+    var showAppStylePage by mutableStateOf(false)
     var showRecordingPage by mutableStateOf(false)
     var showGlassStudioPage by mutableStateOf(false)
     var showDefaultSimDialog by mutableStateOf(false)

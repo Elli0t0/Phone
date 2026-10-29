@@ -280,6 +280,7 @@ fun SettingsScreen(
     // closes the open page instead of leaving Settings.
     BackHandler(enabled = dialogs.showCallBackgroundPage) { dialogs.showCallBackgroundPage = false }
     BackHandler(enabled = dialogs.showAnswerStylePage) { dialogs.showAnswerStylePage = false }
+    BackHandler(enabled = dialogs.showAppStylePage) { dialogs.showAppStylePage = false }
     BackHandler(enabled = dialogs.showGlassStudioPage) { dialogs.showGlassStudioPage = false }
     BackHandler(enabled = dialogs.showBlockedNumbers) { dialogs.showBlockedNumbers = false }
     BackHandler(enabled = dialogs.showRecordingPage) { dialogs.showRecordingPage = false }
@@ -291,6 +292,14 @@ fun SettingsScreen(
             onSelect = { viewModel.onAnswerStyleChanged(it) },
             onSliderOnlyWhenLockedChange = { viewModel.onSliderOnlyWhenLockedChanged(it) },
             onNavigateBack = { dialogs.showAnswerStylePage = false }
+        )
+    }
+
+    if (dialogs.showAppStylePage) {
+        AppStyleScreen(
+            settings = settings,
+            viewModel = viewModel,
+            onNavigateBack = { dialogs.showAppStylePage = false }
         )
     }
 

@@ -156,4 +156,16 @@
     <string name="recording_status_needs_wifi">به Wi-Fi نیاز دارد</string>
     <string name="settings_key_style">سبک کلیدها</string>
     <string name="settings_switch_style">سبک سوییچ</string>
+    <string name="settings_app_style">سبک برنامه</string>
+    <string name="settings_app_style_classic">Classic</string>
+    <string name="settings_app_style_clean">Clean</string>
+    <string name="settings_app_style_custom">سفارشی</string>
+    <string name="settings_app_style_customize">شخصی‌سازی</string>
+    <string name="settings_app_style_try_it">امتحان کنید</string>
+    <string name="settings_font_style">قلم</string>
+    <string name="settings_transition_style">گذر بین صفحه‌ها</string>
+    <string name="settings_bottom_sheets">برگه‌های پایینی</string>
+    <string name="settings_bottom_sheets_desc">باز کردن پنجره‌ها به‌صورت برگه‌ی پایینی با دستگیره</string>
+    <string name="settings_swipe_actions">کنش‌های کشویی</string>
+    <string name="settings_swipe_actions_desc">کشیدن ردیف‌های اخیر برای تماس مجدد یا حذف</string>
 </resources>

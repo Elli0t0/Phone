@@ -123,7 +123,7 @@ fun ContactRow(
     }
     val rowSource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
-    val insetCard = LocalAppSettings.current.cardStyle == CardStyle.INSET
+    val insetCard = LocalAppSettings.current.effectiveStyle.card == CardStyle.INSET
 
     GlassListCard(
         modifier = modifier
@@ -177,7 +177,7 @@ fun ContactGroupCard(
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
-    val insetCard = LocalAppSettings.current.cardStyle == CardStyle.INSET
+    val insetCard = LocalAppSettings.current.effectiveStyle.card == CardStyle.INSET
     GlassListCard(
         modifier = modifier
             .fillMaxWidth()
@@ -231,7 +231,7 @@ private fun ContactGroupRow(
     }
     val rowSource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
-    val insetCard = LocalAppSettings.current.cardStyle == CardStyle.INSET
+    val insetCard = LocalAppSettings.current.effectiveStyle.card == CardStyle.INSET
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -273,7 +273,7 @@ fun FavoritesHintRow(
     val spacing = LocalSpacing.current
     val hintSource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
-    val insetCard = LocalAppSettings.current.cardStyle == CardStyle.INSET
+    val insetCard = LocalAppSettings.current.effectiveStyle.card == CardStyle.INSET
     GlassListCard(
         modifier = modifier
             .fillMaxWidth()

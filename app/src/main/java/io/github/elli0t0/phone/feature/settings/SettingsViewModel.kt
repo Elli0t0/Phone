@@ -33,6 +33,9 @@ import io.github.elli0t0.phone.data.settings.model.DefaultSim
 import io.github.elli0t0.phone.data.settings.model.CardStyle
 import io.github.elli0t0.phone.data.settings.model.KeyStyle
 import io.github.elli0t0.phone.data.settings.model.SwitchStyle
+import io.github.elli0t0.phone.data.settings.model.AppStyle
+import io.github.elli0t0.phone.data.settings.model.FontStyle
+import io.github.elli0t0.phone.data.settings.model.TransitionStyle
 import io.github.elli0t0.phone.data.settings.model.ContactNameFormat
 import io.github.elli0t0.phone.data.settings.model.ContactSortOrder
 import io.github.elli0t0.phone.data.settings.model.ListDensity
@@ -147,6 +150,36 @@ class SettingsViewModel(
     fun onSwitchStyleChanged(style: SwitchStyle) {
         viewModelScope.launch {
             settingsRepository.setSwitchStyle(style)
+        }
+    }
+
+    fun onAppStyleChanged(style: AppStyle) {
+        viewModelScope.launch {
+            settingsRepository.setAppStyle(style)
+        }
+    }
+
+    fun onFontStyleChanged(style: FontStyle) {
+        viewModelScope.launch {
+            settingsRepository.setFontStyle(style)
+        }
+    }
+
+    fun onTransitionStyleChanged(style: TransitionStyle) {
+        viewModelScope.launch {
+            settingsRepository.setTransitionStyle(style)
+        }
+    }
+
+    fun onBottomSheetsChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setBottomSheets(enabled)
+        }
+    }
+
+    fun onSwipeActionsChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setSwipeActions(enabled)
         }
     }
 

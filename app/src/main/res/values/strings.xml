@@ -545,5 +545,17 @@
     <string name="recording_status_needs_wifi">Needs Wi-Fi</string>
     <string name="settings_key_style">Key style</string>
     <string name="settings_switch_style">Switch style</string>
+    <string name="settings_app_style">App style</string>
+    <string name="settings_app_style_classic">Classic</string>
+    <string name="settings_app_style_clean">Clean</string>
+    <string name="settings_app_style_custom">Custom</string>
+    <string name="settings_app_style_customize">Customize</string>
+    <string name="settings_app_style_try_it">Try it</string>
+    <string name="settings_font_style">Font</string>
+    <string name="settings_transition_style">Screen transitions</string>
+    <string name="settings_bottom_sheets">Bottom sheets</string>
+    <string name="settings_bottom_sheets_desc">Open dialogs as bottom sheets with a grabber</string>
+    <string name="settings_swipe_actions">Swipe actions</string>
+    <string name="settings_swipe_actions_desc">Swipe Recents rows to call back or delete</string>
 </resources>
 

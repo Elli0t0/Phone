@@ -41,6 +41,10 @@ import io.github.elli0t0.phone.data.settings.model.DefaultSim
 import io.github.elli0t0.phone.data.settings.model.CardStyle
 import io.github.elli0t0.phone.data.settings.model.KeyStyle
 import io.github.elli0t0.phone.data.settings.model.SwitchStyle
+import io.github.elli0t0.phone.data.settings.model.AppStyle
+import io.github.elli0t0.phone.data.settings.model.FontStyle
+import io.github.elli0t0.phone.data.settings.model.TransitionStyle
+import io.github.elli0t0.phone.data.settings.model.StylePreset
 import io.github.elli0t0.phone.data.settings.model.ContactNameFormat
 import io.github.elli0t0.phone.data.settings.model.ContactSortOrder
 import io.github.elli0t0.phone.data.settings.model.ListDensity
@@ -69,6 +73,11 @@ interface SettingsRepository {
     suspend fun setGlassBottomBar(enabled: Boolean)
     suspend fun setKeyStyle(style: KeyStyle)
     suspend fun setSwitchStyle(style: SwitchStyle)
+    suspend fun setAppStyle(style: AppStyle)
+    suspend fun setFontStyle(style: FontStyle)
+    suspend fun setTransitionStyle(style: TransitionStyle)
+    suspend fun setBottomSheets(enabled: Boolean)
+    suspend fun setSwipeActions(enabled: Boolean)
     suspend fun setGlassHeaders(enabled: Boolean)
     suspend fun setGlassContactDetail(enabled: Boolean)
     suspend fun setGlassCallScreens(enabled: Boolean)
@@ -143,6 +152,11 @@ class DataStoreSettingsRepository(
         val GLASS_BOTTOM_BAR = booleanPreferencesKey("glass_bottom_bar")
         val KEY_STYLE = stringPreferencesKey("key_style")
         val SWITCH_STYLE = stringPreferencesKey("switch_style")
+        val APP_STYLE = stringPreferencesKey("app_style")
+        val FONT_STYLE = stringPreferencesKey("font_style")
+        val TRANSITION_STYLE = stringPreferencesKey("transition_style")
+        val BOTTOM_SHEETS = booleanPreferencesKey("bottom_sheets")
+        val SWIPE_ACTIONS = booleanPreferencesKey("swipe_actions")
         // Legacy key style flag, read only: migrates to KEY_STYLE when
         // the new key is absent (true -> Glass, false -> Simple).
         val GLASS_DIALPAD = booleanPreferencesKey("glass_dialpad")
@@ -235,6 +249,14 @@ class DataStoreSettingsRepository(
             ?: if (prefs[Keys.GLASS_DIALPAD] ?: true) KeyStyle.GLASS else KeyStyle.SIMPLE
         val switchStyleStr = prefs[Keys.SWITCH_STYLE]
         val switchStyle = switchStyleStr?.let { runCatching { SwitchStyle.valueOf(it) }.getOrNull() } ?: SwitchStyle.DEFAULT
+        val appStyleStr = prefs[Keys.APP_STYLE]
+        val appStyle = appStyleStr?.let { runCatching { AppStyle.valueOf(it) }.getOrNull() } ?: AppStyle.CLASSIC
+        val fontStyleStr = prefs[Keys.FONT_STYLE]
+        val fontStyle = fontStyleStr?.let { runCatching { FontStyle.valueOf(it) }.getOrNull() } ?: FontStyle.SYSTEM
+        val transitionStyleStr = prefs[Keys.TRANSITION_STYLE]
+        val transitionStyle = transitionStyleStr?.let { runCatching { TransitionStyle.valueOf(it) }.getOrNull() } ?: TransitionStyle.FADE
+        val bottomSheets = prefs[Keys.BOTTOM_SHEETS] ?: false
+        val swipeActions = prefs[Keys.SWIPE_ACTIONS] ?: false
         val glassHeaders = prefs[Keys.GLASS_HEADERS] ?: true
         val glassContactDetail = prefs[Keys.GLASS_CONTACT_DETAIL] ?: true
         val glassCallScreens = prefs[Keys.GLASS_CALL_SCREENS] ?: true
@@ -401,6 +423,11 @@ class DataStoreSettingsRepository(
             glassBottomBar = glassBottomBar,
             keyStyle = keyStyle,
             switchStyle = switchStyle,
+            appStyle = appStyle,
+            fontStyle = fontStyle,
+            transitionStyle = transitionStyle,
+            bottomSheets = bottomSheets,
+            swipeActions = swipeActions,
             glassHeaders = glassHeaders,
             glassContactDetail = glassContactDetail,
             glassCallScreens = glassCallScreens,
@@ -488,6 +515,58 @@ class DataStoreSettingsRepository(
     override suspend fun setCardStyle(style: CardStyle) {
         dataStore.edit { prefs ->
             prefs[Keys.CARD_STYLE] = style.name
+            prefs[Keys.APP_STYLE] = AppStyle.CUSTOM.name
+        }
+    }
+
+    // Picking a preset also copies it into the individual values, so
+    // switching to Custom later starts from the preset that showed.
+    // CUSTOM itself only flips the marker; the values stay as stored.
+    override suspend fun setAppStyle(style: AppStyle) {
+        dataStore.edit { prefs ->
+            prefs[Keys.APP_STYLE] = style.name
+            val preset = when (style) {
+                AppStyle.CLASSIC -> StylePreset.CLASSIC
+                AppStyle.CLEAN -> StylePreset.CLEAN
+                AppStyle.CUSTOM -> null
+            }
+            if (preset != null) {
+                prefs[Keys.FONT_STYLE] = preset.font.name
+                prefs[Keys.CARD_STYLE] = preset.card.name
+                prefs[Keys.KEY_STYLE] = preset.keys.name
+                prefs[Keys.SWITCH_STYLE] = preset.switch.name
+                prefs[Keys.TRANSITION_STYLE] = preset.transitions.name
+                prefs[Keys.BOTTOM_SHEETS] = preset.sheets
+                prefs[Keys.SWIPE_ACTIONS] = preset.swipeActions
+            }
+        }
+    }
+
+    override suspend fun setFontStyle(style: FontStyle) {
+        dataStore.edit { prefs ->
+            prefs[Keys.FONT_STYLE] = style.name
+            prefs[Keys.APP_STYLE] = AppStyle.CUSTOM.name
+        }
+    }
+
+    override suspend fun setTransitionStyle(style: TransitionStyle) {
+        dataStore.edit { prefs ->
+            prefs[Keys.TRANSITION_STYLE] = style.name
+            prefs[Keys.APP_STYLE] = AppStyle.CUSTOM.name
+        }
+    }
+
+    override suspend fun setBottomSheets(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.BOTTOM_SHEETS] = enabled
+            prefs[Keys.APP_STYLE] = AppStyle.CUSTOM.name
+        }
+    }
+
+    override suspend fun setSwipeActions(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.SWIPE_ACTIONS] = enabled
+            prefs[Keys.APP_STYLE] = AppStyle.CUSTOM.name
         }
     }
 
@@ -542,12 +621,14 @@ class DataStoreSettingsRepository(
     override suspend fun setKeyStyle(style: KeyStyle) {
         dataStore.edit { prefs ->
             prefs[Keys.KEY_STYLE] = style.name
+            prefs[Keys.APP_STYLE] = AppStyle.CUSTOM.name
         }
     }
 
     override suspend fun setSwitchStyle(style: SwitchStyle) {
         dataStore.edit { prefs ->
             prefs[Keys.SWITCH_STYLE] = style.name
+            prefs[Keys.APP_STYLE] = AppStyle.CUSTOM.name
         }
     }
 

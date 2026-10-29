@@ -118,7 +118,7 @@ fun AppSwitch(
             )
             .clip(RoundedCornerShape(PhoneDimens.settingsSwitchCornerPercent))
             .background(
-                if (LocalAppSettings.current.switchStyle == SwitchStyle.GREEN) {
+                if (LocalAppSettings.current.effectiveStyle.switch == SwitchStyle.GREEN) {
                     if (checked) SwitchGreenTrack else SwitchGreenUncheckedTrack
                 } else if (checked) {
                     MaterialTheme.colorScheme.primary

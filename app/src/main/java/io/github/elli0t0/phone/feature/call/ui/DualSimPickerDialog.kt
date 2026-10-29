@@ -23,14 +23,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.bidiWrap
+import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.LiquidGlassPopupSurface
 import io.github.elli0t0.phone.core.design.PhoneBottomSheet
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.pressScale
@@ -46,14 +50,9 @@ fun DualSimPickerDialog(
 ) {
     val spacing = LocalSpacing.current
     val lightHaptic = rememberLightHaptic()
-
-    PhoneBottomSheet(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier
-                .padding(horizontal = spacing.large)
-                .padding(bottom = spacing.large)
-                .testTag("sim_picker_dialog")
-        ) {
+    // Classic shows the old centered dialog; Clean shows the sheet.
+    val sheets = LocalAppSettings.current.effectiveStyle.sheets
+    val content: @Composable ColumnScope.() -> Unit = {
             Text(
                 text = stringResource(id = R.string.call_sim_picker_title),
                 style = MaterialTheme.typography.titleMedium,
@@ -106,6 +105,28 @@ fun DualSimPickerDialog(
                 TextButton(onClick = onDismiss) {
                     Text(text = stringResource(id = R.string.action_cancel))
                 }
+            }
+    }
+    if (sheets) {
+        PhoneBottomSheet(onDismissRequest = onDismiss) {
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = spacing.large)
+                    .padding(bottom = spacing.large)
+                    .testTag("sim_picker_dialog")
+            ) {
+                content()
+            }
+        }
+    } else {
+        Dialog(onDismissRequest = onDismiss) {
+            LiquidGlassPopupSurface(
+                modifier = Modifier
+                    .padding(horizontal = spacing.large)
+                    .padding(bottom = spacing.large)
+                    .testTag("sim_picker_dialog")
+            ) {
+                content()
             }
         }
     }

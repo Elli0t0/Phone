@@ -150,6 +150,16 @@ item {
     ) {
         Column(modifier = Modifier.padding(spacing.medium)) {
             SettingsRow(
+                title = stringResource(id = R.string.settings_app_style),
+                subtitle = settings.appStyle.label,
+                onClick = { dialogs.showAppStylePage = true }
+            )
+
+            Spacer(modifier = Modifier.height(spacing.small))
+            SettingsListDivider()
+            Spacer(modifier = Modifier.height(spacing.small))
+
+            SettingsRow(
                 title = stringResource(id = R.string.settings_theme),
                 subtitle = settings.themeMode.label,
                 onClick = { dialogs.showThemeDialog = true }

@@ -17,6 +17,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
+import io.github.elli0t0.phone.data.settings.model.TransitionStyle
 import io.github.elli0t0.phone.feature.contacts.ContactsScreen
 import io.github.elli0t0.phone.feature.dialpad.DialpadScreen
 import io.github.elli0t0.phone.feature.recents.RecentsScreen
@@ -29,6 +30,7 @@ fun PhoneNavHost(
     startDestination: String = Screen.Recents.route,
     defaultStartTabRoute: String = Screen.Recents.route,
     animationOption: AnimationOption = AnimationOption.ON,
+    transitionStyle: TransitionStyle = TransitionStyle.PUSH,
     onContactsBarVisibilityChanged: (Boolean) -> Unit = {},
     pendingDialNumber: String? = null,
     onDialNumberConsumed: () -> Unit = {}
@@ -42,15 +44,16 @@ fun PhoneNavHost(
     val tabExitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition =
         { Motion.tabExitTransition(animationOption) }
     // Inner screens (Setup, Settings) slide + parallax + dim through
-    // Motion; tabs only fade (see tabEnterTransition above).
+    // Motion when the transition style is PUSH, fade when FADE;
+    // tabs only fade (see tabEnterTransition above).
     val innerEnterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition =
-        { Motion.innerEnterTransition(animationOption) }
+        { Motion.innerEnterTransition(animationOption, transitionStyle) }
     val innerExitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition =
-        { Motion.innerExitTransition(animationOption) }
+        { Motion.innerExitTransition(animationOption, transitionStyle) }
     val innerPopEnterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition =
-        { Motion.innerPopEnterTransition(animationOption) }
+        { Motion.innerPopEnterTransition(animationOption, transitionStyle) }
     val innerPopExitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition =
-        { Motion.innerPopExitTransition(animationOption) }
+        { Motion.innerPopExitTransition(animationOption, transitionStyle) }
     // Create-contact request (keypad / Recents):
     // the Contacts tab opens the editor prefilled, then clears it.
     var pendingCreateRequest by remember { mutableStateOf<CreateContactRequest?>(null) }

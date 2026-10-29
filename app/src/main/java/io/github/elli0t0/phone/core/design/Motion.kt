@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.GlassHapticFeedback
+import io.github.elli0t0.phone.data.settings.model.TransitionStyle
 
 /**
  * Central motion behavior for the Animations setting. Every animation
@@ -98,19 +99,27 @@ object Motion {
 
     /**
      * Push-screen transition (Settings, contact detail/edit, groups,
-     * history, call screens). Push ([direction] >= 0): the new screen
-     * slides in from the right on a spring (damping 0.9, stiffness
-     * 400) + fades in, while the screen underneath parallaxes a
-     * quarter width left and dims to 0.7 alpha. Pop ([direction] <
-     * 0) reverses both sides. REDUCED fades only; OFF is no
-     * transition.
+     * history, call screens). Push ([direction] >= 0): with PUSH the
+     * new screen slides in from the right on a spring (damping 0.9,
+     * stiffness 400) + fades in, while the screen underneath
+     * parallaxes a quarter width left and dims to 0.7 alpha; with
+     * FADE both sides only fade. Pop ([direction] < 0) reverses both
+     * sides. REDUCED fades only; OFF is no transition.
      */
-    fun innerContentTransform(option: AnimationOption, direction: Int): ContentTransform {
+    fun innerContentTransform(
+        option: AnimationOption,
+        transition: TransitionStyle,
+        direction: Int
+    ): ContentTransform {
         if (option == AnimationOption.OFF) {
             return ContentTransform(EnterTransition.None, ExitTransition.None)
         }
-        if (option == AnimationOption.REDUCED) {
-            return ContentTransform(fadeIn(), fadeOut())
+        if (option == AnimationOption.REDUCED || transition == TransitionStyle.FADE) {
+            val fadeMs = innerDurationMs(option)
+            return ContentTransform(
+                fadeIn(animationSpec = tween(durationMillis = fadeMs)),
+                fadeOut(animationSpec = tween(durationMillis = fadeMs))
+            )
         }
         val pushSpring = spring<IntOffset>(dampingRatio = 0.9f, stiffness = 400f)
         return if (direction < 0) {
@@ -128,20 +137,20 @@ object Motion {
     }
 
     /** NavHost enter transition for a pushed inner screen. */
-    fun innerEnterTransition(option: AnimationOption): EnterTransition =
-        innerContentTransform(option, 1).targetContentEnter
+    fun innerEnterTransition(option: AnimationOption, transition: TransitionStyle): EnterTransition =
+        innerContentTransform(option, transition, 1).targetContentEnter
 
     /** NavHost exit transition for a pushed inner screen. */
-    fun innerExitTransition(option: AnimationOption): ExitTransition =
-        innerContentTransform(option, 1).initialContentExit
+    fun innerExitTransition(option: AnimationOption, transition: TransitionStyle): ExitTransition =
+        innerContentTransform(option, transition, 1).initialContentExit
 
     /** NavHost pop-enter transition for a pushed inner screen. */
-    fun innerPopEnterTransition(option: AnimationOption): EnterTransition =
-        innerContentTransform(option, -1).targetContentEnter
+    fun innerPopEnterTransition(option: AnimationOption, transition: TransitionStyle): EnterTransition =
+        innerContentTransform(option, transition, -1).targetContentEnter
 
     /** NavHost pop-exit transition for a pushed inner screen. */
-    fun innerPopExitTransition(option: AnimationOption): ExitTransition =
-        innerContentTransform(option, -1).initialContentExit
+    fun innerPopExitTransition(option: AnimationOption, transition: TransitionStyle): ExitTransition =
+        innerContentTransform(option, transition, -1).initialContentExit
 
     /** Shared duration tokens (milliseconds). */
     object Durations {

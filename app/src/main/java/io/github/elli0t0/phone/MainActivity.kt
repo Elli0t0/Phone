@@ -325,6 +325,7 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
                 startDestination = startDestination,
                 defaultStartTabRoute = appSettings.defaultStartTab.route,
                 animationOption = appSettings.animationOption,
+                transitionStyle = appSettings.effectiveStyle.transitions,
                 onContactsBarVisibilityChanged = { showContactsBar = it },
                 pendingDialNumber = pendingDialNumber,
                 onDialNumberConsumed = { pendingDialNumber = null },

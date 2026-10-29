@@ -331,7 +331,7 @@ class CallActivity : ComponentActivity() {
                                 AnimatedContent(
                                     targetState = currentModel.state == CallState.RINGING,
                                     transitionSpec = {
-                                        Motion.innerContentTransform(settings.animationOption, 1)
+                                        Motion.innerContentTransform(settings.animationOption, settings.effectiveStyle.transitions, 1)
                                     },
                                     label = "call_state"
                                 ) { ringing ->

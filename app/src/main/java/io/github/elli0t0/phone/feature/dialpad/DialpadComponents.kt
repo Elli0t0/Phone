@@ -122,7 +122,7 @@ fun DialKeyView(
             if (interaction is PressInteraction.Press) lightHaptic()
         }
     }
-    val keyStyle = LocalAppSettings.current.keyStyle
+    val keyStyle = LocalAppSettings.current.effectiveStyle.keys
     // Key content shared by the glass and simple branches; the flat
     // branch has its own content (different sizes and weights).
     val keyContent: @Composable () -> Unit = {
@@ -458,7 +458,7 @@ fun DialpadNoMatchActions(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.height(12.dp))
-        if (LocalAppSettings.current.keyStyle == KeyStyle.GLASS) {
+        if (LocalAppSettings.current.effectiveStyle.keys == KeyStyle.GLASS) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -686,7 +686,7 @@ fun QuickRedialChips(
                 .weight(1f)
                 .heightIn(min = 44.dp)
                 .testTag("dialpad_quick_redial_$index")
-            if (LocalAppSettings.current.keyStyle == KeyStyle.GLASS) {
+            if (LocalAppSettings.current.effectiveStyle.keys == KeyStyle.GLASS) {
                 val source = remember { MutableInteractionSource() }
                 LiquidGlassPill(
                     tint = MaterialTheme.colorScheme.primary,
@@ -822,7 +822,7 @@ fun ClipboardChip(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = spacing.small)
         )
-        if (LocalAppSettings.current.keyStyle == KeyStyle.GLASS) {
+        if (LocalAppSettings.current.effectiveStyle.keys == KeyStyle.GLASS) {
             val source = remember { MutableInteractionSource() }
             LiquidGlassPill(
                 tint = MaterialTheme.colorScheme.primary,
