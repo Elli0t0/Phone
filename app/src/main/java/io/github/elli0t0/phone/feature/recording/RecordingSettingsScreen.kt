@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
@@ -22,8 +24,10 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -97,6 +101,7 @@ fun RecordingSettingsScreen(
     val recordings by viewModel.recordings.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     val testOutcome by viewModel.testOutcome.collectAsStateWithLifecycle()
+    val testing by viewModel.testing.collectAsStateWithLifecycle()
 
     // The pairing code is entered into Phone's own notification, so Pair
     // must ensure notifications are allowed first: on API 33+ a plain
@@ -464,7 +469,17 @@ fun RecordingSettingsScreen(
                         enabled = status == BackendStatus.READY && !busy &&
                             session is RecordingSession.Idle
                     ) {
-                        Text(text = stringResource(id = R.string.recording_test))
+                        if (testing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = LocalContentColor.current,
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = stringResource(id = R.string.recording_test_running))
+                        } else {
+                            Text(text = stringResource(id = R.string.recording_test))
+                        }
                     }
                     if (testOutcome != null) {
                         Spacer(modifier = Modifier.height(4.dp))
@@ -473,30 +488,48 @@ fun RecordingSettingsScreen(
                         // duration and peak; below 2% it is silence,
                         // not success, with the exact next check.
                         val outcome = testOutcome!!
-                        Text(
-                            text = if (outcome.error != null) {
-                                stringResource(
-                                    id = R.string.recording_test_failed,
-                                    outcome.error!!
-                                )
-                            } else if (outcome.peak != null && outcome.peak < 0.02f) {
-                                stringResource(id = R.string.recording_test_mic_silence)
-                            } else if (outcome.peak != null) {
-                                stringResource(
-                                    id = R.string.recording_test_ok_mic,
-                                    outcome.bytes,
-                                    outcome.durationMs,
-                                    (outcome.peak * 100).toInt()
-                                )
-                            } else {
-                                stringResource(
-                                    id = R.string.recording_test_ok,
-                                    outcome.bytes,
-                                    outcome.durationMs
-                                )
-                            },
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                        val failed = outcome.error != null
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (failed) {
+                                    MaterialTheme.colorScheme.errorContainer
+                                } else {
+                                    MaterialTheme.colorScheme.secondaryContainer
+                                }
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = if (outcome.error != null) {
+                                    stringResource(
+                                        id = R.string.recording_test_failed,
+                                        outcome.error!!
+                                    )
+                                } else if (outcome.peak != null && outcome.peak < 0.02f) {
+                                    stringResource(id = R.string.recording_test_mic_silence)
+                                } else if (outcome.peak != null) {
+                                    stringResource(
+                                        id = R.string.recording_test_ok_mic,
+                                        outcome.bytes,
+                                        outcome.durationMs,
+                                        (outcome.peak * 100).toInt()
+                                    )
+                                } else {
+                                    stringResource(
+                                        id = R.string.recording_test_ok,
+                                        outcome.bytes,
+                                        outcome.durationMs
+                                    )
+                                },
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (failed) {
+                                    MaterialTheme.colorScheme.onErrorContainer
+                                } else {
+                                    MaterialTheme.colorScheme.onSecondaryContainer
+                                },
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
                     }
                 }
             }

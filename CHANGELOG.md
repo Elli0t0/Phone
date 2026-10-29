@@ -164,6 +164,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.17.2]
+
+- Settings sub-pages open on top again: the whole sub-page group (BackHandlers + Answer style, App style, Glass Studio, Call background, Block numbers, Call recording) moved to the very end of the Settings composable, after the section pages. Back now closes the top-most page first. Logic unchanged, only the order.
+- Recording helper version handshake: the helper STATUS reply now carries " v2" (HELPER_VERSION = 2, bumped on protocol changes). A stored helper that answers without the current version is told to quit and respawned instead of reused, so an old helper left running after an update can no longer answer "ERR unknown" to START. The in-call dialog never shows a blank or "unknown" message anymore — it shows the setup error text instead. If starting the foreground service throws, the session rolls back fully (descriptor closed, entry deleted, backend capture stopped, state Idle).
+- Test record feedback: while the test runs, the button shows "Testing…" with a small spinner (new testing state in the view model, so other busy work cannot trigger it). The result now shows in a Card (error container on failure, secondary container on success) with bodyMedium text, using the same result strings and logic.
+
 ## [0.17.1]
 
 - Shizuku recording backend removed: built-in ADB is now the only backend. The Backend radio group is gone from the recording page, the RecordingBackendKind setting and its repository key/setter are gone, and the controller, recording view model, recording page, main Settings recording subtitle, and in-call recording dialog no longer branch on a backend kind — they use the ADB backend directly. The settings test always records from the microphone.

@@ -217,7 +217,12 @@ class CallActivity : ComponentActivity() {
                 if (recordingError != null) {
                     RecordingStatusDialog(
                         title = stringResource(id = R.string.recording_dialog_title),
-                        body = recordingError!!,
+                        // A blank or bare "unknown" message says
+                        // nothing: show the actionable setup error
+                        // instead of the raw text.
+                        body = recordingError?.takeIf {
+                            it.isNotBlank() && it.trim() != "unknown"
+                        } ?: stringResource(id = R.string.recording_needed_adb_error),
                         actionLabel = null,
                         onAction = null,
                         onDismiss = { recordingError = null }

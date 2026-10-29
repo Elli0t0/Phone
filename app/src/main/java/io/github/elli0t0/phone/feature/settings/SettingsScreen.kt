@@ -474,60 +474,6 @@ fun SettingsScreen(
         }
     }
 
-    // Full-screen pages, emitted after the list Scaffold so they draw
-    // on top of it. Emitted before the Scaffold, they composed behind
-    // the list, so tapping the row visibly did nothing. System Back
-    // closes the open page instead of leaving Settings.
-    BackHandler(enabled = dialogs.showCallBackgroundPage) { dialogs.showCallBackgroundPage = false }
-    BackHandler(enabled = dialogs.showAnswerStylePage) { dialogs.showAnswerStylePage = false }
-    BackHandler(enabled = dialogs.showAppStylePage) { dialogs.showAppStylePage = false }
-    BackHandler(enabled = dialogs.showGlassStudioPage) { dialogs.showGlassStudioPage = false }
-    BackHandler(enabled = dialogs.showBlockedNumbers) { dialogs.showBlockedNumbers = false }
-    BackHandler(enabled = dialogs.showRecordingPage) { dialogs.showRecordingPage = false }
-
-    if (dialogs.showAnswerStylePage) {
-        AnswerStyleScreen(
-            selected = settings.answerStyle,
-            sliderOnlyWhenLocked = settings.sliderOnlyWhenLocked,
-            onSelect = { viewModel.onAnswerStyleChanged(it) },
-            onSliderOnlyWhenLockedChange = { viewModel.onSliderOnlyWhenLockedChanged(it) },
-            onNavigateBack = { dialogs.showAnswerStylePage = false }
-        )
-    }
-
-    if (dialogs.showAppStylePage) {
-        AppStyleScreen(
-            settings = settings,
-            viewModel = viewModel,
-            onNavigateBack = { dialogs.showAppStylePage = false }
-        )
-    }
-
-    if (dialogs.showGlassStudioPage) {
-        GlassStudioScreen(
-            settings = settings,
-            viewModel = viewModel,
-            onNavigateBack = { dialogs.showGlassStudioPage = false }
-        )
-    }
-
-    if (dialogs.showCallBackgroundPage) {
-        CallBackgroundScreen(
-            selected = settings.callBackground,
-            accentColor = settings.accentColor,
-            onSelect = { viewModel.setCallBackground(it) },
-            onNavigateBack = { dialogs.showCallBackgroundPage = false }
-        )
-    }
-
-    if (dialogs.showBlockedNumbers) {
-        BlockedNumbersScreen(onNavigateBack = { dialogs.showBlockedNumbers = false })
-    }
-
-    if (dialogs.showRecordingPage) {
-        RecordingSettingsScreen(onNavigateBack = { dialogs.showRecordingPage = false })
-    }
-
     BackHandler(enabled = dialogs.showAppearancePage) { dialogs.showAppearancePage = false }
     BackHandler(enabled = dialogs.showGlassPage) { dialogs.showGlassPage = false }
     BackHandler(enabled = dialogs.showLayoutNavPage) { dialogs.showLayoutNavPage = false }
@@ -607,4 +553,61 @@ fun SettingsScreen(
             onNavigateBack = { dialogs.showAboutPage = false }
         )
     }
+
+    // Full-screen pages, emitted last so they draw on top of
+    // the section pages too: later = on top, and the last-registered
+    // BackHandler wins, so Back closes the top-most page first.
+    // on top of it. Emitted before the Scaffold, they composed behind
+    // the list, so tapping the row visibly did nothing. System Back
+    // closes the open page instead of leaving Settings.
+    BackHandler(enabled = dialogs.showCallBackgroundPage) { dialogs.showCallBackgroundPage = false }
+    BackHandler(enabled = dialogs.showAnswerStylePage) { dialogs.showAnswerStylePage = false }
+    BackHandler(enabled = dialogs.showAppStylePage) { dialogs.showAppStylePage = false }
+    BackHandler(enabled = dialogs.showGlassStudioPage) { dialogs.showGlassStudioPage = false }
+    BackHandler(enabled = dialogs.showBlockedNumbers) { dialogs.showBlockedNumbers = false }
+    BackHandler(enabled = dialogs.showRecordingPage) { dialogs.showRecordingPage = false }
+
+    if (dialogs.showAnswerStylePage) {
+        AnswerStyleScreen(
+            selected = settings.answerStyle,
+            sliderOnlyWhenLocked = settings.sliderOnlyWhenLocked,
+            onSelect = { viewModel.onAnswerStyleChanged(it) },
+            onSliderOnlyWhenLockedChange = { viewModel.onSliderOnlyWhenLockedChanged(it) },
+            onNavigateBack = { dialogs.showAnswerStylePage = false }
+        )
+    }
+
+    if (dialogs.showAppStylePage) {
+        AppStyleScreen(
+            settings = settings,
+            viewModel = viewModel,
+            onNavigateBack = { dialogs.showAppStylePage = false }
+        )
+    }
+
+    if (dialogs.showGlassStudioPage) {
+        GlassStudioScreen(
+            settings = settings,
+            viewModel = viewModel,
+            onNavigateBack = { dialogs.showGlassStudioPage = false }
+        )
+    }
+
+    if (dialogs.showCallBackgroundPage) {
+        CallBackgroundScreen(
+            selected = settings.callBackground,
+            accentColor = settings.accentColor,
+            onSelect = { viewModel.setCallBackground(it) },
+            onNavigateBack = { dialogs.showCallBackgroundPage = false }
+        )
+    }
+
+    if (dialogs.showBlockedNumbers) {
+        BlockedNumbersScreen(onNavigateBack = { dialogs.showBlockedNumbers = false })
+    }
+
+    if (dialogs.showRecordingPage) {
+        RecordingSettingsScreen(onNavigateBack = { dialogs.showRecordingPage = false })
+    }
+
 }

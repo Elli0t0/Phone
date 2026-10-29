@@ -272,9 +272,21 @@ class RecordingController(
             _state.value = RecordingSession.Recording(number, displayName, startedAt, isTest)
             _lastError.value = null
             _lastRecordingSilent.value = false
-            context.startForegroundService(
-                Intent(context, RecordingForegroundService::class.java)
-            )
+            try {
+                context.startForegroundService(
+                    Intent(context, RecordingForegroundService::class.java)
+                )
+            } catch (e: Exception) {
+                // The service failed to start: roll the session back
+                // completely so no orphan entry, descriptor, or
+                // backend capture is left behind.
+                runCatching { pfd.close() }
+                runCatching { context.contentResolver.delete(uri, null, null) }
+                runCatching { adbBackend.stopCapture() }
+                active = null
+                _state.value = RecordingSession.Idle
+                throw e
+            }
             Unit
         }
     }

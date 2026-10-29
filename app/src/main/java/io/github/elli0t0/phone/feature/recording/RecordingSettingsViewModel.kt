@@ -64,6 +64,8 @@ class RecordingSettingsViewModel(
     val busy: StateFlow<Boolean> = _busy.asStateFlow()
     private val _testOutcome = MutableStateFlow<RecordingTestOutcome?>(null)
     val testOutcome: StateFlow<RecordingTestOutcome?> = _testOutcome.asStateFlow()
+    private val _testing = MutableStateFlow(false)
+    val testing: StateFlow<Boolean> = _testing.asStateFlow()
     private val _playError = MutableStateFlow<String?>(null)
     val playError: StateFlow<String?> = _playError.asStateFlow()
 
@@ -159,6 +161,7 @@ class RecordingSettingsViewModel(
     fun runTest() {
         viewModelScope.launch {
             _busy.value = true
+            _testing.value = true
             _testOutcome.value = null
             val result = controller.runPipelineTest()
             _testOutcome.value = result.fold(
@@ -167,6 +170,7 @@ class RecordingSettingsViewModel(
                 },
                 onFailure = { RecordingTestOutcome(0, 0, it.message, null) }
             )
+            _testing.value = false
             _busy.value = false
         }
     }

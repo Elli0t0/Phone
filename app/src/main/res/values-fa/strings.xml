@@ -81,7 +81,7 @@
     <string name="recording_status_ready">آماده است</string>
     <string name="recording_action_refresh">به‌روزرسانی</string>
     <string name="recording_test">آزمایش ضبط (3 ثانیه، میکروفون)</string>
-    <string name="recording_test_running">آزمایش ضبط در حال انجام است</string>
+    <string name="recording_test_running">در حال آزمایش…</string>
     <string name="recording_test_title">ضبط آزمایشی</string>
     <string name="recording_test_ok">آزمایش موفق: %1$d بایت در %2$d میلی‌ثانیه</string>
     <string name="recording_test_ok_mic">ضبط کار می‌کند. برای آزمایش تماس، تماسی بگیرید و «ضبط» را بزنید. (%1$d بایت در %2$d میلی‌ثانیه، اوج %3$d٪)</string>

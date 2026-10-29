@@ -167,14 +167,19 @@ class AdbRecordingBackend(
 
     override suspend fun ensureBound(): Boolean {
         // A helper already running (stored port/token) is reused
-        // without any Kadb round-trip, so it survives app restarts.
+        // without any Kadb round-trip, so it survives app restarts —
+        // but only when its STATUS carries the current protocol
+        // version. An outdated helper (plain "IDLE", no version) is
+        // told to quit and the code falls through to respawn below.
         val stored = settingsRepository.settingsFlow.first()
         val storedPort = stored.adbHelperPort
         val storedToken = stored.adbHelperToken
-        if (storedPort != null && storedToken != null &&
-            helperStatus(storedPort, storedToken) != null
-        ) {
-            return true
+        if (storedPort != null && storedToken != null) {
+            val st = helperStatus(storedPort, storedToken)
+            if (isCurrent(st)) return true
+            if (st != null) {
+                runCatching { sendQuit(storedPort, storedToken) }
+            }
         }
         val storedEndpoint = workingEndpoint
         if (storedEndpoint != null) {
@@ -663,11 +668,15 @@ class AdbRecordingBackend(
         val stored = settingsRepository.settingsFlow.first()
         val storedPort = stored.adbHelperPort
         val storedToken = stored.adbHelperToken
-        if (storedPort != null && storedToken != null &&
-            helperStatus(storedPort, storedToken) != null
-        ) {
-            _lastError.value = null
-            return true
+        if (storedPort != null && storedToken != null) {
+            val st = helperStatus(storedPort, storedToken)
+            if (isCurrent(st)) {
+                _lastError.value = null
+                return true
+            }
+            if (st != null) {
+                runCatching { sendQuit(storedPort, storedToken) }
+            }
         }
         runCatching {
             withContext(Dispatchers.IO) {
@@ -709,7 +718,11 @@ class AdbRecordingBackend(
         return false
     }
 
-    /** STATUS reply ("IDLE"/"RECORDING"), or null when the helper does not answer. */
+    /** True when a STATUS reply carries the current protocol version. */
+    private fun isCurrent(status: String?) =
+        status != null && status.trim().endsWith(" v$HELPER_VERSION")
+
+    /** STATUS reply ("IDLE v2"/"RECORDING v2"), or null when the helper does not answer. */
     private suspend fun helperStatus(port: Int, token: String): String? =
         withContext(Dispatchers.IO) {
             runCatching {
@@ -728,6 +741,25 @@ class AdbRecordingBackend(
             }.onFailure { e ->
                 lastSocketError = e.message?.takeIf { it.isNotBlank() } ?: e.toString()
             }.getOrNull()
+
+    /** Same socket code as helperStatus, but sends QUIT and ignores the reply. */
+    private suspend fun sendQuit(port: Int, token: String) {
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val socket = Socket()
+                try {
+                    socket.connect(InetSocketAddress(OFFLINE_ADB_HOST, port), 1500)
+                    socket.soTimeout = 5000
+                    socket.getOutputStream().write(
+                        "$token\nQUIT\n".toByteArray(Charsets.US_ASCII)
+                    )
+                    socket.getOutputStream().flush()
+                } finally {
+                    runCatching { socket.close() }
+                }
+            }
+        }
+    }
         }
 
     /** One Kadb shell command's stdout (stderr when stdout is blank). */

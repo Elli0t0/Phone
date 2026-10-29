@@ -14,6 +14,14 @@ import kotlin.coroutines.resume
 /** Loopback log file the recorder helper writes to (see AdbRecordingBackend). */
 internal const val HELPER_LOG_PATH = "/data/local/tmp/phone_helper.log"
 
+/**
+ * Helper protocol version, appended to every STATUS reply ("IDLE v2").
+ * Bump it whenever the helper protocol changes: the app treats a
+ * STATUS reply without the current version as an outdated helper left
+ * running from an older install, and respawns it instead of reusing it.
+ */
+internal const val HELPER_VERSION = 2
+
 private const val PAIRING_SERVICE_TYPE = "_adb-tls-pairing._tcp"
 private const val CONNECT_SERVICE_TYPE = "_adb-tls-connect._tcp"
 

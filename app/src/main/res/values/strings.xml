@@ -470,7 +470,7 @@
     <string name="recording_status_ready">Ready</string>
     <string name="recording_action_refresh">Refresh</string>
     <string name="recording_test">Test recording (3s, microphone)</string>
-    <string name="recording_test_running">Test recording in progress</string>
+    <string name="recording_test_running">Testing…</string>
     <string name="recording_test_title">Test recording</string>
     <string name="recording_test_ok">Test OK: %1$d bytes in %2$d ms</string>
     <string name="recording_test_ok_mic">Recorder works. For a call test, start a call and tap Record. (%1$d bytes in %2$d ms, peak %3$d%%)</string>

@@ -110,7 +110,7 @@ private class RecordingHelperServer(
             val command = readLine(input)
             when {
                 command == "STATUS" -> {
-                    reply(socket, if (isRecording()) "RECORDING" else "IDLE")
+                    reply(socket, (if (isRecording()) "RECORDING" else "IDLE") + " v$HELPER_VERSION")
                     runCatching { socket.close() }
                 }
                 command == "QUIT" -> {
