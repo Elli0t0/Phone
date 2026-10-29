@@ -9,6 +9,7 @@ import com.flyfishxu.kadb.Kadb
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.recording.BackendStatus
 import io.github.elli0t0.phone.core.recording.CaptureResult
+import io.github.elli0t0.phone.core.recording.CaptureSource
 import io.github.elli0t0.phone.core.recording.RecordingBackend
 import io.github.elli0t0.phone.core.recording.WavWriter
 import io.github.elli0t0.phone.data.settings.SettingsRepository
@@ -100,6 +101,24 @@ class AdbRecordingBackend(
     private var captureOut: FileOutputStream? = null
     private var captureJob: Job? = null
     private val captureBytes = AtomicLong(0)
+
+    /** Peak amplitude of the running capture (0..1), for the live
+     * in-call meter. Updated per chunk by the reader; the controller
+     * exposes it, the meter reads it. Zero when nothing records. */
+    private val _captureLevel = MutableStateFlow(0f)
+    val captureLevel: StateFlow<Float> = _captureLevel.asStateFlow()
+
+    /** Finished-capture peaks, read by stopCapture after the reader
+     * joined (the join is the happens-before edge). */
+    private var capturePeak = 0f
+    private var captureFirstSecondPeak = 0f
+    private var captureSource = CaptureSource.CALL
+
+    /** Diagnostic line of the last finished capture (source, sample
+     * rate, peaks, fallback failure); shown under Recorder status
+     * and copied by Copy details. Not cleared by status refreshes. */
+    private val _captureDiagnostic = MutableStateFlow<String?>(null)
+    val captureDiagnostic: StateFlow<String?> = _captureDiagnostic.asStateFlow()
 
     /** Message from the last failed helper-socket connect, for diagnostics. */
     private var lastSocketError: String? = null
@@ -219,7 +238,10 @@ class AdbRecordingBackend(
         _keyAccepted.value = false
     }
 
-    override suspend fun startCapture(fd: ParcelFileDescriptor): Result<Unit> = runCatching {
+    override suspend fun startCapture(
+        fd: ParcelFileDescriptor,
+        source: CaptureSource
+    ): Result<Unit> = runCatching {
         if (!ensureBound()) {
             throw IllegalStateException(
                 _lastError.value?.takeIf { it.isNotBlank() }
@@ -234,11 +256,14 @@ class AdbRecordingBackend(
         }
         // A helper orphaned by an app restart still holds a capture;
         // the helper preempts it on START, so this session owns the file.
+        // CALL is the default; MIC only for the settings-page test,
+        // because VOICE_CALL is silent outside an active call.
+        val command = if (source == CaptureSource.MIC) "START MIC" else "START CALL"
         val socket = withContext(Dispatchers.IO) {
             val s = Socket()
             s.connect(InetSocketAddress(OFFLINE_ADB_HOST, port), 1500)
             s.soTimeout = 15_000
-            s.getOutputStream().write("$token\nSTART\n".toByteArray(Charsets.US_ASCII))
+            s.getOutputStream().write("$token\n$command\n".toByteArray(Charsets.US_ASCII))
             s.getOutputStream().flush()
             val reply = readLine(s.getInputStream())
             if (reply != "OK") {
@@ -258,8 +283,15 @@ class AdbRecordingBackend(
         captureSocket = socket
         captureOut = out
         captureBytes.set(0)
+        captureSource = source
+        capturePeak = 0f
+        captureFirstSecondPeak = 0f
+        _captureLevel.value = 0f
         captureJob = captureScope.launch {
             val buffer = ByteArray(8192)
+            var peak = 0f
+            var firstPeakSample = 0
+            var firstSecondSamples = 0
             try {
                 while (true) {
                     val read = socket.getInputStream().read(buffer)
@@ -267,11 +299,32 @@ class AdbRecordingBackend(
                     if (read > 0) {
                         out.write(buffer, 0, read)
                         captureBytes.addAndGet(read.toLong())
+                        // 16-bit little-endian samples: overall peak,
+                        // first-second peak, and the live meter level.
+                        var chunkPeak = 0
+                        var i = 0
+                        while (i + 1 < read) {
+                            val sample = (buffer[i].toInt() and 0xFF) or
+                                (buffer[i + 1].toInt() shl 8)
+                            val abs = if (sample < 0) -sample else sample
+                            if (abs > chunkPeak) chunkPeak = abs
+                            if (firstSecondSamples < WavWriter.SAMPLE_RATE) {
+                                if (abs > firstPeakSample) firstPeakSample = abs
+                                firstSecondSamples++
+                            }
+                            i += 2
+                        }
+                        val chunkLevel = chunkPeak / 32768f
+                        if (chunkLevel > peak) peak = chunkLevel
+                        _captureLevel.value = chunkLevel
                     }
                 }
             } catch (_: Exception) {
                 // Socket closed by stopCapture, or the helper died:
                 // bytes so far are still a valid recording.
+            } finally {
+                capturePeak = peak
+                captureFirstSecondPeak = firstPeakSample / 32768f
             }
         }
         Unit
@@ -298,7 +351,17 @@ class AdbRecordingBackend(
                 }
                 out.flush()
             }
-            CaptureResult(bytes, WavWriter.durationMs(bytes))
+            val result = CaptureResult(
+                pcmBytes = bytes,
+                durationMs = WavWriter.durationMs(bytes),
+                peak = capturePeak,
+                firstSecondPeak = captureFirstSecondPeak,
+                source = captureSource,
+                sampleRate = WavWriter.SAMPLE_RATE,
+                fallbackError = readFallbackError()
+            )
+            _captureDiagnostic.value = result.diagnostic()
+            result
         } finally {
             // The ParcelFileDescriptor itself stays open: the
             // controller owns and closes it after stop.
@@ -306,6 +369,30 @@ class AdbRecordingBackend(
             captureOut = null
             captureJob = null
             captureBytes.set(0)
+            _captureLevel.value = 0f
+        }
+    }
+
+    /**
+     * Best-effort read of a FALLBACK_FAILED line from the helper log,
+     * attributed to this capture only: lines after the last
+     * SESSION_START belong to the current capture (the log file is
+     * truncated on every helper launch). Capped at 3 s and null on
+     * any failure, so a dead ADB link can never stall a stop.
+     */
+    private suspend fun readFallbackError(): String? {
+        val endpoint = workingEndpoint ?: return null
+        return withTimeoutOrNull(3000) {
+            withContext(Dispatchers.IO) {
+                runCatching {
+                    val log = kadbShell(endpoint.first, endpoint.second, "tail -50 $HELPER_LOG_PATH")
+                    val lines = log.lines()
+                    val sessionStart = lines.indexOfLast { it.startsWith("SESSION_START") }
+                    val recent = if (sessionStart >= 0) lines.drop(sessionStart + 1) else lines
+                    recent.lastOrNull { it.startsWith("FALLBACK_FAILED:") }
+                        ?.removePrefix("FALLBACK_FAILED:")?.trim()?.takeIf { it.isNotBlank() }
+                }.getOrNull()
+            }
         }
     }
 

@@ -12,5 +12,7 @@ data class RecordingEntity(
     val startedAt: Long,
     val durationMs: Long,
     val sizeBytes: Long,
-    val isTest: Boolean
+    val isTest: Boolean,
+    /** Peak below 1% over the whole capture; old rows default false. */
+    val isSilent: Boolean = false
 )

@@ -8,6 +8,7 @@ import android.os.IBinder
 import io.github.elli0t0.phone.BuildConfig
 import io.github.elli0t0.phone.core.recording.BackendStatus
 import io.github.elli0t0.phone.core.recording.CaptureResult
+import io.github.elli0t0.phone.core.recording.CaptureSource
 import io.github.elli0t0.phone.core.recording.RecordingBackend
 import io.github.elli0t0.phone.core.recording.WavWriter
 import io.github.elli0t0.phone.data.settings.model.RecordingBackendKind
@@ -151,7 +152,13 @@ class ShizukuRecordingBackend(private val context: Context) : RecordingBackend {
         withTimeoutOrNull(BIND_TIMEOUT_MS) { deferred.await() } ?: false
     }
 
-    override suspend fun startCapture(fd: android.os.ParcelFileDescriptor): Result<Unit> {
+    // The Shizuku service always captures VOICE_CALL: a MIC test
+    // keeps the old behavior (it records the call source, so a test
+    // outside a call is still silent there) and the source is ignored.
+    override suspend fun startCapture(
+        fd: android.os.ParcelFileDescriptor,
+        source: CaptureSource
+    ): Result<Unit> {
         if (!ensureBound()) {
             return Result.failure(IllegalStateException("Recorder service is not bound"))
         }

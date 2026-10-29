@@ -477,11 +477,16 @@
     <string name="recording_action_start_shizuku">Open Shizuku</string>
     <string name="recording_action_grant">Grant permission</string>
     <string name="recording_action_refresh">Refresh</string>
-    <string name="recording_test">Test recording (3s)</string>
+    <string name="recording_test">Test recording (3s, microphone)</string>
     <string name="recording_test_running">Test recording in progress</string>
     <string name="recording_test_title">Test recording</string>
     <string name="recording_test_ok">Test OK: %1$d bytes in %2$d ms</string>
+    <string name="recording_test_ok_mic">Recorder works. For a call test, start a call and tap Record. (%1$d bytes in %2$d ms, peak %3$d%%)</string>
+    <string name="recording_test_mic_silence">Microphone returned silence. Check the RECORD_AUDIO permission for the shell recorder or another app using the microphone.</string>
     <string name="recording_test_failed">Test failed: %1$s</string>
+    <string name="recording_silent_message">This recording is silent. Call audio capture may be blocked on this device, or the call was not connected yet.</string>
+    <string name="recording_silent_badge">Silent</string>
+    <string name="recording_armed">Recording starts when the call connects</string>
     <string name="recording_active">Recording</string>
     <string name="recording_active_call">Recording this call</string>
     <string name="recording_notification_channel">Call recording</string>

@@ -164,6 +164,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.16.10]
+
+- Recording test fixed: the settings test now records 3s from the microphone (helper `START MIC`) instead of VOICE_CALL, which is silent outside an active call. The button reads "Test recording (3s, microphone)" and shows bytes, duration and peak level; below 2% peak it says the microphone returned silence and names the RECORD_AUDIO / mic-in-use check; on success it says the recorder works and a call test needs a real call. Shizuku keeps its old call-source test.
+- Silence detection for real recordings: the ADB reader tracks peak amplitude while writing PCM. On stop, a peak below 1% keeps the file but badges it "Silent" in the recordings list (with the full message) and shows the silent message in the call UI. Test recordings get the same badge.
+- Tapping Record before the call connects no longer records dialing/ringing: it arms the recording, which starts only once the call is ACTIVE (the in-call UI shows "Recording starts when the call connects"); tapping again disarms.
+- Live level meter on the in-call Record button while recording, driven by the same per-chunk peak.
+- VOICE_CALL fallback (helper, own function): if the first 2s of an ACTIVE call are pure silence, it retries once with VOICE_DOWNLINK + VOICE_UPLINK mixed (summed with clipping) into one mono stream. If mixing is not possible on this device, the exact exception is logged and shown under Recorder status.
+- Recorder status / Copy details now include the last capture's line: source tried, sample rate, first-second peak, overall peak, fallback failure text. Room database is now version 4 (recordings gain an isSilent column via a real migration).
+
 ## [0.16.9]
 
 - Settings restructured into 8 section pages (Appearance, Liquid glass, Layout & navigation, Calls, Contacts, Call recording, Privacy, About), each with an icon row and a live summary subtitle on the main page; "Reset to defaults" stays at the bottom.

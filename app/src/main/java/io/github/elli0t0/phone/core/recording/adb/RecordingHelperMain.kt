@@ -22,8 +22,18 @@ import kotlin.concurrent.thread
  * the app): every connection sends the launch token as its first line
  * and is closed immediately otherwise, then one command:
  * STATUS -> IDLE|RECORDING, QUIT -> OK (and the helper exits),
- * START -> OK followed by raw 16-bit mono PCM chunks on the same
- * connection until the app closes it (or ERR <reason> instead of OK).
+ * START [CALL|MIC] -> OK followed by raw 16-bit mono PCM chunks on
+ * the same connection until the app closes it (or ERR <reason>
+ * instead of OK). CALL (MediaRecorder.AudioSource.VOICE_CALL) is the
+ * default; MIC is the settings-page test only, because VOICE_CALL
+ * returns audio solely during an active call.
+ *
+ * VOICE_CALL fallback (own function, easy to remove): if the first 2 s
+ * of a CALL capture are pure silence, the helper retries once with
+ * VOICE_DOWNLINK + VOICE_UPLINK mixed (summed with clipping) into one
+ * mono stream. When mixing is not possible on this device, the exact
+ * exception is logged as FALLBACK_FAILED and the VOICE_CALL stream
+ * resumes, so the recording still exists and the failure is visible.
  *
  * Uses only framework classes plus WavWriter's constants, all present
  * in the APK's classpath under app_process. Never touches the app
@@ -53,6 +63,8 @@ private class RecordingHelperServer(
 ) {
     private val lock = Any()
     private var recorder: AudioRecord? = null
+    /** Second mixed-capture record (VOICE_UPLINK); null outside the fallback. */
+    private var secondRecord: AudioRecord? = null
     private var captureThread: Thread? = null
     @Volatile
     private var stopRequested = false
@@ -95,20 +107,30 @@ private class RecordingHelperServer(
                 runCatching { socket.close() }
                 return
             }
-            when (val command = readLine(input)) {
-                "STATUS" -> {
+            val command = readLine(input)
+            when {
+                command == "STATUS" -> {
                     reply(socket, if (isRecording()) "RECORDING" else "IDLE")
                     runCatching { socket.close() }
                 }
-                "QUIT" -> {
+                command == "QUIT" -> {
                     reply(socket, "OK")
                     stopCaptureInternal()
                     quitRequested = true
                     runCatching { socket.close() }
                     runCatching { serverSocket?.close() }
                 }
-                "START" -> {
-                    val result = startCapture(socket)
+                command == "START" || command.startsWith("START ") -> {
+                    // CALL is the default; the app passes MIC only for
+                    // the settings-page test. Anything else after START
+                    // is treated as CALL, never rejected: a test must
+                    // not fail on a protocol spelling detail.
+                    val source = if (command == "START MIC") {
+                        MediaRecorder.AudioSource.MIC
+                    } else {
+                        MediaRecorder.AudioSource.VOICE_CALL
+                    }
+                    val result = startCapture(socket, source)
                     reply(socket, result)
                     if (result == "OK") {
                         // This thread watches the socket: EOF (the app
@@ -141,72 +163,126 @@ private class RecordingHelperServer(
      * app restart is preempted: the new session owns the recorder.
      * Returns "OK" or "ERR <reason>" (the exact AudioRecord failure
      * text when creation or start throws, so it shows in the UI).
+     * SESSION_START marks the log so the app can attribute a later
+     * FALLBACK_FAILED line to this capture, not an earlier one.
      */
-    private fun startCapture(socket: Socket): String {
+    private fun startCapture(socket: Socket, source: Int): String {
         if (isRecording()) stopCaptureInternal()
+        val record = try {
+            createRecord(source)
+        } catch (e: Exception) {
+            return "ERR ${e.message ?: e.toString()}"
+        }
         synchronized(lock) {
-            val minBuffer = AudioRecord.getMinBufferSize(
-                WavWriter.SAMPLE_RATE,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT
-            )
-            if (minBuffer <= 0) return "ERR audio"
-            val record = try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    AudioRecord.Builder()
-                        .setAudioSource(MediaRecorder.AudioSource.VOICE_CALL)
-                        .setAudioFormat(
-                            AudioFormat.Builder()
-                                .setSampleRate(WavWriter.SAMPLE_RATE)
-                                .setChannelMask(AudioFormat.CHANNEL_IN_MONO)
-                                .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                                .build()
-                        )
-                        .setBufferSizeInBytes(maxOf(minBuffer, 8192))
-                        .build()
-                } else {
-                    AudioRecord(
-                        MediaRecorder.AudioSource.VOICE_CALL,
-                        WavWriter.SAMPLE_RATE,
-                        AudioFormat.CHANNEL_IN_MONO,
-                        AudioFormat.ENCODING_PCM_16BIT,
-                        maxOf(minBuffer, 8192)
-                    )
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                return "ERR ${e.message ?: e.toString()}"
-            }
-            if (record.state != AudioRecord.STATE_INITIALIZED) {
-                record.release()
-                return "ERR audio"
-            }
-            try {
-                record.startRecording()
-            } catch (e: Exception) {
-                e.printStackTrace()
-                record.release()
-                return "ERR ${e.message ?: e.toString()}"
-            }
             recorder = record
             stopRequested = false
             val thread = thread(isDaemon = true, name = "phone-recording") {
-                captureLoop(socket)
+                captureLoop(socket, source)
             }
             captureThread = thread
-            return "OK"
         }
+        System.err.println("SESSION_START")
+        return "OK"
+    }
+
+    /**
+     * Creates and starts an AudioRecord for [source], or throws with
+     * the exact failure (creation/start exceptions are printed, the
+     * "audio" sentinel covers an unusable configuration). Shared by
+     * the main capture and the mixed fallback so both fail identically.
+     */
+    private fun createRecord(source: Int): AudioRecord {
+        val minBuffer = AudioRecord.getMinBufferSize(
+            WavWriter.SAMPLE_RATE,
+            AudioFormat.CHANNEL_IN_MONO,
+            AudioFormat.ENCODING_PCM_16BIT
+        )
+        if (minBuffer <= 0) throw IllegalStateException("audio")
+        val record = try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                AudioRecord.Builder()
+                    .setAudioSource(source)
+                    .setAudioFormat(
+                        AudioFormat.Builder()
+                            .setSampleRate(WavWriter.SAMPLE_RATE)
+                            .setChannelMask(AudioFormat.CHANNEL_IN_MONO)
+                            .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                            .build()
+                    )
+                    .setBufferSizeInBytes(maxOf(minBuffer, 8192))
+                    .build()
+            } else {
+                AudioRecord(
+                    source,
+                    WavWriter.SAMPLE_RATE,
+                    AudioFormat.CHANNEL_IN_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT,
+                    maxOf(minBuffer, 8192)
+                )
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw e
+        }
+        if (record.state != AudioRecord.STATE_INITIALIZED) {
+            record.release()
+            throw IllegalStateException("audio")
+        }
+        try {
+            record.startRecording()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            record.release()
+            throw e
+        }
+        return record
     }
 
     /** Writer thread: raw PCM to the START connection until the app
-     * closes it (write fails), the capture errors, or a stop arrives. */
-    private fun captureLoop(socket: Socket) {
-        val record = synchronized(lock) { recorder } ?: return
+     * closes it (write fails), the capture errors, or a stop arrives.
+     * For CALL captures the first 2 s are watched: pure silence there
+     * triggers the mixed downlink/uplink retry once (see below). The
+     * app only starts a CALL capture once the call is ACTIVE, so the
+     * 2 s window runs during a connected call, not dialing. */
+    private fun captureLoop(socket: Socket, source: Int) {
+        var record = synchronized(lock) { recorder } ?: return
         val buffer = ByteArray(8192)
+        var samplesSeen = 0L
+        var allZero = true
+        var fallbackAttempted = false
         try {
             while (!stopRequested) {
                 val read = record.read(buffer, 0, buffer.size)
                 if (read > 0) {
+                    if (source == MediaRecorder.AudioSource.VOICE_CALL && !fallbackAttempted) {
+                        var i = 0
+                        while (i + 1 < read) {
+                            val sample = (buffer[i].toInt() and 0xFF) or
+                                (buffer[i + 1].toInt() shl 8)
+                            if (sample != 0) {
+                                allZero = false
+                                break
+                            }
+                            i += 2
+                        }
+                        samplesSeen += read / 2
+                        if (samplesSeen >= 2L * WavWriter.SAMPLE_RATE && allZero) {
+                            fallbackAttempted = true
+                            // The mixed loop owns the socket to the end
+                            // when it runs; otherwise resume VOICE_CALL
+                            // with a fresh record and keep the stream.
+                            if (runMixedCapture(socket)) return
+                            runCatching { record.stop() }
+                            runCatching { record.release() }
+                            record = try {
+                                createRecord(MediaRecorder.AudioSource.VOICE_CALL)
+                            } catch (_: Exception) {
+                                break
+                            }
+                            synchronized(lock) { recorder = record }
+                            continue
+                        }
+                    }
                     try {
                         socket.outputStream.write(buffer, 0, read)
                     } catch (_: Exception) {
@@ -225,7 +301,9 @@ private class RecordingHelperServer(
                 }
                 // Exactly-once release: a preempt owns the release of
                 // the recorder it replaced, so only release when this
-                // loop's recorder is still the current one.
+                // loop's recorder is still the current one. After a
+                // mixed capture the fields already moved on (or were
+                // nulled), so this check skips them safely.
                 if (recorder === record) {
                     recorder = null
                     runCatching { record.release() }
@@ -233,6 +311,82 @@ private class RecordingHelperServer(
             }
             runCatching { socket.close() }
         }
+    }
+
+    /**
+     * VOICE_CALL fallback, kept as its own function so it is easy to
+     * remove: VOICE_DOWNLINK + VOICE_UPLINK as two AudioRecord
+     * instances, summed sample-wise with clipping into one mono
+     * stream on the same socket. Returns true when the mixed loop ran
+     * to its end (stop or socket error); false when mixing is not
+     * possible on this device, with the exact exception logged as
+     * FALLBACK_FAILED for the app to surface under Recorder status.
+     * The two streams are read in turn, so they can drift by up to one
+     * buffer; that is accepted for a fallback path.
+     */
+    private fun runMixedCapture(socket: Socket): Boolean {
+        val old = synchronized(lock) { recorder }
+        runCatching { old?.stop() }
+        runCatching { old?.release() }
+        val down: AudioRecord
+        val up: AudioRecord
+        try {
+            down = createRecord(MediaRecorder.AudioSource.VOICE_DOWNLINK)
+            try {
+                up = createRecord(MediaRecorder.AudioSource.VOICE_UPLINK)
+            } catch (e: Exception) {
+                runCatching { down.stop() }
+                runCatching { down.release() }
+                throw e
+            }
+        } catch (e: Exception) {
+            System.err.println("FALLBACK_FAILED: ${e.message ?: e.toString()}")
+            e.printStackTrace()
+            return false
+        }
+        synchronized(lock) {
+            recorder = down
+            secondRecord = up
+        }
+        val bufferDown = ByteArray(8192)
+        val bufferUp = ByteArray(8192)
+        try {
+            while (!stopRequested) {
+                val readDown = down.read(bufferDown, 0, bufferDown.size)
+                val readUp = up.read(bufferUp, 0, bufferUp.size)
+                if (readDown <= 0 || readUp <= 0) break
+                val n = minOf(readDown, readUp) / 2 * 2
+                var i = 0
+                while (i < n) {
+                    val a = (bufferDown[i].toInt() and 0xFF) or
+                        (bufferDown[i + 1].toInt() shl 8)
+                    val b = (bufferUp[i].toInt() and 0xFF) or
+                        (bufferUp[i + 1].toInt() shl 8)
+                    var mixed = a + b
+                    if (mixed > 32767) mixed = 32767
+                    if (mixed < -32768) mixed = -32768
+                    bufferDown[i] = (mixed and 0xFF).toByte()
+                    bufferDown[i + 1] = (mixed shr 8).toByte()
+                    i += 2
+                }
+                try {
+                    socket.outputStream.write(bufferDown, 0, n)
+                } catch (_: Exception) {
+                    break
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        } finally {
+            synchronized(lock) {
+                if (recorder === down) recorder = null
+                if (secondRecord === up) secondRecord = null
+                runCatching { down.release() }
+                runCatching { up.release() }
+            }
+            runCatching { socket.close() }
+        }
+        return true
     }
 
     /**
@@ -244,13 +398,19 @@ private class RecordingHelperServer(
         val thread = synchronized(lock) {
             stopRequested = true
             runCatching { recorder?.stop() }
+            // The mixed fallback holds a second record; stopping only
+            // the first would leave its read blocked and the thread alive.
+            runCatching { secondRecord?.stop() }
             captureThread
         }
         thread?.join(5000)
         synchronized(lock) {
             val stale = recorder
+            val staleSecond = secondRecord
             recorder = null
+            secondRecord = null
             runCatching { stale?.release() }
+            runCatching { staleSecond?.release() }
             captureThread = null
             stopRequested = false
         }

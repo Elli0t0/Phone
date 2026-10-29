@@ -33,7 +33,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-data class RecordingTestOutcome(val bytes: Long, val durationMs: Long, val error: String?)
+data class RecordingTestOutcome(
+    val bytes: Long,
+    val durationMs: Long,
+    val error: String?,
+    /** Peak 0..1 for the ADB mic test; null when unmeasured (Shizuku). */
+    val peak: Float? = null
+)
 
 class RecordingSettingsViewModel(
     private val controller: RecordingController,
@@ -44,6 +50,7 @@ class RecordingSettingsViewModel(
     val backendStatus: StateFlow<BackendStatus> = controller.backendStatus
     val backendKind: StateFlow<RecordingBackendKind> = controller.activeBackendKind
     val backendDiagnostic: StateFlow<String?> = controller.backendDiagnostic
+    val captureDiagnostic: StateFlow<String?> = controller.lastCaptureDiagnostic
     val pairResult: StateFlow<PairResult?> = controller.pairResult
     val manualPort: StateFlow<Int?> = controller.manualPort
     val detectResult: StateFlow<String?> = controller.detectResult
@@ -169,8 +176,10 @@ class RecordingSettingsViewModel(
             _testOutcome.value = null
             val result = controller.runPipelineTest()
             _testOutcome.value = result.fold(
-                onSuccess = { RecordingTestOutcome(it.pcmBytes, it.durationMs, null) },
-                onFailure = { RecordingTestOutcome(0, 0, it.message) }
+                onSuccess = {
+                    RecordingTestOutcome(it.pcmBytes, it.durationMs, null, it.peak)
+                },
+                onFailure = { RecordingTestOutcome(0, 0, it.message, null) }
             )
             _busy.value = false
         }

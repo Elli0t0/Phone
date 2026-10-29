@@ -113,6 +113,8 @@ fun OngoingCallScreen(
     dim: Float = 0f,
     showNumber: Boolean = true,
     isRecording: Boolean = false,
+    recordingLevel: Float = 0f,
+    recordingArmed: Boolean = false,
     onRecordToggle: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -305,6 +307,34 @@ fun OngoingCallScreen(
                             color = MaterialTheme.colorScheme.error
                         )
                     }
+                    // Live level meter: the same peak the backend
+                    // measures while writing PCM. A flat bar during a
+                    // call means silence is being recorded, right away
+                    // instead of at playback. No animated state: the
+                    // flow updates a few times per second, which is
+                    // the animation.
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Box(
+                        modifier = Modifier
+                            .width(64.dp)
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(Color.White.copy(alpha = 0.3f))
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(recordingLevel.coerceIn(0f, 1f))
+                                .background(Color.White)
+                        )
+                    }
+                } else if (recordingArmed) {
+                    Spacer(modifier = Modifier.height(spacing.extraSmall))
+                    Text(
+                        text = stringResource(id = R.string.recording_armed),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.6f)
+                    )
                 }
             }
 

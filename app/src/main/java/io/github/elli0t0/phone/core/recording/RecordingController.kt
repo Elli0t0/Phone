@@ -8,6 +8,7 @@ import android.os.Environment
 import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import io.github.elli0t0.phone.core.recording.adb.AdbRecordingBackend
+import io.github.elli0t0.phone.core.recording.CaptureSource
 import io.github.elli0t0.phone.data.call.CallRepository
 import io.github.elli0t0.phone.data.call.CallState
 import io.github.elli0t0.phone.data.recordings.RecordingEntity
@@ -81,6 +82,33 @@ class RecordingController(
 
     /** Diagnostic detail for the last ADB probe; null when healthy. */
     val backendDiagnostic: StateFlow<String?> = adbBackend.lastError
+
+    /** Diagnostic line of the last finished capture (source, sample
+     * rate, peaks, fallback failure); shown under Recorder status. */
+    private val _lastCaptureDiagnostic = MutableStateFlow<String?>(null)
+    val lastCaptureDiagnostic: StateFlow<String?> = _lastCaptureDiagnostic.asStateFlow()
+
+    /** True when the last finished non-test recording was silent
+     * (peak below 1%); the in-call UI shows the silent message from
+     * this. Reset on every new start so it fires once per stop. */
+    private val _lastRecordingSilent = MutableStateFlow(false)
+    val lastRecordingSilent: StateFlow<Boolean> = _lastRecordingSilent.asStateFlow()
+
+    /** Live capture level (0..1) from the ADB backend's reader; the
+     * in-call meter reads it. Shizuku stays at 0 (it does not stream
+     * PCM through the app). */
+    val recordingLevel: StateFlow<Float> = adbBackend.captureLevel
+
+    /** True while a call recording is armed: tapped before the call
+     * was ACTIVE, waiting for the connect to start capture. */
+    private val _pendingRecording = MutableStateFlow(false)
+    val pendingRecording: StateFlow<Boolean> = _pendingRecording.asStateFlow()
+
+    /** Armed call-recording request (number, display name), set by
+     * startCallRecording before ACTIVE and consumed by the collector
+     * below. Volatile: written from UI callers, read on the IO scope. */
+    @Volatile
+    private var pendingCall: Pair<String, String?>? = null
 
     /** Latest pairing attempt result, published by PairCodeReceiver. */
     private val _pairResult = MutableStateFlow<PairResult?>(null)
@@ -162,6 +190,22 @@ class RecordingController(
                 ) {
                     stopRecording()
                 }
+                // Armed recording: the tap landed before ACTIVE. The
+                // duration must not count dialing/ringing, so capture
+                // starts only once the call connects; a disconnect
+                // before that drops the request silently.
+                val pending = pendingCall
+                if (pending != null) {
+                    if (model == null || model.state == CallState.DISCONNECTED) {
+                        pendingCall = null
+                        _pendingRecording.value = false
+                    } else if (model.state == CallState.ACTIVE) {
+                        pendingCall = null
+                        _pendingRecording.value = false
+                        startSession(pending.first, pending.second, isTest = false)
+                            .onFailure { _lastError.value = it.message }
+                    }
+                }
             }
         }
     }
@@ -187,10 +231,32 @@ class RecordingController(
                 return Result.failure(IllegalStateException("Recorder is not ready"))
             }
         }
+        // Tapped before the call connected: arm instead of recording
+        // dialing/ringing silence — capture (and its duration) starts
+        // only once the call is ACTIVE, via the collector above.
+        // Tapping again while armed disarms (the button toggles).
+        val callState = CallRepository.ongoingCallModel.value?.state
+        if (callState != null && callState != CallState.ACTIVE) {
+            return sessionMutex.withLock {
+                if (pendingCall != null) {
+                    pendingCall = null
+                    _pendingRecording.value = false
+                } else {
+                    pendingCall = number to displayName
+                    _pendingRecording.value = true
+                }
+                Result.success(Unit)
+            }
+        }
         return startSession(number, displayName, isTest = false)
     }
 
-    /** 3-second pipeline check: proves bind + capture + file without a call. */
+    /**
+     * 3-second pipeline check: proves bind + capture + file without a
+     * call. The ADB backend records from the microphone (VOICE_CALL is
+     * silent outside an active call, which is exactly what the old
+     * test measured); Shizuku keeps its old call-source behavior.
+     */
     suspend fun runPipelineTest(): Result<CaptureResult> {
         if (activeBackend().status.value != BackendStatus.READY) {
             activeBackend().refreshStatus()
@@ -207,7 +273,12 @@ class RecordingController(
                 )
             }
         }
-        val started = startSession("", null, isTest = true)
+        val source = if (activeBackendKind.value == RecordingBackendKind.ADB) {
+            CaptureSource.MIC
+        } else {
+            CaptureSource.CALL
+        }
+        val started = startSession("", null, isTest = true, source = source)
         if (started.isFailure) return Result.failure(started.exceptionOrNull()!!)
         delay(TEST_DURATION_MS)
         return stopSession()
@@ -216,7 +287,8 @@ class RecordingController(
     private suspend fun startSession(
         number: String,
         displayName: String?,
-        isTest: Boolean
+        isTest: Boolean,
+        source: CaptureSource = CaptureSource.CALL
     ): Result<Unit> = sessionMutex.withLock {
         if (active != null) return@withLock Result.failure(
             IllegalStateException("Already recording")
@@ -224,7 +296,7 @@ class RecordingController(
         runCatching {
             val startedAt = System.currentTimeMillis()
             val (uri, pfd) = createEntry(number, startedAt, isTest)
-            val capture = activeBackend().startCapture(pfd)
+            val capture = activeBackend().startCapture(pfd, source)
             if (capture.isFailure) {
                 runCatching { pfd.close() }
                 runCatching { context.contentResolver.delete(uri, null, null) }
@@ -233,6 +305,7 @@ class RecordingController(
             active = ActiveSession(uri, pfd, number, displayName, startedAt, isTest)
             _state.value = RecordingSession.Recording(number, displayName, startedAt, isTest)
             _lastError.value = null
+            _lastRecordingSilent.value = false
             context.startForegroundService(
                 Intent(context, RecordingForegroundService::class.java)
             )
@@ -265,6 +338,13 @@ class RecordingController(
         }
         context.stopService(Intent(context, RecordingForegroundService::class.java))
         capture.onSuccess { result ->
+            // A null peak means the backend does not measure (Shizuku):
+            // never read as silence. Below 1% the file is kept but
+            // badged Silent, and a non-test stop raises the in-call
+            // silent message.
+            val silent = result.peak != null && result.peak < 0.01f
+            _lastCaptureDiagnostic.value = result.diagnostic()
+            if (!session.isTest) _lastRecordingSilent.value = silent
             runCatching {
                 recordingsRepository.add(
                     RecordingEntity(
@@ -274,7 +354,8 @@ class RecordingController(
                         startedAt = session.startedAt,
                         durationMs = result.durationMs,
                         sizeBytes = result.pcmBytes + WavWriter.HEADER_SIZE,
-                        isTest = session.isTest
+                        isTest = session.isTest,
+                        isSilent = silent
                     )
                 )
             }

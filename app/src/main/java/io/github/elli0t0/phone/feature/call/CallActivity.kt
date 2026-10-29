@@ -52,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -144,9 +145,30 @@ class CallActivity : ComponentActivity() {
                 val recordingBackendKind by (recordingController?.activeBackendKind
                     ?: remember { MutableStateFlow(RecordingBackendKind.SHIZUKU) })
                     .collectAsStateWithLifecycle()
+                val recordingLevel by (recordingController?.recordingLevel
+                    ?: remember { MutableStateFlow(0f) })
+                    .collectAsStateWithLifecycle()
+                val recordingArmed by (recordingController?.pendingRecording
+                    ?: remember { MutableStateFlow(false) })
+                    .collectAsStateWithLifecycle()
+                val lastRecordingSilent by (recordingController?.lastRecordingSilent
+                    ?: remember { MutableStateFlow(false) })
+                    .collectAsStateWithLifecycle()
                 val recordingScope = rememberCoroutineScope()
                 var showRecordingNeeded by remember { mutableStateOf(false) }
                 var recordingError by remember { mutableStateOf<String?>(null) }
+
+                // A stop that measured silence raises the same dialog
+                // as a start failure, so the user learns right away
+                // instead of discovering a silent file later. The
+                // controller resets the flag on every new start, so
+                // this fires once per silent stop.
+                val context = LocalContext.current
+                LaunchedEffect(lastRecordingSilent) {
+                    if (lastRecordingSilent) {
+                        recordingError = context.getString(R.string.recording_silent_message)
+                    }
+                }
 
                 // Post-dial wait (";" only; "," pauses continue on
                 // their own): a glass dialog asking whether to send
@@ -381,6 +403,8 @@ class CallActivity : ComponentActivity() {
                                             dim = settings.callBackgroundDim,
                                             showNumber = settings.showNumberOnCallScreen,
                                             isRecording = recordingSession is RecordingSession.Recording,
+                                            recordingLevel = recordingLevel,
+                                            recordingArmed = recordingArmed,
                                             onRecordToggle = {
                                                 recordingScope.launch {
                                                     val controller = recordingController

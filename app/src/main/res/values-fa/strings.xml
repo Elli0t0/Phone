@@ -88,11 +88,16 @@
     <string name="recording_action_start_shizuku">باز کردن شیزوکو</string>
     <string name="recording_action_grant">اعطای دسترسی</string>
     <string name="recording_action_refresh">به‌روزرسانی</string>
-    <string name="recording_test">آزمایش ضبط (3 ثانیه)</string>
+    <string name="recording_test">آزمایش ضبط (3 ثانیه، میکروفون)</string>
     <string name="recording_test_running">آزمایش ضبط در حال انجام است</string>
     <string name="recording_test_title">ضبط آزمایشی</string>
     <string name="recording_test_ok">آزمایش موفق: %1$d بایت در %2$d میلی‌ثانیه</string>
+    <string name="recording_test_ok_mic">ضبط کار می‌کند. برای آزمایش تماس، تماسی بگیرید و «ضبط» را بزنید. (%1$d بایت در %2$d میلی‌ثانیه، اوج %3$d٪)</string>
+    <string name="recording_test_mic_silence">میکروفون صدایی ضبط نکرد. دسترسی RECORD_AUDIO ضبط‌کننده یا استفاده برنامه‌ای دیگر از میکروفون را بررسی کنید.</string>
     <string name="recording_test_failed">آزمایش ناموفق بود: %1$s</string>
+    <string name="recording_silent_message">این ضبط بی‌صداست. ممکن است ضبط صدای تماس در این دستگاه مسدود باشد، یا تماس هنوز وصل نشده باشد.</string>
+    <string name="recording_silent_badge">بی‌صدا</string>
+    <string name="recording_armed">ضبط با وصل شدن تماس آغاز می‌شود</string>
     <string name="recording_active">در حال ضبط</string>
     <string name="recording_active_call">در حال ضبط این تماس</string>
     <string name="recording_notification_channel">ضبط تماس</string>

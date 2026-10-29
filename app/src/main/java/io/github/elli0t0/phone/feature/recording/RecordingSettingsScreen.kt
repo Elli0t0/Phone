@@ -134,6 +134,7 @@ fun RecordingSettingsScreen(
     val playingId by viewModel.playingId.collectAsStateWithLifecycle()
     val positionMs by viewModel.positionMs.collectAsStateWithLifecycle()
     val backendDiagnostic by viewModel.backendDiagnostic.collectAsStateWithLifecycle()
+    val captureDiagnostic by viewModel.captureDiagnostic.collectAsStateWithLifecycle()
     val pairResult by viewModel.pairResult.collectAsStateWithLifecycle()
     val manualPort by viewModel.manualPort.collectAsStateWithLifecycle()
     val detectResult by viewModel.detectResult.collectAsStateWithLifecycle()
@@ -275,16 +276,25 @@ fun RecordingSettingsScreen(
                                 color = MaterialTheme.colorScheme.error
                             )
                         }
-                        if (backendKind == RecordingBackendKind.ADB && backendDiagnostic != null) {
+                        // Copy details covers the probe diagnostic
+                        // plus the last capture's line (source, sample
+                        // rate, peaks, fallback failure), so every
+                        // reason for a silent or failed recording is
+                        // in one paste.
+                        val detailsText = listOfNotNull(
+                            backendDiagnostic,
+                            captureDiagnostic
+                        ).joinToString("\n").takeIf { it.isNotBlank() }
+                        if (backendKind == RecordingBackendKind.ADB && detailsText != null) {
                             Spacer(modifier = Modifier.height(4.dp))
                             SelectionContainer {
                                 Text(
-                                    text = backendDiagnostic!!,
+                                    text = detailsText,
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
                             TextButton(onClick = {
-                                clipboardManager.setText(AnnotatedString(backendDiagnostic!!))
+                                clipboardManager.setText(AnnotatedString(detailsText))
                             }) {
                                 Text(text = stringResource(id = R.string.recording_copy_details))
                             }
@@ -542,17 +552,31 @@ fun RecordingSettingsScreen(
                     }
                     if (testOutcome != null) {
                         Spacer(modifier = Modifier.height(4.dp))
+                        // Shizuku does not measure a peak, so it keeps
+                        // the old line. The ADB mic test shows bytes,
+                        // duration and peak; below 2% it is silence,
+                        // not success, with the exact next check.
+                        val outcome = testOutcome!!
                         Text(
-                            text = if (testOutcome!!.error != null) {
+                            text = if (outcome.error != null) {
                                 stringResource(
                                     id = R.string.recording_test_failed,
-                                    testOutcome!!.error!!
+                                    outcome.error!!
+                                )
+                            } else if (outcome.peak != null && outcome.peak < 0.02f) {
+                                stringResource(id = R.string.recording_test_mic_silence)
+                            } else if (outcome.peak != null) {
+                                stringResource(
+                                    id = R.string.recording_test_ok_mic,
+                                    outcome.bytes,
+                                    outcome.durationMs,
+                                    (outcome.peak * 100).toInt()
                                 )
                             } else {
                                 stringResource(
                                     id = R.string.recording_test_ok,
-                                    testOutcome!!.bytes,
-                                    testOutcome!!.durationMs
+                                    outcome.bytes,
+                                    outcome.durationMs
                                 )
                             },
                             style = MaterialTheme.typography.bodySmall
@@ -648,6 +672,19 @@ private fun RecordingRow(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            if (entity.isSilent) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = stringResource(id = R.string.recording_silent_badge),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+                Text(
+                    text = stringResource(id = R.string.recording_silent_message),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
             Spacer(modifier = Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onPlayToggle) {
