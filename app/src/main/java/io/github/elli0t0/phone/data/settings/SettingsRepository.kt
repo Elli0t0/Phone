@@ -109,6 +109,7 @@ interface SettingsRepository {
     suspend fun setRecordingBackend(backend: RecordingBackendKind)
     suspend fun setAdbManualPort(port: Int?)
     suspend fun setAdbLastKnownPort(port: Int?)
+    suspend fun setAdbOfflineMode(enabled: Boolean)
     suspend fun setShowNumberOnCallScreen(show: Boolean)
     suspend fun setDefaultSim(defaultSim: DefaultSim)
     suspend fun setQuickDeclineMessages(messages: List<String>)
@@ -181,6 +182,7 @@ class DataStoreSettingsRepository(
         val RECORDING_BACKEND = stringPreferencesKey("recording_backend")
         val ADB_MANUAL_PORT = intPreferencesKey("adb_manual_port")
         val ADB_LAST_KNOWN_PORT = intPreferencesKey("adb_last_known_port")
+        val ADB_OFFLINE_MODE = booleanPreferencesKey("adb_offline_mode")
         val SHOW_NUMBER_ON_CALL_SCREEN = booleanPreferencesKey("show_number_on_call_screen")
         val DEFAULT_SIM = stringPreferencesKey("default_sim")
         val QUICK_DECLINE_MESSAGES = stringPreferencesKey("quick_decline_messages")
@@ -342,6 +344,7 @@ class DataStoreSettingsRepository(
 
         val adbManualPort = prefs[Keys.ADB_MANUAL_PORT]?.takeIf { it in 1..65535 }
         val adbLastKnownPort = prefs[Keys.ADB_LAST_KNOWN_PORT]?.takeIf { it in 1..65535 }
+        val adbOfflineMode = prefs[Keys.ADB_OFFLINE_MODE] ?: false
 
         val showNumberOnCallScreen = prefs[Keys.SHOW_NUMBER_ON_CALL_SCREEN] ?: true
 
@@ -429,6 +432,7 @@ class DataStoreSettingsRepository(
             recordingBackend = recordingBackend,
             adbManualPort = adbManualPort,
             adbLastKnownPort = adbLastKnownPort,
+            adbOfflineMode = adbOfflineMode,
             showNumberOnCallScreen = showNumberOnCallScreen,
             defaultSim = defaultSim,
             quickDeclineOverrides = quickDeclineOverrides,
@@ -793,6 +797,10 @@ class DataStoreSettingsRepository(
                 prefs[Keys.ADB_LAST_KNOWN_PORT] = port
             }
         }
+    }
+
+    override suspend fun setAdbOfflineMode(enabled: Boolean) {
+        dataStore.edit { prefs -> prefs[Keys.ADB_OFFLINE_MODE] = enabled }
     }
 
     override suspend fun setShowNumberOnCallScreen(show: Boolean) {

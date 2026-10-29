@@ -295,6 +295,8 @@ data class AppSettings(
     val adbManualPort: Int? = null,
     /** Last ADB connect port that worked; tried after NSD results. */
     val adbLastKnownPort: Int? = null,
+    /** Offline ADB recording: prefer a local debugging port (5555) over Wi-Fi. */
+    val adbOfflineMode: Boolean = false,
     val showNumberOnCallScreen: Boolean = true,
     val defaultSim: DefaultSim = DefaultSim.ASK,
     // Quick-decline message overrides, one per reply chip. A blank entry

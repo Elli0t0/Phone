@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import okio.buffer
 import java.io.ByteArrayOutputStream
 import java.net.InetSocketAddress
 import java.net.Socket
@@ -42,6 +43,9 @@ import java.net.Socket
  * NSD discovery, then the ADB connect in order, and reports a specific
  * message for each failure instead of mapping everything to NOT_PAIRED.
  */
+private const val OFFLINE_ADB_HOST = "127.0.0.1"
+private const val OFFLINE_ADB_PORT = 5555
+
 class AdbRecordingBackend(
     private val context: Context,
     private val settingsRepository: SettingsRepository
@@ -60,6 +64,10 @@ class AdbRecordingBackend(
     private val _lastError = MutableStateFlow<String?>(null)
     val lastError: StateFlow<String?> = _lastError.asStateFlow()
 
+    /** True when the last successful probe used the local offline port. */
+    private val _offlinePortActive = MutableStateFlow(false)
+    val offlinePortActive: StateFlow<Boolean> = _offlinePortActive.asStateFlow()
+
     /** Endpoint of the last successful probe; reused for the helper bootstrap. */
     private var workingEndpoint: Pair<String, Int>? = null
 
@@ -67,7 +75,12 @@ class AdbRecordingBackend(
     private var connectionTimeApplied = false
 
     private sealed interface Probe {
-        data class Ok(val host: String, val port: Int) : Probe
+        data class Ok(
+            val host: String,
+            val port: Int,
+            val offline: Boolean = false,
+            val offlineNote: String? = null
+        ) : Probe
         data class Fail(val status: BackendStatus, val message: String) : Probe
     }
 
@@ -75,17 +88,21 @@ class AdbRecordingBackend(
         when (val probe = probe()) {
             is Probe.Ok -> {
                 workingEndpoint = probe.host to probe.port
-                settingsRepository.setAdbLastKnownPort(probe.port)
+                // The offline port is never persisted as last-known: it
+                // must not leak into the Wi-Fi path when the switch is off.
+                if (!probe.offline) settingsRepository.setAdbLastKnownPort(probe.port)
+                _offlinePortActive.value = probe.offline
                 if (ensureHelperAlive(probe.host, probe.port)) {
                     _status.value = BackendStatus.READY
-                    _lastError.value = null
+                    _lastError.value = probe.offlineNote
                 } else {
                     _status.value = BackendStatus.ERROR
-                    _lastError.value = null
+                    _lastError.value = probe.offlineNote
                 }
             }
             is Probe.Fail -> {
                 workingEndpoint = null
+                _offlinePortActive.value = false
                 _status.value = probe.status
                 _lastError.value = probe.message
             }
@@ -108,6 +125,15 @@ class AdbRecordingBackend(
                 reachable(stored.first, stored.second)
             }
             if (stillAnswers) return ensureHelperAlive(stored.first, stored.second)
+        }
+        // Stored endpoint missing or dead: prefer the local offline port
+        // when the switch is on, before falling back to Wi-Fi selection.
+        if (settingsRepository.settingsFlow.first().adbOfflineMode &&
+            withContext(Dispatchers.IO) { reachable(OFFLINE_ADB_HOST, OFFLINE_ADB_PORT) }
+        ) {
+            val offline = OFFLINE_ADB_HOST to OFFLINE_ADB_PORT
+            workingEndpoint = offline
+            if (ensureHelperAlive(offline.first, offline.second)) return true
         }
         // Stored endpoint missing or dead: one fresh selection.
         val endpoint = withContext(Dispatchers.IO) { selectEndpoint() }.endpoint
@@ -158,7 +184,8 @@ class AdbRecordingBackend(
     }
 
     /**
-     * Checks, in order: Wi-Fi, the wireless-debugging setting, then
+     * Checks, in order: the local offline port first when the switch is
+     * on (no Wi-Fi checks), then Wi-Fi, the wireless-debugging setting,
      * endpoint selection (manual port, getprop port, NSD newest-first,
      * last known port — every candidate TCP-checked), then the ADB
      * connect on the ONE verified endpoint. Only an auth failure maps
@@ -166,10 +193,21 @@ class AdbRecordingBackend(
      * reason is visible.
      */
     private suspend fun probe(): Probe = withContext(Dispatchers.IO) {
+        val offlineMode = settingsRepository.settingsFlow.first().adbOfflineMode
+        if (offlineMode && reachable(OFFLINE_ADB_HOST, OFFLINE_ADB_PORT)) {
+            // Local offline port first: no Wi-Fi or wireless-debugging checks.
+            tryOfflinePort()?.let { return@withContext it }
+            // Reachable but unusable for a non-auth reason: fall through
+            // to the Wi-Fi path instead of failing outright.
+        }
         if (!isWifi()) {
             return@withContext Probe.Fail(
                 BackendStatus.NOT_RUNNING,
-                context.getString(R.string.recording_error_no_wifi)
+                if (offlineMode) {
+                    context.getString(R.string.recording_error_offline_needs_wifi)
+                } else {
+                    context.getString(R.string.recording_error_no_wifi)
+                }
             )
         }
         if (Settings.Global.getInt(context.contentResolver, "adb_wifi_enabled", 0) != 1) {
@@ -204,7 +242,18 @@ class AdbRecordingBackend(
                     }
                 }
             }
-            if (ok) return@withContext Probe.Ok(host, port)
+            if (ok) {
+                // Healthy Wi-Fi probe with the switch on and the offline
+                // port still closed: ask adbd to listen locally, then use it.
+                if (offlineMode && !reachable(OFFLINE_ADB_HOST, OFFLINE_ADB_PORT)) {
+                    val note = enableOfflinePort(host, port)
+                    if (note == null) {
+                        return@withContext Probe.Ok(OFFLINE_ADB_HOST, OFFLINE_ADB_PORT, offline = true)
+                    }
+                    return@withContext Probe.Ok(host, port, offlineNote = note)
+                }
+                return@withContext Probe.Ok(host, port)
+            }
         } catch (e: Exception) {
             if (e is CancellationException) throw e
             last = e
@@ -223,6 +272,79 @@ class AdbRecordingBackend(
             )
         }
     }
+
+    /**
+     * Tries the local offline port. Returns Ok on success,
+     * Fail(NOT_PAIRED) on an auth failure, or null when the port is
+     * reachable but unusable for another reason (the caller falls back
+     * to the Wi-Fi path). The wireless-debugging connection-time
+     * setting is not applied here: it governs wireless sessions, not
+     * the plain local port.
+     */
+    private suspend fun tryOfflinePort(): Probe? {
+        var last: Throwable? = null
+        try {
+            val ok = withTimeout(10_000) {
+                Kadb.create(OFFLINE_ADB_HOST, OFFLINE_ADB_PORT, connectTimeout = 10_000, socketTimeout = 10_000).use { kadb ->
+                    kadb.shell("id").exitCode == 0
+                }
+            }
+            if (ok) return Probe.Ok(OFFLINE_ADB_HOST, OFFLINE_ADB_PORT, offline = true)
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            last = e
+        }
+        val lower = last?.message.orEmpty().lowercase()
+        if (lower.contains("auth") || lower.contains("unauthorized") || lower.contains("handshake")) {
+            return Probe.Fail(
+                BackendStatus.NOT_PAIRED,
+                context.getString(R.string.recording_error_key_not_accepted)
+            )
+        }
+        return null
+    }
+
+    /**
+     * Asks adbd, over the verified Wi-Fi connection, to listen on the
+     * local offline port (the tcpip service: the same request a host
+     * `adb tcpip` sends), then waits up to 8 s for the port and
+     * re-starts the helper through it. Returns null on success, else a
+     * reason for Copy details. adbd restarts on tcpip, so a dropped
+     * connection or an empty reply is expected, not an error — and if
+     * the open itself failed but the port still comes up, the request
+     * evidently landed, so that still counts as success.
+     */
+    private suspend fun enableOfflinePort(wifiHost: String, wifiPort: Int): String? =
+        withContext(Dispatchers.IO) {
+            var sendError: String? = null
+            try {
+                Kadb.create(wifiHost, wifiPort, connectTimeout = 10_000, socketTimeout = 10_000).use { kadb ->
+                    kadb.open("tcpip:$OFFLINE_ADB_PORT").use { stream ->
+                        runCatching { stream.source.buffer().readUtf8() }
+                    }
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                sendError = e.message.orEmpty().ifBlank { e.toString() }
+            }
+            repeat(32) {
+                delay(250)
+                if (reachable(OFFLINE_ADB_HOST, OFFLINE_ADB_PORT)) {
+                    return@withContext if (ensureHelperAlive(OFFLINE_ADB_HOST, OFFLINE_ADB_PORT)) {
+                        null
+                    } else {
+                        context.getString(
+                            R.string.recording_error_offline_port,
+                            "recorder helper did not start"
+                        )
+                    }
+                }
+            }
+            context.getString(
+                R.string.recording_error_offline_port,
+                sendError ?: "port $OFFLINE_ADB_PORT did not open"
+            )
+        }
 
     /** One verified endpoint, or null plus the full attempt list. */
     private data class Selection(

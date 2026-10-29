@@ -536,5 +536,10 @@
     <string name="recording_action_reset_pairing">Reset pairing</string>
     <string name="recording_reset_hint">Forget \'Phone\' in the system\'s Paired devices list before pairing again.</string>
     <string name="recording_adb_needs_wifi">Needs Wi-Fi. Keep Wireless debugging on. If recording stops after you turn it off, enable USB debugging (no cable needed): it keeps the recorder alive.</string>
+    <string name="recording_offline_mode_title">Record without Wi-Fi (experimental)</string>
+    <string name="recording_offline_mode_desc">Needs Wi-Fi once after every reboot. Opens a local debugging port (5555), protected by the pairing key.</string>
+    <string name="recording_status_offline_active">Offline port active (until reboot)</string>
+    <string name="recording_error_offline_needs_wifi">Connect to Wi-Fi once to re-enable offline recording.</string>
+    <string name="recording_error_offline_port">Could not open the offline port: %1$s</string>
 </resources>
 

@@ -95,6 +95,14 @@ class RecordingController(
         .map { it.adbManualPort }
         .stateIn(scope, SharingStarted.Eagerly, null)
 
+    /** Offline recording switch from Settings. */
+    val offlineMode: StateFlow<Boolean> = settingsRepository.settingsFlow
+        .map { it.adbOfflineMode }
+        .stateIn(scope, SharingStarted.Eagerly, false)
+
+    /** True when the last successful ADB probe used the local offline port. */
+    val offlinePortActive: StateFlow<Boolean> = adbBackend.offlinePortActive
+
     /** Latest Detect-port attempt: the attempt list when nothing answered, null on success. */
     private val _detectResult = MutableStateFlow<String?>(null)
     val detectResult: StateFlow<String?> = _detectResult.asStateFlow()
@@ -113,6 +121,10 @@ class RecordingController(
 
     suspend fun setManualPort(port: Int?) {
         settingsRepository.setAdbManualPort(port)
+    }
+
+    suspend fun setOfflineMode(enabled: Boolean) {
+        settingsRepository.setAdbOfflineMode(enabled)
     }
 
     suspend fun resetPairing() {

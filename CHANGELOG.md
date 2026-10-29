@@ -164,6 +164,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.15.9]
+
+- Record without Wi-Fi (experimental) in Call recording > Advanced: when the switch is on, a healthy Wi-Fi probe asks adbd to listen on local port 5555, waits for it, and re-starts the helper through it; later probes use 127.0.0.1:5555 first with no Wi-Fi needed until the next reboot.
+- Status shows "Offline port active (until reboot)" on the local port, and "Connect to Wi-Fi once to re-enable offline recording" when the switch is on, the port is closed, and there is no Wi-Fi. Switching it off just stops preferring 5555; the Wi-Fi path is unchanged.
+
 ## [0.15.8]
 
 - Fixed the crash when opening Call background (the same crash would hit a real incoming call): the quick-reply chips used FlowRow, whose overload changed between foundation-layout versions, while the app was compiled against a newer layout than the one shipped in the APK. All three FlowRow call sites now use a small WrappingRow built on the stable Layout API, so the app no longer depends on the version-sensitive overload.

@@ -31,6 +31,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -126,6 +127,8 @@ fun RecordingSettingsScreen(
     val pairResult by viewModel.pairResult.collectAsStateWithLifecycle()
     val manualPort by viewModel.manualPort.collectAsStateWithLifecycle()
     val detectResult by viewModel.detectResult.collectAsStateWithLifecycle()
+    val offlineMode by viewModel.offlineMode.collectAsStateWithLifecycle()
+    val offlinePortActive by viewModel.offlinePortActive.collectAsStateWithLifecycle()
     val clipboardManager = LocalClipboardManager.current
 
     LaunchedEffect(Unit) { viewModel.refresh() }
@@ -147,7 +150,11 @@ fun RecordingSettingsScreen(
             BackendStatus.NOT_RUNNING -> stringResource(id = R.string.recording_status_adb_not_running)
             BackendStatus.PERMISSION_NEEDED -> stringResource(id = R.string.recording_status_permission)
             BackendStatus.NOT_INSTALLED -> stringResource(id = R.string.recording_status_not_installed)
-            BackendStatus.READY -> stringResource(id = R.string.recording_status_ready)
+            BackendStatus.READY -> if (offlinePortActive) {
+                stringResource(id = R.string.recording_status_offline_active)
+            } else {
+                stringResource(id = R.string.recording_status_ready)
+            }
             BackendStatus.ERROR -> stringResource(id = R.string.recording_status_adb_error)
         }
     } else {
@@ -406,6 +413,28 @@ fun RecordingSettingsScreen(
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = stringResource(id = R.string.recording_reset_hint),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = stringResource(id = R.string.recording_offline_mode_title),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Switch(
+                                    checked = offlineMode,
+                                    onCheckedChange = { viewModel.setOfflineMode(it) },
+                                    enabled = !busy
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = stringResource(id = R.string.recording_offline_mode_desc),
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }

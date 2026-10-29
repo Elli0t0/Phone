@@ -47,6 +47,8 @@ class RecordingSettingsViewModel(
     val pairResult: StateFlow<PairResult?> = controller.pairResult
     val manualPort: StateFlow<Int?> = controller.manualPort
     val detectResult: StateFlow<String?> = controller.detectResult
+    val offlineMode: StateFlow<Boolean> = controller.offlineMode
+    val offlinePortActive: StateFlow<Boolean> = controller.offlinePortActive
     val session: StateFlow<RecordingSession> = controller.state
     val lastError: StateFlow<String?> = controller.lastError
     val recordings: StateFlow<List<RecordingEntity>> = recordingsRepository.recordings
@@ -118,6 +120,14 @@ class RecordingSettingsViewModel(
 
     fun setManualPort(port: Int?) {
         viewModelScope.launch { controller.setManualPort(port) }
+    }
+
+    /** Flipping the switch re-probes at once, so enabling runs the offline step. */
+    fun setOfflineMode(enabled: Boolean) {
+        viewModelScope.launch {
+            controller.setOfflineMode(enabled)
+            refresh()
+        }
     }
 
     fun detectPort() {
