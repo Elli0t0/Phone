@@ -23,8 +23,30 @@ android {
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
+    // Native libraries exist for four ABIs (graphics.path from Compose
+    // and DataStore's shared counter); ship arm64-v8a only, which
+    // covers current phones. Emulator (x86/x86_64) and old 32-bit
+    // devices can no longer install this APK.
+    ndk {
+      abiFilters += "arm64-v8a"
+    }
+
     // Keep only English and Persian resources from the app and its libraries.
     resourceConfigurations += setOf("en", "fa")
+  }
+
+  // Drop metadata and metadata-like files that ride along in library
+  // jars but nothing at runtime reads.
+  packaging {
+    resources {
+      excludes += setOf(
+        "/META-INF/{AL2.0,LGPL2.1}",
+        "DebugProbesKt.bin",
+        "kotlin-tooling-metadata.json",
+        "META-INF/*.version",
+        "**/*.kotlin_builtins"
+      )
+    }
   }
 
   signingConfigs {

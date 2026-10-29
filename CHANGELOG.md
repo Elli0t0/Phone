@@ -164,6 +164,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.16.8]
+
+- Smaller APK, no feature removed: native libraries now ship arm64-v8a only (the APK carried four ABIs of the same two libraries); packaging drops dead metadata (META-INF license/version files, DebugProbesKt.bin, kotlin-tooling-metadata.json, *.kotlin_builtins).
+- R8 keeps narrowed: the whole Coil Compose package keep is now just the two image composables the avatar UI calls (AsyncImage, SubcomposeAsyncImage) plus ImageRequest, and the whole settings package keep is now just the two DataStore key holders. Room, Shizuku, Kadb and the recording helper (RecordingHelperMainKt) keeps are unchanged.
+- Measured on the 0.16.7 release APK (7,072,550 bytes): classes.dex 4,639,352 (stored, 66%), BouncyCastle resources 1,240,355 (kept: its JSSE provider is live in the DEX, used by the ADB TLS stack), fonts 800,370 compressed. The CI font-subsetting step (Latin-only Inter, committed files untouched) is prepared for hand-add to the workflow, since the push tool cannot write workflow files; it saves a further ~700 KB on the first build that runs with it.
+
 ## [0.16.7]
 
 - Keypad: long-press paste on the number display is back (the Clipboard chip stays gone).

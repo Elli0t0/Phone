@@ -27,12 +27,17 @@
     @androidx.room.Relation <fields>;
 }
 
-# DataStore: settings and setup repositories hold Preferences keys looked up by
-# name; keep them and their key holders.
--keep class io.github.elli0t0.phone.data.settings.** { *; }
+# DataStore: only the Preferences key holders are kept; the
+# repositories and model are reached by direct references from the
+# app container, and key names are string literals, so renaming
+# their holder fields cannot break a lookup.
+-keep class io.github.elli0t0.phone.data.settings.DataStoreSettingsRepository$Keys { *; }
+-keep class io.github.elli0t0.phone.data.settings.DataStoreSetupRepository$Keys { *; }
 
-# Coil: keep the Compose image-loading API used by the contact avatar UI.
--keep class coil.compose.** { *; }
+# Coil: only the two image composables the avatar UI actually calls
+# (plus ImageRequest below); the rest follows R8 reachability.
+-keep class coil.compose.AsyncImageKt { *; }
+-keep class coil.compose.SubcomposeAsyncImageKt { *; }
 -keep class coil.request.ImageRequest { *; }
 -keep class coil.request.ImageRequest$Builder { *; }
 
