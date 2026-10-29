@@ -152,4 +152,6 @@
     <string name="recording_status_offline_active">درگاه آفلاین فعال است (تا راه‌اندازی مجدد)</string>
     <string name="recording_error_offline_needs_wifi">برای فعال‌سازی دوباره‌ی ضبط آفلاین، یک بار به Wi-Fi وصل شوید.</string>
     <string name="recording_error_offline_port">درگاه آفلاین باز نشد: %1$s</string>
+    <string name="recording_status_not_paired_short">جفت نشده است</string>
+    <string name="recording_status_needs_wifi">به Wi-Fi نیاز دارد</string>
 </resources>

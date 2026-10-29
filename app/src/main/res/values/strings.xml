@@ -541,5 +541,7 @@
     <string name="recording_status_offline_active">Offline port active (until reboot)</string>
     <string name="recording_error_offline_needs_wifi">Connect to Wi-Fi once to re-enable offline recording.</string>
     <string name="recording_error_offline_port">Could not open the offline port: %1$s</string>
+    <string name="recording_status_not_paired_short">Not paired</string>
+    <string name="recording_status_needs_wifi">Needs Wi-Fi</string>
 </resources>
 

@@ -334,12 +334,12 @@ fun PhoneBottomBar(
             // Accent glow color, read here in composable scope: a
             // drawBehind block cannot read MaterialTheme.
             val accentGlow = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
-            // The one shared droplet, behind the items: a small
-            // glass lens, not a flat pill. A soft accent glow sits
-            // behind it (radial gradient, scaled up, no real blur);
-            // the lens layers a white vertical-gradient fill, a
-            // crescent top highlight and a 1dp gradient rim, all
-            // inside the pill clip.
+            // The one shared droplet, behind the items. Lens mode
+            // draws only the lens droplet; the Haze path layers a
+            // soft accent glow (radial gradient, scaled up, no real
+            // blur) behind a gradient-fill lens with a crescent top
+            // highlight and a 1dp gradient rim, all inside the pill
+            // clip.
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
@@ -398,30 +398,9 @@ fun PhoneBottomBar(
                     .fillMaxHeight()
                     .padding(vertical = PhoneDimens.bottomBarItemInset)
             ) {
-                // Soft accent glow behind the lens.
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer {
-                            scaleX = 1.35f
-                            scaleY = 1.35f
-                        }
-                        .drawBehind {
-                            drawRect(
-                                brush = Brush.radialGradient(
-                                    colors = listOf(
-                                        accentGlow,
-                                        Color.Transparent
-                                    ),
-                                    center = Offset(size.width / 2f, size.height / 2f),
-                                    radius = minOf(size.width, size.height) / 2f
-                                )
-                            )
-                        }
-                )
                 if (lensBackdrop != null) {
-                    // Real lens: samples the backdrop sharp, no blur.
-                    // The accent glow above stays behind it.
+                    // Lens mode draws only the lens droplet: no Haze
+                    // droplet, no accent glow behind it.
                     LensDropletSurface(
                         backdrop = lensBackdrop,
                         pillShape = pillShape,
@@ -429,6 +408,27 @@ fun PhoneBottomBar(
                         modifier = Modifier.fillMaxSize()
                     )
                 } else {
+                    // Soft accent glow behind the lens.
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                scaleX = 1.35f
+                                scaleY = 1.35f
+                            }
+                            .drawBehind {
+                                drawRect(
+                                    brush = Brush.radialGradient(
+                                        colors = listOf(
+                                            accentGlow,
+                                            Color.Transparent
+                                        ),
+                                        center = Offset(size.width / 2f, size.height / 2f),
+                                        radius = minOf(size.width, size.height) / 2f
+                                    )
+                                )
+                            }
+                    )
                     HazeDropletLens(pillShape)
                 }
             }

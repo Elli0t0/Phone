@@ -164,6 +164,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.15.10]
+
+- Lens bar: the droplet area in lens mode draws only the lens droplet (the accent glow moved to the Haze path), and the lens droplet is clipped to the fully rounded pill shape; size (item minus the 4dp inset) and rest centering on the selected tab are unchanged.
+- Settings > Calls > Call recording subtitle now shows the selected backend plus its status word ("Built-in ADB · Ready", "Not paired", "Needs Wi-Fi"), refreshed when the row appears.
+- Quick-redial chip labels are wrapped in bidi isolation (FSI/PDI) so parentheses stay on the correct side in RTL names.
+
 ## [0.15.9]
 
 - Record without Wi-Fi (experimental) in Call recording > Advanced: when the switch is on, a healthy Wi-Fi probe asks adbd to listen on local port 5555, waits for it, and re-starts the helper through it; later probes use 127.0.0.1:5555 first with no Wi-Fi needed until the next reboot.

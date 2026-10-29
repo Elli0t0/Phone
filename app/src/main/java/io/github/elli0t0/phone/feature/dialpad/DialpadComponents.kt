@@ -639,7 +639,7 @@ fun QuickRedialChips(
                         )
                         Spacer(modifier = Modifier.size(4.dp))
                         Text(
-                            text = bidiWrap(entry.label),
+                            text = "\u2068" + entry.label + "\u2069",
                             style = MaterialTheme.typography.labelLarge.copy(textDirection = TextDirection.Content),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -658,7 +658,7 @@ fun QuickRedialChips(
                     )
                     Spacer(modifier = Modifier.size(4.dp))
                     Text(
-                        text = bidiWrap(entry.label),
+                        text = "\u2068" + entry.label + "\u2069",
                         style = MaterialTheme.typography.labelLarge.copy(textDirection = TextDirection.Content),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis

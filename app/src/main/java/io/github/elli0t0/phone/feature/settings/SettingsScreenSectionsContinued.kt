@@ -13,6 +13,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,9 +22,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.recording.BackendStatus
 import io.github.elli0t0.phone.data.settings.model.AnswerStyle
+import io.github.elli0t0.phone.data.settings.model.RecordingBackendKind
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import androidx.compose.runtime.Composable
 import io.github.elli0t0.phone.core.design.Spacing
@@ -186,9 +191,40 @@ item {
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
             Spacer(modifier = Modifier.height(spacing.small))
 
+            // Live recording status for this row: the backend kind
+            // comes from settings, the status from the controller.
+            // The row refreshes the status on entry, so the subtitle
+            // is current, not the last probe from another screen.
+            val recordingController =
+                (context.applicationContext as PhoneApplication).container.recordingController
+            val recordingStatus by recordingController.backendStatus.collectAsStateWithLifecycle()
+            LaunchedEffect(Unit) { recordingController.refreshBackendStatus() }
+            val recordingBackendLabel = stringResource(
+                id = if (settings.recordingBackend == RecordingBackendKind.ADB) {
+                    R.string.recording_backend_adb
+                } else {
+                    R.string.recording_backend_shizuku
+                }
+            )
+            val recordingStatusWord = when (recordingStatus) {
+                BackendStatus.READY -> stringResource(id = R.string.recording_status_ready)
+                BackendStatus.NOT_PAIRED -> stringResource(id = R.string.recording_status_not_paired_short)
+                BackendStatus.NOT_RUNNING ->
+                    if (settings.recordingBackend == RecordingBackendKind.ADB) {
+                        stringResource(id = R.string.recording_status_needs_wifi)
+                    } else {
+                        null
+                    }
+                else -> null
+            }
+            val recordingSubtitle = if (recordingStatusWord != null) {
+                "$recordingBackendLabel · $recordingStatusWord"
+            } else {
+                recordingBackendLabel
+            }
             SettingsRow(
                 title = stringResource(id = R.string.settings_call_recording),
-                subtitle = stringResource(id = R.string.settings_call_recording_desc),
+                subtitle = recordingSubtitle,
                 onClick = { dialogs.showRecordingPage = true }
             )
         }

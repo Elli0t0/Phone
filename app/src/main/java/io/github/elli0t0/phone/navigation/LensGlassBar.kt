@@ -3,6 +3,7 @@ package io.github.elli0t0.phone.navigation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -79,7 +80,9 @@ fun LensDropletSurface(
     modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = modifier.drawBackdrop(
+        modifier = modifier
+            .clip(pillShape)
+            .drawBackdrop(
             backdrop = backdrop,
             shape = { pillShape },
             effects = {
