@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.16.6]
+
+- Keypad: the "Clipboard / Paste" chip and its title are gone completely, together with every clipboard read or check on that screen — the chip composable, the clip-description check on open/resume, the tap-to-read path, and the number display's long-press paste. The Recent chips (quick redial) and the favorites strip are untouched.
+
 ## [0.16.5]
 
 - Pairing UX: submitting the code now immediately replaces the notification with an ongoing "Pairing…" one (indeterminate progress, no reply action), so the system "sending" spinner stops; the pairing itself runs in the application scope instead of goAsync (whose ~10 s budget cut off the 30 s discovery), and the pending result finishes right after launching. If the pairing service is not found within 30 s, the result notification says to open "Pair device with pairing code" first, then type the code; on success it posts "Paired" and refreshes the status.

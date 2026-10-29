@@ -189,43 +189,8 @@ class DialpadViewModel(
         setRawNumber("")
     }
 
-    /**
-     * Paste chip visibility, from the clip description only (mime
-     * type text/plain): no clipboard text is read here, so no system
-     * toast fires when the dialpad opens or resumes.
-     */
-    fun refreshClipboardAvailability(hasPlainText: Boolean) {
-        _uiState.value = _uiState.value.copy(showPasteChip = hasPlainText)
-    }
-
-    /**
-     * Paste chip tapped: the clipboard text is read only now, then
-     * validated as a phone number — spaces, dashes and parentheses
-     * removed, optional leading '+', 5 to 15 digits. A valid number
-     * is pasted; anything else hides the chip and pastes nothing, so
-     * a non-number never shows as a number chip.
-     */
-    fun onPasteChipTapped(clipboardText: String?) {
-        val normalized = clipboardText?.let { PhoneNumberFormatter.normalizeDigits(it) } ?: ""
-        val stripped = normalized.filter { it != ' ' && it != '-' && it != '(' && it != ')' }
-        val isNumber = stripped.matches(Regex("^\\+?[0-9]{5,15}$"))
-        if (isNumber) {
-            onNumberPasted(stripped)
-        } else {
-            _uiState.value = _uiState.value.copy(showPasteChip = false)
-        }
-    }
-
-    fun onNumberPasted(pastedText: String) {
-        val sanitized = PhoneNumberFormatter.sanitize(pastedText)
-        if (sanitized.isNotEmpty()) {
-            val updated = _rawNumber.value + sanitized
-            setRawNumber(updated)
-        }
-    }
-
     /** External dial request: replace the input with the number
-     * (same sanitize path as paste, so +, * and # survive). */
+     * (sanitized, so +, * and # survive). */
     fun onExternalDialNumber(number: String) {
         val sanitized = PhoneNumberFormatter.sanitize(number)
         if (sanitized.isNotEmpty()) setRawNumber(sanitized)

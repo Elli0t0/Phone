@@ -44,8 +44,6 @@ fun ColumnScope.DialpadSuggestionsArea(
     onSuggestionSelect: (ContactSummary) -> Unit,
     onRedial: (QuickRedialEntry) -> Unit,
     onFavoriteClick: (ContactSummary) -> Unit,
-    showPasteChip: Boolean,
-    onClipboardPaste: () -> Unit,
     onCreateContactAction: () -> Unit,
     onAddToExistingContactAction: () -> Unit,
     onMessageAction: () -> Unit
@@ -72,7 +70,7 @@ fun ColumnScope.DialpadSuggestionsArea(
         uiState.matchingContacts.isNotEmpty()
     val showNoMatchActions = uiState.rawNumber.isNotEmpty() &&
         !showSearchRows && !showChips
-    // Empty keypad: favorites, clipboard, and recents share the area,
+    // Empty keypad: favorites and recents share the area,
     // centered with breathing room instead of squished above the keys
     // under a tall blank. Every other state stays pinned to the bottom,
     // so lists grow upward from the keypad.
@@ -124,12 +122,6 @@ fun ColumnScope.DialpadSuggestionsArea(
                 FavoritesStrip(
                     favorites = uiState.favorites,
                     onFavoriteClick = onFavoriteClick,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-            if (showPasteChip) {
-                ClipboardChip(
-                    onPaste = onClipboardPaste,
                     modifier = Modifier.fillMaxWidth()
                 )
             }

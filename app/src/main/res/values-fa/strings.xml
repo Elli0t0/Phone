@@ -50,8 +50,6 @@
     <string name="history_day_today">امروز</string>
     <string name="history_day_yesterday">دیروز</string>
     <string name="section_favorites">علاقه‌مندی‌ها</string>
-    <string name="dialpad_clipboard">کلیپ‌بورد</string>
-    <string name="dialpad_paste">چسباندن</string>
     <string name="action_undo">بازگردانی</string>
     <string name="blocked_numbers_search_hint">جستجو در شماره‌های مسدود</string>
     <string name="blocked_numbers_unblocked">شماره از مسدودیت خارج شد</string>

@@ -7,7 +7,6 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
@@ -34,7 +33,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -55,13 +53,11 @@ fun DialpadNumberDisplay(
     rawNumber: String,
     animationOption: AnimationOption,
     lightHaptic: () -> Unit,
-    onPaste: (String) -> Unit,
     onBackspacePressed: () -> Unit,
     onStartBackspaceRepeat: ((() -> Unit)?) -> Unit,
     onStopBackspaceRepeat: () -> Unit
 ) {
-    val clipboardManager = LocalClipboardManager.current
-    // Formatted Number Display (supports long click to paste).
+    // Formatted Number Display.
     // Always rendered: a fixed slot, so typing the first digit
     // never shifts the layout. Number centered, regular weight,
     // auto-shrinks on overflow; the backspace owns a reserved
@@ -83,17 +79,6 @@ fun DialpadNumberDisplay(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onLongPress = {
-                            val clipText = clipboardManager.getText()?.text
-                            if (!clipText.isNullOrBlank()) {
-                                lightHaptic()
-                                onPaste(clipText)
-                            }
-                        }
-                    )
-                }
                 .testTag("dialpad_number_display"),
             contentAlignment = Alignment.Center
         ) {

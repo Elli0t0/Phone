@@ -12,12 +12,8 @@ data class DialpadUiState(
     val isSearching: Boolean = false,
     val canCall: Boolean = false,
     val quickRedial: List<QuickRedialEntry> = emptyList(),
-    // Empty-keypad extras: favorite contacts (dialable ones only) and
-    // whether the clipboard holds plain text (checked via the clip
-    // description only, so no clipboard toast fires). The text itself
-    // is read and validated only when the Paste chip is tapped.
-    val favorites: List<ContactSummary> = emptyList(),
-    val showPasteChip: Boolean = false
+    // Empty-keypad extras: favorite contacts (dialable ones only).
+    val favorites: List<ContactSummary> = emptyList()
 )
 
 /** One recent number for the empty-keypad quick-dial chips. */
