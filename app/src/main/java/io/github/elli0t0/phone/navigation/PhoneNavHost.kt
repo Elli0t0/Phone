@@ -33,16 +33,16 @@ fun PhoneNavHost(
     pendingDialNumber: String? = null,
     onDialNumberConsumed: () -> Unit = {}
 ) {
-    // Tab transitions: cross-fade + a subtle slide (5% width) through
-    // Motion; REDUCED fades only, OFF is instant. The bottom bar lives
+    // Tab transitions: a short 180ms cross-fade only through Motion;
+    // REDUCED fades shorter, OFF is instant. The bottom bar lives
     // outside this NavHost (in MainActivity), so it never animates
     // with the screens.
     val tabEnterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition =
         { Motion.tabEnterTransition(animationOption) }
     val tabExitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition =
         { Motion.tabExitTransition(animationOption) }
-    // Inner screens (Setup, Settings) slide + fade through Motion;
-    // tabs only fade (see tabEnterTransition above).
+    // Inner screens (Setup, Settings) slide + parallax + dim through
+    // Motion; tabs only fade (see tabEnterTransition above).
     val innerEnterTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition =
         { Motion.innerEnterTransition(animationOption) }
     val innerExitTransition: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition =

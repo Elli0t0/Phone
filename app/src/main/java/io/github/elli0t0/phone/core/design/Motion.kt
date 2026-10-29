@@ -21,8 +21,6 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
@@ -45,6 +43,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.GlassHapticFeedback
@@ -56,39 +55,29 @@ import io.github.elli0t0.phone.data.settings.model.GlassHapticFeedback
  */
 object Motion {
 
-    /** Tab-switch fade-in duration. */
+    /** Tab-switch cross-fade duration: 180ms, shorter when reduced. */
     fun tabFadeDurationMs(option: AnimationOption): Int = when (option) {
-        AnimationOption.ON -> 120
-        AnimationOption.REDUCED -> 60
+        AnimationOption.ON -> 180
+        AnimationOption.REDUCED -> 100
         AnimationOption.OFF -> 0
     }
 
     /**
-     * Tab-switch enter: cross-fade + a subtle slide-in (5% width).
-     * REDUCED fades only; OFF is instant.
+     * Tab-switch enter: a short cross-fade only, no slide.
+     * REDUCED fades shorter; OFF is instant.
      */
     fun tabEnterTransition(option: AnimationOption): EnterTransition {
         if (option == AnimationOption.OFF) return EnterTransition.None
-        val duration = tabFadeDurationMs(option)
-        val fade = fadeIn(animationSpec = tween(durationMillis = duration))
-        if (option == AnimationOption.REDUCED) return fade
-        return fade + slideInHorizontally(
-            animationSpec = tween(durationMillis = duration)
-        ) { it / 20 }
+        return fadeIn(animationSpec = tween(durationMillis = tabFadeDurationMs(option)))
     }
 
     /**
-     * Tab-switch exit: cross-fade + a subtle slide-out (5% width).
-     * REDUCED fades only; OFF is instant.
+     * Tab-switch exit: a short cross-fade only, no slide.
+     * REDUCED fades shorter; OFF is instant.
      */
     fun tabExitTransition(option: AnimationOption): ExitTransition {
         if (option == AnimationOption.OFF) return ExitTransition.None
-        val duration = tabFadeDurationMs(option)
-        val fade = fadeOut(animationSpec = tween(durationMillis = duration))
-        if (option == AnimationOption.REDUCED) return fade
-        return fade + slideOutHorizontally(
-            animationSpec = tween(durationMillis = duration)
-        ) { -it / 20 }
+        return fadeOut(animationSpec = tween(durationMillis = tabFadeDurationMs(option)))
     }
 
     /** Bottom-bar pill + content color transition. */
@@ -108,32 +97,34 @@ object Motion {
     }
 
     /**
-     * Inner-screen transition (pushed screens: Settings, contact
-     * detail/edit, groups, history, call screens). Spring scale +
-     * fade: the new screen scales up from 0.96, the old one scales
-     * down to 0.98 while fading. [direction] is kept for call-site
-     * compatibility; the animation is the same both ways. REDUCED
-     * fades only; OFF is no transition.
+     * Push-screen transition (Settings, contact detail/edit, groups,
+     * history, call screens). Push ([direction] >= 0): the new screen
+     * slides in from the right on a spring (damping 0.9, stiffness
+     * 400) + fades in, while the screen underneath parallaxes a
+     * quarter width left and dims to 0.7 alpha. Pop ([direction] <
+     * 0) reverses both sides. REDUCED fades only; OFF is no
+     * transition.
      */
     fun innerContentTransform(option: AnimationOption, direction: Int): ContentTransform {
         if (option == AnimationOption.OFF) {
             return ContentTransform(EnterTransition.None, ExitTransition.None)
         }
-        val duration = innerDurationMs(option)
-        val fadeIn = fadeIn(animationSpec = tween(durationMillis = duration))
-        val fadeOut = fadeOut(animationSpec = tween(durationMillis = duration))
         if (option == AnimationOption.REDUCED) {
-            return ContentTransform(fadeIn, fadeOut)
+            return ContentTransform(fadeIn(), fadeOut())
         }
-        val scaleIn = scaleIn(
-            animationSpec = spring(dampingRatio = 0.8f, stiffness = 500f),
-            initialScale = 0.96f
-        )
-        val scaleOut = scaleOut(
-            animationSpec = spring(dampingRatio = 0.8f, stiffness = 500f),
-            targetScale = 0.98f
-        )
-        return ContentTransform(fadeIn + scaleIn, fadeOut + scaleOut)
+        val pushSpring = spring<IntOffset>(dampingRatio = 0.9f, stiffness = 400f)
+        return if (direction < 0) {
+            ContentTransform(
+                slideInHorizontally(animationSpec = pushSpring) { -it / 4 } + fadeIn(),
+                slideOutHorizontally(animationSpec = pushSpring) { it } + fadeOut()
+            )
+        } else {
+            ContentTransform(
+                slideInHorizontally(animationSpec = pushSpring) { it } + fadeIn(),
+                slideOutHorizontally(animationSpec = pushSpring) { -it / 4 } +
+                    fadeOut(targetAlpha = 0.7f)
+            )
+        }
     }
 
     /** NavHost enter transition for a pushed inner screen. */

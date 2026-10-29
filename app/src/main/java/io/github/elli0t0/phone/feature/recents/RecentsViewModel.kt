@@ -50,6 +50,9 @@ class RecentsViewModel(
     private val _searchQuery = MutableStateFlow("")
     private val _selectedDate = MutableStateFlow<LocalDate?>(null)
     private val _expandedCallId = MutableStateFlow<Long?>(null)
+    // Rows swiped (or menu-deleted) but not yet confirmed: hidden
+    // from the list until the Undo snackbar resolves.
+    private val _pendingDeleteIds = MutableStateFlow<Set<Long>>(emptySet())
     private val _userMessageRes = MutableStateFlow<Int?>(null)
     private val _reloadTrigger = MutableStateFlow(0L)
     private val _errorMessage = MutableStateFlow<String?>(null)
@@ -111,13 +114,16 @@ class RecentsViewModel(
     )
 
     // Filter + group + sort: runs only when the logs, the loading/error
-    // state, or the filter inputs change — never on expand/message.
+    // state, the filter inputs, or the pending-delete set change —
+    // never on expand/message.
     private val sectionsFlow = combine(
         logDataFlow,
-        callFilterInputFlow
-    ) { logData, filterInput ->
+        callFilterInputFlow,
+        _pendingDeleteIds
+    ) { logData, filterInput, pendingDeleteIds ->
         val filteredCalls = filterCalls(logData.calls, filterInput.filter, filterInput.query, filterInput.date)
         val grouped = CallLogGroupingHelper.groupConsecutiveCalls(filteredCalls)
+            .filter { it.id !in pendingDeleteIds }
         RecentsSections(
             daySections = CallLogGroupingHelper.organizeIntoDaySections(grouped),
             favorites = logData.favorites,
@@ -218,15 +224,24 @@ class RecentsViewModel(
         _expandedCallId.value = null
     }
 
-    fun deleteCall(callId: Long) {
+    // Deferred delete for the swipe/menu Undo snackbar: the row
+    // hides immediately, the call-log entry is removed only when the
+    // snackbar resolves without Undo.
+    fun requestDelete(callId: Long) {
+        if (_expandedCallId.value == callId) {
+            _expandedCallId.value = null
+        }
+        _pendingDeleteIds.value = _pendingDeleteIds.value + callId
+    }
+
+    fun undoDelete(callId: Long) {
+        _pendingDeleteIds.value = _pendingDeleteIds.value - callId
+    }
+
+    fun confirmDelete(callId: Long) {
+        _pendingDeleteIds.value = _pendingDeleteIds.value - callId
         activeScope?.launch {
-            val success = callLogRepository.deleteCall(callId)
-            if (success) {
-                if (_expandedCallId.value == callId) {
-                    _expandedCallId.value = null
-                }
-                _userMessageRes.value = R.string.snackbar_call_deleted
-            }
+            callLogRepository.deleteCall(callId)
         }
     }
 

@@ -79,6 +79,8 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.LocalAppSnackbarHostState
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarResult
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalAppSettings
@@ -100,6 +102,7 @@ import io.github.elli0t0.phone.feature.recents.ui.CallLogRow
 import io.github.elli0t0.phone.feature.recents.ui.DaySectionCard
 import io.github.elli0t0.phone.feature.recents.ui.RecentsEmptyState
 
+import io.github.elli0t0.phone.navigation.CollapsedHeaderBar
 import io.github.elli0t0.phone.navigation.FloatingActionsPill
 import io.github.elli0t0.phone.navigation.PageHeaderItem
 import java.time.Instant
@@ -186,6 +189,31 @@ fun RecentsScreen(
                     CallManager.placeCall(context, number, res.sim.handle)
                 is io.github.elli0t0.phone.core.telecom.SimCallResolution.ShowDialog ->
                     simPickerTargetNumber = number
+            }
+        }
+    }
+
+    // Delete with Undo: the row hides at once, the call-log entry
+    // is removed only when the snackbar resolves without Undo (or
+    // the screen goes away, so a pending delete never lingers).
+    fun deleteCallWithUndo(callId: Long) {
+        viewModel.requestDelete(callId)
+        recentsScope.launch {
+            var undone = false
+            try {
+                val result = snackbarHostState.showSnackbar(
+                    message = context.getString(R.string.snackbar_call_deleted),
+                    actionLabel = context.getString(R.string.action_undo),
+                    duration = SnackbarDuration.Long
+                )
+                if (result == SnackbarResult.ActionPerformed) {
+                    viewModel.undoDelete(callId)
+                    undone = true
+                }
+            } finally {
+                if (!undone) {
+                    viewModel.confirmDelete(callId)
+                }
             }
         }
     }
@@ -650,7 +678,7 @@ fun RecentsScreen(
                                             onCopyNumberClick = {
                                                 clipboardManager.setText(AnnotatedString(group.number))
                                             },
-                                            onDeleteClick = { viewModel.deleteCall(group.id) },
+                                            onDeleteClick = { deleteCallWithUndo(group.id) },
                                             showDivider = false
                                         )
                                     }
@@ -681,6 +709,16 @@ fun RecentsScreen(
             }
             }
         }
+        // Collapsed header bar: the title over a blur bar once the
+        // large header has scrolled off. Hidden while search is
+        // open (the header item does not exist then). The pill
+        // below draws above it at the top-right.
+        CollapsedHeaderBar(
+            listState = listState,
+            title = stringResource(id = R.string.app_name),
+            modifier = Modifier.align(Alignment.TopStart),
+            extraVisible = !searchVisible
+        )
         // Floating actions pill: the header's buttons, overlaid at
         // the top-right once the header has scrolled off. No title,
         // no full-width band — just the buttons.

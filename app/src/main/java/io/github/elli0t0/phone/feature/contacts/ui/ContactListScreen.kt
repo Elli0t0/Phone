@@ -62,6 +62,7 @@ import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 import io.github.elli0t0.phone.data.contacts.model.DuplicateGroup
 import io.github.elli0t0.phone.feature.contacts.ContactsUiState
 
+import io.github.elli0t0.phone.navigation.CollapsedHeaderBar
 import io.github.elli0t0.phone.navigation.FloatingActionsPill
 import io.github.elli0t0.phone.navigation.PageHeaderItem
 
@@ -536,6 +537,14 @@ private fun ContactsContent(
             }
         }
         }
+        // Collapsed header bar: the title over a blur bar once the
+        // large header has scrolled off. The pill below draws above
+        // it at the top-right.
+        CollapsedHeaderBar(
+            listState = listState,
+            title = stringResource(id = R.string.tab_contacts),
+            modifier = Modifier.align(Alignment.TopStart)
+        )
         // Floating actions pill: Groups + header buttons, overlaid
         // at the top-right once the header has scrolled off. No
         // title, no full-width band — just the buttons.

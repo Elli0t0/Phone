@@ -28,14 +28,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.bidiWrap
-import io.github.elli0t0.phone.core.design.LiquidGlassPopupSurface
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.PhoneBottomSheet
 import io.github.elli0t0.phone.core.design.PhoneDimens
-import io.github.elli0t0.phone.core.design.dialogEnter
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.core.telecom.SimAccountInfo
@@ -50,70 +47,64 @@ fun DualSimPickerDialog(
     val spacing = LocalSpacing.current
     val lightHaptic = rememberLightHaptic()
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        LiquidGlassPopupSurface(
+    PhoneBottomSheet(onDismissRequest = onDismiss) {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
                 .padding(horizontal = spacing.large)
-                .dialogEnter()
+                .padding(bottom = spacing.large)
                 .testTag("sim_picker_dialog")
         ) {
-            Column(modifier = Modifier.padding(spacing.large)) {
-                Text(
-                    text = stringResource(id = R.string.call_sim_picker_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = spacing.medium)
-                )
-                Text(
-                    text = bidiWrap(targetNumber),
-                    style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = spacing.medium)
-                )
+            Text(
+                text = stringResource(id = R.string.call_sim_picker_title),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = spacing.medium)
+            )
+            Text(
+                text = bidiWrap(targetNumber),
+                style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = spacing.medium)
+            )
 
-                simAccounts.forEachIndexed { index, sim ->
-                    val rowSource = remember { MutableInteractionSource() }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = PhoneDimens.simPickerRowMinHeight)
-                            .clip(RoundedCornerShape(PhoneDimens.simPickerRowCornerRadius))
-                            .pressScale(rowSource)
-                            .clickable(
-                                interactionSource = rowSource,
-                                indication = ripple()
-                            ) { lightHaptic(); onSimSelected(sim) }
-                            .padding(horizontal = spacing.small, vertical = spacing.small)
-                            .testTag("sim_picker_option_${sim.label}"),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_sim_card),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(PhoneDimens.simPickerIconSize)
-                        )
-                        Spacer(modifier = Modifier.width(spacing.medium))
-                        Text(
-                            text = sim.label,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    if (index < simAccounts.lastIndex) {
-                        Spacer(modifier = Modifier.height(spacing.small))
-                    }
-                }
+            simAccounts.forEachIndexed { index, sim ->
+                val rowSource = remember { MutableInteractionSource() }
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = PhoneDimens.simPickerRowMinHeight)
+                        .clip(RoundedCornerShape(PhoneDimens.simPickerRowCornerRadius))
+                        .pressScale(rowSource)
+                        .clickable(
+                            interactionSource = rowSource,
+                            indication = ripple()
+                        ) { lightHaptic(); onSimSelected(sim) }
+                        .padding(horizontal = spacing.small, vertical = spacing.small)
+                        .testTag("sim_picker_option_${sim.label}"),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = onDismiss) {
-                        Text(text = stringResource(id = R.string.action_cancel))
-                    }
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_sim_card),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(PhoneDimens.simPickerIconSize)
+                    )
+                    Spacer(modifier = Modifier.width(spacing.medium))
+                    Text(
+                        text = sim.label,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                if (index < simAccounts.lastIndex) {
+                    Spacer(modifier = Modifier.height(spacing.small))
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TextButton(onClick = onDismiss) {
+                    Text(text = stringResource(id = R.string.action_cancel))
                 }
             }
         }

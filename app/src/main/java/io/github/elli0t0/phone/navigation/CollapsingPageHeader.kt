@@ -1,5 +1,6 @@
 package io.github.elli0t0.phone.navigation
 
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyListState
@@ -26,10 +28,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.hazeEffect
+import io.github.elli0t0.phone.core.design.GlassBlurTintDark
+import io.github.elli0t0.phone.core.design.GlassBlurTintLight
 import io.github.elli0t0.phone.core.design.GlassSurface
 import io.github.elli0t0.phone.core.design.LiquidGlassPillShape
 import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.LocalHazeState
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.isDarkGlassTheme
+import io.github.elli0t0.phone.data.settings.model.GlassIntensity
 import io.github.elli0t0.phone.data.settings.model.HeaderSize
 
 /**
@@ -171,3 +181,83 @@ fun FloatingActionsPill(
 }
 
 
+
+/**
+ * Collapsed header bar: once the large title has scrolled off (the
+ * same reveal condition as the floating actions pill), the top area
+ * becomes a full-width translucent blur bar with the screen title
+ * centered at 17sp SemiBold and a 0.5dp hairline at the bottom.
+ * It reads the shared haze state like the pill (never the list's
+ * own state), so it cannot hit the haze/hazeChild crash. Without
+ * blur (reduce transparency, API < 31, no state) it falls back to
+ * a near-opaque fill.
+ */
+@Composable
+fun CollapsedHeaderBar(
+    listState: LazyListState,
+    title: String,
+    modifier: Modifier = Modifier,
+    extraVisible: Boolean = true
+) {
+    val scrolled by remember {
+        derivedStateOf { listState.firstVisibleItemIndex > 0 }
+    }
+    if (!extraVisible || !scrolled) return
+    val dark = isDarkGlassTheme()
+    val settings = LocalAppSettings.current
+    val hazeState = LocalHazeState.current
+    val blurOn = hazeState != null &&
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+        !settings.reduceTransparency
+    val tint = (if (dark) GlassBlurTintDark else GlassBlurTintLight).copy(alpha = 0.35f)
+    val radius = (when (settings.glassIntensity) {
+        GlassIntensity.SUBTLE -> PhoneDimens.glassBlurRadiusSubtle
+        GlassIntensity.STANDARD -> PhoneDimens.glassBlurRadiusStandard
+        GlassIntensity.STRONG -> PhoneDimens.glassBlurRadiusStrong
+    }) * settings.glassBlurAmount
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .then(
+                if (blurOn) {
+                    Modifier.hazeEffect(
+                        state = hazeState!!,
+                        style = HazeStyle(
+                            backgroundColor = Color.Transparent,
+                            tint = HazeTint(tint),
+                            blurRadius = radius
+                        )
+                    )
+                } else {
+                    Modifier.background(
+                        (if (dark) GlassBlurTintDark else MaterialTheme.colorScheme.surface)
+                            .copy(alpha = 0.92f)
+                    )
+                }
+            )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+        ) {
+            Text(
+                text = title,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(0.5.dp)
+                    .background(MaterialTheme.colorScheme.outlineVariant)
+            )
+        }
+    }
+}

@@ -23,6 +23,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -315,9 +317,15 @@ class CallActivity : ComponentActivity() {
                             AnimatedVisibility(
                                 visible = currentModel.state != CallState.DISCONNECTED,
                                 enter = EnterTransition.None,
-                                exit = Motion.innerContentTransform(
-                                    settings.animationOption, 1
-                                ).initialContentExit,
+                                // Plain fade, timed to innerDurationMs:
+                                // the finish() delay below waits out
+                                // exactly this exit, so it must fade to
+                                // zero (never a parallax dim that cuts).
+                                exit = fadeOut(
+                                    animationSpec = tween(
+                                        durationMillis = Motion.innerDurationMs(settings.animationOption)
+                                    )
+                                ),
                                 label = "call_end"
                             ) {
                                 AnimatedContent(

@@ -365,7 +365,7 @@ if (dialogs.showFormatDialog) {
 }
 
 if (dialogs.showCallDisplayDialog) {
-    SettingsChoiceDialog(
+    SettingsChoiceSheet(
         title = stringResource(id = R.string.settings_call_display),
         options = CallDisplay.entries.map { it.label to it },
         selected = settings.callDisplay,

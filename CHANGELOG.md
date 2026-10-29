@@ -164,6 +164,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.16.2]
+
+- Recents swipe: start->end calls back (green), end->start deletes (red) with an Undo snackbar; light haptic when the swipe crosses the threshold; directions follow the layout direction (RTL swaps them).
+- Navigation: tab switches are a short 180ms crossfade only; pushed screens (Settings, contact detail/edit, call screens) slide in on a spring with the screen underneath parallaxing out and dimming; pop reverses. Reduced animations fade only.
+- Bottom sheets: contact create/edit, Call waiting, the SIM pickers, and the Incoming call display choice now open as bottom sheets with a 36x5dp grabber, 20dp top corners, dim scrim, and drag to dismiss.
+- Scrolled headers: once the large title scrolls off, a translucent blur bar (tint 0.35) with a 0.5dp hairline shows the screen title centered at 17sp SemiBold.
+
 ## [0.16.1]
 
 - Typeface: Inter (open source, OFL) is now the app font family; Persian text keeps the system font via automatic fallback.

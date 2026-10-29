@@ -24,13 +24,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import io.github.elli0t0.phone.R
-import io.github.elli0t0.phone.core.design.LiquidGlassPopupSurface
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.PhoneBottomSheet
 import io.github.elli0t0.phone.core.design.PhoneDimens
-import io.github.elli0t0.phone.core.design.dialogEnter
 import io.github.elli0t0.phone.core.telecom.SimAccountInfo
 
 @Composable
@@ -41,48 +38,42 @@ fun CallingSimDialog(
     onDismiss: () -> Unit
 ) {
     val spacing = LocalSpacing.current
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        LiquidGlassPopupSurface(
+    PhoneBottomSheet(onDismissRequest = onDismiss) {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
                 .padding(horizontal = spacing.large)
-                .dialogEnter()
+                .padding(bottom = spacing.large)
                 .testTag("calling_sim_dialog")
         ) {
-            Column(modifier = Modifier.padding(spacing.large)) {
-                Text(
-                    text = stringResource(id = R.string.contact_calling_sim_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = spacing.medium)
-                )
+            Text(
+                text = stringResource(id = R.string.contact_calling_sim_title),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = spacing.medium)
+            )
+            CallingSimRow(
+                label = stringResource(id = R.string.contact_calling_sim_ask),
+                isSelected = currentSimId == null,
+                iconRes = R.drawable.ic_sim_card,
+                onClick = { onSimSelected(null) },
+                testTag = "calling_sim_ask"
+            )
+            Spacer(modifier = Modifier.height(spacing.small))
+            simAccounts.forEach { sim ->
                 CallingSimRow(
-                    label = stringResource(id = R.string.contact_calling_sim_ask),
-                    isSelected = currentSimId == null,
+                    label = sim.label,
+                    isSelected = currentSimId == sim.handle.id,
                     iconRes = R.drawable.ic_sim_card,
-                    onClick = { onSimSelected(null) },
-                    testTag = "calling_sim_ask"
+                    onClick = { onSimSelected(sim.handle.id) },
+                    testTag = "calling_sim_${sim.label}"
                 )
                 Spacer(modifier = Modifier.height(spacing.small))
-                simAccounts.forEach { sim ->
-                    CallingSimRow(
-                        label = sim.label,
-                        isSelected = currentSimId == sim.handle.id,
-                        iconRes = R.drawable.ic_sim_card,
-                        onClick = { onSimSelected(sim.handle.id) },
-                        testTag = "calling_sim_${sim.label}"
-                    )
-                    Spacer(modifier = Modifier.height(spacing.small))
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Text(text = stringResource(id = R.string.action_cancel))
-                    }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TextButton(onClick = onDismiss) {
+                    Text(text = stringResource(id = R.string.action_cancel))
                 }
             }
         }

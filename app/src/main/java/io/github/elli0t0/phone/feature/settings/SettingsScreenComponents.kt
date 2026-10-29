@@ -18,8 +18,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -43,7 +41,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.window.Dialog
+import io.github.elli0t0.phone.core.design.PhoneBottomSheet
 import androidx.compose.ui.text.font.FontWeight
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
@@ -220,6 +218,65 @@ fun <T> SettingsChoiceDialog(
     )
 }
 
+// Bottom-sheet version of SettingsChoiceDialog: same radio rows,
+// shown as a sheet instead of a centered dialog.
+@Composable
+fun <T> SettingsChoiceSheet(
+    title: String,
+    options: List<Pair<String, T>>,
+    selected: T,
+    onSelect: (T) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val spacing = LocalSpacing.current
+    val lightHaptic = rememberLightHaptic()
+    PhoneBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .padding(horizontal = spacing.large)
+                .padding(bottom = spacing.large)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(bottom = spacing.medium)
+            )
+            options.forEach { (label, value) ->
+                val optionSource = remember { MutableInteractionSource() }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .pressScale(optionSource)
+                        .clickable(
+                            interactionSource = optionSource,
+                            indication = ripple()
+                        ) { lightHaptic(); onSelect(value) }
+                        .padding(vertical = PhoneDimens.settingsRowVerticalPadding),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = value == selected,
+                        onClick = { onSelect(value) }
+                    )
+                    Spacer(modifier = Modifier.width(PhoneDimens.settingsChoiceOptionGap))
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TextButton(onClick = onDismiss) {
+                    Text(text = stringResource(id = R.string.action_cancel))
+                }
+            }
+        }
+    }
+}
+
 // USSD request state for the Call waiting flow.
 sealed interface UssdState {
     data class Sending(val code: String, val simLabel: String) : UssdState
@@ -239,70 +296,69 @@ fun CallWaitingDialog(
     ussdState: UssdState? = null
 ) {
     val spacing = LocalSpacing.current
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            shape = MaterialTheme.shapes.extraLarge,
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    PhoneBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .padding(horizontal = spacing.large)
+                .padding(bottom = spacing.large)
         ) {
-            Column(modifier = Modifier.padding(spacing.large)) {
-                Text(
-                    text = stringResource(id = R.string.settings_call_waiting),
-                    style = MaterialTheme.typography.titleLarge
-                )
-                Spacer(modifier = Modifier.height(spacing.medium))
-                Text(
-                    text = stringResource(id = R.string.call_waiting_desc),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(spacing.medium))
-                FilledTonalButton(
-                    onClick = { onAction("*43#") },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(text = stringResource(id = R.string.call_waiting_activate))
+            Text(
+                text = stringResource(id = R.string.settings_call_waiting),
+                style = MaterialTheme.typography.titleLarge
+            )
+            Spacer(modifier = Modifier.height(spacing.medium))
+            Text(
+                text = stringResource(id = R.string.call_waiting_desc),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(spacing.medium))
+            FilledTonalButton(
+                onClick = { onAction("*43#") },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = stringResource(id = R.string.call_waiting_activate))
+            }
+            Spacer(modifier = Modifier.height(spacing.small))
+            FilledTonalButton(
+                onClick = { onAction("#43#") },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = stringResource(id = R.string.call_waiting_deactivate))
+            }
+            Spacer(modifier = Modifier.height(spacing.small))
+            FilledTonalButton(
+                onClick = onCheck,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = stringResource(id = R.string.call_waiting_check))
+            }
+            when (val state = ussdState) {
+                is UssdState.Sending -> {
+                    Spacer(modifier = Modifier.height(spacing.medium))
+                    Text(
+                        text = stringResource(id = R.string.ussd_sending),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
-                Spacer(modifier = Modifier.height(spacing.small))
-                FilledTonalButton(
-                    onClick = { onAction("#43#") },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(text = stringResource(id = R.string.call_waiting_deactivate))
+                is UssdState.Result -> {
+                    Spacer(modifier = Modifier.height(spacing.medium))
+                    Text(
+                        text = state.message,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 }
-                Spacer(modifier = Modifier.height(spacing.small))
-                FilledTonalButton(
-                    onClick = onCheck,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(text = stringResource(id = R.string.call_waiting_check))
-                }
-                when (val state = ussdState) {
-                    is UssdState.Sending -> {
-                        Spacer(modifier = Modifier.height(spacing.medium))
-                        Text(
-                            text = stringResource(id = R.string.ussd_sending),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    is UssdState.Result -> {
-                        Spacer(modifier = Modifier.height(spacing.medium))
-                        Text(
-                            text = state.message,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    null -> Unit
-                }
-                Spacer(modifier = Modifier.height(spacing.medium))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Text(text = stringResource(id = R.string.action_cancel))
-                    }
+                null -> Unit
+            }
+            Spacer(modifier = Modifier.height(spacing.medium))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TextButton(onClick = onDismiss) {
+                    Text(text = stringResource(id = R.string.action_cancel))
                 }
             }
         }
@@ -318,51 +374,58 @@ fun UssdSimPickerDialog(
 ) {
     val spacing = LocalSpacing.current
     val lightHaptic = rememberLightHaptic()
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(text = stringResource(id = R.string.call_sim_picker_title)) },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                sims.forEach { sim ->
-                    val simSource = remember { MutableInteractionSource() }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(PhoneDimens.settingsSimRowCornerRadius))
-                            .pressScale(simSource)
-                            .clickable(
-                                interactionSource = simSource,
-                                indication = ripple()
-                            ) { lightHaptic(); onSimSelected(sim) }
-                            .padding(
-                                horizontal = spacing.small,
-                                vertical = spacing.medium
-                            ),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_sim_card),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(PhoneDimens.settingsSimRowIconSize)
-                        )
-                        Spacer(modifier = Modifier.width(spacing.medium))
-                        Text(
-                            text = sim.label,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
+    PhoneBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .padding(horizontal = spacing.large)
+                .padding(bottom = spacing.large)
+        ) {
+            Text(
+                text = stringResource(id = R.string.call_sim_picker_title),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(bottom = spacing.medium)
+            )
+            sims.forEach { sim ->
+                val simSource = remember { MutableInteractionSource() }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(PhoneDimens.settingsSimRowCornerRadius))
+                        .pressScale(simSource)
+                        .clickable(
+                            interactionSource = simSource,
+                            indication = ripple()
+                        ) { lightHaptic(); onSimSelected(sim) }
+                        .padding(
+                            horizontal = spacing.small,
+                            vertical = spacing.medium
+                        ),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_sim_card),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(PhoneDimens.settingsSimRowIconSize)
+                    )
+                    Spacer(modifier = Modifier.width(spacing.medium))
+                    Text(
+                        text = sim.label,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 }
             }
-        },
-        confirmButton = {},
-        dismissButton = {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
             TextButton(onClick = onDismiss) {
                 Text(text = stringResource(id = R.string.action_cancel))
             }
         }
-    )
+        }
+    }
 }
 
 // Editor for the three quick-decline messages shown on the incoming call

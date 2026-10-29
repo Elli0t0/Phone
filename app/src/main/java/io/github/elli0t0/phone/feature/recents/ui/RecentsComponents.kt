@@ -40,6 +40,7 @@ import androidx.compose.material3.ripple
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,6 +63,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.AccentBlue
+import io.github.elli0t0.phone.core.design.SwipeCallGreen
+import io.github.elli0t0.phone.core.design.SwipeDeleteRed
 import io.github.elli0t0.phone.core.design.GlassListCard
 import io.github.elli0t0.phone.core.design.CallAnswerGreen
 import io.github.elli0t0.phone.core.design.CallRejectedOrange
@@ -169,25 +172,32 @@ fun CallLogRow(
         MaterialTheme.colorScheme.onSurface
     }
 
-    // Swipe to act: right = call, left = message. The row snaps back
-    // after the action; it is never dismissed.
+    // Swipe to act: start->end = call back (snaps back), end->start
+    // = delete (dismisses; the screen shows an Undo snackbar).
+    // Start/end are layout directions, so RTL swaps the physical
+    // swipe directions automatically.
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
             when (value) {
                 SwipeToDismissBoxValue.StartToEnd -> {
-                    lightHaptic()
                     onCallClick()
                     false
                 }
                 SwipeToDismissBoxValue.EndToStart -> {
-                    lightHaptic()
-                    onMessageClick()
-                    false
+                    onDeleteClick()
+                    true
                 }
                 SwipeToDismissBoxValue.Settled -> true
             }
         }
     )
+    // Light haptic the moment the swipe crosses the dismiss
+    // threshold (target leaves Settled), not on release.
+    LaunchedEffect(dismissState.targetValue) {
+        if (dismissState.targetValue != SwipeToDismissBoxValue.Settled) {
+            lightHaptic()
+        }
+    }
 
     Column(
         modifier = modifier.fillMaxWidth()
@@ -201,12 +211,12 @@ fun CallLogRow(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(if (isCall) CallAnswerGreen else AccentBlue),
+                            .background(if (isCall) SwipeCallGreen else SwipeDeleteRed),
                         contentAlignment = if (isCall) Alignment.CenterStart else Alignment.CenterEnd
                     ) {
                         Icon(
                             painter = painterResource(
-                                id = if (isCall) R.drawable.ic_phone else R.drawable.ic_message
+                                id = if (isCall) R.drawable.ic_phone else R.drawable.ic_delete
                             ),
                             contentDescription = null,
                             tint = OnAccentBlue,
