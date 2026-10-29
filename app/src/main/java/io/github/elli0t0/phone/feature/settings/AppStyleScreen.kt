@@ -74,6 +74,9 @@ fun AppStyleScreen(
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
+    // LazyColumn item conditions are not a @Composable scope, so the
+    // search-override read is hoisted here (0.16.9 lesson, repeated).
+    val showCustomize = settings.showAdvancedSettings || LocalSearchAdvanced.current
     var showFontDialog by remember { mutableStateOf(false) }
     var showCardDialog by remember { mutableStateOf(false) }
     var showKeyDialog by remember { mutableStateOf(false) }
@@ -168,10 +171,10 @@ fun AppStyleScreen(
                         )
                     }
                 }
-                if (settings.showAdvancedSettings || LocalSearchAdvanced.current) item {
+                if (showCustomize) item {
                     SettingsSectionHeader(title = stringResource(id = R.string.settings_app_style_customize))
                 }
-                if (settings.showAdvancedSettings || LocalSearchAdvanced.current) item {
+                if (showCustomize) item {
                     Card(
                         shape = settingsListCardShape(),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
