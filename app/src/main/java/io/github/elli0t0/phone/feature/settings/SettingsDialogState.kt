@@ -92,6 +92,10 @@ class SettingsDialogState {
     var showBlockedNumbers by mutableStateOf(false)
     var showAboutDialog by mutableStateOf(false)
     var showDebugLogDialog by mutableStateOf(false)
+    // Settings search (0.17.3): row id to highlight after a result tap,
+    // plus a one-visit force-show of advanced rows for advanced results.
+    var searchHighlightId by mutableStateOf<String?>(null)
+    var searchForceAdvanced by mutableStateOf(false)
     var showCallWaitingDialog by mutableStateOf(false)
     var showUssdSimPicker by mutableStateOf(false)
     var customColorHexInput by mutableStateOf("")

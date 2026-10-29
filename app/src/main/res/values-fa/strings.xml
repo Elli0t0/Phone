@@ -164,4 +164,21 @@
     <string name="settings_privacy_granted">همه دسترسی‌ها اعطا شده است</string>
     <string name="settings_privacy_action_needed">نیاز به اقدام است</string>
     <string name="duplicates_merge_menu">ادغام موارد تکراری</string>
+    <string name="settings_search_hint">جستجو در تنظیمات</string>
+    <string name="settings_search_no_results">تنظیمی با «%1$s» مطابقت ندارد</string>
+    <string name="search_keywords_dynamic_color">رنگ پویا تصویر پس‌زمینه</string>
+    <string name="search_keywords_pure_black">مشکی خالص تیره اولد</string>
+    <string name="search_keywords_backdrop">پس‌زمینه تاری تصویر</string>
+    <string name="search_keywords_bottom_bar">نوار ناوبری لنز قطره</string>
+    <string name="search_keywords_animations">حرکت گذار سرعت</string>
+    <string name="search_keywords_block_numbers">مزاحم فهرست سیاه</string>
+    <string name="search_keywords_call_waiting">انتظار تماس دوم</string>
+    <string name="search_keywords_default_sim">سیم‌کارت تماس</string>
+    <string name="search_keywords_quick_decline">رد پیام پاسخ</string>
+    <string name="search_keywords_bottom_sheets">برگه پنجره بازشو</string>
+    <string name="search_keywords_swipe_actions">کشویی حذف تماس</string>
+    <string name="search_keywords_lens_bar">نوار لنز قطره شکست نور</string>
+    <string name="search_keywords_recording_pair">جفت‌سازی کد همتا اشکال‌زدایی بی‌سیم وای‌فای</string>
+    <string name="search_keywords_recording_port">درگاه دستی</string>
+    <string name="search_keywords_recording_offline">آفلاین بدون وای‌فای راه‌اندازی مجدد</string>
 </resources>

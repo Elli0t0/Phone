@@ -103,6 +103,7 @@ fun SettingsRow(
     title: String,
     subtitle: String? = null,
     titleColor: Color = MaterialTheme.colorScheme.onSurface,
+    searchId: String? = null,
     onClick: () -> Unit
 ) {
     val rowSource = remember { MutableInteractionSource() }
@@ -111,6 +112,7 @@ fun SettingsRow(
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .searchHighlight(searchId)
             .pressScale(rowSource)
             .clickable(
                 interactionSource = rowSource,
@@ -141,6 +143,7 @@ fun SettingsNavRow(
     iconRes: Int,
     title: String,
     subtitle: String? = null,
+    searchId: String? = null,
     onClick: () -> Unit
 ) {
     val rowSource = remember { MutableInteractionSource() }
@@ -149,6 +152,7 @@ fun SettingsNavRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .searchHighlight(searchId)
             .pressScale(rowSource)
             .clickable(
                 interactionSource = rowSource,
@@ -194,11 +198,13 @@ fun SettingsSwitchRow(
     title: String,
     subtitle: String? = null,
     checked: Boolean,
+    searchId: String? = null,
     onCheckedChange: (Boolean) -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .searchHighlight(searchId)
             .padding(vertical = PhoneDimens.settingsSwitchRowVerticalPadding),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween

@@ -47,6 +47,7 @@ fun LayoutCard(
         Column(modifier = Modifier.padding(spacing.medium)) {
             SettingsRow(
                 title = stringResource(id = R.string.settings_list_density),
+                searchId = "list_density",
                 subtitle = settings.listDensity.label,
                 onClick = { dialogs.showDensityDialog = true }
             )
@@ -57,6 +58,7 @@ fun LayoutCard(
 
             SettingsRow(
                 title = stringResource(id = R.string.settings_card_style),
+                searchId = "card_style",
                 subtitle = settings.cardStyle.label,
                 onClick = { dialogs.showCardStyleDialog = true }
             )
@@ -79,6 +81,7 @@ fun NavigationCard(
         Column(modifier = Modifier.padding(spacing.medium)) {
             SettingsRow(
                 title = stringResource(id = R.string.settings_default_tab),
+                searchId = "default_tab",
                 subtitle = settings.defaultStartTab.label,
                 onClick = { dialogs.showTabDialog = true }
             )
@@ -89,6 +92,7 @@ fun NavigationCard(
 
             SettingsSwitchRow(
                 title = stringResource(id = R.string.settings_bottom_labels),
+                searchId = "bottom_labels",
                 subtitle = stringResource(id = R.string.settings_bottom_labels_desc),
                 checked = settings.showBottomBarLabels,
                 onCheckedChange = { viewModel.onShowBottomBarLabelsChanged(it) }
@@ -100,6 +104,7 @@ fun NavigationCard(
 
             SettingsRow(
                 title = stringResource(id = R.string.settings_bottom_bar_style),
+                searchId = "bottom_bar_style",
                 subtitle = settings.bottomBarStyle.label,
                 onClick = { dialogs.showBottomBarStyleDialog = true }
             )
@@ -110,6 +115,7 @@ fun NavigationCard(
 
             SettingsRow(
                 title = stringResource(id = R.string.settings_bottom_bar_size),
+                searchId = "bottom_bar_size",
                 subtitle = settings.bottomBarSize.label,
                 onClick = { dialogs.showBottomBarSizeDialog = true }
             )
@@ -120,6 +126,7 @@ fun NavigationCard(
 
             SettingsSwitchRow(
                 title = stringResource(id = R.string.settings_bottom_bar_shrink),
+                searchId = "bottom_bar_shrink",
                 subtitle = stringResource(id = R.string.settings_bottom_bar_shrink_desc),
                 checked = settings.shrinkBottomBarOnScroll,
                 onCheckedChange = { viewModel.onShrinkBottomBarOnScrollChanged(it) }
@@ -131,6 +138,7 @@ fun NavigationCard(
 
             SettingsRow(
                 title = stringResource(id = R.string.settings_animations),
+                searchId = "animations",
                 subtitle = settings.animationOption.label,
                 onClick = { dialogs.showAnimDialog = true }
             )

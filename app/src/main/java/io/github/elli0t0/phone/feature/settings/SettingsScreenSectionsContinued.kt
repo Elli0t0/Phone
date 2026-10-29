@@ -56,6 +56,7 @@ fun ContactsCard(
         Column(modifier = Modifier.padding(spacing.medium)) {
             SettingsRow(
                 title = stringResource(id = R.string.settings_sort_order),
+                searchId = "sort_order",
                 subtitle = settings.contactSortOrder.label,
                 onClick = { dialogs.showSortDialog = true }
             )
@@ -66,6 +67,7 @@ fun ContactsCard(
 
             SettingsRow(
                 title = stringResource(id = R.string.settings_name_format),
+                searchId = "name_format",
                 subtitle = settings.contactNameFormat.label,
                 onClick = { dialogs.showFormatDialog = true }
             )
@@ -100,6 +102,7 @@ fun CallsCard(
 
                 SettingsRow(
                     title = stringResource(id = R.string.settings_supplementary),
+                    searchId = "supplementary",
                     onClick = {
                         runCatching {
                             context.startActivity(
@@ -118,6 +121,7 @@ fun CallsCard(
             // the MMI code is dialed and the carrier executes it.
             SettingsRow(
                 title = stringResource(id = R.string.settings_call_waiting),
+                searchId = "call_waiting",
                 onClick = { dialogs.showCallWaitingDialog = true }
             )
 
@@ -127,6 +131,7 @@ fun CallsCard(
 
             SettingsRow(
                 title = stringResource(id = R.string.settings_call_display),
+                searchId = "call_display",
                 subtitle = settings.callDisplay.label,
                 onClick = { dialogs.showCallDisplayDialog = true }
             )
@@ -165,6 +170,7 @@ fun CallsCard(
 
             SettingsRow(
                 title = stringResource(id = R.string.settings_default_sim),
+                searchId = "default_sim",
                 subtitle = settings.defaultSim.label,
                 onClick = { dialogs.showDefaultSimDialog = true }
             )
@@ -175,6 +181,7 @@ fun CallsCard(
 
             SettingsRow(
                 title = stringResource(id = R.string.settings_quick_decline),
+                searchId = "quick_decline",
                 onClick = { dialogs.showQuickDeclineDialog = true }
             )
 
@@ -200,6 +207,7 @@ fun PrivacyCard(
         Column(modifier = Modifier.padding(spacing.medium)) {
             SettingsRow(
                 title = stringResource(id = R.string.settings_permissions),
+                searchId = "permissions",
                 onClick = {
                     runCatching {
                         context.startActivity(
@@ -231,10 +239,12 @@ fun AboutCard(
         Column(modifier = Modifier.padding(spacing.medium)) {
             SettingsRow(
                 title = stringResource(id = R.string.settings_about_phone),
+                searchId = "about_phone",
                 onClick = { dialogs.showAboutDialog = true }
             )
             SettingsRow(
                 title = stringResource(id = R.string.update_check_title),
+                searchId = "update_check",
                 onClick = runUpdateCheck
             )
         }
@@ -254,6 +264,7 @@ fun ResetCard(
         Column(modifier = Modifier.padding(spacing.medium)) {
             SettingsRow(
                 title = stringResource(id = R.string.settings_reset_button),
+                searchId = "main_reset",
                 titleColor = MaterialTheme.colorScheme.error,
                 onClick = { dialogs.showResetDialog = true }
             )

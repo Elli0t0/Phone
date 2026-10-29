@@ -81,6 +81,7 @@ fun AppearanceCard(
 
             SettingsRow(
                 title = stringResource(id = R.string.settings_theme),
+                searchId = "theme",
                 subtitle = settings.themeMode.label,
                 onClick = { dialogs.showThemeDialog = true }
             )
@@ -93,6 +94,7 @@ fun AppearanceCard(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 SettingsSwitchRow(
                     title = stringResource(id = R.string.settings_dynamic_color),
+                    searchId = "dynamic_color",
                     subtitle = stringResource(id = R.string.settings_dynamic_color_desc),
                     checked = settings.dynamicColor,
                     onCheckedChange = { viewModel.onDynamicColorChanged(it) }
@@ -104,6 +106,7 @@ fun AppearanceCard(
 
             SettingsRow(
                 title = stringResource(id = R.string.settings_accent_color),
+                searchId = "accent",
                 subtitle = AccentPreset.entries.find { it.colorValue == settings.accentColor }?.label
                     ?: stringResource(id = R.string.settings_custom_color),
                 onClick = { dialogs.showAccentDialog = true }
@@ -115,6 +118,7 @@ fun AppearanceCard(
 
             SettingsSwitchRow(
                 title = stringResource(id = R.string.settings_pure_black),
+                searchId = "pure_black",
                 subtitle = stringResource(id = R.string.settings_pure_black_desc),
                 checked = settings.pureBlackDarkMode,
                 onCheckedChange = { viewModel.onPureBlackDarkModeChanged(it) }
@@ -125,6 +129,7 @@ fun AppearanceCard(
             Spacer(modifier = Modifier.height(spacing.small))
 
             // Font size scale
+            Column(modifier = Modifier.fillMaxWidth().searchHighlight("font_scale")) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -197,12 +202,14 @@ fun AppearanceCard(
                 }
             )
 
+            }
             Spacer(modifier = Modifier.height(spacing.small))
             SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsRow(
                 title = stringResource(id = R.string.settings_header_size),
+                searchId = "header_size",
                 subtitle = settings.headerSize.label,
                 onClick = { dialogs.showHeaderSizeDialog = true }
             )
@@ -225,6 +232,7 @@ fun GlassCard(
         Column(modifier = Modifier.padding(spacing.medium)) {
             SettingsSwitchRow(
                 title = stringResource(id = R.string.settings_glass_bottom_bar),
+                searchId = "glass_bottom_bar",
                 subtitle = stringResource(id = R.string.settings_glass_bottom_bar_desc),
                 checked = settings.glassBottomBar,
                 onCheckedChange = { viewModel.onGlassBottomBarChanged(it) }
@@ -236,6 +244,7 @@ fun GlassCard(
 
             SettingsRow(
                 title = stringResource(id = R.string.settings_key_style),
+                searchId = "key_style",
                 subtitle = settings.keyStyle.label,
                 onClick = { dialogs.showKeyStyleDialog = true }
             )
@@ -246,6 +255,7 @@ fun GlassCard(
 
             SettingsSwitchRow(
                 title = stringResource(id = R.string.settings_glass_headers),
+                searchId = "glass_headers",
                 subtitle = stringResource(id = R.string.settings_glass_headers_desc),
                 checked = settings.glassHeaders,
                 onCheckedChange = { viewModel.onGlassHeadersChanged(it) }
@@ -257,6 +267,7 @@ fun GlassCard(
 
             SettingsSwitchRow(
                 title = stringResource(id = R.string.settings_glass_contact_detail),
+                searchId = "glass_contact_detail",
                 subtitle = stringResource(id = R.string.settings_glass_contact_detail_desc),
                 checked = settings.glassContactDetail,
                 onCheckedChange = { viewModel.onGlassContactDetailChanged(it) }
@@ -268,6 +279,7 @@ fun GlassCard(
 
             SettingsSwitchRow(
                 title = stringResource(id = R.string.settings_glass_call_screens),
+                searchId = "glass_call_screens",
                 subtitle = stringResource(id = R.string.settings_glass_call_screens_desc),
                 checked = settings.glassCallScreens,
                 onCheckedChange = { viewModel.onGlassCallScreensChanged(it) }
@@ -279,6 +291,7 @@ fun GlassCard(
 
             SettingsRow(
                 title = stringResource(id = R.string.settings_glass_intensity),
+                searchId = "glass_intensity",
                 subtitle = settings.glassIntensity.label,
                 onClick = { dialogs.showGlassIntensityDialog = true }
             )
@@ -289,6 +302,7 @@ fun GlassCard(
 
             SettingsSwitchRow(
                 title = stringResource(id = R.string.settings_reduce_transparency),
+                searchId = "reduce_transparency",
                 subtitle = stringResource(id = R.string.settings_reduce_transparency_desc),
                 checked = settings.reduceTransparency,
                 onCheckedChange = { viewModel.onReduceTransparencyChanged(it) }
@@ -300,6 +314,7 @@ fun GlassCard(
 
             SettingsSwitchRow(
                 title = stringResource(id = R.string.settings_glass_cards),
+                searchId = "glass_cards",
                 subtitle = stringResource(id = R.string.settings_glass_cards_desc),
                 checked = settings.glassCards,
                 onCheckedChange = { viewModel.onGlassCardsChanged(it) }
@@ -311,6 +326,7 @@ fun GlassCard(
 
             SettingsSwitchRow(
                 title = stringResource(id = R.string.settings_dynamic_highlights),
+                searchId = "glass_dynamic_highlights",
                 subtitle = stringResource(id = R.string.settings_dynamic_highlights_desc),
                 checked = settings.dynamicHighlights,
                 onCheckedChange = { viewModel.onDynamicHighlightsChanged(it) }
@@ -322,6 +338,7 @@ fun GlassCard(
 
             SettingsRow(
                 title = stringResource(id = R.string.settings_backdrop),
+                searchId = "glass_backdrop",
                 // Pure black dark mode forces the backdrop off.
                 subtitle = if (settings.pureBlackDarkMode) {
                     Backdrop.OFF.label
@@ -332,8 +349,8 @@ fun GlassCard(
             )
 
             // Glass Studio is advanced: hidden unless the
-            // advanced toggle is on.
-            if (settings.showAdvancedSettings) {
+            // advanced toggle is on (or opened from a search result).
+            if (settings.showAdvancedSettings || LocalSearchAdvanced.current) {
             Spacer(modifier = Modifier.height(spacing.small))
             SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))

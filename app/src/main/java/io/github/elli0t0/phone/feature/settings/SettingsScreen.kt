@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.lazy.LazyColumn
@@ -59,6 +60,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -72,6 +74,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.compose.ui.res.painterResource
@@ -124,6 +127,7 @@ import java.net.URL
 import java.net.UnknownHostException
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -164,6 +168,43 @@ fun SettingsScreen(
     }
 
     val dialogs = remember { SettingsDialogState() }
+
+    // Settings search (0.17.3): the field lives at the top of the main
+    // page; while the query is non-empty the results replace the list.
+    // Results run on a 150ms-debounced query, not every keystroke.
+    var searchQuery by remember { mutableStateOf("") }
+    var debouncedQuery by remember { mutableStateOf("") }
+    LaunchedEffect(searchQuery) {
+        delay(150)
+        debouncedQuery = searchQuery
+    }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    fun openSearchResult(entry: SettingEntry) {
+        keyboardController?.hide()
+        searchQuery = ""
+        debouncedQuery = ""
+        if (entry.advanced) dialogs.searchForceAdvanced = true
+        dialogs.searchHighlightId = entry.anchor
+        openSettingsPage(dialogs, entry.page)
+    }
+    // The highlight pulse is brief (the row clears it after 1400ms);
+    // the advanced force-show lasts until every page is closed again.
+    LaunchedEffect(dialogs.searchHighlightId) {
+        val id = dialogs.searchHighlightId
+        if (id != null) {
+            delay(1400)
+            if (dialogs.searchHighlightId == id) dialogs.searchHighlightId = null
+        }
+    }
+    val anySettingsPageOpen = dialogs.showAppearancePage || dialogs.showGlassPage ||
+        dialogs.showLayoutNavPage || dialogs.showCallsPage || dialogs.showContactsPage ||
+        dialogs.showPrivacyPage || dialogs.showAboutPage || dialogs.showAppStylePage ||
+        dialogs.showGlassStudioPage || dialogs.showCallBackgroundPage ||
+        dialogs.showBlockedNumbers || dialogs.showRecordingPage ||
+        dialogs.showAnswerStylePage
+    LaunchedEffect(anySettingsPageOpen) {
+        if (!anySettingsPageOpen) dialogs.searchForceAdvanced = false
+    }
 
     // Live recording status for the main Call recording row (moved
     // from the Calls card): the backend is built-in ADB, the status
@@ -258,6 +299,10 @@ fun SettingsScreen(
         runUpdateCheck = runUpdateCheck,
         currentVersionName = currentVersionName
     )
+    CompositionLocalProvider(
+        LocalSearchHighlight provides dialogs.searchHighlightId,
+        LocalSearchAdvanced provides dialogs.searchForceAdvanced
+    ) {
     Scaffold(
         modifier = modifier.fillMaxSize().testTag("settings_screen"),
         topBar = {
@@ -278,11 +323,24 @@ fun SettingsScreen(
             )
         }
     ) { innerPadding ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
+        ) {
+            SettingsSearchField(
+                query = searchQuery,
+                onQueryChange = { searchQuery = it },
+                modifier = Modifier.padding(
+                    horizontal = spacing.screenHorizontalPadding,
+                    vertical = spacing.small
+                )
+            )
+            if (searchQuery.isBlank()) {
+        LazyColumn(
+            modifier = Modifier
+                .weight(1f)
                 .padding(horizontal = spacing.screenHorizontalPadding),
             verticalArrangement = Arrangement.spacedBy(spacing.medium),
             contentPadding = PaddingValues(bottom = bottomBarListBottomPadding())
@@ -366,6 +424,7 @@ fun SettingsScreen(
                         SettingsNavRow(
                             iconRes = R.drawable.ic_settings,
                             title = stringResource(id = R.string.settings_cat_appearance),
+                            searchId = "nav_appearance",
                             subtitle = appearanceSubtitle,
                             onClick = { dialogs.showAppearancePage = true }
                         )
@@ -377,6 +436,7 @@ fun SettingsScreen(
                         SettingsNavRow(
                             iconRes = R.drawable.ic_filter,
                             title = stringResource(id = R.string.settings_cat_liquid_glass),
+                            searchId = "nav_glass",
                             subtitle = glassSubtitle,
                             onClick = { dialogs.showGlassPage = true }
                         )
@@ -388,6 +448,7 @@ fun SettingsScreen(
                         SettingsNavRow(
                             iconRes = R.drawable.ic_fullscreen,
                             title = stringResource(id = R.string.settings_cat_layout_nav),
+                            searchId = "nav_layout_nav",
                             subtitle = layoutNavSubtitle,
                             onClick = { dialogs.showLayoutNavPage = true }
                         )
@@ -399,6 +460,7 @@ fun SettingsScreen(
                         SettingsNavRow(
                             iconRes = R.drawable.ic_phone,
                             title = stringResource(id = R.string.settings_cat_calls),
+                            searchId = "nav_calls",
                             subtitle = callsSubtitle,
                             onClick = { dialogs.showCallsPage = true }
                         )
@@ -410,6 +472,7 @@ fun SettingsScreen(
                         SettingsNavRow(
                             iconRes = R.drawable.ic_contacts,
                             title = stringResource(id = R.string.settings_cat_contacts),
+                            searchId = "nav_contacts",
                             subtitle = contactsSubtitle,
                             onClick = { dialogs.showContactsPage = true }
                         )
@@ -421,6 +484,7 @@ fun SettingsScreen(
                         SettingsNavRow(
                             iconRes = R.drawable.ic_record,
                             title = stringResource(id = R.string.settings_call_recording),
+                            searchId = "nav_recording",
                             subtitle = recordingSubtitle,
                             onClick = { dialogs.showRecordingPage = true }
                         )
@@ -432,6 +496,7 @@ fun SettingsScreen(
                         SettingsNavRow(
                             iconRes = R.drawable.ic_block,
                             title = stringResource(id = R.string.settings_cat_privacy),
+                            searchId = "nav_privacy",
                             subtitle = privacySubtitle,
                             onClick = { dialogs.showPrivacyPage = true }
                         )
@@ -443,6 +508,7 @@ fun SettingsScreen(
                         SettingsNavRow(
                             iconRes = R.drawable.ic_info,
                             title = stringResource(id = R.string.settings_cat_about),
+                            searchId = "nav_about",
                             subtitle = currentVersionName,
                             onClick = { dialogs.showAboutPage = true }
                         )
@@ -458,6 +524,7 @@ fun SettingsScreen(
                     Column(modifier = Modifier.padding(spacing.medium)) {
                         SettingsSwitchRow(
                             title = stringResource(id = R.string.settings_show_advanced),
+                            searchId = "main_advanced",
                             subtitle = stringResource(id = R.string.settings_show_advanced_desc),
                             checked = settings.showAdvancedSettings,
                             onCheckedChange = { viewModel.onShowAdvancedSettingsChanged(it) }
@@ -472,6 +539,55 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(spacing.large))
             }
         }
+            } else {
+                val resolvedEntries = allSettingEntries.map { entry ->
+                    ResolvedSettingEntry(
+                        entry = entry,
+                        title = stringResource(id = entry.titleRes),
+                        keywords = if (entry.keywordsRes != 0) {
+                            stringResource(id = entry.keywordsRes)
+                        } else {
+                            ""
+                        },
+                        section = stringResource(id = entry.sectionRes)
+                    )
+                }
+                val searchResults = if (debouncedQuery.isBlank()) {
+                    emptyList()
+                } else {
+                    searchSettings(debouncedQuery, resolvedEntries)
+                }
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = spacing.screenHorizontalPadding),
+                    verticalArrangement = Arrangement.spacedBy(spacing.medium),
+                    contentPadding = PaddingValues(bottom = bottomBarListBottomPadding())
+                ) {
+                    if (debouncedQuery.isNotBlank() && searchResults.isEmpty()) {
+                        item {
+                            Text(
+                                text = stringResource(
+                                    id = R.string.settings_search_no_results,
+                                    debouncedQuery
+                                ),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(vertical = spacing.medium)
+                            )
+                        }
+                    } else if (searchResults.isNotEmpty()) {
+                        item {
+                            SettingsSearchResults(
+                                results = searchResults,
+                                onResultClick = ::openSearchResult
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
     }
 
     BackHandler(enabled = dialogs.showAppearancePage) { dialogs.showAppearancePage = false }

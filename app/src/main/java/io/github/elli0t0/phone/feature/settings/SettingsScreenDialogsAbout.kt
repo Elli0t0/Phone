@@ -76,7 +76,7 @@ if (dialogs.showAboutDialog) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(spacing.small))
-                if (settings.showAdvancedSettings) TextButton(
+                if (settings.showAdvancedSettings || LocalSearchAdvanced.current) TextButton(
                     onClick = {
                         dialogs.showAboutDialog = false
                         dialogs.showDebugLogDialog = true

@@ -67,6 +67,8 @@ import io.github.elli0t0.phone.core.recording.PairResult
 import io.github.elli0t0.phone.core.recording.RecordingSession
 import io.github.elli0t0.phone.data.recordings.RecordingEntity
 import io.github.elli0t0.phone.data.settings.model.SwitchStyle
+import io.github.elli0t0.phone.feature.settings.LocalSearchAdvanced
+import io.github.elli0t0.phone.feature.settings.searchHighlight
 import io.github.elli0t0.phone.navigation.InnerTopBar
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -95,7 +97,7 @@ fun RecordingSettingsScreen(
     // Hoisted: the Advanced card's condition sits at LazyListScope
     // level (not a @Composable scope), so the settings read must
     // happen here in the function body, not in the condition.
-    val showAdvancedSettings = LocalAppSettings.current.showAdvancedSettings
+    val showAdvancedSettings = LocalAppSettings.current.showAdvancedSettings || LocalSearchAdvanced.current
     val session by viewModel.session.collectAsStateWithLifecycle()
     val lastError by viewModel.lastError.collectAsStateWithLifecycle()
     val recordings by viewModel.recordings.collectAsStateWithLifecycle()
@@ -192,7 +194,7 @@ fun RecordingSettingsScreen(
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surface
                     ),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().searchHighlight("recording_status")
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
@@ -339,6 +341,7 @@ fun RecordingSettingsScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Row(
+                                modifier = Modifier.fillMaxWidth().searchHighlight("recording_port"),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
@@ -361,7 +364,8 @@ fun RecordingSettingsScreen(
                                 )
                                 Button(
                                     onClick = { viewModel.detectPort() },
-                                    enabled = !busy
+                                    enabled = !busy,
+                                    modifier = Modifier.searchHighlight("recording_detect")
                                 ) {
                                     Text(text = stringResource(id = R.string.recording_action_detect_port))
                                 }
@@ -382,7 +386,8 @@ fun RecordingSettingsScreen(
                             Spacer(modifier = Modifier.height(8.dp))
                             Button(
                                 onClick = { viewModel.resetPairing() },
-                                enabled = !busy
+                                enabled = !busy,
+                                modifier = Modifier.searchHighlight("recording_reset_pairing")
                             ) {
                                 Text(text = stringResource(id = R.string.recording_action_reset_pairing))
                             }
@@ -393,7 +398,7 @@ fun RecordingSettingsScreen(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth().searchHighlight("recording_offline"),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
@@ -463,7 +468,7 @@ fun RecordingSettingsScreen(
             }
 
             item {
-                Column {
+                Column(modifier = Modifier.fillMaxWidth().searchHighlight("recording_test")) {
                     Button(
                         onClick = { viewModel.runTest() },
                         enabled = status == BackendStatus.READY && !busy &&

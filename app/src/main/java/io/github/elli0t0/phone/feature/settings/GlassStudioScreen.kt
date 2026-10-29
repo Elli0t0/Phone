@@ -169,6 +169,7 @@ fun GlassStudioScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(spacing.medium)) {
+                            Column(modifier = Modifier.fillMaxWidth().searchHighlight("studio_blur")) {
                             GlassSliderRow(
                                 title = stringResource(id = R.string.settings_glass_blur_amount),
                                 valueLabel = String.format(
@@ -183,11 +184,13 @@ fun GlassStudioScreen(
                                 valueRange = 0.5f..1.5f,
                                 steps = 19
                             )
+                            }
 
                             Spacer(modifier = Modifier.height(spacing.small))
                             SettingsListDivider()
                             Spacer(modifier = Modifier.height(spacing.small))
 
+                            Column(modifier = Modifier.fillMaxWidth().searchHighlight("studio_tint")) {
                             GlassSliderRow(
                                 title = stringResource(id = R.string.settings_glass_tint),
                                 valueLabel = "${(settings.glassTintAmount * 100).roundToInt()}%",
@@ -200,11 +203,13 @@ fun GlassStudioScreen(
                                 valueRange = 0f..1f,
                                 steps = 19
                             )
+                            }
 
                             Spacer(modifier = Modifier.height(spacing.small))
                             SettingsListDivider()
                             Spacer(modifier = Modifier.height(spacing.small))
 
+                            Column(modifier = Modifier.fillMaxWidth().searchHighlight("studio_richness")) {
                             GlassSliderRow(
                                 title = stringResource(id = R.string.settings_glass_richness),
                                 valueLabel = String.format(
@@ -219,6 +224,7 @@ fun GlassStudioScreen(
                                 valueRange = 1.0f..2.2f,
                                 steps = 23
                             )
+                            }
                         }
                     }
                 }
@@ -233,6 +239,7 @@ fun GlassStudioScreen(
                         Column(modifier = Modifier.padding(spacing.medium)) {
                             SettingsRow(
                                 title = stringResource(id = R.string.settings_edge_light),
+                                searchId = "studio_edge_light",
                                 subtitle = settings.edgeLight.label,
                                 onClick = { showEdgeLightDialog = true }
                             )
@@ -243,6 +250,7 @@ fun GlassStudioScreen(
 
                             SettingsSwitchRow(
                                 title = stringResource(id = R.string.settings_dynamic_highlights),
+                                searchId = "studio_dynamic_highlights",
                                 subtitle = stringResource(id = R.string.settings_dynamic_highlights_desc),
                                 checked = settings.dynamicHighlights,
                                 onCheckedChange = { viewModel.onDynamicHighlightsChanged(it) }
@@ -254,6 +262,7 @@ fun GlassStudioScreen(
 
                             SettingsSwitchRow(
                                 title = stringResource(id = R.string.settings_edge_refraction),
+                                searchId = "studio_edge_refraction",
                                 subtitle = stringResource(id = R.string.settings_edge_refraction_desc),
                                 checked = settings.edgeRefraction,
                                 onCheckedChange = { viewModel.onEdgeRefractionChanged(it) }
@@ -265,6 +274,7 @@ fun GlassStudioScreen(
 
                             SettingsSwitchRow(
                                 title = stringResource(id = R.string.settings_lens_bar),
+                                searchId = "studio_lens_bar",
                                 subtitle = stringResource(id = R.string.settings_lens_bar_desc),
                                 checked = settings.lensBar,
                                 onCheckedChange = { viewModel.onLensBarChanged(it) }
@@ -276,6 +286,7 @@ fun GlassStudioScreen(
 
                             SettingsRow(
                                 title = stringResource(id = R.string.settings_droplet_stretch),
+                                searchId = "studio_droplet_stretch",
                                 subtitle = settings.dropletStretch.label,
                                 onClick = { showDropletStretchDialog = true }
                             )
@@ -286,6 +297,7 @@ fun GlassStudioScreen(
 
                             SettingsRow(
                                 title = stringResource(id = R.string.settings_glass_haptic),
+                                searchId = "studio_haptic",
                                 subtitle = settings.glassHapticFeedback.label,
                                 onClick = { showHapticDialog = true }
                             )
@@ -296,6 +308,7 @@ fun GlassStudioScreen(
 
                             SettingsRow(
                                 title = stringResource(id = R.string.settings_backdrop),
+                                searchId = "studio_backdrop",
                                 // Pure black dark mode forces the backdrop off.
                                 subtitle = if (settings.pureBlackDarkMode) {
                                     Backdrop.OFF.label
@@ -311,6 +324,7 @@ fun GlassStudioScreen(
 
                             SettingsRow(
                                 title = stringResource(id = R.string.settings_switch_style),
+                                searchId = "studio_switch_style",
                                 subtitle = settings.switchStyle.label,
                                 onClick = { showSwitchStyleDialog = true }
                             )
@@ -320,7 +334,7 @@ fun GlassStudioScreen(
                 item {
                     FilledTonalButton(
                         onClick = { viewModel.onResetGlassDefaults() },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth().searchHighlight("studio_reset")
                     ) {
                         Text(text = stringResource(id = R.string.settings_glass_reset))
                     }

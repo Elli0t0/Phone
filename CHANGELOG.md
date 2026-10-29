@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.17.3]
+
+- Settings search: a 48dp pill search field at the top of the main Settings page. While the query is non-empty, results replace the list: title, section breadcrumb, and a small section icon. Tapping a result opens its page and briefly highlights the row with an accent pulse (1.2s fade, static when animations are off, cleared after 1400ms). One registry covers every settings row (main page, all 7 section pages, App style Customize, Glass Studio, Call Studio groups, recording page), with English + Persian synonym keywords for the hard-to-find rows. Matching normalizes the query and the text (lowercase, Persian/Arabic yeh/kaf unification, tashkeel and joiners stripped, Arabic-Indic and Persian digits mapped to ASCII), requires all query tokens, and puts title-prefix matches first; results run on a 150ms debounce. Advanced rows are force-shown for the visit when opened from a search result, even with the advanced toggle off, and the force-show clears once every settings page is closed. Pages are single cards, not list items, so there is no row to scroll to — the pulse is the locator. Unit tests cover normalization, matching, registry id/anchor uniqueness, and that every page opens its flag.
+
 ## [0.17.2]
 
 - Settings sub-pages open on top again: the whole sub-page group (BackHandlers + Answer style, App style, Glass Studio, Call background, Block numbers, Call recording) moved to the very end of the Settings composable, after the section pages. Back now closes the top-most page first. Logic unchanged, only the order.

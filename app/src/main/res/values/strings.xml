@@ -553,5 +553,22 @@
     <string name="settings_privacy_granted">All permissions granted</string>
     <string name="settings_privacy_action_needed">Action needed</string>
     <string name="duplicates_merge_menu">Merge duplicates</string>
+    <string name="settings_search_hint">Search settings</string>
+    <string name="settings_search_no_results">No settings match “%1$s”</string>
+    <string name="search_keywords_dynamic_color">material you wallpaper</string>
+    <string name="search_keywords_pure_black">oled amoled dark</string>
+    <string name="search_keywords_backdrop">background blur wallpaper</string>
+    <string name="search_keywords_bottom_bar">navigation bar lens droplet</string>
+    <string name="search_keywords_animations">motion transition speed</string>
+    <string name="search_keywords_block_numbers">spam blacklist</string>
+    <string name="search_keywords_call_waiting">waiting second call</string>
+    <string name="search_keywords_default_sim">sim card sim1 sim2</string>
+    <string name="search_keywords_quick_decline">decline message reply sms</string>
+    <string name="search_keywords_bottom_sheets">sheet dialog popup</string>
+    <string name="search_keywords_swipe_actions">swipe gesture delete call</string>
+    <string name="search_keywords_lens_bar">lens droplet refraction</string>
+    <string name="search_keywords_recording_pair">pair pairing code wireless debugging wifi adb</string>
+    <string name="search_keywords_recording_port">port manual tcp adb</string>
+    <string name="search_keywords_recording_offline">offline without wifi reboot</string>
 </resources>
 

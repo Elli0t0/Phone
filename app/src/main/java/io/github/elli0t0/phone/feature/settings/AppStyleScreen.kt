@@ -168,10 +168,10 @@ fun AppStyleScreen(
                         )
                     }
                 }
-                if (settings.showAdvancedSettings) item {
+                if (settings.showAdvancedSettings || LocalSearchAdvanced.current) item {
                     SettingsSectionHeader(title = stringResource(id = R.string.settings_app_style_customize))
                 }
-                if (settings.showAdvancedSettings) item {
+                if (settings.showAdvancedSettings || LocalSearchAdvanced.current) item {
                     Card(
                         shape = settingsListCardShape(),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -180,6 +180,7 @@ fun AppStyleScreen(
                         Column(modifier = Modifier.padding(spacing.medium)) {
                             SettingsRow(
                                 title = stringResource(id = R.string.settings_font_style),
+                                searchId = "style_font",
                                 subtitle = settings.fontStyle.label,
                                 onClick = { showFontDialog = true }
                             )
@@ -190,6 +191,7 @@ fun AppStyleScreen(
 
                             SettingsRow(
                                 title = stringResource(id = R.string.settings_card_style),
+                                searchId = "style_card",
                                 subtitle = settings.cardStyle.label,
                                 onClick = { showCardDialog = true }
                             )
@@ -200,6 +202,7 @@ fun AppStyleScreen(
 
                             SettingsRow(
                                 title = stringResource(id = R.string.settings_key_style),
+                                searchId = "style_key",
                                 subtitle = settings.keyStyle.label,
                                 onClick = { showKeyDialog = true }
                             )
@@ -210,6 +213,7 @@ fun AppStyleScreen(
 
                             SettingsRow(
                                 title = stringResource(id = R.string.settings_switch_style),
+                                searchId = "style_switch",
                                 subtitle = settings.switchStyle.label,
                                 onClick = { showSwitchDialog = true }
                             )
@@ -220,6 +224,7 @@ fun AppStyleScreen(
 
                             SettingsRow(
                                 title = stringResource(id = R.string.settings_transition_style),
+                                searchId = "style_transition",
                                 subtitle = settings.transitionStyle.label,
                                 onClick = { showTransitionDialog = true }
                             )
@@ -230,6 +235,7 @@ fun AppStyleScreen(
 
                             SettingsSwitchRow(
                                 title = stringResource(id = R.string.settings_bottom_sheets),
+                                searchId = "style_sheets",
                                 subtitle = stringResource(id = R.string.settings_bottom_sheets_desc),
                                 checked = settings.bottomSheets,
                                 onCheckedChange = { viewModel.onBottomSheetsChanged(it) }
@@ -241,6 +247,7 @@ fun AppStyleScreen(
 
                             SettingsSwitchRow(
                                 title = stringResource(id = R.string.settings_swipe_actions),
+                                searchId = "style_swipe",
                                 subtitle = stringResource(id = R.string.settings_swipe_actions_desc),
                                 checked = settings.swipeActions,
                                 onCheckedChange = { viewModel.onSwipeActionsChanged(it) }
