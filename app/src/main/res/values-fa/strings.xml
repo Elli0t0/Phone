@@ -219,6 +219,14 @@
     <string name="settings_app_style_custom">سفارشی</string>
     <string name="settings_app_style_customize">شخصی‌سازی</string>
     <string name="settings_app_style_try_it">امتحان کنید</string>
+    <string name="settings_keypad_style">سبک صفحه‌کلید</string>
+    <string name="settings_keypad_style_try_it">امتحان کنید</string>
+    <string name="settings_keypad_style_try_hint">کلیدها را بزنید تا این سبک را امتحان کنید</string>
+    <string name="settings_keypad_style_clear">پاک کردن</string>
+    <string name="settings_keypad_style_glass">شیشه‌ای</string>
+    <string name="settings_keypad_style_classic">کلاسیک</string>
+    <string name="settings_keypad_style_minimal">مینیمال</string>
+    <string name="settings_keypad_style_squircle">مربع گرد</string>
     <string name="settings_font_style">قلم</string>
     <string name="settings_transition_style">گذر بین صفحه‌ها</string>
     <string name="settings_bottom_sheets">برگه‌های پایینی</string>

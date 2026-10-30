@@ -43,6 +43,7 @@ import io.github.elli0t0.phone.data.settings.model.CallDisplay
 import io.github.elli0t0.phone.data.settings.model.DefaultSim
 import io.github.elli0t0.phone.data.settings.model.CardStyle
 import io.github.elli0t0.phone.data.settings.model.KeyStyle
+import io.github.elli0t0.phone.data.settings.model.KeypadStyle
 import io.github.elli0t0.phone.data.settings.model.SwitchStyle
 import io.github.elli0t0.phone.data.settings.model.AppStyle
 import io.github.elli0t0.phone.data.settings.model.FontStyle
@@ -76,6 +77,7 @@ interface SettingsRepository {
     suspend fun setShrinkBottomBarOnScroll(shrink: Boolean)
     suspend fun setGlassBottomBar(enabled: Boolean)
     suspend fun setKeyStyle(style: KeyStyle)
+    suspend fun setKeypadStyle(style: KeypadStyle)
     suspend fun setSwitchStyle(style: SwitchStyle)
     suspend fun setAppStyle(style: AppStyle)
     suspend fun setFontStyle(style: FontStyle)
@@ -174,6 +176,7 @@ class DataStoreSettingsRepository(
         val BOTTOM_BAR_SHRINK = booleanPreferencesKey("bottom_bar_shrink")
         val GLASS_BOTTOM_BAR = booleanPreferencesKey("glass_bottom_bar")
         val KEY_STYLE = stringPreferencesKey("key_style")
+        val KEYPAD_STYLE = stringPreferencesKey("keypad_style")
         val SWITCH_STYLE = stringPreferencesKey("switch_style")
         val APP_STYLE = stringPreferencesKey("app_style")
         val FONT_STYLE = stringPreferencesKey("font_style")
@@ -287,6 +290,9 @@ class DataStoreSettingsRepository(
         val keyStyleStr = prefs[Keys.KEY_STYLE]
         val keyStyle = keyStyleStr?.let { runCatching { KeyStyle.valueOf(it) }.getOrNull() }
             ?: if (prefs[Keys.GLASS_DIALPAD] ?: true) KeyStyle.GLASS else KeyStyle.SIMPLE
+        val keypadStyleStr = prefs[Keys.KEYPAD_STYLE]
+        val keypadStyle = keypadStyleStr?.let { runCatching { KeypadStyle.valueOf(it) }.getOrNull() }
+            ?: KeypadStyle.GLASS
         val switchStyleStr = prefs[Keys.SWITCH_STYLE]
         val switchStyle = switchStyleStr?.let { runCatching { SwitchStyle.valueOf(it) }.getOrNull() } ?: SwitchStyle.DEFAULT
         val appStyleStr = prefs[Keys.APP_STYLE]
@@ -474,6 +480,7 @@ class DataStoreSettingsRepository(
             shrinkBottomBarOnScroll = barShrink,
             glassBottomBar = glassBottomBar,
             keyStyle = keyStyle,
+            keypadStyle = keypadStyle,
             switchStyle = switchStyle,
             appStyle = appStyle,
             fontStyle = fontStyle,
@@ -686,6 +693,14 @@ class DataStoreSettingsRepository(
         dataStore.edit { prefs ->
             prefs[Keys.KEY_STYLE] = style.name
             prefs[Keys.APP_STYLE] = AppStyle.CUSTOM.name
+        }
+    }
+
+    // Standalone like the app background: picking a keypad style
+    // does not flip the app style to Custom.
+    override suspend fun setKeypadStyle(style: KeypadStyle) {
+        dataStore.edit { prefs ->
+            prefs[Keys.KEYPAD_STYLE] = style.name
         }
     }
 

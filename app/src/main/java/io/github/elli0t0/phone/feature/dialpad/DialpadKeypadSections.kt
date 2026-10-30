@@ -38,18 +38,20 @@ import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.design.bouncyClick
 import io.github.elli0t0.phone.data.settings.model.KeyStyle
+import io.github.elli0t0.phone.data.settings.model.KeypadStyle
 
 @Composable
 fun DialpadKeypadGrid(
     onKeyPressed: (Char) -> Unit,
     onLongPressDigit: (Char) -> Unit,
     keySize: Dp = 72.dp,
-    verticalSpacing: Dp = 12.dp
+    verticalSpacing: Dp = 12.dp,
+    keypadStyle: KeypadStyle = KeypadStyle.GLASS
 ) {
     val spacing = LocalSpacing.current
-    // Keypad Grid (Keys 1-9, *, 0, #): centered rows of 72dp
-    // circles with 20dp gaps, so the middle column sits dead
-    // center under the call button below.
+    // Keypad Grid (Keys 1-9, *, 0, #): centered rows with 20dp
+    // gaps, so the middle column sits dead center under the call
+    // button below. Key look comes from the keypad style.
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -62,8 +64,9 @@ fun DialpadKeypadGrid(
                 horizontalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 rowKeys.forEach { dialKey ->
-                    DialKeyView(
+                    KeypadKey(
                         dialKey = dialKey,
+                        style = keypadStyle,
                         size = keySize,
                         onClick = {
                             onKeyPressed(dialKey.digit)

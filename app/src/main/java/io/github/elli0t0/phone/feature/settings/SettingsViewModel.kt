@@ -36,6 +36,7 @@ import io.github.elli0t0.phone.data.settings.model.CardStyle
 import io.github.elli0t0.phone.data.settings.model.KeyStyle
 import io.github.elli0t0.phone.data.settings.model.SwitchStyle
 import io.github.elli0t0.phone.data.settings.model.AppStyle
+import io.github.elli0t0.phone.data.settings.model.KeypadStyle
 import io.github.elli0t0.phone.data.settings.model.FontStyle
 import io.github.elli0t0.phone.data.settings.model.TransitionStyle
 import io.github.elli0t0.phone.data.settings.model.ContactNameFormat
@@ -223,6 +224,12 @@ class SettingsViewModel(
     fun onAppStyleChanged(style: AppStyle) {
         viewModelScope.launch {
             settingsRepository.setAppStyle(style)
+        }
+    }
+
+    fun onKeypadStyleChanged(style: KeypadStyle) {
+        viewModelScope.launch {
+            settingsRepository.setKeypadStyle(style)
         }
     }
 

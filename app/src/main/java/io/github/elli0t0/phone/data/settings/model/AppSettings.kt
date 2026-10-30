@@ -30,6 +30,19 @@ enum class KeyStyle(val label: String) {
     FLAT("Flat")
 }
 
+/**
+ * Dialpad digit-key look, independent of the app-style preset:
+ * GLASS is the current unified key, CLASSIC restores the
+ * pre-redesign glass key, MINIMAL is bare digits with a ripple,
+ * SQUIRCLE is a rounded-square tonal tile.
+ */
+enum class KeypadStyle(val label: String) {
+    GLASS("Glass"),
+    CLASSIC("Classic"),
+    MINIMAL("Minimal"),
+    SQUIRCLE("Squircle")
+}
+
 enum class SwitchStyle(val label: String) {
     DEFAULT("Default"),
     GREEN("Green")
@@ -376,6 +389,8 @@ data class AppSettings(
     // current Haze bar is used unchanged.
     val lensBar: Boolean = true,
     val keyStyle: KeyStyle = KeyStyle.GLASS,
+    /** Dialpad digit-key look, independent of the app-style preset. */
+    val keypadStyle: KeypadStyle = KeypadStyle.GLASS,
     val switchStyle: SwitchStyle = SwitchStyle.DEFAULT,
     // Master look preset (see StylePreset). The individual values
     // below are the look when appStyle is CUSTOM, and are copied from

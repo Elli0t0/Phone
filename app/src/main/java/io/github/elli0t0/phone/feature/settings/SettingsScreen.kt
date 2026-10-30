@@ -227,6 +227,7 @@ fun SettingsScreen(
     val anySettingsPageOpen = dialogs.showAppearancePage || dialogs.showGlassPage ||
         dialogs.showLayoutNavPage || dialogs.showCallsPage || dialogs.showContactsPage ||
         dialogs.showPrivacyPage || dialogs.showAboutPage || dialogs.showAppStylePage ||
+        dialogs.showKeypadStylePage ||
         dialogs.showGlassStudioPage || dialogs.showCallBackgroundPage || dialogs.showAppBackgroundPage ||
         dialogs.showBlockedNumbers || dialogs.showExcludedNumbers || dialogs.showRecordingPage ||
         dialogs.showAnswerStylePage
@@ -739,6 +740,7 @@ fun SettingsScreen(
     BackHandler(enabled = dialogs.showAppBackgroundPage) { dialogs.showAppBackgroundPage = false }
     BackHandler(enabled = dialogs.showAnswerStylePage) { dialogs.showAnswerStylePage = false }
     BackHandler(enabled = dialogs.showAppStylePage) { dialogs.showAppStylePage = false }
+    BackHandler(enabled = dialogs.showKeypadStylePage) { dialogs.showKeypadStylePage = false }
     BackHandler(enabled = dialogs.showGlassStudioPage) { dialogs.showGlassStudioPage = false }
     BackHandler(enabled = dialogs.showBlockedNumbers) { dialogs.showBlockedNumbers = false }
     BackHandler(enabled = dialogs.showRecordingPage) { dialogs.showRecordingPage = false }
@@ -759,6 +761,14 @@ fun SettingsScreen(
             settings = settings,
             viewModel = viewModel,
             onNavigateBack = { dialogs.showAppStylePage = false }
+        )
+    }
+
+    if (dialogs.showKeypadStylePage) {
+        KeypadStyleScreen(
+            settings = settings,
+            viewModel = viewModel,
+            onNavigateBack = { dialogs.showKeypadStylePage = false }
         )
     }
 

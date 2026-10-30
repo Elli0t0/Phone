@@ -65,6 +65,17 @@ fun LayoutCard(
                 subtitle = settings.cardStyle.label,
                 onClick = { dialogs.showCardStyleDialog = true }
             )
+
+            Spacer(modifier = Modifier.height(spacing.small))
+            SettingsListDivider()
+            Spacer(modifier = Modifier.height(spacing.small))
+
+            SettingsRow(
+                title = stringResource(id = R.string.settings_keypad_style),
+                searchId = "keypad_style",
+                subtitle = settings.keypadStyle.label,
+                onClick = { dialogs.showKeypadStylePage = true }
+            )
         }
     }
 }

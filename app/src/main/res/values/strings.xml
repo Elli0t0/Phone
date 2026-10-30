@@ -566,6 +566,14 @@
     <string name="settings_app_style_custom">Custom</string>
     <string name="settings_app_style_customize">Customize</string>
     <string name="settings_app_style_try_it">Try it</string>
+    <string name="settings_keypad_style">Keypad style</string>
+    <string name="settings_keypad_style_try_it">Try it</string>
+    <string name="settings_keypad_style_try_hint">Tap the keys to try this style</string>
+    <string name="settings_keypad_style_clear">Clear</string>
+    <string name="settings_keypad_style_glass">Glass</string>
+    <string name="settings_keypad_style_classic">Classic</string>
+    <string name="settings_keypad_style_minimal">Minimal</string>
+    <string name="settings_keypad_style_squircle">Squircle</string>
     <string name="settings_font_style">Font</string>
     <string name="settings_transition_style">Screen transitions</string>
     <string name="settings_bottom_sheets">Bottom sheets</string>

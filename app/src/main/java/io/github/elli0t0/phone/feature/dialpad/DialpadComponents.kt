@@ -57,17 +57,25 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.bidiWrap
+import io.github.elli0t0.phone.core.design.KeypadKeyLightRim
 import io.github.elli0t0.phone.core.design.LiquidGlassChip
+import io.github.elli0t0.phone.core.design.LiquidGlassSurfaceLight
 import io.github.elli0t0.phone.data.settings.model.KeyStyle
+import io.github.elli0t0.phone.data.settings.model.KeypadStyle
 import io.github.elli0t0.phone.core.design.LiquidGlassPill
 import io.github.elli0t0.phone.core.design.LiquidGlassPillShape
 import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.glassPress
+import io.github.elli0t0.phone.core.design.isDarkGlassTheme
+import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
@@ -87,24 +95,46 @@ val DIAL_KEYS_GRID = listOf(
     listOf(DialKey('*', ""), DialKey('0', "+"), DialKey('#', ""))
 )
 
-@OptIn(ExperimentalFoundationApi::class)
+/**
+ * Dialpad digit key, dispatched by keypad style (the sample's
+ * KeypadKey, adapted to the existing DialKey model: one value
+ * carries the digit and its letters). GLASS is the current
+ * unified key, unchanged; CLASSIC restores the pre-redesign
+ * glass key; MINIMAL is bare digits with a ripple; SQUIRCLE is
+ * a rounded-square tonal tile. Every branch keeps the same
+ * contract: tick on press-down, combined click + long-click
+ * fallback, testTag dial_key_<tag>.
+ */
 @Composable
-fun DialKeyView(
+fun KeypadKey(
     dialKey: DialKey,
+    style: KeypadStyle,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     size: Dp = 72.dp
 ) {
-    val keyTag = when (dialKey.digit) {
-        '*' -> "star"
-        '#' -> "hash"
-        else -> dialKey.digit.toString()
+    when (style) {
+        KeypadStyle.GLASS -> GlassKey(dialKey, onClick, onLongClick, modifier, size)
+        KeypadStyle.CLASSIC -> ClassicKey(dialKey, onClick, onLongClick, modifier)
+        KeypadStyle.MINIMAL -> MinimalKey(dialKey, onClick, onLongClick, modifier, size)
+        KeypadStyle.SQUIRCLE -> SquircleKey(dialKey, onClick, onLongClick, modifier, size)
     }
+}
 
-    // Shared press source: the tick below and the press scale both
-    // observe it, so feedback fires on press-down, not on release.
-    // (The screen's key lambdas must not tick again.)
+private fun keyTagOf(dialKey: DialKey): String = when (dialKey.digit) {
+    '*' -> "star"
+    '#' -> "hash"
+    else -> dialKey.digit.toString()
+}
+
+/**
+ * One press source per key: the tick below and the press scale
+ * both observe it, so feedback fires on press-down, not on
+ * release. (The screen's key lambdas must not tick again.)
+ */
+@Composable
+private fun rememberKeyTickSource(): MutableInteractionSource {
     val keySource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
     LaunchedEffect(keySource) {
@@ -112,10 +142,64 @@ fun DialKeyView(
             if (interaction is PressInteraction.Press) lightHaptic()
         }
     }
+    return keySource
+}
+
+/** Shared key content: digit (or asterisk icon) + letters line. */
+@Composable
+private fun KeyContent(
+    dialKey: DialKey,
+    digitSize: TextUnit,
+    digitWeight: FontWeight,
+    letterSize: TextUnit,
+    letterSpacing: TextUnit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        if (dialKey.digit == '*') {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_asterisk),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(PhoneDimens.keypadAsteriskSize)
+            )
+        } else {
+            Text(
+                text = dialKey.digit.toString(),
+                fontSize = digitSize,
+                fontWeight = digitWeight,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+        // Always emit the sublabel, even when empty: an empty Text
+        // still occupies one line height, so every key has the same
+        // height and the digits stay aligned.
+        Text(
+            text = dialKey.letters,
+            fontSize = letterSize,
+            letterSpacing = letterSpacing,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun GlassKey(
+    dialKey: DialKey,
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+    size: Dp = 72.dp
+) {
+    // The current unified key, unchanged: GLASS preset keys get
+    // the very light glass container + 1dp rim; every other preset
+    // gets the same layout with a flat container and no border.
+    // No heavy gradient.
+    val keySource = rememberKeyTickSource()
     val pressed by keySource.collectIsPressedAsState()
-    // The glass switch: GLASS keys get the very light glass
-    // container + 1dp rim; every other style gets the same layout
-    // with a flat container and no border. No heavy gradient.
     val glass = LocalAppSettings.current.effectiveStyle.keys == KeyStyle.GLASS
     val container = if (glass) {
         MaterialTheme.colorScheme.onSurface.copy(alpha = if (pressed) 0.16f else 0.08f)
@@ -143,38 +227,116 @@ fun DialKeyView(
                     if (onLongClick != null) onLongClick() else onClick()
                 }
             )
-            .testTag("dial_key_$keyTag"),
+            .testTag("dial_key_${keyTagOf(dialKey)}"),
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            if (dialKey.digit == '*') {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_asterisk),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(PhoneDimens.keypadAsteriskSize)
-                )
-            } else {
-                Text(
-                    text = dialKey.digit.toString(),
-                    fontSize = 30.sp,
-                    fontWeight = FontWeight.Light,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-            // Always emit the sublabel, even when empty: an empty Text
-            // still occupies one line height, so every key has the same
-            // height and the digits stay aligned.
-            Text(
-                text = dialKey.letters,
-                fontSize = 10.sp,
-                letterSpacing = 1.5.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+        KeyContent(dialKey, 30.sp, FontWeight.Light, 10.sp, 1.5.sp)
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun ClassicKey(
+    dialKey: DialKey,
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    // The pre-redesign glass key (0.18.0): fixed 64dp circle,
+    // liquid glass with a light fill + 1dp rim on light themes,
+    // no ripple, glass press feedback. No tilt: tilt plumbing
+    // was removed with the redesign and the new key entry point
+    // carries none.
+    val keySource = rememberKeyTickSource()
+    val lightKey = !isDarkGlassTheme()
+    Box(
+        modifier = modifier
+            .size(PhoneDimens.keypadTouchSize)
+            .then(if (lightKey) Modifier.background(LiquidGlassSurfaceLight, CircleShape) else Modifier)
+            .liquidGlass(shape = CircleShape, premium = true)
+            .then(if (lightKey) Modifier.border(1.dp, KeypadKeyLightRim, CircleShape) else Modifier)
+            .glassPress(keySource)
+            .combinedClickable(
+                interactionSource = keySource,
+                indication = null,
+                onClick = onClick,
+                onLongClick = {
+                    if (onLongClick != null) onLongClick() else onClick()
+                }
             )
-        }
+            .testTag("dial_key_${keyTagOf(dialKey)}"),
+        contentAlignment = Alignment.Center
+    ) {
+        KeyContent(
+            dialKey,
+            PhoneDimens.keypadDigitSize,
+            FontWeight.Normal,
+            PhoneDimens.keypadLetterSize,
+            0.5.sp
+        )
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun MinimalKey(
+    dialKey: DialKey,
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+    size: Dp = 72.dp
+) {
+    // No circles, no fill: big thin digits with letters under
+    // them, ripple only on press.
+    val keySource = rememberKeyTickSource()
+    Box(
+        modifier = modifier
+            .size(size)
+            .combinedClickable(
+                interactionSource = keySource,
+                indication = ripple(),
+                onClick = onClick,
+                onLongClick = {
+                    if (onLongClick != null) onLongClick() else onClick()
+                }
+            )
+            .testTag("dial_key_${keyTagOf(dialKey)}"),
+        contentAlignment = Alignment.Center
+    ) {
+        KeyContent(dialKey, 36.sp, FontWeight.Light, 10.sp, 1.5.sp)
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun SquircleKey(
+    dialKey: DialKey,
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+    size: Dp = 72.dp
+) {
+    // Rounded-square tonal tile with a subtle pressed scale.
+    val keySource = rememberKeyTickSource()
+    val pressed by keySource.collectIsPressedAsState()
+    Box(
+        modifier = modifier
+            .size(size)
+            .scale(if (pressed) 0.96f else 1f)
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .combinedClickable(
+                interactionSource = keySource,
+                indication = null,
+                onClick = onClick,
+                onLongClick = {
+                    if (onLongClick != null) onLongClick() else onClick()
+                }
+            )
+            .testTag("dial_key_${keyTagOf(dialKey)}"),
+        contentAlignment = Alignment.Center
+    ) {
+        KeyContent(dialKey, 30.sp, FontWeight.Light, 10.sp, 1.5.sp)
     }
 }
 

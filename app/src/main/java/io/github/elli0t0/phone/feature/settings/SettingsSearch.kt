@@ -64,6 +64,7 @@ enum class SettingsPage {
     PRIVACY,
     ABOUT,
     APP_STYLE,
+    KEYPAD_STYLE,
     GLASS_STUDIO,
     CALL_BACKGROUND,
     BLOCKED_NUMBERS,
@@ -82,6 +83,7 @@ fun openSettingsPage(dialogs: SettingsDialogState, page: SettingsPage) {
         SettingsPage.PRIVACY -> dialogs.showPrivacyPage = true
         SettingsPage.ABOUT -> dialogs.showAboutPage = true
         SettingsPage.APP_STYLE -> dialogs.showAppStylePage = true
+        SettingsPage.KEYPAD_STYLE -> dialogs.showKeypadStylePage = true
         SettingsPage.GLASS_STUDIO -> dialogs.showGlassStudioPage = true
         SettingsPage.CALL_BACKGROUND -> dialogs.showCallBackgroundPage = true
         SettingsPage.BLOCKED_NUMBERS -> dialogs.showBlockedNumbers = true
@@ -93,7 +95,8 @@ fun openSettingsPage(dialogs: SettingsDialogState, page: SettingsPage) {
 fun settingsPageIconRes(page: SettingsPage): Int = when (page) {
     SettingsPage.MAIN,
     SettingsPage.APPEARANCE,
-    SettingsPage.APP_STYLE -> R.drawable.ic_settings
+    SettingsPage.APP_STYLE,
+    SettingsPage.KEYPAD_STYLE -> R.drawable.ic_settings
     SettingsPage.GLASS,
     SettingsPage.GLASS_STUDIO -> R.drawable.ic_filter
     SettingsPage.LAYOUT_NAV -> R.drawable.ic_fullscreen
@@ -332,6 +335,7 @@ val allSettingEntries: List<SettingEntry> = listOf(
     // Layout & navigation page.
     SettingEntry("list_density", R.string.settings_list_density, R.string.settings_cat_layout_nav, SettingsPage.LAYOUT_NAV, anchor = "list_density"),
     SettingEntry("card_style", R.string.settings_card_style, R.string.settings_cat_layout_nav, SettingsPage.LAYOUT_NAV, anchor = "card_style"),
+    SettingEntry("keypad_style", R.string.settings_keypad_style, R.string.settings_cat_layout_nav, SettingsPage.KEYPAD_STYLE, anchor = "keypad_style"),
     SettingEntry("default_tab", R.string.settings_default_tab, R.string.settings_cat_layout_nav, SettingsPage.LAYOUT_NAV, anchor = "default_tab"),
     SettingEntry("bottom_labels", R.string.settings_bottom_labels, R.string.settings_cat_layout_nav, SettingsPage.LAYOUT_NAV, anchor = "bottom_labels"),
     SettingEntry("bottom_bar_style", R.string.settings_bottom_bar_style, R.string.settings_cat_layout_nav, SettingsPage.LAYOUT_NAV, anchor = "bottom_bar_style", keywordsRes = R.string.search_keywords_bottom_bar),

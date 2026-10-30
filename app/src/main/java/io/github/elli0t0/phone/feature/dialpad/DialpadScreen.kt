@@ -373,7 +373,8 @@ fun DialpadScreen(
             caption = numberCaption
         )
         DialpadKeypadGrid(
-            // No tick here: DialKeyView ticks on press-down.
+            // No tick here: KeypadKey ticks on press-down.
+            keypadStyle = LocalAppSettings.current.keypadStyle,
             onKeyPressed = { digit ->
                 viewModel.onKeyPressed(digit)
             },

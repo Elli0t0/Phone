@@ -79,6 +79,7 @@ class SettingsDialogState {
     var showAppBackgroundPage by mutableStateOf(false)
     var showAnswerStylePage by mutableStateOf(false)
     var showAppStylePage by mutableStateOf(false)
+    var showKeypadStylePage by mutableStateOf(false)
     var showRecordingPage by mutableStateOf(false)
     var showGlassStudioPage by mutableStateOf(false)
     // Restructured Settings pages (0.16.9): one flag per section page.
