@@ -154,7 +154,11 @@
     <!-- Recents / Call Log -->
     <string name="recents_search_hint">Search calls</string>
     <string name="recents_pick_date">Pick a date</string>
-    <string name="recents_calls_today">%1$d calls today</string>
+    <plurals name="recents_calls_today">
+        <item quantity="one">%1$d call today</item>
+        <item quantity="other">%1$d calls today</item>
+    </plurals>
+    <string name="recents_no_calls_today">No calls today</string>
     <string name="cd_clear_date_filter">Clear date filter</string>
     <string name="permission_call_log_title">Call log permission</string>
     <string name="permission_call_log_message">Phone needs access to your call history to display recent calls.</string>

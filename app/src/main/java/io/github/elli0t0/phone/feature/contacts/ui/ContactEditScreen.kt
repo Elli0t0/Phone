@@ -15,6 +15,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -230,12 +231,15 @@ fun ContactEditScreen(
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = spacing.screenHorizontalPadding)
-                    // Bottom clearance is the save pill height + the
-                    // navigation bar inset + 16dp, so the last card is
-                    // never covered by the floating pill.
+                    // Bottom clearance is the save pill height + its
+                    // bottom margin + the navigation bar inset + 16dp,
+                    // so the last card is never covered by the
+                    // floating pill (the margin was missing before,
+                    // leaving the pill touching the Ringtone card).
                     .padding(
                         top = spacing.medium,
                         bottom = PhoneDimens.editSavePillHeight +
+                            spacing.medium +
                             WindowInsets.navigationBars.asPaddingValues()
                                 .calculateBottomPadding() +
                             16.dp
@@ -582,6 +586,30 @@ private fun PhoneInputField(
             shape = MaterialTheme.shapes.medium,
             colors = EditFieldColors(),
             singleLine = true,
+            // The value stays verbatim: no formatter, no length cap,
+            // so saving can never alter the stored number. Smaller
+            // text + tighter padding + the remove button as a
+            // trailing icon free enough width that long numbers
+            // (11+ digits) show fully instead of clipping the last
+            // digit at the field edge.
+            textStyle = MaterialTheme.typography.bodyMedium,
+            contentPadding = PaddingValues(horizontal = 12.dp),
+            trailingIcon = if (canRemove) {
+                {
+                    IconButton(
+                        onClick = onRemove,
+                        modifier = Modifier.testTag("btn_remove_phone_$index")
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_close),
+                            contentDescription = stringResource(id = R.string.contact_remove_field),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else {
+                null
+            },
             modifier = Modifier.weight(1f).testTag("input_phone_$index")
         )
 
@@ -615,16 +643,6 @@ private fun PhoneInputField(
                         }
                     )
                 }
-            }
-        }
-
-        if (canRemove) {
-            IconButton(onClick = onRemove, modifier = Modifier.testTag("btn_remove_phone_$index")) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_close),
-                    contentDescription = stringResource(id = R.string.contact_remove_field),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }

@@ -76,6 +76,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -897,7 +898,15 @@ private fun RecentsHeaderItem(
             }
         }
         Text(
-            text = stringResource(id = R.string.recents_calls_today, callsToday),
+            text = if (callsToday == 0) {
+                stringResource(id = R.string.recents_no_calls_today)
+            } else {
+                pluralStringResource(
+                    id = R.plurals.recents_calls_today,
+                    count = callsToday,
+                    callsToday
+                )
+            },
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Start,

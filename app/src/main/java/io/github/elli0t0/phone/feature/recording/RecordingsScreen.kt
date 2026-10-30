@@ -60,6 +60,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.core.design.GlassListCard
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
@@ -364,7 +365,11 @@ private fun RecordingListItem(
     val size = remember(entity.sizeBytes) { Formatter.formatShortFileSize(context, entity.sizeBytes) }
     val title = entity.title?.takeIf { it.isNotBlank() }
         ?: entity.displayName?.takeIf { it.isNotBlank() }
-        ?: entity.number.ifBlank { stringResource(R.string.recordings_unknown) }
+        // Same formatter as Recents and contact details, so a
+        // recording never shows its raw number (+98...) while the
+        // same call shows it spaced (+98 13 ...).
+        ?: PhoneNumberFormatter.format(entity.number)
+            .ifBlank { stringResource(R.string.recordings_unknown) }
     val speedText = if (speed == speed.toInt().toFloat()) "${speed.toInt()}x" else "${speed}x"
     Column(
         Modifier.fillMaxWidth()

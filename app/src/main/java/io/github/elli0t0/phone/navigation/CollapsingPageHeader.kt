@@ -43,9 +43,9 @@ import io.github.elli0t0.phone.data.settings.model.HeaderSize
  * Content-based height, scaled by the Header size setting only
  * (Compact 0.85x, Standard 1x, Large 1.2x): Row 1 is the split top
  * bar (Contacts) or the actions (Recents, end aligned), Row 2 the
- * centered title, Row 3 the subtitle. Nothing is absolutely
- * positioned, so the rows cannot overlap each other or the next
- * list item.
+ * left-aligned title (same as Recents), Row 3 the subtitle. Nothing
+ * is absolutely positioned, so the rows cannot overlap each other
+ * or the next list item.
  * Scrolls away naturally: no snapping, no height animation.
  */
 @Composable
@@ -95,18 +95,20 @@ fun PageHeaderItem(
                 letterSpacing = (-0.4).sp
             ),
             color = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center,
+            textAlign = TextAlign.Start,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth()
         )
         if (subtitle != null) {
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
+                textAlign = TextAlign.Start,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }

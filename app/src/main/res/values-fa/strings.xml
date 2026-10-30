@@ -373,7 +373,11 @@
     <string name="dialpad_create_contact">ایجاد مخاطب جدید</string>
     <string name="recents_search_hint">جستجوی تماس‌ها</string>
     <string name="recents_pick_date">یک تاریخ انتخاب کنید</string>
-    <string name="recents_calls_today">%1$d تماس امروز</string>
+    <plurals name="recents_calls_today">
+        <item quantity="one">%1$d تماس امروز</item>
+        <item quantity="other">%1$d تماس امروز</item>
+    </plurals>
+    <string name="recents_no_calls_today">امروز تماسی نیست</string>
     <string name="cd_clear_date_filter">پاک کردن فیلتر تاریخ</string>
     <string name="permission_call_log_title">دسترسی سابقه تماس</string>
     <string name="permission_call_log_message">«Phone» برای نمایش تماس‌های اخیر نیاز به دسترسی به سابقه تماس شما دارد.</string>

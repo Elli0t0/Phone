@@ -129,10 +129,13 @@ Column(
         .padding(horizontal = spacing.screenHorizontalPadding)
         .padding(top = contentTopPadding)
         // Clearance above the floating bar so the last card
-        // (History) is never covered: bar height + navigation
-        // inset (both in the other terms) + a 24 dp gap + the
-        // bottom scrim height.
-        .padding(bottom = navBarBottom + PhoneDimens.bottomBarReservedHeight + PhoneDimens.detailHistoryGap + PhoneDimens.bottomScrimHeight),
+        // (History) scrolls fully above it: the bar's full height
+        // (bar + its vertical margins) + the navigation inset +
+        // a 16dp gap.
+        .padding(
+            bottom = navBarBottom + PhoneDimens.bottomBarHeight +
+                PhoneDimens.bottomBarBottomMargin + PhoneDimens.bottomBarBottomMargin + 16.dp
+        ),
     horizontalAlignment = Alignment.CenterHorizontally
 ) {
 Spacer(modifier = Modifier.height(spacing.medium))
