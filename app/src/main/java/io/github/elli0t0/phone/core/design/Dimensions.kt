@@ -78,7 +78,7 @@ object PhoneDimens {
     val noMatchChipLabelSize = 12.sp
     val noMatchChipLabelLineHeight = 14.sp
     val keypadNumberDisplaySize = 40.sp
-    val keypadNumberDisplayMinSize = 24.sp
+    val keypadNumberDisplayMinSize = 22.sp
     val keypadNumberDisplayShrinkFactor = 0.92f
     val callButtonSize = 70.dp
     // Incoming call screen: avatar, title, answer/decline buttons.

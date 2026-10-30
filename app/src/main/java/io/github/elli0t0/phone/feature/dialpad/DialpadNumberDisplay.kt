@@ -70,7 +70,7 @@ fun DialpadNumberDisplay(
     // below), so a backspace long-press can never paste.
     // Always rendered: a fixed slot, so typing the first digit
     // never shifts the layout. Number centered, light weight,
-    // 36sp dropping to 24sp past 11 chars; the backspace owns a
+    // auto-sized by digit count (see below); the backspace owns a
     // reserved 56dp slot at the right, so the number never runs
     // under it.
     // At the minimum size a still-overflowing number falls back
@@ -78,16 +78,40 @@ fun DialpadNumberDisplay(
     // leading and trailing digits visible). MiddleEllipsis does
     // not exist in this Compose version, so the truncation is
     // computed from the measured line width (see below).
-    // 36sp Light, dropping to 24sp once the number passes 11 chars.
-    val baseSize = if (displayText.length > 11) PhoneDimens.keypadNumberDisplayMinSize else 36.sp
-    var displayFontSize by remember { mutableStateOf(baseSize) }
+    // Dial-number auto size: digits only, spaces and + ignored.
+    // Up to 10 digits full size, then gradual shrink to the 22sp
+    // floor, animated between tiers (instant when animations are
+    // off, short tween when reduced).
+    val digits = displayText.count { it.isDigit() }
+    val targetSize = when {
+        digits <= 10 -> 44f
+        digits <= 12 -> 36f
+        digits <= 14 -> 30f
+        digits <= 17 -> 26f
+        else -> PhoneDimens.keypadNumberDisplayMinSize.value
+    }
+    val animatedSize by animateFloatAsState(
+        targetValue = targetSize,
+        animationSpec = when (animationOption) {
+            AnimationOption.OFF -> snap()
+            AnimationOption.REDUCED -> tween(
+                durationMillis = Motion.scaledDurationMs(Motion.Durations.Short, animationOption)
+            )
+            else -> spring(dampingRatio = 0.8f, stiffness = 500f)
+        },
+        label = "dialSize"
+    )
+    // Overflow can force the floor before the digit count does
+    // (small screens, large font scale); reset with the text.
+    var sizeOverride by remember { mutableStateOf<Float?>(null) }
     var overflowAtMin by remember { mutableStateOf(false) }
     var middleTruncated by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(displayText) {
-        displayFontSize = baseSize
+        sizeOverride = null
         overflowAtMin = false
         middleTruncated = null
     }
+    val displayFontSize = (sizeOverride ?: animatedSize).sp
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -156,7 +180,7 @@ fun DialpadNumberDisplay(
                             }
                             overflowAtMin = true
                         } else {
-                            displayFontSize = PhoneDimens.keypadNumberDisplayMinSize
+                            sizeOverride = PhoneDimens.keypadNumberDisplayMinSize.value
                         }
                     }
                 },
