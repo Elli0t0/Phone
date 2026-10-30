@@ -792,7 +792,7 @@ fun SettingsScreen(
     if (dialogs.showRecordingPage) {
         RecordingSettingsScreen(
             onNavigateBack = { dialogs.showRecordingPage = false },
-            onNavigateToRecordings = onNavigateToRecordings
+            onOpenRecordings = onNavigateToRecordings
         )
     }
 
