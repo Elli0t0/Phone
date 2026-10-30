@@ -124,10 +124,12 @@ class RecordingsViewModel(
 
     fun onSearchChanged(q: String) {
         query.value = q
+        clearSelection()
     }
 
     fun onFilterChanged(f: RecordingDateFilter) {
         filter.value = f
+        clearSelection()
     }
 
     private fun List<RecordingEntity>.groupDays(ascending: Boolean): List<RecordingDay> {
@@ -184,10 +186,10 @@ class RecordingsViewModel(
         try {
             mp.setDataSource(appContext, Uri.parse(entity.uri))
             mp.prepare()
+            player = mp
+            mp.setOnCompletionListener { stopPlayback() }
             mp.start()
             applySpeed()
-            mp.setOnCompletionListener { stopPlayback() }
-            player = mp
             _playingId.value = entity.id
             _positionMs.value = 0
             _playError.value = null
@@ -201,6 +203,7 @@ class RecordingsViewModel(
             }
         } catch (e: Exception) {
             runCatching { mp.release() }
+            player = null
             _playingId.value = null
             _playError.value = e.message
         }
@@ -213,8 +216,9 @@ class RecordingsViewModel(
 
     fun skip(deltaMs: Int) {
         val p = player ?: return
-        val to = (p.currentPosition + deltaMs).coerceIn(0, p.duration)
-        seekTo(to)
+        val d = p.duration
+        if (d <= 0) return
+        seekTo((p.currentPosition + deltaMs).coerceIn(0, d))
     }
 
     fun cycleSpeed() {
@@ -265,7 +269,8 @@ class RecordingsViewModel(
     }
 
     fun deleteSelected() {
-        val ids = _selectedIds.value
+        val visible = (days.value.flatMap { it.items } + flatItems.value).map { it.id }.toSet()
+        val ids = _selectedIds.value.intersect(visible)
         if (ids.isEmpty()) return
         val playing = _playingId.value
         if (playing != null && playing in ids) stopPlayback()

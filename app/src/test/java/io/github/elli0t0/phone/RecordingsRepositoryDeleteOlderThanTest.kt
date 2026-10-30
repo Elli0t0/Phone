@@ -115,3 +115,36 @@ class RecordingsRepositoryDeleteOlderThanTest {
         assertTrue(events.isEmpty())
     }
 }
+
+class RecordingsRepositoryDeleteOldTestsTest {
+    @Test
+    fun deletesOldTests_filesBeforeRows() = runTest {
+        val events = mutableListOf<String>()
+        val dao = FakeRecordingsDao(
+            oldTests = listOf(
+                recording(5, 100_000L, isTest = true),
+                recording(6, 100_000L, isTest = true)
+            ),
+            events = events
+        )
+        val repo = DefaultRecordingsRepository(
+            dao,
+            fileDeleter = { uri -> events.add("file:$uri") },
+            fileExists = { _ -> true }
+        )
+        assertEquals(2, repo.deleteOldTests())
+        assertEquals(listOf("file:content://test/5", "file:content://test/6", "row:5", "row:6"), events)
+    }
+
+    @Test
+    fun empty_returnsZero_noCalls() = runTest {
+        val events = mutableListOf<String>()
+        val repo = DefaultRecordingsRepository(
+            FakeRecordingsDao(events = events),
+            fileDeleter = { uri -> events.add("file:$uri") },
+            fileExists = { _ -> true }
+        )
+        assertEquals(0, repo.deleteOldTests())
+        assertTrue(events.isEmpty())
+    }
+}

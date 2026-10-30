@@ -18,6 +18,7 @@ interface RecordingsRepository {
     suspend fun removeAll(entities: List<RecordingEntity>): Int = 0
     suspend fun countOlderThanUnstarred(cutoff: Long): Int = 0
     suspend fun deleteOlderThan(cutoff: Long, keepStarred: Boolean = true): Int = 0
+    suspend fun deleteOldTests(): Int = 0
 }
 
 /**
@@ -74,6 +75,13 @@ class DefaultRecordingsRepository(
         all.forEach { fileDeleter(it.uri) }
         all.forEach { dao.deleteById(it.id) }
         return all.size
+    }
+
+    override suspend fun deleteOldTests(): Int {
+        val victims = dao.oldTests(System.currentTimeMillis() - 86_400_000L).distinctBy { it.id }
+        victims.forEach { fileDeleter(it.uri) }
+        victims.forEach { dao.deleteById(it.id) }
+        return victims.size
     }
 
     override suspend fun removeMissingFiles(): Int {
