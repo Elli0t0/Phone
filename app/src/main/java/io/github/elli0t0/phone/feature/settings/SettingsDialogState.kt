@@ -76,6 +76,7 @@ class SettingsDialogState {
     var showFormatDialog by mutableStateOf(false)
     var showCallDisplayDialog by mutableStateOf(false)
     var showCallBackgroundPage by mutableStateOf(false)
+    var showAppBackgroundPage by mutableStateOf(false)
     var showAnswerStylePage by mutableStateOf(false)
     var showAppStylePage by mutableStateOf(false)
     var showRecordingPage by mutableStateOf(false)

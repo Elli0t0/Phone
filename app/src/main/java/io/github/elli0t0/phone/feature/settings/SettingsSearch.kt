@@ -327,6 +327,7 @@ val allSettingEntries: List<SettingEntry> = listOf(
     SettingEntry("glass_cards", R.string.settings_glass_cards, R.string.settings_cat_liquid_glass, SettingsPage.GLASS, anchor = "glass_cards", advanced = true),
     SettingEntry("glass_dynamic_highlights", R.string.settings_dynamic_highlights, R.string.settings_cat_liquid_glass, SettingsPage.GLASS, anchor = "glass_dynamic_highlights"),
     SettingEntry("glass_backdrop", R.string.settings_backdrop, R.string.settings_cat_liquid_glass, SettingsPage.GLASS, anchor = "glass_backdrop", keywordsRes = R.string.search_keywords_backdrop),
+    SettingEntry("glass_app_background", R.string.settings_app_background, R.string.settings_cat_liquid_glass, SettingsPage.GLASS, anchor = "glass_app_background", keywordsRes = R.string.search_keywords_backdrop),
     SettingEntry("glass_studio", R.string.settings_glass_studio, R.string.settings_cat_liquid_glass, SettingsPage.GLASS_STUDIO, advanced = true),
     // Layout & navigation page.
     SettingEntry("list_density", R.string.settings_list_density, R.string.settings_cat_layout_nav, SettingsPage.LAYOUT_NAV, anchor = "list_density"),

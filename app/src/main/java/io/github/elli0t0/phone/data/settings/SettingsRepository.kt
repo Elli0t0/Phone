@@ -26,6 +26,7 @@ import io.github.elli0t0.phone.data.settings.model.IncomingAvatarSize
 import io.github.elli0t0.phone.data.settings.model.EndCallButtonSize
 import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
+import io.github.elli0t0.phone.data.settings.model.AppBackground
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
 import io.github.elli0t0.phone.data.settings.model.Backdrop
@@ -95,6 +96,9 @@ interface SettingsRepository {
     suspend fun setGlassCards(enabled: Boolean)
     suspend fun setDynamicHighlights(enabled: Boolean)
     suspend fun setBackdrop(backdrop: Backdrop)
+    suspend fun setAppBackground(background: AppBackground)
+    suspend fun setAppBackgroundDim(dim: Float)
+    suspend fun setAppBackgroundPhotoVersion(version: Long)
     suspend fun setDefaultStartTab(tab: StartTab)
     suspend fun setContactSortOrder(order: ContactSortOrder)
     suspend fun setContactNameFormat(format: ContactNameFormat)
@@ -185,6 +189,9 @@ class DataStoreSettingsRepository(
         val GLASS_CARDS = booleanPreferencesKey("glass_cards")
         val DYNAMIC_HIGHLIGHTS = booleanPreferencesKey("dynamic_highlights")
         val BACKDROP = stringPreferencesKey("backdrop")
+        val APP_BACKGROUND = stringPreferencesKey("app_background")
+        val APP_BACKGROUND_DIM = floatPreferencesKey("app_background_dim")
+        val APP_BACKGROUND_PHOTO_VERSION = longPreferencesKey("app_background_photo_version")
         val DEFAULT_START_TAB = stringPreferencesKey("default_start_tab")
         val CONTACT_SORT_ORDER = stringPreferencesKey("contact_sort_order")
         val CONTACT_NAME_FORMAT = stringPreferencesKey("contact_name_format")
@@ -298,6 +305,10 @@ class DataStoreSettingsRepository(
         val dynamicHighlights = prefs[Keys.DYNAMIC_HIGHLIGHTS] ?: true
         val backdropStr = prefs[Keys.BACKDROP]
         val backdrop = backdropStr?.let { runCatching { Backdrop.valueOf(it) }.getOrNull() } ?: Backdrop.SUBTLE
+        val appBackgroundStr = prefs[Keys.APP_BACKGROUND]
+        val appBackground = appBackgroundStr?.let { runCatching { AppBackground.valueOf(it) }.getOrNull() } ?: AppBackground.AURORA
+        val appBackgroundDim = (prefs[Keys.APP_BACKGROUND_DIM] ?: 0.35f).coerceIn(0f, 0.9f)
+        val appBackgroundPhotoVersion = prefs[Keys.APP_BACKGROUND_PHOTO_VERSION] ?: 0L
 
         val tabStr = prefs[Keys.DEFAULT_START_TAB]
         val startTab = tabStr?.let { runCatching { StartTab.valueOf(it) }.getOrNull() } ?: StartTab.KEYPAD
@@ -461,6 +472,9 @@ class DataStoreSettingsRepository(
             glassCards = glassCards,
             dynamicHighlights = dynamicHighlights,
             backdrop = backdrop,
+            appBackground = appBackground,
+            appBackgroundDim = appBackgroundDim,
+            appBackgroundPhotoVersion = appBackgroundPhotoVersion,
             defaultStartTab = startTab,
             contactSortOrder = sortOrder,
             contactNameFormat = nameFormat,
@@ -746,6 +760,24 @@ class DataStoreSettingsRepository(
     override suspend fun setBackdrop(backdrop: Backdrop) {
         dataStore.edit { prefs ->
             prefs[Keys.BACKDROP] = backdrop.name
+        }
+    }
+
+    override suspend fun setAppBackground(background: AppBackground) {
+        dataStore.edit { prefs ->
+            prefs[Keys.APP_BACKGROUND] = background.name
+        }
+    }
+
+    override suspend fun setAppBackgroundDim(dim: Float) {
+        dataStore.edit { prefs ->
+            prefs[Keys.APP_BACKGROUND_DIM] = dim.coerceIn(0f, 0.9f)
+        }
+    }
+
+    override suspend fun setAppBackgroundPhotoVersion(version: Long) {
+        dataStore.edit { prefs ->
+            prefs[Keys.APP_BACKGROUND_PHOTO_VERSION] = version
         }
     }
 

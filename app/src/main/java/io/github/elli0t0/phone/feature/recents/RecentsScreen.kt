@@ -122,6 +122,7 @@ import kotlinx.coroutines.launch
 fun RecentsScreen(
     onNavigateToContactDetail: (Long) -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
+    onNavigateToRecordings: () -> Unit = {},
     onCreateContact: (String) -> Unit = {},
     onAddToExistingContact: (String) -> Unit = {},
     modifier: Modifier = Modifier
@@ -456,6 +457,18 @@ fun RecentsScreen(
                                     }
                                 ) {
                                     Text(
+                                        text = stringResource(id = R.string.recordings_title),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier
+                                            .clickable { menuExpanded = false; onNavigateToRecordings() }
+                                            .padding(
+                                                horizontal = spacing.medium,
+                                                vertical = spacing.small + spacing.extraSmall
+                                            )
+                                            .testTag("recordings_button")
+                                    )
+                                    Text(
                                         text = stringResource(id = R.string.settings_title),
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = MaterialTheme.colorScheme.onSurface,
@@ -677,7 +690,6 @@ fun RecentsScreen(
                                         modifier = Modifier
                                             .animateItem()
                                     ) { group ->
-                                        val recording = group.calls.firstNotNullOfOrNull { recordingByCallId[it.id] }
                                         CallLogRow(
                                             group = group,
                                             isExpanded = uiState.expandedCallId == group.id,
@@ -710,13 +722,11 @@ fun RecentsScreen(
                                             },
                                             onDeleteClick = { deleteCallWithUndo(group.id) },
                                             showDivider = false,
-                                            recording = recording,
-                                            isPlayingRecording = recording != null && quickPlayer.playingId == recording.id,
-                                            onRecordingClick = {
-                                                if (recording != null) {
-                                                    val error = quickPlayer.toggle(recording)
-                                                    if (error != null) recentsScope.launch { snackbarHostState.showSnackbar(error) }
-                                                }
+                                            recordingByCallId = recordingByCallId,
+                                            playingRecordingId = quickPlayer.playingId,
+                                            onRecordingPlayClick = { rec ->
+                                                val error = quickPlayer.toggle(rec)
+                                                if (error != null) recentsScope.launch { snackbarHostState.showSnackbar(error) }
                                             }
                                         )
                                     }

@@ -164,6 +164,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.17.9]
+
+- Recents groups with several recordings now show a count badge on the collapsed row's play button, and expanding a group shows a play button on every call that has its own recording. Playing one recording stops any other that is playing.
+- New Recordings screen, opened from the Recents 3-dot menu: all recordings grouped by day with search and All / Today / This week / This month filters, in-place playback with a seek bar, share, call back, and delete with confirmation. The list in Call recording settings is unchanged.
+- App background is now choosable from Liquid glass settings: Aurora blobs (the current look, still the default), eight gradients, Plain, or a photo of your own with a Darkness slider. Intensity (Off / Subtle / Vivid) is still set in Backdrop. The photo file is not part of settings JSON backup.
+
 ## [0.17.8]
 
 - The floating actions pill no longer overlaps the search bar: it hides while search is open on Recents and Contacts, and returns when search closes.

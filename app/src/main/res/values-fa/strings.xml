@@ -67,6 +67,11 @@
     <string name="dialpad_speed_dial_saved">شماره‌گیری سریع %1$s ذخیره شد</string>
     <string name="settings_dynamic_highlights">هایلایت‌های پویا</string>
     <string name="settings_backdrop">پس‌زمینه</string>
+    <string name="settings_app_background">پس‌زمینه</string>
+    <string name="app_background_photo_failed">این تصویر قابل استفاده نیست</string>
+    <string name="app_background_change_photo">تغییر عکس</string>
+    <string name="app_background_darkness">تیرگی</string>
+    <string name="app_background_intensity_note">شدت (خاموش / ملایم / واضح) هنوز از بخش پس‌زمینه تنظیم می‌شود.</string>
     <string name="settings_dynamic_highlights_desc">هایلایت شیشه با شیب دستگاه جابه‌جا می‌شود</string>
     <string name="settings_glass_studio">استودیو شیشه</string>
     <string name="settings_glass_studio_desc">تنظیم دقیق تاری، رنگ، لبه‌ها و بیشتر</string>
@@ -116,6 +121,15 @@
     <string name="recording_empty">هنوز ضبطی وجود ندارد</string>
     <string name="recording_delete">حذف</string>
     <string name="recording_share">اشتراک‌گذاری</string>
+    <string name="recordings_title">ضبط‌ها</string>
+    <string name="recordings_search_hint">جستجوی ضبط‌ها</string>
+    <string name="recordings_filter_all">همه</string>
+    <string name="recordings_filter_today">امروز</string>
+    <string name="recordings_filter_week">این هفته</string>
+    <string name="recordings_filter_month">این ماه</string>
+    <string name="recordings_delete_title">حذف ضبط؟</string>
+    <string name="recordings_delete_message">این فایل از گوشی حذف می‌شود.</string>
+    <string name="recordings_unknown">ناشناس</string>
     <string name="recording_note">فقط ضبط دستی. به جفت کردن ADB داخلی نیاز دارد. فایل‌ها در پوشه‌ی Music/Phone با فرمت WAV ذخیره می‌شوند.</string>
     <string name="recording_dialog_title">ضبط به راه‌اندازی نیاز دارد</string>
     <string name="call_action_record">ضبط</string>

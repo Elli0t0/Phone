@@ -8,6 +8,8 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -20,12 +22,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material3.MaterialTheme
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
+import io.github.elli0t0.phone.data.settings.model.AppBackground
+import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.Backdrop
+import io.github.elli0t0.phone.data.settings.model.CallBackground
+import java.io.File
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -54,9 +67,53 @@ private fun Color.hueShift(degrees: Float): Color {
  *
  * Nothing is drawn when Backdrop is Off or when Pure black dark
  * mode is on (which forces Off).
+ *
+ * The style picker (AppBackground) dispatches here: AURORA keeps
+ * the blobs below, gradients reuse the call-background brushes,
+ * PLAIN draws nothing (the root Box paints the theme background),
+ * PHOTO draws the user-chosen image with a dimming veil.
  */
 @Composable
 fun AmbientBackdrop(modifier: Modifier = Modifier) {
+    val settings = LocalAppSettings.current
+    if (settings.pureBlackDarkMode || settings.backdrop == Backdrop.OFF) return
+    when (settings.appBackground) {
+        AppBackground.AURORA -> AuroraBlobsBackdrop(modifier)
+        AppBackground.PLAIN -> Unit
+        AppBackground.PHOTO -> PhotoBackdrop(modifier, settings)
+        else -> GradientBackdrop(modifier, settings)
+    }
+}
+
+@Composable
+private fun GradientBackdrop(modifier: Modifier, settings: AppSettings) {
+    val brush = remember(settings.appBackground, settings.accentColor) {
+        callBackgroundBrush(settings.appBackground.gradient ?: CallBackground.DEFAULT, settings.accentColor)
+    }
+    val isLight = MaterialTheme.colorScheme.background.luminance() > 0.5f
+    // Subtle = 0.5, Vivid = 1.0; capped in light theme so text stays readable.
+    val alpha = (settings.backdrop.strength * 2.5f).coerceIn(0f, if (isLight) 0.35f else 1f)
+    Box(modifier.fillMaxSize().graphicsLayer { this.alpha = alpha }.background(brush))
+}
+
+@Composable
+private fun PhotoBackdrop(modifier: Modifier, settings: AppSettings) {
+    val context = LocalContext.current
+    val file = remember(settings.appBackgroundPhotoVersion) { File(context.filesDir, "app_background.jpg") }
+    if (!file.exists()) return
+    Box(modifier.fillMaxSize()) {
+        AsyncImage(
+            model = ImageRequest.Builder(context).data(file)
+                .memoryCacheKey("app_bg_${settings.appBackgroundPhotoVersion}").build(),
+            contentDescription = null, contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background.copy(alpha = settings.appBackgroundDim)))
+    }
+}
+
+@Composable
+private fun AuroraBlobsBackdrop(modifier: Modifier = Modifier) {
     val settings = LocalAppSettings.current
     val backdrop = settings.backdrop
     if (settings.pureBlackDarkMode || backdrop == Backdrop.OFF) return

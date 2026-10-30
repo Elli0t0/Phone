@@ -14,7 +14,8 @@ object SettingsBackup {
     const val FORMAT = "phone-settings"
     const val VERSION = 1
     private val excludedPrefixes = listOf("adb_")
-    fun isPortable(name: String) = excludedPrefixes.none { name.startsWith(it) }
+    private val excludedKeys = setOf("app_background_photo_version")
+    fun isPortable(name: String) = name !in excludedKeys && excludedPrefixes.none { name.startsWith(it) }
 
     fun encode(values: Map<String, Any>): String {
         val items = JSONObject()

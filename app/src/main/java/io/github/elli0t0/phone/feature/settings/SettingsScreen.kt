@@ -225,7 +225,7 @@ fun SettingsScreen(
     val anySettingsPageOpen = dialogs.showAppearancePage || dialogs.showGlassPage ||
         dialogs.showLayoutNavPage || dialogs.showCallsPage || dialogs.showContactsPage ||
         dialogs.showPrivacyPage || dialogs.showAboutPage || dialogs.showAppStylePage ||
-        dialogs.showGlassStudioPage || dialogs.showCallBackgroundPage ||
+        dialogs.showGlassStudioPage || dialogs.showCallBackgroundPage || dialogs.showAppBackgroundPage ||
         dialogs.showBlockedNumbers || dialogs.showRecordingPage ||
         dialogs.showAnswerStylePage
     LaunchedEffect(anySettingsPageOpen) {
@@ -734,6 +734,7 @@ fun SettingsScreen(
     // the list, so tapping the row visibly did nothing. System Back
     // closes the open page instead of leaving Settings.
     BackHandler(enabled = dialogs.showCallBackgroundPage) { dialogs.showCallBackgroundPage = false }
+    BackHandler(enabled = dialogs.showAppBackgroundPage) { dialogs.showAppBackgroundPage = false }
     BackHandler(enabled = dialogs.showAnswerStylePage) { dialogs.showAnswerStylePage = false }
     BackHandler(enabled = dialogs.showAppStylePage) { dialogs.showAppStylePage = false }
     BackHandler(enabled = dialogs.showGlassStudioPage) { dialogs.showGlassStudioPage = false }
@@ -772,6 +773,14 @@ fun SettingsScreen(
             accentColor = settings.accentColor,
             onSelect = { viewModel.setCallBackground(it) },
             onNavigateBack = { dialogs.showCallBackgroundPage = false }
+        )
+    }
+
+    if (dialogs.showAppBackgroundPage) {
+        AppBackgroundScreen(
+            settings = settings,
+            viewModel = viewModel,
+            onNavigateBack = { dialogs.showAppBackgroundPage = false }
         )
     }
 

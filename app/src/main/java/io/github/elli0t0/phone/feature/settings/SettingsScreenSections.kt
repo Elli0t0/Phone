@@ -366,6 +366,17 @@ fun GlassCard(
                 onClick = { dialogs.showBackdropDialog = true }
             )
 
+            Spacer(modifier = Modifier.height(spacing.small))
+            SettingsListDivider()
+            Spacer(modifier = Modifier.height(spacing.small))
+
+            SettingsRow(
+                title = stringResource(id = R.string.settings_app_background),
+                searchId = "glass_app_background",
+                subtitle = settings.appBackground.label,
+                onClick = { dialogs.showAppBackgroundPage = true }
+            )
+
             // Glass Studio is advanced: hidden unless the
             // advanced toggle is on (or opened from a search result).
             if (settings.showAdvancedSettings || LocalSearchAdvanced.current) {

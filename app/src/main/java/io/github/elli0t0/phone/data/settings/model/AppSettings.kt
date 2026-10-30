@@ -315,6 +315,27 @@ enum class Backdrop(val label: String, val strength: Float) {
     VIVID("Vivid", 0.40f)
 }
 
+/**
+ * App-wide background behind the tab content. AURORA (the drifting
+ * accent blobs) is the historical look and the default, so existing
+ * users see no change; the other entries reuse the call-background
+ * gradients, PLAIN is the bare theme background, PHOTO is a
+ * user-chosen image from filesDir.
+ */
+enum class AppBackground(val label: String, val gradient: CallBackground?) {
+    AURORA("Aurora blobs", null),
+    ACCENT("Accent", CallBackground.ACCENT),
+    SUNSET("Sunset", CallBackground.SUNSET),
+    OCEAN("Ocean", CallBackground.OCEAN),
+    FOREST("Forest", CallBackground.FOREST),
+    LAVENDER("Lavender", CallBackground.LAVENDER),
+    ROSE("Rose", CallBackground.ROSE),
+    MIDNIGHT("Midnight", CallBackground.MIDNIGHT),
+    AMBER("Amber", CallBackground.AMBER),
+    PLAIN("Plain", null),
+    PHOTO("Photo", null)
+}
+
 data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val accentColor: Long = AccentPreset.ONE_UI_BLUE.colorValue,
@@ -373,6 +394,9 @@ data class AppSettings(
     // Ambient backdrop behind the tab content. Forced Off when
     // Pure black dark mode is on (see AmbientBackdrop).
     val backdrop: Backdrop = Backdrop.SUBTLE,
+    val appBackground: AppBackground = AppBackground.AURORA,
+    val appBackgroundDim: Float = 0.35f,
+    val appBackgroundPhotoVersion: Long = 0L,
     val defaultStartTab: StartTab = StartTab.KEYPAD,
     val contactSortOrder: ContactSortOrder = ContactSortOrder.FIRST_NAME,
     val contactNameFormat: ContactNameFormat = ContactNameFormat.FIRST_NAME_FIRST,

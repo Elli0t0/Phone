@@ -312,6 +312,11 @@
     <string name="settings_glass_cards_desc">Use liquid glass for the Contacts and Recents list cards</string>
     <string name="settings_dynamic_highlights">Dynamic highlights</string>
     <string name="settings_backdrop">Backdrop</string>
+    <string name="settings_app_background">Background</string>
+    <string name="app_background_photo_failed">Could not use this image</string>
+    <string name="app_background_change_photo">Change photo</string>
+    <string name="app_background_darkness">Darkness</string>
+    <string name="app_background_intensity_note">Intensity (Off / Subtle / Vivid) is still set in Backdrop.</string>
     <string name="settings_dynamic_highlights_desc">Glass highlights shift with device tilt</string>
     <string name="settings_glass_studio">Glass Studio</string>
     <string name="settings_glass_studio_desc">Fine-tune blur, tint, edges and more</string>
@@ -512,6 +517,15 @@
     <string name="recording_empty">No recordings yet</string>
     <string name="recording_delete">Delete</string>
     <string name="recording_share">Share</string>
+    <string name="recordings_title">Recordings</string>
+    <string name="recordings_search_hint">Search recordings</string>
+    <string name="recordings_filter_all">All</string>
+    <string name="recordings_filter_today">Today</string>
+    <string name="recordings_filter_week">This week</string>
+    <string name="recordings_filter_month">This month</string>
+    <string name="recordings_delete_title">Delete recording?</string>
+    <string name="recordings_delete_message">This file will be removed from your phone.</string>
+    <string name="recordings_unknown">Unknown</string>
     <string name="recording_note">Manual recording only. Needs built-in ADB pairing. Files are saved as WAV in Music/Phone.</string>
     <string name="recording_dialog_title">Recording needs setup</string>
     <string name="call_action_record">Record</string>

@@ -18,6 +18,7 @@ import io.github.elli0t0.phone.data.settings.model.IncomingAvatarSize
 import io.github.elli0t0.phone.data.settings.model.EndCallButtonSize
 import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
+import io.github.elli0t0.phone.data.settings.model.AppBackground
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
 import io.github.elli0t0.phone.data.settings.model.Backdrop
@@ -356,6 +357,24 @@ class SettingsViewModel(
     fun onBackdropChanged(backdrop: Backdrop) {
         viewModelScope.launch {
             settingsRepository.setBackdrop(backdrop)
+        }
+    }
+
+    fun onAppBackgroundChanged(background: AppBackground) {
+        viewModelScope.launch {
+            settingsRepository.setAppBackground(background)
+        }
+    }
+
+    fun onAppBackgroundDimChanged(dim: Float) {
+        viewModelScope.launch {
+            settingsRepository.setAppBackgroundDim(dim)
+        }
+    }
+
+    fun onAppBackgroundPhotoChanged(version: Long) {
+        viewModelScope.launch {
+            settingsRepository.setAppBackgroundPhotoVersion(version)
         }
     }
 

@@ -127,6 +127,9 @@ fun PhoneNavHost(
                 },
                 onNavigateToSettings = {
                     navController.navigate(Screen.Settings.route)
+                },
+                onNavigateToRecordings = {
+                    navController.navigate(Screen.Recordings.route)
                 }
             )
         }
@@ -196,6 +199,17 @@ fun PhoneNavHost(
                 onNavigateBack = { navController.popBackStack() },
                 openRecordingPage = pendingOpenRecordingPage,
                 onRecordingPageConsumed = onRecordingPageConsumed
+            )
+        }
+        composable(
+            route = Screen.Recordings.route,
+            enterTransition = innerEnterTransition,
+            exitTransition = innerExitTransition,
+            popEnterTransition = innerPopEnterTransition,
+            popExitTransition = innerPopExitTransition
+        ) {
+            io.github.elli0t0.phone.feature.recording.RecordingsScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }

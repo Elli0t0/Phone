@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.unit.Dp
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -94,6 +96,54 @@ import io.github.elli0t0.phone.core.common.bidiWrap
 import androidx.compose.ui.text.style.TextDirection
 
 @OptIn(ExperimentalFoundationApi::class)
+/**
+ * Shared recording play/pause circle: the collapsed row (32dp, with
+ * a count badge when the group holds several recordings) and the
+ * per-call breakdown rows (36dp) both use it, so the icon, colors
+ * and test tag never drift apart.
+ */
+@Composable
+fun RecordingPlayButton(
+    isPlaying: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    size: Dp = 32.dp,
+    badgeCount: Int = 0
+) {
+    Box(modifier = modifier.size(size), contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f))
+                .clickable { onClick() }
+                .testTag("recents_recording_icon"),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play),
+                contentDescription = stringResource(
+                    if (isPlaying) R.string.recents_pause_recording else R.string.recents_play_recording
+                ),
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(size * 0.56f)
+            )
+        }
+        if (badgeCount > 1) {
+            Text(
+                text = badgeCount.toString(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = 4.dp, y = (-4).dp)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape)
+                    .padding(horizontal = 5.dp)
+            )
+        }
+    }
+}
+
 @Composable
 fun CallLogRow(
     group: CallGroup,
@@ -112,9 +162,9 @@ fun CallLogRow(
     onDeleteClick: () -> Unit,
     showDivider: Boolean = true,
     showSim: Boolean = false,
-    recording: RecordingEntity? = null,
-    isPlayingRecording: Boolean = false,
-    onRecordingClick: () -> Unit = {},
+    recordingByCallId: Map<Long, RecordingEntity> = emptyMap(),
+    playingRecordingId: Long? = null,
+    onRecordingPlayClick: (RecordingEntity) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
@@ -297,28 +347,19 @@ fun CallLogRow(
                     )
                 }
 
-                // Recording playback, when this group has a matched
-                // recording: a play/pause button before the time slot.
-                if (recording != null) {
+                // Recording playback, when this group has matched
+                // recordings: the latest one plays from here, with a
+                // badge when the group holds several. Per-call buttons
+                // live in the expanded breakdown below.
+                val groupRecordings = group.calls.mapNotNull { recordingByCallId[it.id] }
+                val latestRecording = groupRecordings.firstOrNull()
+                if (latestRecording != null) {
                     Spacer(modifier = Modifier.width(spacing.small))
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f))
-                            .clickable { onRecordingClick() }
-                            .testTag("recents_recording_icon"),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(if (isPlayingRecording) R.drawable.ic_pause else R.drawable.ic_play),
-                            contentDescription = stringResource(
-                                if (isPlayingRecording) R.string.recents_pause_recording else R.string.recents_play_recording
-                            ),
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
+                    RecordingPlayButton(
+                        isPlaying = latestRecording.id == playingRecordingId,
+                        badgeCount = groupRecordings.size,
+                        onClick = { onRecordingPlayClick(latestRecording) }
+                    )
                 }
 
                 // Time in its own fixed-width slot at the row's
@@ -394,7 +435,10 @@ fun CallLogRow(
                     onCallClick = onCallClick,
                     onMessageClick = onMessageClick,
                     onOpenContactClick = onOpenContactClick,
-                    onAddContactClick = onAddContactClick
+                    onAddContactClick = onAddContactClick,
+                    recordingByCallId = recordingByCallId,
+                    playingRecordingId = playingRecordingId,
+                    onRecordingPlayClick = onRecordingPlayClick
                 )
             }
                 }
@@ -499,6 +543,9 @@ private fun ExpandedCallDetails(
     onMessageClick: () -> Unit,
     onOpenContactClick: () -> Unit,
     onAddContactClick: () -> Unit,
+    recordingByCallId: Map<Long, RecordingEntity> = emptyMap(),
+    playingRecordingId: Long? = null,
+    onRecordingPlayClick: (RecordingEntity) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val call = group.primaryCall
@@ -550,7 +597,14 @@ private fun ExpandedCallDetails(
                     .padding(vertical = spacing.extraSmall)
             ) {
                 group.calls.forEachIndexed { index, entry ->
-                    CallBreakdownRow(entry = entry, showSim = showSim)
+                    val entryRecording = recordingByCallId[entry.id]
+                    CallBreakdownRow(
+                        entry = entry,
+                        showSim = showSim,
+                        recording = entryRecording,
+                        isPlaying = entryRecording != null && entryRecording.id == playingRecordingId,
+                        onPlayClick = { if (entryRecording != null) onRecordingPlayClick(entryRecording) }
+                    )
                     if (index < group.calls.lastIndex) {
                         HorizontalDivider(
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = PhoneDimens.recentsDividerAlpha),
@@ -789,6 +843,9 @@ private fun expandedActionEnter(option: AnimationOption, index: Int): EnterTrans
 private fun CallBreakdownRow(
     entry: CallLogEntry,
     showSim: Boolean,
+    recording: RecordingEntity? = null,
+    isPlaying: Boolean = false,
+    onPlayClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
@@ -829,6 +886,10 @@ private fun CallBreakdownRow(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+        if (recording != null) {
+            Spacer(modifier = Modifier.width(spacing.small))
+            RecordingPlayButton(isPlaying = isPlaying, onClick = onPlayClick, size = 36.dp)
         }
     }
 }

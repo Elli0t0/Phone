@@ -43,6 +43,14 @@ sealed class Screen(
         contentDescriptionRes = R.string.cd_settings
     )
 
+    data object Recordings : Screen(
+        route = "recordings",
+        titleRes = R.string.recordings_title,
+        iconRes = R.drawable.ic_mic,
+        iconResSelected = R.drawable.ic_mic,
+        contentDescriptionRes = R.string.recordings_title
+    )
+
     data object Setup : Screen(
         route = "setup",
         titleRes = R.string.setup_title,
