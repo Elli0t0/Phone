@@ -164,6 +164,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.18.0]
+
+- Recordings screen: multi-select with select-all and bulk delete, star/unstar, edit title and note, sort by newest, oldest, longest, largest, or starred first, player skip ±10s and playback speed, and a summary line with the count and total size.
+- Recordings are now cleaned up automatically: a retention setting (Never / 7 / 30 / 90 days) deletes old unstarred recordings on app start, after a recording stops, and when the Recordings screen opens, asking first when old recordings exist. Starred recordings are never deleted.
+- Auto-record can now be filtered: record all calls, only contacts, only unknown numbers, or all except selected numbers. The excluded-numbers list, opened from the auto-record card, lets you type a number or pick a contact; a stored number also matches the same number written differently.
+- Recordings can now be saved privately: a switch in the Recordings card keeps new recordings inside Phone only instead of Music/Phone, where other apps can see them. Playback, delete, and share all work with private files, and they are excluded from cloud backup and device transfer. Existing recordings are not moved.
+- The Call recording settings page is tidier: its recordings list moved out to the Recordings screen, reached from a new "Open recordings" card showing the count and total size.
+- Persian is now complete: every English string has a Persian translation.
+- Removed 54 strings nothing referenced anymore.
+- The lens bottom bar now follows the size setting: Small makes the whole row shorter and lower, not just the icons inside it; Medium is unchanged.
+- The Recordings date filter chip now uses the accent color when selected, the Recents menu no longer shows a stale popup over the title, and recordings gained starred, title, and note fields with one shared file-deletion path.
+
 ## [0.17.10]
 
 - The back arrow on the Recordings screen is now the proper on-background color instead of nearly black; Settings pages look the same as before.
