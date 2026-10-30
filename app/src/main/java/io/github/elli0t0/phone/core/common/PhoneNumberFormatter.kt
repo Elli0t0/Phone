@@ -1,6 +1,9 @@
 package io.github.elli0t0.phone.core.common
 
 import android.telephony.PhoneNumberUtils
+import androidx.annotation.StringRes
+import io.github.elli0t0.phone.R
+import java.util.Locale
 
 /**
  * One display format for every number. Region = SIM/network country
@@ -142,6 +145,30 @@ object PhoneNumberFormatter {
         } else {
             "+98 ${rest.substring(0, 2)} ${rest.substring(2, 6)} ${rest.substring(6)}"
         }
+    }
+
+    /**
+     * Caption for a dialed number, e.g. "Iran · Mobile": the country
+     * name plus the line type, or null when either cannot be
+     * determined (partial input, unknown region, untyped lines).
+     * Only Iranian mobiles are typed today: a national number of
+     * 10 digits starting with 9 (trunk 09… or +98 9…). Anything
+     * else shows nothing.
+     */
+    data class NumberCaption(val country: String, @StringRes val typeRes: Int)
+
+    fun numberCaption(rawNumber: String): NumberCaption? {
+        val normalized = normalizeDigits(rawNumber)
+        if (normalized.isBlank() || normalized.contains('*') || normalized.contains('#')) return null
+        val e164 = PhoneNumberMatcher.toE164(normalized)
+        if (e164.isBlank()) return null
+        val iso = PhoneNumberMatcher.countryIsoForE164(e164) ?: return null
+        if (iso != "IR") return null
+        val national = e164.removePrefix("+98")
+        if (national.length != 10 || !national.startsWith("9")) return null
+        val country = Locale("", iso).getDisplayCountry(Locale.getDefault())
+            .takeIf { it.isNotBlank() } ?: return null
+        return NumberCaption(country, R.string.type_phone_mobile)
     }
 
     /**

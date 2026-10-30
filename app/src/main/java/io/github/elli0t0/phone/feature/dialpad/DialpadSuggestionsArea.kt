@@ -70,10 +70,10 @@ fun ColumnScope.DialpadSuggestionsArea(
         uiState.matchingContacts.isNotEmpty()
     val showNoMatchActions = uiState.rawNumber.isNotEmpty() &&
         !showSearchRows && !showChips
-    // Empty keypad: favorites and recents share the area,
-    // centered with breathing room instead of squished above the keys
-    // under a tall blank. Every other state stays pinned to the bottom,
-    // so lists grow upward from the keypad.
+    // Empty keypad: favorites and recents share the area, pinned
+    // to the top so the flexible gap sits above the number display,
+    // not between the display and the keys. T9 chips pin to the
+    // top too; search rows fill the area.
     val isEmptyState = uiState.rawNumber.isEmpty() && !showSearchRows && !showChips
     // T9 Matching contacts list above the keypad
     Box(
@@ -81,7 +81,7 @@ fun ColumnScope.DialpadSuggestionsArea(
             .fillMaxWidth()
             .weight(1f)
             .padding(top = spacing.small),
-        contentAlignment = if (isEmptyState) Alignment.Center else Alignment.BottomCenter
+        contentAlignment = Alignment.TopCenter
     ) {
     if (showSearchRows) {
         // Name search: full rows.

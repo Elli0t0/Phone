@@ -13,9 +13,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBars
@@ -26,7 +26,6 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -63,7 +62,6 @@ import io.github.elli0t0.phone.core.design.dialogEnter
 import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
-import io.github.elli0t0.phone.core.design.rememberTilt
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.core.telecom.CallManager
 import io.github.elli0t0.phone.data.settings.model.Backdrop
@@ -178,8 +176,6 @@ fun DialpadScreen(
     // Shared light haptic for every keypad tap (follows the system
     // haptics setting), replacing the two local View-based helpers.
     val lightHaptic = rememberLightHaptic()
-    // One tilt listener for all keys (Dynamic highlights setting).
-    val tilt = rememberTilt()
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -201,8 +197,14 @@ fun DialpadScreen(
     val backdropVisible = LocalAppSettings.current.let {
         it.backdrop != Backdrop.OFF && !it.pureBlackDarkMode
     }
+    // Small screens (< 640dp tall) get smaller keys with tighter
+    // rows; the call button stays 72dp.
+    BoxWithConstraints(
+        modifier = modifier.fillMaxSize()
+    ) {
+        val compactKeys = maxHeight < 640.dp
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .background(
                 if (backdropVisible) {
@@ -351,6 +353,14 @@ fun DialpadScreen(
                 )
             }
         )
+        // Region + line-type caption under the number, only when
+        // the formatter could determine one.
+        val numberCaptionInfo = remember(uiState.rawNumber) {
+            PhoneNumberFormatter.numberCaption(uiState.rawNumber)
+        }
+        val numberCaption = numberCaptionInfo?.let {
+            "${it.country} · ${stringResource(it.typeRes)}"
+        }
         DialpadNumberDisplay(
             displayText = uiState.formattedNumber.ifBlank { uiState.rawNumber },
             rawNumber = uiState.rawNumber,
@@ -359,9 +369,9 @@ fun DialpadScreen(
             onPaste = viewModel::onNumberPasted,
             onBackspacePressed = viewModel::onBackspacePressed,
             onStartBackspaceRepeat = viewModel::startBackspaceRepeat,
-            onStopBackspaceRepeat = viewModel::stopBackspaceRepeat
+            onStopBackspaceRepeat = viewModel::stopBackspaceRepeat,
+            caption = numberCaption
         )
-        Spacer(modifier = Modifier.height(spacing.small))
         DialpadKeypadGrid(
             // No tick here: DialKeyView ticks on press-down.
             onKeyPressed = { digit ->
@@ -416,7 +426,8 @@ fun DialpadScreen(
                     }
                 }
             },
-            tilt = tilt
+            keySize = if (compactKeys) 64.dp else 72.dp,
+            verticalSpacing = if (compactKeys) 8.dp else 12.dp
         )
         DialpadCallButtonRow(
             keyStyle = keyStyle,
@@ -428,5 +439,6 @@ fun DialpadScreen(
                 }
             }
         )
+    }
     }
 }

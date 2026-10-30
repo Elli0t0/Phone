@@ -1,8 +1,5 @@
 package io.github.elli0t0.phone.feature.dialpad
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.snap
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -39,7 +36,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
@@ -61,6 +58,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.elli0t0.phone.R
@@ -68,17 +66,12 @@ import io.github.elli0t0.phone.core.common.bidiWrap
 import io.github.elli0t0.phone.core.design.LiquidGlassChip
 import io.github.elli0t0.phone.data.settings.model.KeyStyle
 import io.github.elli0t0.phone.core.design.LiquidGlassPill
-import io.github.elli0t0.phone.core.design.KeypadKeyLightRim
 import io.github.elli0t0.phone.core.design.LiquidGlassPillShape
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
-import io.github.elli0t0.phone.core.design.LiquidGlassSurfaceLight
-import io.github.elli0t0.phone.core.design.isDarkGlassTheme
-import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.design.bouncyClick
-import io.github.elli0t0.phone.core.design.glassPress
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 import io.github.elli0t0.phone.feature.contacts.ui.ContactAvatar
 
@@ -101,7 +94,7 @@ fun DialKeyView(
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
-    tilt: State<Offset>? = null
+    size: Dp = 72.dp
 ) {
     val keyTag = when (dialKey.digit) {
         '*' -> "star"
@@ -109,23 +102,50 @@ fun DialKeyView(
         else -> dialKey.digit.toString()
     }
 
-    // Shared press source: bouncyClick and combinedClickable observe
-    // the same press state, so the key bounces (0.90) while pressed.
-    // No ripple: the glass surface is the feedback.
+    // Shared press source: the tick below and the press scale both
+    // observe it, so feedback fires on press-down, not on release.
+    // (The screen's key lambdas must not tick again.)
     val keySource = remember { MutableInteractionSource() }
-    // Light tick on press-down (system haptic setting respected):
-    // click-time feedback fires on release, which feels late while
-    // typing. The screen's key lambdas must not tick again.
     val lightHaptic = rememberLightHaptic()
     LaunchedEffect(keySource) {
         keySource.interactions.collect { interaction ->
             if (interaction is PressInteraction.Press) lightHaptic()
         }
     }
-    val keyStyle = LocalAppSettings.current.effectiveStyle.keys
-    // Key content shared by the glass and simple branches; the flat
-    // branch has its own content (different sizes and weights).
-    val keyContent: @Composable () -> Unit = {
+    val pressed by keySource.collectIsPressedAsState()
+    // The glass switch: GLASS keys get the very light glass
+    // container + 1dp rim; every other style gets the same layout
+    // with a flat container and no border. No heavy gradient.
+    val glass = LocalAppSettings.current.effectiveStyle.keys == KeyStyle.GLASS
+    val container = if (glass) {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = if (pressed) 0.16f else 0.08f)
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
+    }
+    Box(
+        modifier = modifier
+            .size(size)
+            .scale(if (pressed) 0.94f else 1f)
+            .clip(CircleShape)
+            .background(container)
+            .then(
+                if (glass) {
+                    Modifier.border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f), CircleShape)
+                } else {
+                    Modifier
+                }
+            )
+            .combinedClickable(
+                interactionSource = keySource,
+                indication = null,
+                onClick = onClick,
+                onLongClick = {
+                    if (onLongClick != null) onLongClick() else onClick()
+                }
+            )
+            .testTag("dial_key_$keyTag"),
+        contentAlignment = Alignment.Center
+    ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -140,10 +160,8 @@ fun DialKeyView(
             } else {
                 Text(
                     text = dialKey.digit.toString(),
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontSize = PhoneDimens.keypadDigitSize,
-                        fontWeight = FontWeight.Normal
-                    ),
+                    fontSize = 30.sp,
+                    fontWeight = FontWeight.Light,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -152,121 +170,10 @@ fun DialKeyView(
             // height and the digits stay aligned.
             Text(
                 text = dialKey.letters,
-                style = MaterialTheme.typography.labelMedium.copy(
-                    fontSize = PhoneDimens.keypadLetterSize,
-                    fontWeight = FontWeight.Normal
-                ),
+                fontSize = 10.sp,
+                letterSpacing = 1.5.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-        }
-    }
-    if (keyStyle == KeyStyle.FLAT) {
-        // Flat key: solid circle, digit 36sp Light, letters 10sp
-        // Bold with 2sp tracking at 60% alpha. Press fills instantly
-        // and fades back over 350ms; no scale, no ripple.
-        val flatPressed by keySource.collectIsPressedAsState()
-        val darkFlatKey = isDarkGlassTheme()
-        val flatBg by animateColorAsState(
-            targetValue = if (flatPressed) {
-                Color(0xFF7A7A80)
-            } else if (darkFlatKey) {
-                Color(0xFF333336)
-            } else {
-                Color(0xFFE5E5EA)
-            },
-            animationSpec = if (flatPressed) snap() else tween(350),
-            label = "flatKeyBg"
-        )
-        Box(
-            modifier = modifier
-                .size(78.dp)
-                .clip(CircleShape)
-                .background(flatBg)
-                .combinedClickable(
-                    interactionSource = keySource,
-                    indication = null,
-                    onClick = onClick,
-                    onLongClick = {
-                        if (onLongClick != null) onLongClick() else onClick()
-                    }
-                )
-                .testTag("dial_key_$keyTag"),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                if (dialKey.digit == '*') {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_asterisk),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(PhoneDimens.keypadAsteriskSize)
-                    )
-                } else {
-                    Text(
-                        text = dialKey.digit.toString(),
-                        fontSize = 36.sp,
-                        fontWeight = FontWeight.Light,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                // Always emit the letters line, even when empty, so
-                // every key has the same height and digits align.
-                Text(
-                    text = dialKey.letters,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.60f)
-                )
-            }
-        }
-    } else if (keyStyle == KeyStyle.GLASS) {
-        // Light keys: the glass fill alone is near-invisible on a
-        // light background, so light keys get a slightly darker fill
-        // and a 1dp 12% black rim to read as keys.
-        val lightKey = !isDarkGlassTheme()
-        Box(
-            modifier = modifier
-                .size(PhoneDimens.keypadTouchSize)
-                .then(if (lightKey) Modifier.background(LiquidGlassSurfaceLight, CircleShape) else Modifier)
-                .liquidGlass(shape = CircleShape, premium = true, tilt = tilt)
-                .then(if (lightKey) Modifier.border(1.dp, KeypadKeyLightRim, CircleShape) else Modifier)
-                .glassPress(keySource)
-                .combinedClickable(
-                    interactionSource = keySource,
-                    indication = null,
-                    onClick = onClick,
-                    onLongClick = {
-                        if (onLongClick != null) onLongClick() else onClick()
-                    }
-                )
-                .testTag("dial_key_$keyTag"),
-            contentAlignment = Alignment.Center
-        ) {
-            keyContent()
-        }
-    } else {
-        // Simple key: bare digits with press-scale and a circle-clipped ripple.
-        Box(
-            modifier = modifier
-                .size(PhoneDimens.keypadTouchSize)
-                .clip(CircleShape)
-                .bouncyClick(keySource)
-                .combinedClickable(
-                    interactionSource = keySource,
-                    indication = ripple(),
-                    onClick = onClick,
-                    onLongClick = {
-                        if (onLongClick != null) onLongClick() else onClick()
-                    }
-                )
-                .testTag("dial_key_$keyTag"),
-            contentAlignment = Alignment.Center
-        ) {
-            keyContent()
         }
     }
 }
@@ -665,8 +572,8 @@ fun QuickRedialChips(
     modifier: Modifier = Modifier
 ) {
     // Never render empty pills: an empty or still-loading list, or
-    // entries with no name, show nothing at all.
-    val visibleEntries = entries.filter { it.label.isNotBlank() }
+    // entries with no name, show nothing at all. At most 3 chips.
+    val visibleEntries = entries.filter { it.label.isNotBlank() }.take(3)
     if (visibleEntries.isEmpty()) return
     val spacing = LocalSpacing.current
     Column(modifier = modifier) {
@@ -684,7 +591,7 @@ fun QuickRedialChips(
         visibleEntries.forEachIndexed { index, entry ->
             val chipModifier = Modifier
                 .weight(1f)
-                .heightIn(min = 44.dp)
+                .height(36.dp)
                 .testTag("dialpad_quick_redial_$index")
             if (LocalAppSettings.current.effectiveStyle.keys == KeyStyle.GLASS) {
                 val source = remember { MutableInteractionSource() }
@@ -699,16 +606,10 @@ fun QuickRedialChips(
                         ) { onRedial(entry) }
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        modifier = Modifier.padding(horizontal = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_phone),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.size(4.dp))
                         Text(
                             text = "\u2068" + entry.label + "\u2069",
                             style = MaterialTheme.typography.labelLarge.copy(textDirection = TextDirection.Content),
@@ -720,14 +621,10 @@ fun QuickRedialChips(
             } else {
                 FilledTonalButton(
                     onClick = { onRedial(entry) },
-                    modifier = chipModifier
+                    modifier = chipModifier,
+                    shape = CircleShape,
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_phone),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.size(4.dp))
                     Text(
                         text = "\u2068" + entry.label + "\u2069",
                         style = MaterialTheme.typography.labelLarge.copy(textDirection = TextDirection.Content),

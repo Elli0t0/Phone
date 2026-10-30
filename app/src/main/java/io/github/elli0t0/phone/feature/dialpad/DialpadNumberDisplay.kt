@@ -44,7 +44,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneDimens
@@ -59,29 +61,37 @@ fun DialpadNumberDisplay(
     onPaste: (String) -> Unit,
     onBackspacePressed: () -> Unit,
     onStartBackspaceRepeat: ((() -> Unit)?) -> Unit,
-    onStopBackspaceRepeat: () -> Unit
+    onStopBackspaceRepeat: () -> Unit,
+    caption: String? = null
 ) {
     val clipboardManager = LocalClipboardManager.current
     // Formatted Number Display. Long-press pastes the clipboard
     // number; the paste target excludes the backspace slot (see
     // below), so a backspace long-press can never paste.
     // Always rendered: a fixed slot, so typing the first digit
-    // never shifts the layout. Number centered, regular weight,
-    // auto-shrinks on overflow; the backspace owns a reserved
-    // 56dp slot at the right, so the number never runs under it.
+    // never shifts the layout. Number centered, light weight,
+    // 36sp dropping to 24sp past 11 chars; the backspace owns a
+    // reserved 56dp slot at the right, so the number never runs
+    // under it.
     // At the minimum size a still-overflowing number falls back
     // to a single line truncated in the middle ("…" keeps the
     // leading and trailing digits visible). MiddleEllipsis does
     // not exist in this Compose version, so the truncation is
     // computed from the measured line width (see below).
-    var displayFontSize by remember { mutableStateOf(PhoneDimens.keypadNumberDisplaySize) }
+    // 36sp Light, dropping to 24sp once the number passes 11 chars.
+    val baseSize = if (displayText.length > 11) PhoneDimens.keypadNumberDisplayMinSize else 36.sp
+    var displayFontSize by remember { mutableStateOf(baseSize) }
     var overflowAtMin by remember { mutableStateOf(false) }
     var middleTruncated by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(displayText) {
-        displayFontSize = PhoneDimens.keypadNumberDisplaySize
+        displayFontSize = baseSize
         overflowAtMin = false
         middleTruncated = null
     }
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -123,7 +133,7 @@ fun DialpadNumberDisplay(
                 text = displayText,
                 style = MaterialTheme.typography.displayLarge.copy(
                     fontSize = displayFontSize,
-                    fontWeight = FontWeight.Normal
+                    fontWeight = FontWeight.Light
                 ),
                 color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Center,
@@ -146,12 +156,7 @@ fun DialpadNumberDisplay(
                             }
                             overflowAtMin = true
                         } else {
-                            val shrunk = displayFontSize * PhoneDimens.keypadNumberDisplayShrinkFactor
-                            displayFontSize = if (shrunk.value < PhoneDimens.keypadNumberDisplayMinSize.value) {
-                                PhoneDimens.keypadNumberDisplayMinSize
-                            } else {
-                                shrunk
-                            }
+                            displayFontSize = PhoneDimens.keypadNumberDisplayMinSize
                         }
                     }
                 },
@@ -164,7 +169,7 @@ fun DialpadNumberDisplay(
                     text = middleTruncated!!,
                     style = MaterialTheme.typography.displayLarge.copy(
                         fontSize = displayFontSize,
-                        fontWeight = FontWeight.Normal
+                        fontWeight = FontWeight.Light
                     ),
                     color = MaterialTheme.colorScheme.onBackground,
                     textAlign = TextAlign.Center,
@@ -217,7 +222,7 @@ fun DialpadNumberDisplay(
                             text = char.toString(),
                             style = MaterialTheme.typography.displayLarge.copy(
                                 fontSize = displayFontSize,
-                                fontWeight = FontWeight.Normal
+                                fontWeight = FontWeight.Light
                             ),
                             color = MaterialTheme.colorScheme.onBackground,
                             maxLines = 1,
@@ -304,4 +309,18 @@ fun DialpadNumberDisplay(
                 }
             }
         }
+        // Region + line-type caption ("Iran · Mobile") under the
+        // number, only when the formatter could determine one.
+        if (caption != null) {
+            Text(
+                text = caption,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
 }
