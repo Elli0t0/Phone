@@ -5,8 +5,10 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
+import android.text.format.Formatter
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,20 +20,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -40,13 +38,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
@@ -65,23 +61,20 @@ import io.github.elli0t0.phone.core.design.SwitchGreenUncheckedTrack
 import io.github.elli0t0.phone.core.recording.BackendStatus
 import io.github.elli0t0.phone.core.recording.PairResult
 import io.github.elli0t0.phone.core.recording.RecordingSession
-import io.github.elli0t0.phone.data.recordings.RecordingEntity
 import io.github.elli0t0.phone.data.settings.model.SwitchStyle
 import io.github.elli0t0.phone.feature.settings.LocalSearchAdvanced
 import io.github.elli0t0.phone.feature.settings.searchHighlight
 import io.github.elli0t0.phone.navigation.InnerTopBar
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 /**
  * Call recording page: built-in ADB backend status + setup actions, a
- * 3-second pipeline test, the active recording (if any), and the
- * recordings list with playback, delete, and share.
+ * 3-second pipeline test, the active recording (if any), and a row
+ * opening the Recordings screen.
  */
 @Composable
 fun RecordingSettingsScreen(
     onNavigateBack: () -> Unit,
+    onOpenRecordings: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -100,7 +93,7 @@ fun RecordingSettingsScreen(
     val showAdvancedSettings = LocalAppSettings.current.showAdvancedSettings || LocalSearchAdvanced.current
     val session by viewModel.session.collectAsStateWithLifecycle()
     val lastError by viewModel.lastError.collectAsStateWithLifecycle()
-    val recordings by viewModel.recordings.collectAsStateWithLifecycle()
+    val recordingStats by viewModel.recordingStats.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     val testOutcome by viewModel.testOutcome.collectAsStateWithLifecycle()
     val testing by viewModel.testing.collectAsStateWithLifecycle()
@@ -131,9 +124,6 @@ fun RecordingSettingsScreen(
             pairPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
-    val playError by viewModel.playError.collectAsStateWithLifecycle()
-    val playingId by viewModel.playingId.collectAsStateWithLifecycle()
-    val positionMs by viewModel.positionMs.collectAsStateWithLifecycle()
     val backendDiagnostic by viewModel.backendDiagnostic.collectAsStateWithLifecycle()
     val captureDiagnostic by viewModel.captureDiagnostic.collectAsStateWithLifecycle()
     val pairResult by viewModel.pairResult.collectAsStateWithLifecycle()
@@ -229,6 +219,33 @@ fun RecordingSettingsScreen(
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = stringResource(id = R.string.recording_auto_note),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            }
+
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                        .searchHighlight("recording_open")
+                        .clickable { onOpenRecordings() }
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = stringResource(id = R.string.recordings_open),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = stringResource(
+                                id = R.string.recordings_open_summary,
+                                recordingStats.count,
+                                Formatter.formatShortFileSize(context, recordingStats.totalBytes)
+                            ),
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -592,136 +609,8 @@ fun RecordingSettingsScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-
-            if (playError != null) {
-                item {
-                    Text(
-                        text = playError!!,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
-
-            if (recordings.isEmpty()) {
-                item {
-                    Text(
-                        text = stringResource(id = R.string.recording_empty),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            } else {
-                items(recordings, key = { it.id }) { entity ->
-                    RecordingRow(
-                        entity = entity,
-                        isPlaying = playingId == entity.id,
-                        positionMs = if (playingId == entity.id) positionMs else 0L,
-                        onPlayToggle = { viewModel.togglePlay(entity) },
-                        onSeek = { viewModel.seekTo(it) },
-                        onDelete = { viewModel.delete(entity) },
-                        onShare = { viewModel.share(entity, context) }
-                    )
-                }
-            }
         }
     }
-}
-
-@Composable
-private fun RecordingRow(
-    entity: RecordingEntity,
-    isPlaying: Boolean,
-    positionMs: Long,
-    onPlayToggle: () -> Unit,
-    onSeek: (Int) -> Unit,
-    onDelete: () -> Unit,
-    onShare: () -> Unit
-) {
-    val dateFormat = remember {
-        SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-    }
-    val title = when {
-        entity.isTest -> stringResource(id = R.string.recording_test_title)
-        !entity.displayName.isNullOrBlank() -> entity.displayName!!
-        else -> entity.number
-    }
-    val durationText = if (entity.durationMs >= 60_000) {
-        stringResource(
-            id = R.string.recents_duration_min_sec,
-            (entity.durationMs / 60_000).toInt(),
-            ((entity.durationMs / 1000) % 60).toInt()
-        )
-    } else {
-        stringResource(
-            id = R.string.recents_duration_sec,
-            (entity.durationMs / 1000).toInt()
-        )
-    }
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = title, style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = "${dateFormat.format(Date(entity.startedAt))}  •  $durationText",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            if (entity.isSilent) {
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = stringResource(id = R.string.recording_silent_badge),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
-                )
-                Text(
-                    text = stringResource(id = R.string.recording_silent_message),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onPlayToggle) {
-                    Icon(
-                        painter = painterResource(
-                            id = if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play
-                        ),
-                        contentDescription = null
-                    )
-                }
-                Slider(
-                    value = positionMs.toFloat(),
-                    onValueChange = { if (isPlaying) onSeek(it.toInt()) },
-                    valueRange = 0f..maxOf(1f, entity.durationMs.toFloat()),
-                    enabled = isPlaying,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = "${formatPlayerTime(positionMs)} / ${formatPlayerTime(entity.durationMs)}",
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton(onClick = onDelete) {
-                    Text(text = stringResource(id = R.string.recording_delete))
-                }
-                TextButton(onClick = onShare) {
-                    Text(text = stringResource(id = R.string.recording_share))
-                }
-            }
-        }
-    }
-}
-
-private fun formatPlayerTime(ms: Long): String {
-    val totalSeconds = ms / 1000
-    return "${totalSeconds / 60}:${(totalSeconds % 60).toString().padStart(2, '0')}"
 }
 
 private fun openNotificationSettings(context: android.content.Context) {

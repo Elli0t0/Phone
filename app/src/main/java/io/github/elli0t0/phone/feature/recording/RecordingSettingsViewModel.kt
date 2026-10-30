@@ -1,14 +1,11 @@
 package io.github.elli0t0.phone.feature.recording
 
 import android.content.Context
-import android.content.Intent
 import android.database.ContentObserver
-import android.media.MediaPlayer
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
-import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
@@ -21,10 +18,9 @@ import io.github.elli0t0.phone.core.recording.RecordingController
 import io.github.elli0t0.phone.core.recording.RecordingSession
 import io.github.elli0t0.phone.core.recording.adb.openWirelessDebugging
 import io.github.elli0t0.phone.core.recording.adb.postPairNotification
-import io.github.elli0t0.phone.data.recordings.RecordingEntity
+import io.github.elli0t0.phone.data.recordings.RecordingStats
 import io.github.elli0t0.phone.data.recordings.RecordingsRepository
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -58,8 +54,8 @@ class RecordingSettingsViewModel(
     val keyAccepted: StateFlow<Boolean> = controller.adbKeyAccepted
     val session: StateFlow<RecordingSession> = controller.state
     val lastError: StateFlow<String?> = controller.lastError
-    val recordings: StateFlow<List<RecordingEntity>> = recordingsRepository.recordings
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val recordingStats: StateFlow<RecordingStats> = recordingsRepository.stats
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecordingStats(0, 0))
 
     private val _busy = MutableStateFlow(false)
     val busy: StateFlow<Boolean> = _busy.asStateFlow()
@@ -67,15 +63,6 @@ class RecordingSettingsViewModel(
     val testOutcome: StateFlow<RecordingTestOutcome?> = _testOutcome.asStateFlow()
     private val _testing = MutableStateFlow(false)
     val testing: StateFlow<Boolean> = _testing.asStateFlow()
-    private val _playError = MutableStateFlow<String?>(null)
-    val playError: StateFlow<String?> = _playError.asStateFlow()
-
-    private var player: MediaPlayer? = null
-    private val _playingId = MutableStateFlow<Long?>(null)
-    val playingId: StateFlow<Long?> = _playingId.asStateFlow()
-    private val _positionMs = MutableStateFlow(0L)
-    val positionMs: StateFlow<Long> = _positionMs.asStateFlow()
-    private var ticker: Job? = null
 
     private var refreshJob: Job? = null
 
@@ -184,74 +171,7 @@ class RecordingSettingsViewModel(
         viewModelScope.launch { controller.stopRecording() }
     }
 
-    fun togglePlay(entity: RecordingEntity) {
-        if (_playingId.value == entity.id) {
-            stopPlayback()
-        } else {
-            play(entity)
-        }
-    }
-
-    private fun play(entity: RecordingEntity) {
-        stopPlayback()
-        val mp = MediaPlayer()
-        try {
-            mp.setDataSource(appContext, Uri.parse(entity.uri))
-            mp.prepare()
-            mp.start()
-            mp.setOnCompletionListener { stopPlayback() }
-            player = mp
-            _playingId.value = entity.id
-            _positionMs.value = 0
-            _playError.value = null
-            ticker = viewModelScope.launch {
-                while (true) {
-                    delay(500)
-                    _positionMs.value = runCatching {
-                        player?.currentPosition?.toLong() ?: 0
-                    }.getOrDefault(0)
-                }
-            }
-        } catch (e: Exception) {
-            runCatching { mp.release() }
-            _playingId.value = null
-            _playError.value = e.message
-        }
-    }
-
-    fun seekTo(ms: Int) {
-        runCatching { player?.seekTo(ms) }
-        _positionMs.value = ms.toLong()
-    }
-
-    private fun stopPlayback() {
-        ticker?.cancel()
-        ticker = null
-        runCatching {
-            player?.stop()
-            player?.release()
-        }
-        player = null
-        _playingId.value = null
-        _positionMs.value = 0
-    }
-
-    fun delete(entity: RecordingEntity) {
-        if (_playingId.value == entity.id) stopPlayback()
-        viewModelScope.launch { recordingsRepository.remove(entity) }
-    }
-
-    fun share(entity: RecordingEntity, context: Context) {
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "audio/x-wav"
-            putExtra(Intent.EXTRA_STREAM, Uri.parse(entity.uri))
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        context.startActivity(Intent.createChooser(intent, null))
-    }
-
     override fun onCleared() {
-        stopPlayback()
         runCatching {
             val manager = appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
             manager?.unregisterNetworkCallback(networkCallback)

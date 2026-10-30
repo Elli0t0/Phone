@@ -491,7 +491,6 @@
     <string name="recording_action_refresh">Refresh</string>
     <string name="recording_test">Test recording (3s, microphone)</string>
     <string name="recording_test_running">Testing…</string>
-    <string name="recording_test_title">Test recording</string>
     <string name="recording_test_ok">Test OK: %1$d bytes in %2$d ms</string>
     <string name="recording_test_ok_mic">Recorder works. For a call test, start a call and tap Record. (%1$d bytes in %2$d ms, peak %3$d%%)</string>
     <string name="recording_test_mic_silence">Microphone returned silence. Check the RECORD_AUDIO permission for the shell recorder or another app using the microphone.</string>
@@ -518,6 +517,8 @@
     <string name="recording_delete">Delete</string>
     <string name="recording_share">Share</string>
     <string name="recordings_title">Recordings</string>
+    <string name="recordings_open">Open recordings</string>
+    <string name="recordings_open_summary">%1$d recordings · %2$s</string>
     <string name="recordings_search_hint">Search recordings</string>
     <string name="recordings_filter_all">All</string>
     <string name="recordings_filter_today">Today</string>

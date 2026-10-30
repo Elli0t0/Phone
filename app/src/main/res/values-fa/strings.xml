@@ -96,7 +96,6 @@
     <string name="recording_action_refresh">به‌روزرسانی</string>
     <string name="recording_test">آزمایش ضبط (3 ثانیه، میکروفون)</string>
     <string name="recording_test_running">در حال آزمایش…</string>
-    <string name="recording_test_title">ضبط آزمایشی</string>
     <string name="recording_test_ok">آزمایش موفق: %1$d بایت در %2$d میلی‌ثانیه</string>
     <string name="recording_test_ok_mic">ضبط کار می‌کند. برای آزمایش تماس، تماسی بگیرید و «ضبط» را بزنید. (%1$d بایت در %2$d میلی‌ثانیه، اوج %3$d٪)</string>
     <string name="recording_test_mic_silence">میکروفون صدایی ضبط نکرد. دسترسی RECORD_AUDIO ضبط‌کننده یا استفاده برنامه‌ای دیگر از میکروفون را بررسی کنید.</string>
@@ -122,6 +121,8 @@
     <string name="recording_delete">حذف</string>
     <string name="recording_share">اشتراک‌گذاری</string>
     <string name="recordings_title">ضبط‌ها</string>
+    <string name="recordings_open">باز کردن ضبط‌ها</string>
+    <string name="recordings_open_summary">%1$d ضبط · %2$s</string>
     <string name="recordings_search_hint">جستجوی ضبط‌ها</string>
     <string name="recordings_filter_all">همه</string>
     <string name="recordings_filter_today">امروز</string>

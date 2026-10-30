@@ -145,7 +145,8 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     openRecordingPage: Boolean = false,
-    onRecordingPageConsumed: () -> Unit = {}
+    onRecordingPageConsumed: () -> Unit = {},
+    onNavigateToRecordings: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val app = context.applicationContext as PhoneApplication
@@ -789,7 +790,10 @@ fun SettingsScreen(
     }
 
     if (dialogs.showRecordingPage) {
-        RecordingSettingsScreen(onNavigateBack = { dialogs.showRecordingPage = false })
+        RecordingSettingsScreen(
+            onNavigateBack = { dialogs.showRecordingPage = false },
+            onNavigateToRecordings = onNavigateToRecordings
+        )
     }
 
 }

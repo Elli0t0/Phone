@@ -198,7 +198,8 @@ fun PhoneNavHost(
             io.github.elli0t0.phone.feature.settings.SettingsScreen(
                 onNavigateBack = { navController.popBackStack() },
                 openRecordingPage = pendingOpenRecordingPage,
-                onRecordingPageConsumed = onRecordingPageConsumed
+                onRecordingPageConsumed = onRecordingPageConsumed,
+                onNavigateToRecordings = { navController.navigate(Screen.Recordings.route) }
             )
         }
         composable(
