@@ -113,6 +113,7 @@ class SettingsSearchTest {
                 dialogs.showLayoutNavPage || dialogs.showCallsPage ||
                 dialogs.showContactsPage || dialogs.showPrivacyPage ||
                 dialogs.showAboutPage || dialogs.showAppStylePage ||
+                dialogs.showKeypadStylePage ||
                 dialogs.showGlassStudioPage || dialogs.showCallBackgroundPage ||
                 dialogs.showBlockedNumbers || dialogs.showRecordingPage ||
                 dialogs.showAnswerStylePage
