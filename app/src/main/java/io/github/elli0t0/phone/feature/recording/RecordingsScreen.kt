@@ -82,7 +82,11 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, modifier: Modifier = Modifier) 
     val spacing = LocalSpacing.current
     var deleteTarget by remember { mutableStateOf<RecordingEntity?>(null) }
 
-    Scaffold(modifier = modifier.fillMaxSize().testTag("recordings_page"), containerColor = Color.Transparent) { inner ->
+    Scaffold(
+        modifier = modifier.fillMaxSize().testTag("recordings_page"),
+        containerColor = Color.Transparent,
+        contentColor = MaterialTheme.colorScheme.onBackground
+    ) { inner ->
         Column(Modifier.fillMaxSize().padding(bottom = inner.calculateBottomPadding())) {
             InnerTopBar(onBack = onNavigateBack, title = stringResource(R.string.recordings_title), backTestTag = "btn_recordings_back")
             LazyColumn(

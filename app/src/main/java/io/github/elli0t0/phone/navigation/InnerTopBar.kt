@@ -55,7 +55,8 @@ fun InnerTopBar(
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_arrow_back),
-                    contentDescription = stringResource(id = R.string.cd_back)
+                    contentDescription = stringResource(id = R.string.cd_back),
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
             }
         }

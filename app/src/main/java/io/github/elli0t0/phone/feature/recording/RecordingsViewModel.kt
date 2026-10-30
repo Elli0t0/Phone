@@ -15,6 +15,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,6 +50,10 @@ class RecordingsViewModel(
     private val repo: RecordingsRepository,
     private val appContext: Context
 ) : ViewModel() {
+    init {
+        viewModelScope.launch(Dispatchers.IO) { runCatching { repo.removeMissingFiles() } }
+    }
+
     private val query = MutableStateFlow("")
     private val filter = MutableStateFlow(RecordingDateFilter.ALL)
     val searchQuery: StateFlow<String> = query

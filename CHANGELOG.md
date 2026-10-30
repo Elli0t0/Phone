@@ -164,6 +164,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.17.10]
+
+- The back arrow on the Recordings screen is now the proper on-background color instead of nearly black; Settings pages look the same as before.
+- The ADB private key folder is now excluded from cloud backup and device transfer, so a restore can never bring back a stale key.
+- Recording rows whose audio file no longer exists are cleaned up when the Recordings screen opens.
+
 ## [0.17.9]
 
 - Recents groups with several recordings now show a count badge on the collapsed row's play button, and expanding a group shows a play button on every call that has its own recording. Playing one recording stops any other that is playing.
