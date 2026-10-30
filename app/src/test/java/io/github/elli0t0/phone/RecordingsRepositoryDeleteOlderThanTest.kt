@@ -1,6 +1,5 @@
 package io.github.elli0t0.phone
 
-import android.test.mock.MockContentResolver
 import io.github.elli0t0.phone.data.recordings.DefaultRecordingsRepository
 import io.github.elli0t0.phone.data.recordings.RecordingEntity
 import io.github.elli0t0.phone.data.recordings.RecordingStats
@@ -48,6 +47,17 @@ private class FakeRecordingsDao(
     override fun stats(): Flow<RecordingStats> = flowOf(RecordingStats(0, 0))
 }
 
+/**
+ * The unit-test android.jar has no android.test.mock, and
+ * ContentResolver cannot be instantiated without it — but the
+ * repository only hands the resolver to the injected file-deleter
+ * (which ignores it here), so null stands in. The cast erases
+ * to Object, so no null check fires; never use this where the
+ * value is actually read.
+ */
+@Suppress("UNCHECKED_CAST")
+private fun <T : Any> unsafeNull(): T = null as T
+
 class RecordingsRepositoryDeleteOlderThanTest {
     private val cutoff = 1_000_000L
     private val old = 100_000L
@@ -67,7 +77,7 @@ class RecordingsRepositoryDeleteOlderThanTest {
             oldTests = listOf(recording(4, old, isTest = true)),
             events = events
         )
-        val repo = DefaultRecordingsRepository(dao, MockContentResolver()) { _, _ ->
+        val repo = DefaultRecordingsRepository(dao, unsafeNull()) { _, _ ->
             events.add("file")
         }
         val count = repo.deleteOlderThan(cutoff, keepStarred = true)
@@ -89,7 +99,7 @@ class RecordingsRepositoryDeleteOlderThanTest {
             oldTests = listOf(recording(4, old, isTest = true)),
             events = events
         )
-        val repo = DefaultRecordingsRepository(dao, MockContentResolver()) { _, _ ->
+        val repo = DefaultRecordingsRepository(dao, unsafeNull()) { _, _ ->
             events.add("file")
         }
         val count = repo.deleteOlderThan(cutoff, keepStarred = false)
@@ -103,7 +113,7 @@ class RecordingsRepositoryDeleteOlderThanTest {
     @Test
     fun empty_returnsZero_noCalls() = runTest {
         val events = mutableListOf<String>()
-        val repo = DefaultRecordingsRepository(FakeRecordingsDao(events = events), MockContentResolver()) { _, _ ->
+        val repo = DefaultRecordingsRepository(FakeRecordingsDao(events = events), unsafeNull()) { _, _ ->
             events.add("file")
         }
         assertEquals(0, repo.deleteOlderThan(cutoff, keepStarred = true))
