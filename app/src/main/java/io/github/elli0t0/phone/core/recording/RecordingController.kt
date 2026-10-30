@@ -328,7 +328,7 @@ class RecordingController(
             val capture = adbBackend.startCapture(pfd, source)
             if (capture.isFailure) {
                 runCatching { pfd.close() }
-                runCatching { context.contentResolver.delete(uri, null, null) }
+                deleteFile(context.contentResolver, uri)
                 throw capture.exceptionOrNull()!!
             }
             active = ActiveSession(uri, pfd, number, displayName, startedAt, isTest)
@@ -344,7 +344,7 @@ class RecordingController(
                 // completely so no orphan entry, descriptor, or
                 // backend capture is left behind.
                 runCatching { pfd.close() }
-                runCatching { context.contentResolver.delete(uri, null, null) }
+                deleteFile(context.contentResolver, uri)
                 runCatching { adbBackend.stopCapture() }
                 active = null
                 _state.value = RecordingSession.Idle
@@ -453,7 +453,7 @@ class RecordingController(
             // Short silent (or unmeasured) non-test capture: delete
             // the file and keep no row for it.
             if (!session.isTest && result.durationMs < MIN_KEEP_MS && (silent || result.peak == null)) {
-                runCatching { context.contentResolver.delete(session.uri, null, null) }
+                deleteFile(context.contentResolver, session.uri)
                 return@onSuccess
             }
             if (!session.isTest) _lastRecordingSilent.value = silent
@@ -493,7 +493,7 @@ class RecordingController(
             ?: throw IllegalStateException("Could not create recording file")
         val pfd = resolver.openFileDescriptor(uri, "w")
             ?: throw IllegalStateException("Could not open recording file").also {
-                runCatching { resolver.delete(uri, null, null) }
+                deleteFile(resolver, uri)
             }
         return uri to pfd
     }

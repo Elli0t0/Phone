@@ -29,7 +29,9 @@ import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.data.settings.model.AppBackground
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
+import io.github.elli0t0.phone.data.settings.model.AutoRecordMode
 import io.github.elli0t0.phone.data.settings.model.Backdrop
+import io.github.elli0t0.phone.data.settings.model.RecordingSort
 import io.github.elli0t0.phone.data.settings.model.DropletStretch
 import io.github.elli0t0.phone.data.settings.model.EdgeLight
 import io.github.elli0t0.phone.data.settings.model.GlassHapticFeedback
@@ -126,6 +128,11 @@ interface SettingsRepository {
     suspend fun setAdbLastKnownPort(port: Int?)
     suspend fun setAdbOfflineMode(enabled: Boolean)
     suspend fun setAutoRecordCalls(enabled: Boolean)
+    suspend fun setAutoRecordMode(mode: AutoRecordMode)
+    suspend fun setAutoRecordExcluded(numbers: Set<String>)
+    suspend fun setRecordingRetentionDays(days: Int)
+    suspend fun setRecordingsPrivate(private: Boolean)
+    suspend fun setRecordingsSort(sort: RecordingSort)
     suspend fun setAdbHelperPort(port: Int?)
     suspend fun setAdbHelperToken(token: String?)
     suspend fun setShowNumberOnCallScreen(show: Boolean)
@@ -223,6 +230,11 @@ class DataStoreSettingsRepository(
         val ADB_LAST_KNOWN_PORT = intPreferencesKey("adb_last_known_port")
         val ADB_OFFLINE_MODE = booleanPreferencesKey("adb_offline_mode")
         val AUTO_RECORD_CALLS = booleanPreferencesKey("auto_record_calls")
+        val AUTO_RECORD_MODE = stringPreferencesKey("auto_record_mode")
+        val AUTO_RECORD_EXCLUDED = stringSetPreferencesKey("auto_record_excluded")
+        val RECORDING_RETENTION_DAYS = intPreferencesKey("recording_retention_days")
+        val RECORDINGS_PRIVATE = booleanPreferencesKey("recordings_private")
+        val RECORDINGS_SORT = stringPreferencesKey("recordings_sort")
         val ADB_HELPER_PORT = intPreferencesKey("adb_helper_port")
         val ADB_HELPER_TOKEN = stringPreferencesKey("adb_helper_token")
         val SHOW_NUMBER_ON_CALL_SCREEN = booleanPreferencesKey("show_number_on_call_screen")
@@ -400,6 +412,14 @@ class DataStoreSettingsRepository(
         val adbLastKnownPort = prefs[Keys.ADB_LAST_KNOWN_PORT]?.takeIf { it in 1..65535 }
         val adbOfflineMode = prefs[Keys.ADB_OFFLINE_MODE] ?: false
         val autoRecordCalls = prefs[Keys.AUTO_RECORD_CALLS] ?: false
+        val autoRecordMode = prefs[Keys.AUTO_RECORD_MODE]
+            ?.let { runCatching { AutoRecordMode.valueOf(it) }.getOrNull() } ?: AutoRecordMode.ALL
+        val autoRecordExcluded = prefs[Keys.AUTO_RECORD_EXCLUDED] ?: emptySet()
+        val recordingRetentionDays = prefs[Keys.RECORDING_RETENTION_DAYS]
+            ?.takeIf { it == 0 || it == 7 || it == 30 || it == 90 } ?: 0
+        val recordingsPrivate = prefs[Keys.RECORDINGS_PRIVATE] ?: false
+        val recordingsSort = prefs[Keys.RECORDINGS_SORT]
+            ?.let { runCatching { RecordingSort.valueOf(it) }.getOrNull() } ?: RecordingSort.NEWEST
 
         val adbHelperPort = prefs[Keys.ADB_HELPER_PORT]?.takeIf { it in 20000..60000 }
         val adbHelperToken = prefs[Keys.ADB_HELPER_TOKEN]?.takeIf { it.isNotBlank() }
@@ -502,6 +522,11 @@ class DataStoreSettingsRepository(
             adbLastKnownPort = adbLastKnownPort,
             adbOfflineMode = adbOfflineMode,
             autoRecordCalls = autoRecordCalls,
+            autoRecordMode = autoRecordMode,
+            autoRecordExcluded = autoRecordExcluded,
+            recordingRetentionDays = recordingRetentionDays,
+            recordingsPrivate = recordingsPrivate,
+            recordingsSort = recordingsSort,
             adbHelperPort = adbHelperPort,
             adbHelperToken = adbHelperToken,
             showNumberOnCallScreen = showNumberOnCallScreen,
@@ -945,6 +970,29 @@ class DataStoreSettingsRepository(
 
     override suspend fun setAutoRecordCalls(enabled: Boolean) {
         dataStore.edit { prefs -> prefs[Keys.AUTO_RECORD_CALLS] = enabled }
+    }
+
+    override suspend fun setAutoRecordMode(mode: AutoRecordMode) {
+        dataStore.edit { prefs -> prefs[Keys.AUTO_RECORD_MODE] = mode.name }
+    }
+
+    override suspend fun setAutoRecordExcluded(numbers: Set<String>) {
+        dataStore.edit { prefs -> prefs[Keys.AUTO_RECORD_EXCLUDED] = numbers }
+    }
+
+    override suspend fun setRecordingRetentionDays(days: Int) {
+        dataStore.edit { prefs ->
+            prefs[Keys.RECORDING_RETENTION_DAYS] =
+                if (days == 0 || days == 7 || days == 30 || days == 90) days else 0
+        }
+    }
+
+    override suspend fun setRecordingsPrivate(private: Boolean) {
+        dataStore.edit { prefs -> prefs[Keys.RECORDINGS_PRIVATE] = private }
+    }
+
+    override suspend fun setRecordingsSort(sort: RecordingSort) {
+        dataStore.edit { prefs -> prefs[Keys.RECORDINGS_SORT] = sort.name }
     }
 
     override suspend fun setAdbHelperPort(port: Int?) {

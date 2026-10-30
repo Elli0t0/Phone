@@ -336,6 +336,23 @@ enum class AppBackground(val label: String, val gradient: CallBackground?) {
     PHOTO("Photo", null)
 }
 
+/** Which calls auto-record captures; ALL is the historical behavior. */
+enum class AutoRecordMode(val label: String) {
+    ALL("All calls"),
+    CONTACTS_ONLY("Only contacts"),
+    UNKNOWN_ONLY("Only unknown numbers"),
+    EXCEPT_LIST("All except selected numbers")
+}
+
+/** Recordings library sort order. */
+enum class RecordingSort(val label: String) {
+    NEWEST("Newest"),
+    OLDEST("Oldest"),
+    LONGEST("Longest"),
+    LARGEST("Largest"),
+    STARRED_FIRST("Starred first")
+}
+
 data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val accentColor: Long = AccentPreset.ONE_UI_BLUE.colorValue,
@@ -428,6 +445,12 @@ data class AppSettings(
     val adbOfflineMode: Boolean = false,
     /** Auto-record every call once it connects (0.17.7). */
     val autoRecordCalls: Boolean = false,
+    val autoRecordMode: AutoRecordMode = AutoRecordMode.ALL,
+    val autoRecordExcluded: Set<String> = emptySet(),
+    /** 0 = never; otherwise auto-delete after this many days. */
+    val recordingRetentionDays: Int = 0,
+    val recordingsPrivate: Boolean = false,
+    val recordingsSort: RecordingSort = RecordingSort.NEWEST,
     /** Loopback recorder-helper port/token: an already running helper
      * can be reused after an app restart instead of relaunching. */
     val adbHelperPort: Int? = null,
