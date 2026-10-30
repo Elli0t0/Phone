@@ -9,7 +9,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.data.recordings.RecordingEntity
+import io.github.elli0t0.phone.data.recordings.RecordingStats
 import io.github.elli0t0.phone.data.recordings.RecordingsRepository
+import io.github.elli0t0.phone.data.settings.SettingsRepository
+import io.github.elli0t0.phone.data.settings.model.RecordingSort
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -23,6 +26,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -40,14 +45,13 @@ enum class RecordingDateFilter {
 data class RecordingDay(val key: Long, val title: String, val items: List<RecordingEntity>)
 
 /**
- * Recordings library, separate from Call recording settings: the
- * settings page keeps its own list and playback, this VM owns the
- * standalone screen's search, day filter, grouping and playback.
- * Playback is copied from RecordingSettingsViewModel on purpose so
- * the settings page stays untouched.
+ * Recordings library: search, day filter, sort, selection, star,
+ * rename/note and playback. The Call recording settings page links
+ * here instead of keeping its own list.
  */
 class RecordingsViewModel(
     private val repo: RecordingsRepository,
+    private val settingsRepository: SettingsRepository,
     private val appContext: Context
 ) : ViewModel() {
     init {
@@ -59,7 +63,15 @@ class RecordingsViewModel(
     val searchQuery: StateFlow<String> = query
     val dateFilter: StateFlow<RecordingDateFilter> = filter
 
-    val days: StateFlow<List<RecordingDay>> = combine(repo.recordings, query, filter) { all, q, f ->
+    val sort: StateFlow<RecordingSort> = settingsRepository.settingsFlow
+        .map { it.recordingsSort }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecordingSort.NEWEST)
+
+    fun setSort(sort: RecordingSort) {
+        viewModelScope.launch { settingsRepository.setRecordingsSort(sort) }
+    }
+
+    private val filtered: StateFlow<List<RecordingEntity>> = combine(repo.recordings, query, filter) { all, q, f ->
         val now = System.currentTimeMillis()
         val zone = ZoneId.systemDefault()
         val startOfToday = LocalDate.now(zone).atStartOfDay(zone).toInstant().toEpochMilli()
@@ -70,19 +82,37 @@ class RecordingsViewModel(
             RecordingDateFilter.MONTH -> now - 30L * 86_400_000L
         }
         val needle = q.trim()
-        all.asSequence()
-            .filter { !it.isTest && it.startedAt >= from }
+        all.filter { !it.isTest && it.startedAt >= from }
             .filter {
                 needle.isEmpty() ||
                     (it.displayName ?: "").contains(needle, ignoreCase = true) ||
+                    (it.title ?: "").contains(needle, ignoreCase = true) ||
+                    (it.note ?: "").contains(needle, ignoreCase = true) ||
                     it.number.contains(needle)
             }
-            .groupBy { Instant.ofEpochMilli(it.startedAt).atZone(zone).toLocalDate() }
-            .toSortedMap(compareByDescending { it })
-            .map { (date, items) ->
-                RecordingDay(date.toEpochDay(), dayTitle(date), items.sortedByDescending { it.startedAt })
-            }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val days: StateFlow<List<RecordingDay>> = combine(filtered, sort) { items, s ->
+        when (s) {
+            RecordingSort.NEWEST -> items.groupDays(ascending = false)
+            RecordingSort.OLDEST -> items.groupDays(ascending = true)
+            else -> emptyList()
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val flatItems: StateFlow<List<RecordingEntity>> = combine(filtered, sort) { items, s ->
+        when (s) {
+            RecordingSort.LONGEST -> items.sortedByDescending { it.durationMs }
+            RecordingSort.LARGEST -> items.sortedByDescending { it.sizeBytes }
+            RecordingSort.STARRED_FIRST -> items.sortedWith(
+                compareByDescending<RecordingEntity> { it.starred }.thenByDescending { it.startedAt }
+            )
+            else -> emptyList()
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val stats: StateFlow<RecordingStats> = repo.stats
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecordingStats(0, 0))
 
     fun onSearchChanged(q: String) {
         query.value = q
@@ -90,6 +120,23 @@ class RecordingsViewModel(
 
     fun onFilterChanged(f: RecordingDateFilter) {
         filter.value = f
+    }
+
+    private fun List<RecordingEntity>.groupDays(ascending: Boolean): List<RecordingDay> {
+        val zone = ZoneId.systemDefault()
+        val grouped = groupBy { Instant.ofEpochMilli(it.startedAt).atZone(zone).toLocalDate() }
+        val sorted = if (ascending) {
+            grouped.toSortedMap(compareBy { it })
+        } else {
+            grouped.toSortedMap(compareByDescending { it })
+        }
+        return sorted.map { (date, items) ->
+            RecordingDay(
+                date.toEpochDay(),
+                dayTitle(date),
+                if (ascending) items.sortedBy { it.startedAt } else items.sortedByDescending { it.startedAt }
+            )
+        }
     }
 
     private fun dayTitle(date: LocalDate): String {
@@ -111,6 +158,10 @@ class RecordingsViewModel(
     val positionMs: StateFlow<Long> = _positionMs.asStateFlow()
     private var ticker: Job? = null
 
+    private val speeds = listOf(0.75f, 1f, 1.25f, 1.5f, 2f)
+    private val _speed = MutableStateFlow(1f)
+    val speed: StateFlow<Float> = _speed.asStateFlow()
+
     fun togglePlay(entity: RecordingEntity) {
         if (_playingId.value == entity.id) {
             stopPlayback()
@@ -126,6 +177,7 @@ class RecordingsViewModel(
             mp.setDataSource(appContext, Uri.parse(entity.uri))
             mp.prepare()
             mp.start()
+            applySpeed()
             mp.setOnCompletionListener { stopPlayback() }
             player = mp
             _playingId.value = entity.id
@@ -151,6 +203,23 @@ class RecordingsViewModel(
         _positionMs.value = ms.toLong()
     }
 
+    fun skip(deltaMs: Int) {
+        val p = player ?: return
+        val to = (p.currentPosition + deltaMs).coerceIn(0, p.duration)
+        seekTo(to)
+    }
+
+    fun cycleSpeed() {
+        val next = speeds[(speeds.indexOf(_speed.value) + 1) % speeds.size]
+        _speed.value = next
+        applySpeed()
+    }
+
+    private fun applySpeed() {
+        val p = player ?: return
+        if (p.isPlaying) runCatching { p.playbackParams = p.playbackParams.setSpeed(_speed.value) }
+    }
+
     private fun stopPlayback() {
         ticker?.cancel()
         ticker = null
@@ -166,6 +235,47 @@ class RecordingsViewModel(
     fun delete(entity: RecordingEntity) {
         if (_playingId.value == entity.id) stopPlayback()
         viewModelScope.launch { repo.remove(entity) }
+    }
+
+    private val _selectedIds = MutableStateFlow<Set<Long>>(emptySet())
+    val selectedIds: StateFlow<Set<Long>> = _selectedIds.asStateFlow()
+
+    fun toggleSelect(id: Long) {
+        _selectedIds.value = if (id in _selectedIds.value) {
+            _selectedIds.value - id
+        } else {
+            _selectedIds.value + id
+        }
+    }
+
+    fun clearSelection() {
+        _selectedIds.value = emptySet()
+    }
+
+    fun selectAll(ids: Collection<Long>) {
+        _selectedIds.value = ids.toSet()
+    }
+
+    fun deleteSelected() {
+        val ids = _selectedIds.value
+        if (ids.isEmpty()) return
+        val playing = _playingId.value
+        if (playing != null && playing in ids) stopPlayback()
+        viewModelScope.launch {
+            val entities = repo.recordings.first().filter { it.id in ids }
+            repo.removeAll(entities)
+            _selectedIds.value = emptySet()
+        }
+    }
+
+    fun toggleStarred(entity: RecordingEntity) {
+        viewModelScope.launch { repo.setStarred(entity.id, !entity.starred) }
+    }
+
+    fun saveTitleNote(entity: RecordingEntity, title: String, note: String) {
+        viewModelScope.launch {
+            repo.setTitleNote(entity.id, title.ifBlank { null }, note.ifBlank { null })
+        }
     }
 
     fun share(entity: RecordingEntity, context: Context) {
@@ -185,11 +295,12 @@ class RecordingsViewModel(
     companion object {
         fun provideFactory(
             repository: RecordingsRepository,
+            settingsRepository: SettingsRepository,
             appContext: Context
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return RecordingsViewModel(repository, appContext) as T
+                return RecordingsViewModel(repository, settingsRepository, appContext) as T
             }
         }
     }

@@ -1,6 +1,7 @@
 package io.github.elli0t0.phone.navigation
 
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,14 +32,17 @@ import io.github.elli0t0.phone.core.common.bidiWrap
  * the same way. Pass null [onBack] for screens with nowhere to go
  * back to (setup); pass null [title] when the content below already
  * shows the name (detail at rest, where the title appears only once
- * the header card has scrolled away).
+ * the header card has scrolled away). [actions] renders trailing
+ * content after the title, e.g. top-bar icon buttons; it is empty
+ * by default so existing callers are unchanged.
  */
 @Composable
 fun InnerTopBar(
     onBack: (() -> Unit)?,
     title: String?,
     modifier: Modifier = Modifier,
-    backTestTag: String? = null
+    backTestTag: String? = null,
+    actions: @Composable RowScope.() -> Unit = {}
 ) {
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Row(
@@ -70,5 +74,6 @@ fun InnerTopBar(
                 modifier = Modifier.weight(1f)
             )
         }
+        actions()
     }
 }
