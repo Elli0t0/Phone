@@ -68,12 +68,12 @@ class RecordingsRepositoryDeleteOlderThanTest {
         )
         val repo = DefaultRecordingsRepository(
             dao,
-            fileDeleter = { _ -> events.add("file") },
+            fileDeleter = { uri -> events.add("file:$uri") },
             fileExists = { _ -> true }
         )
         val count = repo.deleteOlderThan(cutoff, keepStarred = true)
         assertEquals(3, count)
-        assertEquals(listOf("file", "file", "file", "row:1", "row:2", "row:4"), events)
+        assertEquals(listOf("file:content://test/1", "file:content://test/2", "file:content://test/4", "row:1", "row:2", "row:4"), events)
         assertFalse(events.any { it == "row:3" })
     }
 
@@ -92,7 +92,7 @@ class RecordingsRepositoryDeleteOlderThanTest {
         )
         val repo = DefaultRecordingsRepository(
             dao,
-            fileDeleter = { _ -> events.add("file") },
+            fileDeleter = { uri -> events.add("file:$uri") },
             fileExists = { _ -> true }
         )
         val count = repo.deleteOlderThan(cutoff, keepStarred = false)
@@ -100,7 +100,7 @@ class RecordingsRepositoryDeleteOlderThanTest {
         assertTrue(events.contains("row:2"))
         assertFalse(events.contains("row:3"))
         val firstRow = events.indexOfFirst { it.startsWith("row:") }
-        assertTrue(events.subList(0, firstRow).all { it == "file" })
+        assertTrue(events.subList(0, firstRow).all { it.startsWith("file:") })
     }
 
     @Test
@@ -108,7 +108,7 @@ class RecordingsRepositoryDeleteOlderThanTest {
         val events = mutableListOf<String>()
         val repo = DefaultRecordingsRepository(
             FakeRecordingsDao(events = events),
-            fileDeleter = { _ -> events.add("file") },
+            fileDeleter = { uri -> events.add("file:$uri") },
             fileExists = { _ -> true }
         )
         assertEquals(0, repo.deleteOlderThan(cutoff, keepStarred = true))

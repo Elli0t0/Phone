@@ -2,6 +2,7 @@ package io.github.elli0t0.phone
 
 import android.app.Application
 import android.content.Context
+import android.net.Uri
 import io.github.elli0t0.phone.data.calllog.AndroidCallLogRepository
 import io.github.elli0t0.phone.data.calllog.CallLogRepository
 import io.github.elli0t0.phone.core.telecom.TelecomHelper
@@ -92,12 +93,15 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
     override val recordingsRepository: RecordingsRepository by lazy {
         DefaultRecordingsRepository(
             database.recordingsDao(),
-            fileDeleter = { uri ->
-                io.github.elli0t0.phone.core.recording.deleteFile(context.contentResolver, uri)
+            fileDeleter = { uriString ->
+                io.github.elli0t0.phone.core.recording.deleteFile(
+                    context.contentResolver, Uri.parse(uriString)
+                )
             },
-            fileExists = { uri ->
+            fileExists = { uriString ->
                 runCatching {
-                    context.contentResolver.openFileDescriptor(uri, "r")?.use { true } ?: false
+                    context.contentResolver.openFileDescriptor(Uri.parse(uriString), "r")
+                        ?.use { true } ?: false
                 }.getOrDefault(false)
             }
         )

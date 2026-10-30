@@ -1,6 +1,5 @@
 package io.github.elli0t0.phone.data.recordings
 
-import android.net.Uri
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
@@ -22,15 +21,17 @@ interface RecordingsRepository {
 }
 
 /**
- * The resolver is not held: file I/O arrives as lambdas, so the
- * repository never touches Android framework I/O classes and
- * stays constructible in JVM unit tests, where a ContentResolver
- * cannot be instantiated (no android.test.mock on the classpath).
+ * The resolver is not held: file I/O arrives as lambdas over the
+ * entity's uri STRING, so the repository never touches Android
+ * framework classes and stays constructible in JVM unit tests,
+ * where a ContentResolver cannot be instantiated (no
+ * android.test.mock on the classpath) and Uri.parse returns null.
+ * Uri conversion happens at the container edge, where it is real.
  */
 class DefaultRecordingsRepository(
     private val dao: RecordingsDao,
-    private val fileDeleter: (Uri) -> Unit,
-    private val fileExists: (Uri) -> Boolean
+    private val fileDeleter: (String) -> Unit,
+    private val fileExists: (String) -> Boolean
 ) : RecordingsRepository {
     override val recordings: Flow<List<RecordingEntity>> = dao.getAll()
 
@@ -39,7 +40,7 @@ class DefaultRecordingsRepository(
     override suspend fun add(entity: RecordingEntity): Long = dao.insert(entity)
 
     override suspend fun remove(entity: RecordingEntity) {
-        fileDeleter(Uri.parse(entity.uri))
+        fileDeleter(entity.uri)
         dao.deleteById(entity.id)
     }
 
@@ -52,7 +53,7 @@ class DefaultRecordingsRepository(
     }
 
     override suspend fun removeAll(entities: List<RecordingEntity>): Int {
-        entities.forEach { fileDeleter(Uri.parse(it.uri)) }
+        entities.forEach { fileDeleter(it.uri) }
         entities.forEach { dao.deleteById(it.id) }
         return entities.size
     }
@@ -70,7 +71,7 @@ class DefaultRecordingsRepository(
         // Test rows go when older than a day, whatever the cutoff is.
         val oneDayAgo = System.currentTimeMillis() - 86_400_000L
         val all = (victims + dao.oldTests(oneDayAgo)).distinctBy { it.id }
-        all.forEach { fileDeleter(Uri.parse(it.uri)) }
+        all.forEach { fileDeleter(it.uri) }
         all.forEach { dao.deleteById(it.id) }
         return all.size
     }
@@ -78,7 +79,7 @@ class DefaultRecordingsRepository(
     override suspend fun removeMissingFiles(): Int {
         var removed = 0
         recordings.first().forEach { e ->
-            if (!fileExists(Uri.parse(e.uri))) {
+            if (!fileExists(e.uri)) {
                 dao.deleteById(e.id)
                 removed++
             }
