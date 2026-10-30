@@ -15,7 +15,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -588,12 +587,13 @@ private fun PhoneInputField(
             singleLine = true,
             // The value stays verbatim: no formatter, no length cap,
             // so saving can never alter the stored number. Smaller
-            // text + tighter padding + the remove button as a
-            // trailing icon free enough width that long numbers
-            // (11+ digits) show fully instead of clipping the last
-            // digit at the field edge.
+            // text + the remove button as a trailing icon free
+            // enough width that long numbers (11+ digits) show
+            // fully instead of clipping the last digit at the field
+            // edge. (No contentPadding here: Material3 TextField
+            // has no such parameter, and passing one breaks the
+            // whole call's overload resolution.)
             textStyle = MaterialTheme.typography.bodyMedium,
-            contentPadding = PaddingValues(horizontal = 12.dp),
             trailingIcon = {
                 if (canRemove) {
                     IconButton(
