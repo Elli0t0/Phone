@@ -79,6 +79,10 @@ class RecordingSettingsViewModel(
         .map { it.autoRecordExcluded }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
+    val recordingsPrivate: StateFlow<Boolean> = settingsRepository.settingsFlow
+        .map { it.recordingsPrivate }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     private val _retentionConfirm = MutableStateFlow<RetentionConfirm?>(null)
     val retentionConfirm: StateFlow<RetentionConfirm?> = _retentionConfirm.asStateFlow()
 
@@ -184,6 +188,10 @@ class RecordingSettingsViewModel(
 
     fun setAutoRecordMode(mode: AutoRecordMode) {
         viewModelScope.launch { settingsRepository.setAutoRecordMode(mode) }
+    }
+
+    fun setRecordingsPrivate(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setRecordingsPrivate(enabled) }
     }
 
     fun addExcludedNumber(number: String) {

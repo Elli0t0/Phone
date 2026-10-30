@@ -41,6 +41,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -468,11 +469,15 @@ class RecordingController(
         _state.value = RecordingSession.Idle
         val capture = adbBackend.stopCapture()
         runCatching { session.pfd.close() }
-        runCatching {
-            val pendingOff = ContentValues().apply {
-                put(MediaStore.Audio.Media.IS_PENDING, 0)
+        // IS_PENDING is a MediaStore column: only for content://
+        // entries. Private (file://) recordings have no row to clear.
+        if (session.uri.scheme == "content") {
+            runCatching {
+                val pendingOff = ContentValues().apply {
+                    put(MediaStore.Audio.Media.IS_PENDING, 0)
+                }
+                context.contentResolver.update(session.uri, pendingOff, null, null)
             }
-            context.contentResolver.update(session.uri, pendingOff, null, null)
         }
         context.stopService(Intent(context, RecordingForegroundService::class.java))
         capture.onSuccess { result ->
@@ -511,7 +516,7 @@ class RecordingController(
         }.onFailure { _lastError.value = it.message }
     }
 
-    private fun createEntry(
+    private suspend fun createEntry(
         number: String,
         startedAt: Long,
         isTest: Boolean
@@ -519,6 +524,22 @@ class RecordingController(
         val digits = number.filter { it.isDigit() }.take(15).ifBlank { "unknown" }
         val stamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date(startedAt))
         val name = if (isTest) "Phone_test_$stamp.wav" else "Phone_${stamp}_$digits.wav"
+        // Private storage (step 7): inside Phone only, never
+        // MediaStore, so other apps cannot see it. Existing
+        // recordings are not moved.
+        if (settingsRepository.settingsFlow.first().recordingsPrivate) {
+            val dir = context.getExternalFilesDir("recordings")
+                ?: File(context.filesDir, "recordings")
+            if (!dir.exists()) dir.mkdirs()
+            val file = File(dir, name)
+            val pfd = ParcelFileDescriptor.open(
+                file,
+                ParcelFileDescriptor.MODE_READ_WRITE or
+                    ParcelFileDescriptor.MODE_CREATE or
+                    ParcelFileDescriptor.MODE_TRUNCATE
+            )
+            return Uri.fromFile(file) to pfd
+        }
         val values = ContentValues().apply {
             put(MediaStore.Audio.Media.DISPLAY_NAME, name)
             put(MediaStore.Audio.Media.MIME_TYPE, "audio/x-wav")

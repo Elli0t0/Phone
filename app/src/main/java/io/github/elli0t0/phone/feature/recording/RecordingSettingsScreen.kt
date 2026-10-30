@@ -155,6 +155,7 @@ fun RecordingSettingsScreen(
     val autoRecordCalls by viewModel.autoRecordCalls.collectAsStateWithLifecycle()
     val autoRecordMode by viewModel.autoRecordMode.collectAsStateWithLifecycle()
     val autoRecordExcluded by viewModel.autoRecordExcluded.collectAsStateWithLifecycle()
+    val recordingsPrivate by viewModel.recordingsPrivate.collectAsStateWithLifecycle()
     val offlinePortActive by viewModel.offlinePortActive.collectAsStateWithLifecycle()
     val keyAccepted by viewModel.keyAccepted.collectAsStateWithLifecycle()
     val clipboardManager = LocalClipboardManager.current
@@ -341,6 +342,44 @@ fun RecordingSettingsScreen(
                             text = stringResource(id = R.string.recordings_auto_delete_summary),
                             style = MaterialTheme.typography.bodySmall
                         )
+                        // Private switch inside the card: the Switch
+                        // consumes its own taps, so tapping it never
+                        // opens the retention dialog above.
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(id = R.string.recordings_private_title),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = stringResource(id = R.string.recordings_private_summary),
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                            Switch(
+                                checked = recordingsPrivate,
+                                onCheckedChange = { viewModel.setRecordingsPrivate(it) },
+                                enabled = !busy,
+                                colors = if (LocalAppSettings.current.effectiveStyle.switch == SwitchStyle.GREEN) {
+                                    SwitchDefaults.colors(
+                                        checkedTrackColor = SwitchGreenTrack,
+                                        checkedThumbColor = Color.White,
+                                        checkedBorderColor = Color.Transparent,
+                                        uncheckedTrackColor = SwitchGreenUncheckedTrack,
+                                        uncheckedThumbColor = Color.White,
+                                        uncheckedBorderColor = Color.Transparent
+                                    )
+                                } else {
+                                    SwitchDefaults.colors()
+                                }
+                            )
+                        }
                     }
                 }
             }

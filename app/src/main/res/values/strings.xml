@@ -550,6 +550,8 @@
     <string name="recordings_sort_starred_first">Starred first</string>
     <string name="recordings_auto_delete_title">Auto-delete old recordings</string>
     <string name="recordings_auto_delete_summary">Starred recordings are never deleted.</string>
+    <string name="recordings_private_title">Save recordings privately</string>
+    <string name="recordings_private_summary">Off: saved to Music/Phone, visible to other apps. On: saved inside Phone only. Existing recordings are not moved.</string>
     <string name="recordings_auto_delete_confirm">%1$d recordings older than %2$d days will be deleted now. Starred ones are kept.</string>
     <string name="recordings_retention_never">Never</string>
     <string name="recordings_retention_7_days">7 days</string>
@@ -558,7 +560,7 @@
     <string name="recordings_delete_title">Delete recording?</string>
     <string name="recordings_delete_message">This file will be removed from your phone.</string>
     <string name="recordings_unknown">Unknown</string>
-    <string name="recording_note">Manual recording only. Needs built-in ADB pairing. Files are saved as WAV in Music/Phone.</string>
+    <string name="recording_note">Manual recording only. Needs built-in ADB pairing. Files are saved as WAV in Music/Phone, or inside Phone only with private storage on.</string>
     <string name="recording_dialog_title">Recording needs setup</string>
     <string name="call_action_record">Record</string>
     <string name="recording_backend_adb">Built-in ADB</string>

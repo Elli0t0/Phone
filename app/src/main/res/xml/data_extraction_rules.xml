@@ -2,8 +2,10 @@
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="file" path="kadb/" />
+        <exclude domain="file" path="recordings/" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="file" path="kadb/" />
+        <exclude domain="file" path="recordings/" />
     </device-transfer>
 </data-extraction-rules>

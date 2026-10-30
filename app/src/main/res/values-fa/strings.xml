@@ -144,6 +144,8 @@
     <string name="recordings_sort_starred_first">ستاره‌دارها اول</string>
     <string name="recordings_auto_delete_title">حذف خودکار ضبط‌های قدیمی</string>
     <string name="recordings_auto_delete_summary">ضبط‌های ستاره‌دار هرگز حذف نمی‌شوند.</string>
+    <string name="recordings_private_title">ذخیره ضبط‌ها به‌صورت خصوصی</string>
+    <string name="recordings_private_summary">خاموش: در Music/Phone ذخیره می‌شود و برای برنامه‌های دیگر قابل مشاهده است. روشن: فقط داخل Phone ذخیره می‌شود. ضبط‌های موجود جابه‌جا نمی‌شوند.</string>
     <string name="recordings_auto_delete_confirm">%1$d ضبط قدیمی‌تر از %2$d روز همین حالا حذف می‌شود. ضبط‌های ستاره‌دار نگه داشته می‌شوند.</string>
     <string name="recordings_retention_never">هرگز</string>
     <string name="recordings_retention_7_days">۷ روز</string>
@@ -152,7 +154,7 @@
     <string name="recordings_delete_title">حذف ضبط؟</string>
     <string name="recordings_delete_message">این فایل از گوشی حذف می‌شود.</string>
     <string name="recordings_unknown">ناشناس</string>
-    <string name="recording_note">فقط ضبط دستی. به جفت کردن ADB داخلی نیاز دارد. فایل‌ها در پوشه‌ی Music/Phone با فرمت WAV ذخیره می‌شوند.</string>
+    <string name="recording_note">فقط ضبط دستی. به جفت کردن ADB داخلی نیاز دارد. فایل‌ها با فرمت WAV در پوشه‌ی Music/Phone ذخیره می‌شوند، یا با روشن بودن ذخیره خصوصی، فقط داخل Phone.</string>
     <string name="recording_dialog_title">ضبط به راه‌اندازی نیاز دارد</string>
     <string name="call_action_record">ضبط</string>
     <string name="recording_backend_adb">ADB داخلی</string>

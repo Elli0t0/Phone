@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.media.MediaPlayer
 import android.net.Uri
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -14,6 +15,7 @@ import io.github.elli0t0.phone.data.recordings.RecordingStats
 import io.github.elli0t0.phone.data.recordings.RecordingsRepository
 import io.github.elli0t0.phone.data.settings.SettingsRepository
 import io.github.elli0t0.phone.data.settings.model.RecordingSort
+import java.io.File
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -285,9 +287,20 @@ class RecordingsViewModel(
     }
 
     fun share(entity: RecordingEntity, context: Context) {
+        val rawUri = Uri.parse(entity.uri)
+        // Private recordings are file://: other apps cannot open
+        // them directly, so share through the FileProvider instead.
+        // The grant flag below gives the receiver read access.
+        val shareUri = if (rawUri.scheme == "file") {
+            rawUri.path?.let {
+                FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", File(it))
+            } ?: rawUri
+        } else {
+            rawUri
+        }
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "audio/x-wav"
-            putExtra(Intent.EXTRA_STREAM, Uri.parse(entity.uri))
+            putExtra(Intent.EXTRA_STREAM, shareUri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         context.startActivity(Intent.createChooser(intent, null))
