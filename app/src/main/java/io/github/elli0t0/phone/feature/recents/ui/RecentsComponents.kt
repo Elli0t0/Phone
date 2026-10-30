@@ -95,7 +95,6 @@ import kotlinx.coroutines.withContext
 import io.github.elli0t0.phone.core.common.bidiWrap
 import androidx.compose.ui.text.style.TextDirection
 
-@OptIn(ExperimentalFoundationApi::class)
 /**
  * Shared recording play/pause circle: the collapsed row (32dp, with
  * a count badge when the group holds several recordings) and the
@@ -144,6 +143,7 @@ fun RecordingPlayButton(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CallLogRow(
     group: CallGroup,
