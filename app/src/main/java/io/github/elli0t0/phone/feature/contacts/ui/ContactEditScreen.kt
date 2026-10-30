@@ -594,8 +594,8 @@ private fun PhoneInputField(
             // digit at the field edge.
             textStyle = MaterialTheme.typography.bodyMedium,
             contentPadding = PaddingValues(horizontal = 12.dp),
-            trailingIcon = if (canRemove) {
-                {
+            trailingIcon = {
+                if (canRemove) {
                     IconButton(
                         onClick = onRemove,
                         modifier = Modifier.testTag("btn_remove_phone_$index")
@@ -607,8 +607,6 @@ private fun PhoneInputField(
                         )
                     }
                 }
-            } else {
-                null
             },
             modifier = Modifier.weight(1f).testTag("input_phone_$index")
         )
