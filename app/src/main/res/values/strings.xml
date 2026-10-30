@@ -505,7 +505,7 @@
     <string name="recording_auto_record">Record all calls automatically</string>
     <string name="recording_auto_note">Needs Wi-Fi once after every reboot</string>
     <string name="recording_auto_failed">Auto-recording could not start. Open Phone > Call recording.</string>
-    <string name="recording_needs_wifi">Recorder isn't ready. Connect to Wi-Fi once so recording can start.</string>
+    <string name="recording_needs_wifi">Recorder isn\'t ready. Connect to Wi-Fi once so recording can start.</string>
     <string name="recording_notification_title">Recording call</string>
     <string name="recording_notification_text">Call recording in progress</string>
     <string name="recording_stop">Stop</string>
