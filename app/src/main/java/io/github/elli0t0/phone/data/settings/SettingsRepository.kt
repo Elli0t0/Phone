@@ -131,6 +131,9 @@ interface SettingsRepository {
     suspend fun setAutoRecordMode(mode: AutoRecordMode)
     suspend fun setAutoRecordExcluded(numbers: Set<String>)
     suspend fun setRecordingRetentionDays(days: Int)
+    /** Last auto-cleanup run, epoch ms; 0 when never. Internal bookkeeping, not a user setting. */
+    suspend fun getLastCleanupAt(): Long = 0
+    suspend fun setLastCleanupAt(time: Long) {}
     suspend fun setRecordingsPrivate(private: Boolean)
     suspend fun setRecordingsSort(sort: RecordingSort)
     suspend fun setAdbHelperPort(port: Int?)
@@ -233,6 +236,7 @@ class DataStoreSettingsRepository(
         val AUTO_RECORD_MODE = stringPreferencesKey("auto_record_mode")
         val AUTO_RECORD_EXCLUDED = stringSetPreferencesKey("auto_record_excluded")
         val RECORDING_RETENTION_DAYS = intPreferencesKey("recording_retention_days")
+        val LAST_CLEANUP_AT = longPreferencesKey("last_cleanup_at")
         val RECORDINGS_PRIVATE = booleanPreferencesKey("recordings_private")
         val RECORDINGS_SORT = stringPreferencesKey("recordings_sort")
         val ADB_HELPER_PORT = intPreferencesKey("adb_helper_port")
@@ -985,6 +989,14 @@ class DataStoreSettingsRepository(
             prefs[Keys.RECORDING_RETENTION_DAYS] =
                 if (days == 0 || days == 7 || days == 30 || days == 90) days else 0
         }
+    }
+
+    override suspend fun getLastCleanupAt(): Long {
+        return dataStore.data.first()[Keys.LAST_CLEANUP_AT] ?: 0L
+    }
+
+    override suspend fun setLastCleanupAt(time: Long) {
+        dataStore.edit { prefs -> prefs[Keys.LAST_CLEANUP_AT] = time }
     }
 
     override suspend fun setRecordingsPrivate(private: Boolean) {

@@ -142,6 +142,13 @@
     <string name="recordings_sort_longest">طولانی‌ترین</string>
     <string name="recordings_sort_largest">بزرگ‌ترین</string>
     <string name="recordings_sort_starred_first">ستاره‌دارها اول</string>
+    <string name="recordings_auto_delete_title">حذف خودکار ضبط‌های قدیمی</string>
+    <string name="recordings_auto_delete_summary">ضبط‌های ستاره‌دار هرگز حذف نمی‌شوند.</string>
+    <string name="recordings_auto_delete_confirm">%1$d ضبط قدیمی‌تر از %2$d روز همین حالا حذف می‌شود. ضبط‌های ستاره‌دار نگه داشته می‌شوند.</string>
+    <string name="recordings_retention_never">هرگز</string>
+    <string name="recordings_retention_7_days">۷ روز</string>
+    <string name="recordings_retention_30_days">۳۰ روز</string>
+    <string name="recordings_retention_90_days">۹۰ روز</string>
     <string name="recordings_delete_title">حذف ضبط؟</string>
     <string name="recordings_delete_message">این فایل از گوشی حذف می‌شود.</string>
     <string name="recordings_unknown">ناشناس</string>

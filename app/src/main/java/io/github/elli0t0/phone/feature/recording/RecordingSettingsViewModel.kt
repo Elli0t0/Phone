@@ -14,17 +14,21 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import io.github.elli0t0.phone.core.recording.BackendStatus
 import io.github.elli0t0.phone.core.recording.PairResult
+import io.github.elli0t0.phone.core.recording.RecordingCleanup
 import io.github.elli0t0.phone.core.recording.RecordingController
 import io.github.elli0t0.phone.core.recording.RecordingSession
 import io.github.elli0t0.phone.core.recording.adb.openWirelessDebugging
 import io.github.elli0t0.phone.core.recording.adb.postPairNotification
 import io.github.elli0t0.phone.data.recordings.RecordingStats
 import io.github.elli0t0.phone.data.recordings.RecordingsRepository
+import io.github.elli0t0.phone.data.settings.SettingsRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -36,10 +40,14 @@ data class RecordingTestOutcome(
     val peak: Float? = null
 )
 
+/** A picked retention period that still needs its delete confirm. */
+data class RetentionConfirm(val days: Int, val count: Int)
+
 class RecordingSettingsViewModel(
     private val controller: RecordingController,
     private val recordingsRepository: RecordingsRepository,
-    private val appContext: Context
+    private val appContext: Context,
+    private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
     val backendStatus: StateFlow<BackendStatus> = controller.backendStatus
@@ -56,6 +64,44 @@ class RecordingSettingsViewModel(
     val lastError: StateFlow<String?> = controller.lastError
     val recordingStats: StateFlow<RecordingStats> = recordingsRepository.stats
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecordingStats(0, 0))
+
+    val retentionDays: StateFlow<Int> = settingsRepository.settingsFlow
+        .map { it.recordingRetentionDays }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    private val _retentionConfirm = MutableStateFlow<RetentionConfirm?>(null)
+    val retentionConfirm: StateFlow<RetentionConfirm?> = _retentionConfirm.asStateFlow()
+
+    fun onRetentionPicked(days: Int) {
+        viewModelScope.launch {
+            if (days == 0) {
+                settingsRepository.setRecordingRetentionDays(0)
+                return@launch
+            }
+            val cutoff = System.currentTimeMillis() - days * 86_400_000L
+            val count = recordingsRepository.countOlderThanUnstarred(cutoff)
+            if (count > 0) {
+                _retentionConfirm.value = RetentionConfirm(days, count)
+            } else {
+                settingsRepository.setRecordingRetentionDays(days)
+            }
+        }
+    }
+
+    fun confirmRetention() {
+        val pending = _retentionConfirm.value ?: return
+        _retentionConfirm.value = null
+        viewModelScope.launch(Dispatchers.IO) {
+            settingsRepository.setRecordingRetentionDays(pending.days)
+            runCatching {
+                RecordingCleanup(settingsRepository, recordingsRepository).runIfDue(force = true)
+            }
+        }
+    }
+
+    fun dismissRetentionConfirm() {
+        _retentionConfirm.value = null
+    }
 
     private val _busy = MutableStateFlow(false)
     val busy: StateFlow<Boolean> = _busy.asStateFlow()
@@ -186,11 +232,12 @@ class RecordingSettingsViewModel(
         fun provideFactory(
             controller: RecordingController,
             repository: RecordingsRepository,
-            appContext: Context
+            appContext: Context,
+            settingsRepository: SettingsRepository
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return RecordingSettingsViewModel(controller, repository, appContext) as T
+                return RecordingSettingsViewModel(controller, repository, appContext, settingsRepository) as T
             }
         }
     }

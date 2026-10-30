@@ -22,6 +22,7 @@ import io.github.elli0t0.phone.data.settings.SettingsRepository
 import io.github.elli0t0.phone.data.settings.SetupRepository
 import io.github.elli0t0.phone.data.settings.settingsDataStore
 import io.github.elli0t0.phone.data.settings.setupDataStore
+import io.github.elli0t0.phone.core.recording.RecordingCleanup
 import io.github.elli0t0.phone.core.recording.RecordingController
 import io.github.elli0t0.phone.core.recording.adb.AdbRecordingBackend
 import io.github.elli0t0.phone.data.recordings.DefaultRecordingsRepository
@@ -30,6 +31,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.launch
 
 /** One external dial request (tap a number in another app). The id
  * lets the collector ignore replays of an already-handled request
@@ -140,6 +142,11 @@ class PhoneApplication : Application() {
             ) == android.content.pm.PackageManager.PERMISSION_GRANTED
         ) {
             (container.callLogRepository as? AndroidCallLogRepository)?.preload()
+        }
+        applicationScope.launch {
+            runCatching {
+                RecordingCleanup(container.settingsRepository, container.recordingsRepository).runIfDue()
+            }
         }
     }
 }

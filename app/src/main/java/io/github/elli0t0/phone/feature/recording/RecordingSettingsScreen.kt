@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -38,6 +39,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -63,6 +67,7 @@ import io.github.elli0t0.phone.core.recording.PairResult
 import io.github.elli0t0.phone.core.recording.RecordingSession
 import io.github.elli0t0.phone.data.settings.model.SwitchStyle
 import io.github.elli0t0.phone.feature.settings.LocalSearchAdvanced
+import io.github.elli0t0.phone.feature.settings.SettingsChoiceDialog
 import io.github.elli0t0.phone.feature.settings.searchHighlight
 import io.github.elli0t0.phone.navigation.InnerTopBar
 
@@ -83,7 +88,8 @@ fun RecordingSettingsScreen(
         factory = RecordingSettingsViewModel.provideFactory(
             app.container.recordingController,
             app.container.recordingsRepository,
-            context.applicationContext
+            context.applicationContext,
+            app.container.settingsRepository
         )
     )
     val status by viewModel.backendStatus.collectAsStateWithLifecycle()
@@ -94,6 +100,17 @@ fun RecordingSettingsScreen(
     val session by viewModel.session.collectAsStateWithLifecycle()
     val lastError by viewModel.lastError.collectAsStateWithLifecycle()
     val recordingStats by viewModel.recordingStats.collectAsStateWithLifecycle()
+    val retentionDays by viewModel.retentionDays.collectAsStateWithLifecycle()
+    val retentionConfirm by viewModel.retentionConfirm.collectAsStateWithLifecycle()
+    var showRetentionDialog by remember { mutableStateOf(false) }
+    val retentionLabel = stringResource(
+        when (retentionDays) {
+            7 -> R.string.recordings_retention_7_days
+            30 -> R.string.recordings_retention_30_days
+            90 -> R.string.recordings_retention_90_days
+            else -> R.string.recordings_retention_never
+        }
+    )
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     val testOutcome by viewModel.testOutcome.collectAsStateWithLifecycle()
     val testing by viewModel.testing.collectAsStateWithLifecycle()
@@ -246,6 +263,33 @@ fun RecordingSettingsScreen(
                                 recordingStats.count,
                                 Formatter.formatShortFileSize(context, recordingStats.totalBytes)
                             ),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            }
+
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                        .clickable { showRetentionDialog = true }
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = stringResource(id = R.string.recordings_auto_delete_title),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = retentionLabel,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = stringResource(id = R.string.recordings_auto_delete_summary),
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -610,6 +654,44 @@ fun RecordingSettingsScreen(
                 )
             }
         }
+    }
+    if (showRetentionDialog) {
+        SettingsChoiceDialog(
+            title = stringResource(id = R.string.recordings_auto_delete_title),
+            options = listOf(
+                stringResource(id = R.string.recordings_retention_never) to 0,
+                stringResource(id = R.string.recordings_retention_7_days) to 7,
+                stringResource(id = R.string.recordings_retention_30_days) to 30,
+                stringResource(id = R.string.recordings_retention_90_days) to 90
+            ),
+            selected = retentionDays,
+            onSelect = { viewModel.onRetentionPicked(it); showRetentionDialog = false },
+            onDismiss = { showRetentionDialog = false }
+        )
+    }
+    retentionConfirm?.let { pending ->
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissRetentionConfirm() },
+            title = { Text(stringResource(id = R.string.recordings_auto_delete_title)) },
+            text = {
+                Text(
+                    stringResource(
+                        id = R.string.recordings_auto_delete_confirm,
+                        pending.count, pending.days
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.confirmRetention() }) {
+                    Text(stringResource(id = R.string.recording_delete))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissRetentionConfirm() }) {
+                    Text(stringResource(id = R.string.action_cancel))
+                }
+            }
+        )
     }
 }
 

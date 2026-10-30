@@ -471,6 +471,11 @@ class RecordingController(
                     )
                 )
             }
+            scope.launch {
+                runCatching {
+                    RecordingCleanup(settingsRepository, recordingsRepository).runIfDue()
+                }
+            }
         }.onFailure { _lastError.value = it.message }
     }
 

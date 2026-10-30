@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.recording.RecordingCleanup
 import io.github.elli0t0.phone.data.recordings.RecordingEntity
 import io.github.elli0t0.phone.data.recordings.RecordingStats
 import io.github.elli0t0.phone.data.recordings.RecordingsRepository
@@ -55,7 +56,12 @@ class RecordingsViewModel(
     private val appContext: Context
 ) : ViewModel() {
     init {
-        viewModelScope.launch(Dispatchers.IO) { runCatching { repo.removeMissingFiles() } }
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching { repo.removeMissingFiles() }
+            runCatching {
+                RecordingCleanup(settingsRepository, repo).runIfDue()
+            }
+        }
     }
 
     private val query = MutableStateFlow("")
