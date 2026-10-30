@@ -97,8 +97,10 @@ import kotlin.math.sin
 
 /**
  * Floating liquid-glass bottom bar, overlaid on content. Stadium pill,
- * 85% of the screen width for Medium (70% Small, 90% Large), 64dp tall,
- * three equal-width items, 26dp icons. The bar glass is a 36dp Haze
+ * 75% of the screen width for Medium (62% Small, 82% Large, Medium
+ * capped at 360dp), 64dp tall for Medium, three equal-width items,
+ * 26dp icons. The lens bar scales the same way from its 78%
+ * reference width (capped at 380dp). The bar glass is a 36dp Haze
  * blur with a 0.20 fill, a 1dp vertical-gradient rim (white 38% at
  * the top edge to 6% at the bottom) and faint highlights at the
  * left/right ends, with no drop shadow; list content scrolls visibly
@@ -268,9 +270,10 @@ fun PhoneBottomBar(
         }
     }
 
-    // Width from the size spec (70/85/90% for S/M/L). Height from
-    // the spec (64dp Medium); the three items share the width
-    // equally via weight, so nothing can overflow or clip.
+    // Width from the size spec (62/75/82% for S/M/L, Medium capped
+    // at 360dp). Height from the spec (52/64/68dp). The three items
+    // share the width equally via weight, so nothing can overflow
+    // or clip.
     BoxWithConstraints(
         modifier = modifier
             .navigationBarsPadding()
@@ -278,10 +281,15 @@ fun PhoneBottomBar(
             .testTag("phone_bottom_bar"),
         contentAlignment = Alignment.Center
     ) {
-        // Lens bar sizing (reference): 78% of the screen, capped at
-        // 380dp, 64dp tall. The Haze bar keeps the size setting.
+        // Lens bar sizing: 78% of the screen for Medium, capped at
+        // 380dp, scaled by the size setting like the Haze bar, so
+        // Small shortens the whole row, not just the items inside
+        // it (Small 64%, Large 85%). The Haze bar keeps the size
+        // setting directly.
         val barWidth = if (lensBackdrop != null) {
-            minOf(maxWidth * 0.78f, 380.dp)
+            val lensFraction =
+                0.78f * (sizeSpec.widthFraction / PhoneDimens.bottomBarWidthFraction)
+            minOf(maxWidth * lensFraction, 380.dp)
         } else {
             (maxWidth * sizeSpec.widthFraction).let { rawWidth ->
                 sizeSpec.maxWidth?.let { cap -> minOf(rawWidth, cap) } ?: rawWidth
@@ -316,10 +324,11 @@ fun PhoneBottomBar(
             easing = Motion.Easings.Standard
         )
 
-        // Bar height: shrinks by bottomBarShrinkDelta as the shrink
-        // progress goes 0 to 1. The progress is read only in this
-        // layout lambda, so shrinking never recomposes.
-        val barHeight = if (lensBackdrop != null) 64.dp else sizeSpec.height
+        // Bar height from the size spec: Medium is 64dp, so the
+        // lens bar keeps its height there and shrinks/grows with
+        // the setting like the Haze bar. The progress is read only
+        // in this layout lambda, so shrinking never recomposes.
+        val barHeight = sizeSpec.height
         val barHeightModifier = Modifier.layout { measurable, constraints ->
             val shrink = shrinkProgress().coerceIn(0f, 1f)
             val h = with(this) {

@@ -318,17 +318,13 @@ fun isLensBarActive(settings: AppSettings): Boolean =
  * Bottom clearance for a scrolling list under the floating bar,
  * from the bar-height state (never a hard-coded dp): the current
  * bar height + the navigation-bar inset + a 16dp gap, so the last
- * item scrolls fully above the bar at any bar size. The lens bar
- * has a fixed 64dp height, so it reports that when active.
+ * item scrolls fully above the bar at any bar size, lens included
+ * (its height follows the size setting too).
  */
 @Composable
 fun bottomBarListBottomPadding(): Dp {
     val settings = LocalAppSettings.current
-    val barHeight = if (isLensBarActive(settings)) {
-        64.dp
-    } else {
-        bottomBarSizeSpec(settings.bottomBarSize).height
-    }
+    val barHeight = bottomBarSizeSpec(settings.bottomBarSize).height
     return barHeight +
         WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() +
         16.dp

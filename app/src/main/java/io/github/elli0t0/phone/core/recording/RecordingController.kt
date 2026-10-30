@@ -1,8 +1,10 @@
 package io.github.elli0t0.phone.core.recording
 
+import android.Manifest
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -13,15 +15,18 @@ import android.os.Environment
 import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import io.github.elli0t0.phone.MainActivity
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.recording.adb.AdbRecordingBackend
 import io.github.elli0t0.phone.core.recording.CaptureSource
 import io.github.elli0t0.phone.data.call.CallRepository
 import io.github.elli0t0.phone.data.call.CallState
+import io.github.elli0t0.phone.data.contacts.ContactNameIndex
 import io.github.elli0t0.phone.data.recordings.RecordingEntity
 import io.github.elli0t0.phone.data.recordings.RecordingsRepository
 import io.github.elli0t0.phone.data.settings.SettingsRepository
+import io.github.elli0t0.phone.data.settings.model.AutoRecordMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -239,6 +244,33 @@ class RecordingController(
                 ) {
                     autoHandledCallId = model.id
                     scope.launch {
+                        // Policy first, before any backend probe: a
+                        // filtered-out call costs no probe and no
+                        // failure notification when it is skipped.
+                        val settings = settingsRepository.settingsFlow.first()
+                        val mode = settings.autoRecordMode
+                        val needsContact = mode == AutoRecordMode.CONTACTS_ONLY ||
+                            mode == AutoRecordMode.UNKNOWN_ONLY
+                        val isContact = if (needsContact &&
+                            ContextCompat.checkSelfPermission(
+                                context, Manifest.permission.READ_CONTACTS
+                            ) == PackageManager.PERMISSION_GRANTED &&
+                            !model.number.isNullOrBlank()
+                        ) {
+                            ContactNameIndex.ensureStarted(context.contentResolver)
+                            ContactNameIndex.awaitReady()
+                            // Never model.displayName: it can be
+                            // carrier CNAP text, not a contact.
+                            ContactNameIndex.resolve(model.number) != null
+                        } else {
+                            false
+                        }
+                        if (!AutoRecordPolicy.shouldAutoRecord(
+                                mode, model.number, isContact, settings.autoRecordExcluded
+                            )
+                        ) {
+                            return@launch
+                        }
                         if (adbBackend.status.value != BackendStatus.READY) {
                             adbBackend.refreshStatus()
                         }

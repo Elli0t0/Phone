@@ -35,6 +35,7 @@ fun ContactPickerScreen(
     onClearSearch: () -> Unit,
     onContactClick: (ContactSummary) -> Unit,
     onBack: () -> Unit,
+    titleRes: Int = R.string.add_to_existing_contact,
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
@@ -58,7 +59,7 @@ fun ContactPickerScreen(
                 )
             }
             Text(
-                text = stringResource(id = R.string.add_to_existing_contact),
+                text = stringResource(id = titleRes),
                 style = MaterialTheme.typography.titleLarge
             )
         }

@@ -194,6 +194,16 @@
     <string name="recording_auto">خودکار</string>
     <string name="recording_auto_record">ضبط خودکار همه تماس‌ها</string>
     <string name="recording_auto_note">پس از هر راه‌اندازی مجدد، یک بار به Wi-Fi نیاز دارد</string>
+    <string name="recording_auto_mode_all">همه تماس‌ها</string>
+    <string name="recording_auto_mode_contacts">فقط مخاطبان</string>
+    <string name="recording_auto_mode_unknown">فقط شماره‌های ناشناس</string>
+    <string name="recording_auto_mode_except">همه به‌جز شماره‌های انتخاب‌شده</string>
+    <string name="recording_excluded_title">شماره‌های مستثنا</string>
+    <string name="recording_excluded_numbers">شماره‌های مستثنا (%1$d)</string>
+    <string name="recording_excluded_empty">هنوز شماره‌ای مستثنا نشده است.</string>
+    <string name="recording_excluded_add">افزودن شماره</string>
+    <string name="recording_excluded_hint">شماره تلفن</string>
+    <string name="recording_excluded_pick">انتخاب از مخاطبان</string>
     <string name="recording_auto_failed">ضبط خودکار شروع نشد. «Phone > ضبط تماس» را باز کنید.</string>
     <string name="recording_needs_wifi">ضبط آماده نیست. یک بار به Wi-Fi وصل شوید تا ضبط شروع شود.</string>
     <string name="recording_offline_mode_desc">پس از هر بار راه‌اندازی مجدد، یک بار به Wi-Fi نیاز دارد. یک درگاه اشکال‌زدایی محلی (5555) باز می‌کند که با کلید جفت‌سازی محافظت می‌شود.</string>

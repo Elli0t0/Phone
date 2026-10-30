@@ -22,12 +22,14 @@ import io.github.elli0t0.phone.core.recording.adb.postPairNotification
 import io.github.elli0t0.phone.data.recordings.RecordingStats
 import io.github.elli0t0.phone.data.recordings.RecordingsRepository
 import io.github.elli0t0.phone.data.settings.SettingsRepository
+import io.github.elli0t0.phone.data.settings.model.AutoRecordMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -68,6 +70,14 @@ class RecordingSettingsViewModel(
     val retentionDays: StateFlow<Int> = settingsRepository.settingsFlow
         .map { it.recordingRetentionDays }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    val autoRecordMode: StateFlow<AutoRecordMode> = settingsRepository.settingsFlow
+        .map { it.autoRecordMode }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AutoRecordMode.ALL)
+
+    val autoRecordExcluded: StateFlow<Set<String>> = settingsRepository.settingsFlow
+        .map { it.autoRecordExcluded }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
     private val _retentionConfirm = MutableStateFlow<RetentionConfirm?>(null)
     val retentionConfirm: StateFlow<RetentionConfirm?> = _retentionConfirm.asStateFlow()
@@ -170,6 +180,26 @@ class RecordingSettingsViewModel(
 
     fun setAutoRecordCalls(enabled: Boolean) {
         viewModelScope.launch { controller.setAutoRecordCalls(enabled) }
+    }
+
+    fun setAutoRecordMode(mode: AutoRecordMode) {
+        viewModelScope.launch { settingsRepository.setAutoRecordMode(mode) }
+    }
+
+    fun addExcludedNumber(number: String) {
+        val trimmed = number.trim()
+        if (trimmed.isEmpty()) return
+        viewModelScope.launch {
+            val current = settingsRepository.settingsFlow.first().autoRecordExcluded
+            settingsRepository.setAutoRecordExcluded(current + trimmed)
+        }
+    }
+
+    fun removeExcludedNumber(number: String) {
+        viewModelScope.launch {
+            val current = settingsRepository.settingsFlow.first().autoRecordExcluded
+            settingsRepository.setAutoRecordExcluded(current - number)
+        }
     }
 
     fun detectPort() {

@@ -398,5 +398,7 @@ val allSettingEntries: List<SettingEntry> = listOf(
     SettingEntry("recording_reset_pairing", R.string.recording_action_reset_pairing, R.string.settings_call_recording, SettingsPage.RECORDING, anchor = "recording_reset_pairing", advanced = true),
     SettingEntry("recording_offline", R.string.recording_offline_mode_title, R.string.settings_call_recording, SettingsPage.RECORDING, anchor = "recording_offline", advanced = true, keywordsRes = R.string.search_keywords_recording_offline),
     SettingEntry("recording_test", R.string.recording_test, R.string.settings_call_recording, SettingsPage.RECORDING, anchor = "recording_test"),
-    SettingEntry("recording_open", R.string.recordings_open, R.string.settings_call_recording, SettingsPage.RECORDING, anchor = "recording_open")
+    SettingEntry("recording_open", R.string.recordings_open, R.string.settings_call_recording, SettingsPage.RECORDING, anchor = "recording_open"),
+    SettingEntry("recording_auto_mode", R.string.recording_auto_record, R.string.settings_call_recording, SettingsPage.RECORDING, anchor = "recording_auto"),
+    SettingEntry("recording_excluded", R.string.recording_excluded_title, R.string.settings_call_recording, SettingsPage.RECORDING, anchor = "recording_excluded")
 )

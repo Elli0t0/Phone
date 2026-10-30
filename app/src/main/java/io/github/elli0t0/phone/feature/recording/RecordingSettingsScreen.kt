@@ -27,9 +27,11 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -47,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
@@ -65,6 +68,7 @@ import io.github.elli0t0.phone.core.design.SwitchGreenUncheckedTrack
 import io.github.elli0t0.phone.core.recording.BackendStatus
 import io.github.elli0t0.phone.core.recording.PairResult
 import io.github.elli0t0.phone.core.recording.RecordingSession
+import io.github.elli0t0.phone.data.settings.model.AutoRecordMode
 import io.github.elli0t0.phone.data.settings.model.SwitchStyle
 import io.github.elli0t0.phone.feature.settings.LocalSearchAdvanced
 import io.github.elli0t0.phone.feature.settings.SettingsChoiceDialog
@@ -80,6 +84,7 @@ import io.github.elli0t0.phone.navigation.InnerTopBar
 fun RecordingSettingsScreen(
     onNavigateBack: () -> Unit,
     onOpenRecordings: () -> Unit = {},
+    onOpenExcludedNumbers: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -148,6 +153,8 @@ fun RecordingSettingsScreen(
     val detectResult by viewModel.detectResult.collectAsStateWithLifecycle()
     val offlineMode by viewModel.offlineMode.collectAsStateWithLifecycle()
     val autoRecordCalls by viewModel.autoRecordCalls.collectAsStateWithLifecycle()
+    val autoRecordMode by viewModel.autoRecordMode.collectAsStateWithLifecycle()
+    val autoRecordExcluded by viewModel.autoRecordExcluded.collectAsStateWithLifecycle()
     val offlinePortActive by viewModel.offlinePortActive.collectAsStateWithLifecycle()
     val keyAccepted by viewModel.keyAccepted.collectAsStateWithLifecycle()
     val clipboardManager = LocalClipboardManager.current
@@ -203,6 +210,7 @@ fun RecordingSettingsScreen(
                         containerColor = MaterialTheme.colorScheme.surface
                     ),
                     modifier = Modifier.fillMaxWidth()
+                        .searchHighlight("recording_auto")
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(
@@ -238,6 +246,47 @@ fun RecordingSettingsScreen(
                             text = stringResource(id = R.string.recording_auto_note),
                             style = MaterialTheme.typography.bodySmall
                         )
+                        if (autoRecordCalls) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            AutoRecordMode.entries.forEach { mode ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth()
+                                        .clickable { viewModel.setAutoRecordMode(mode) },
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    RadioButton(
+                                        selected = mode == autoRecordMode,
+                                        onClick = { viewModel.setAutoRecordMode(mode) }
+                                    )
+                                    Text(
+                                        text = stringResource(id = mode.labelRes()),
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+                            }
+                            if (autoRecordMode == AutoRecordMode.EXCEPT_LIST) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth()
+                                        .searchHighlight("recording_excluded")
+                                        .clickable { onOpenExcludedNumbers() }
+                                        .padding(top = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = stringResource(
+                                            id = R.string.recording_excluded_numbers,
+                                            autoRecordExcluded.size
+                                        ),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_chevron_right),
+                                        contentDescription = null
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -700,4 +749,12 @@ private fun openNotificationSettings(context: android.content.Context) {
         putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
     }
     runCatching { context.startActivity(intent) }
+}
+
+/** Localizable labels for the auto-record mode radios: the enum's own label is English-only. */
+private fun AutoRecordMode.labelRes(): Int = when (this) {
+    AutoRecordMode.ALL -> R.string.recording_auto_mode_all
+    AutoRecordMode.CONTACTS_ONLY -> R.string.recording_auto_mode_contacts
+    AutoRecordMode.UNKNOWN_ONLY -> R.string.recording_auto_mode_unknown
+    AutoRecordMode.EXCEPT_LIST -> R.string.recording_auto_mode_except
 }

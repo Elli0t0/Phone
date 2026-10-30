@@ -110,6 +110,7 @@ import io.github.elli0t0.phone.core.permissions.SetupPermissions
 import io.github.elli0t0.phone.core.telecom.rememberDefaultDialerState
 import io.github.elli0t0.phone.core.telecom.UssdHelper
 import io.github.elli0t0.phone.core.telecom.UssdSim
+import io.github.elli0t0.phone.feature.recording.ExcludedNumbersScreen
 import io.github.elli0t0.phone.feature.recording.RecordingSettingsScreen
 import io.github.elli0t0.phone.feature.setup.SetupChecklist
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
@@ -227,7 +228,7 @@ fun SettingsScreen(
         dialogs.showLayoutNavPage || dialogs.showCallsPage || dialogs.showContactsPage ||
         dialogs.showPrivacyPage || dialogs.showAboutPage || dialogs.showAppStylePage ||
         dialogs.showGlassStudioPage || dialogs.showCallBackgroundPage || dialogs.showAppBackgroundPage ||
-        dialogs.showBlockedNumbers || dialogs.showRecordingPage ||
+        dialogs.showBlockedNumbers || dialogs.showExcludedNumbers || dialogs.showRecordingPage ||
         dialogs.showAnswerStylePage
     LaunchedEffect(anySettingsPageOpen) {
         if (!anySettingsPageOpen) dialogs.searchForceAdvanced = false
@@ -741,6 +742,7 @@ fun SettingsScreen(
     BackHandler(enabled = dialogs.showGlassStudioPage) { dialogs.showGlassStudioPage = false }
     BackHandler(enabled = dialogs.showBlockedNumbers) { dialogs.showBlockedNumbers = false }
     BackHandler(enabled = dialogs.showRecordingPage) { dialogs.showRecordingPage = false }
+    BackHandler(enabled = dialogs.showExcludedNumbers) { dialogs.showExcludedNumbers = false }
 
     if (dialogs.showAnswerStylePage) {
         AnswerStyleScreen(
@@ -792,8 +794,15 @@ fun SettingsScreen(
     if (dialogs.showRecordingPage) {
         RecordingSettingsScreen(
             onNavigateBack = { dialogs.showRecordingPage = false },
-            onOpenRecordings = onNavigateToRecordings
+            onOpenRecordings = onNavigateToRecordings,
+            onOpenExcludedNumbers = { dialogs.showExcludedNumbers = true }
         )
+    }
+
+    // Rendered after the recording page, so it draws on top of it
+    // and its BackHandler (registered last) closes it first.
+    if (dialogs.showExcludedNumbers) {
+        ExcludedNumbersScreen(onNavigateBack = { dialogs.showExcludedNumbers = false })
     }
 
 }

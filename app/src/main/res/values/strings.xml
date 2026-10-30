@@ -508,6 +508,16 @@
     <string name="recording_auto">Auto</string>
     <string name="recording_auto_record">Record all calls automatically</string>
     <string name="recording_auto_note">Needs Wi-Fi once after every reboot</string>
+    <string name="recording_auto_mode_all">All calls</string>
+    <string name="recording_auto_mode_contacts">Only contacts</string>
+    <string name="recording_auto_mode_unknown">Only unknown numbers</string>
+    <string name="recording_auto_mode_except">All except selected numbers</string>
+    <string name="recording_excluded_title">Excluded numbers</string>
+    <string name="recording_excluded_numbers">Excluded numbers (%1$d)</string>
+    <string name="recording_excluded_empty">No excluded numbers yet.</string>
+    <string name="recording_excluded_add">Add number</string>
+    <string name="recording_excluded_hint">Phone number</string>
+    <string name="recording_excluded_pick">Pick a contact</string>
     <string name="recording_auto_failed">Auto-recording could not start. Open Phone > Call recording.</string>
     <string name="recording_needs_wifi">Recorder isn\'t ready. Connect to Wi-Fi once so recording can start.</string>
     <string name="recording_notification_title">Recording call</string>
