@@ -90,7 +90,17 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
     }
 
     override val recordingsRepository: RecordingsRepository by lazy {
-        DefaultRecordingsRepository(database.recordingsDao(), context.contentResolver)
+        DefaultRecordingsRepository(
+            database.recordingsDao(),
+            fileDeleter = { uri ->
+                io.github.elli0t0.phone.core.recording.deleteFile(context.contentResolver, uri)
+            },
+            fileExists = { uri ->
+                runCatching {
+                    context.contentResolver.openFileDescriptor(uri, "r")?.use { true } ?: false
+                }.getOrDefault(false)
+            }
+        )
     }
 
     override val recordingController: RecordingController by lazy {

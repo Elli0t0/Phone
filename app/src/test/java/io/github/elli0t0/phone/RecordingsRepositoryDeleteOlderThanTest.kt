@@ -47,17 +47,6 @@ private class FakeRecordingsDao(
     override fun stats(): Flow<RecordingStats> = flowOf(RecordingStats(0, 0))
 }
 
-/**
- * The unit-test android.jar has no android.test.mock, and
- * ContentResolver cannot be instantiated without it — but the
- * repository only hands the resolver to the injected file-deleter
- * (which ignores it here), so null stands in. The cast erases
- * to Object, so no null check fires; never use this where the
- * value is actually read.
- */
-@Suppress("UNCHECKED_CAST")
-private fun <T : Any> unsafeNull(): T = null as T
-
 class RecordingsRepositoryDeleteOlderThanTest {
     private val cutoff = 1_000_000L
     private val old = 100_000L
@@ -77,9 +66,11 @@ class RecordingsRepositoryDeleteOlderThanTest {
             oldTests = listOf(recording(4, old, isTest = true)),
             events = events
         )
-        val repo = DefaultRecordingsRepository(dao, unsafeNull()) { _, _ ->
-            events.add("file")
-        }
+        val repo = DefaultRecordingsRepository(
+            dao,
+            fileDeleter = { _ -> events.add("file") },
+            fileExists = { _ -> true }
+        )
         val count = repo.deleteOlderThan(cutoff, keepStarred = true)
         assertEquals(3, count)
         assertEquals(listOf("file", "file", "file", "row:1", "row:2", "row:4"), events)
@@ -99,9 +90,11 @@ class RecordingsRepositoryDeleteOlderThanTest {
             oldTests = listOf(recording(4, old, isTest = true)),
             events = events
         )
-        val repo = DefaultRecordingsRepository(dao, unsafeNull()) { _, _ ->
-            events.add("file")
-        }
+        val repo = DefaultRecordingsRepository(
+            dao,
+            fileDeleter = { _ -> events.add("file") },
+            fileExists = { _ -> true }
+        )
         val count = repo.deleteOlderThan(cutoff, keepStarred = false)
         assertEquals(3, count)
         assertTrue(events.contains("row:2"))
@@ -113,9 +106,11 @@ class RecordingsRepositoryDeleteOlderThanTest {
     @Test
     fun empty_returnsZero_noCalls() = runTest {
         val events = mutableListOf<String>()
-        val repo = DefaultRecordingsRepository(FakeRecordingsDao(events = events), unsafeNull()) { _, _ ->
-            events.add("file")
-        }
+        val repo = DefaultRecordingsRepository(
+            FakeRecordingsDao(events = events),
+            fileDeleter = { _ -> events.add("file") },
+            fileExists = { _ -> true }
+        )
         assertEquals(0, repo.deleteOlderThan(cutoff, keepStarred = true))
         assertTrue(events.isEmpty())
     }
