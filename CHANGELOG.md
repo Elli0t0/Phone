@@ -164,6 +164,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.18.1]
+
+- Recording fixes: the saved playback speed now applies when a recording starts, skipping guards against an unknown duration, changing search or filter clears the selection, deleting a selection only removes recordings still visible, and old test recordings are cleaned up on schedule even when retention is off.
+- Recents redesign: the title is left-aligned with its actions on the same row and a calls-today line under it, filter chips (including Recorded) are always visible under the header, rows show a contact avatar with a direction badge, a larger name with the count as a pill, and a smaller second line, and day cards are rounder with dividers starting at the text.
+- Keypad redesign: favorites, recents, and suggestions sit at the top with the gap above the number, which is now lighter at 36sp and shrinks past 11 digits with a small region caption (like "Iran · Mobile") when it can be determined; keys are lighter 72dp circles with a flat option, the call row is a single centered green button, and recent chips are 36dp pills showing names only. On short screens the keys shrink to 64dp.
+
 ## [0.18.0]
 
 - Recordings screen: multi-select with select-all and bulk delete, star/unstar, edit title and note, sort by newest, oldest, longest, largest, or starred first, player skip ±10s and playback speed, and a summary line with the count and total size.
