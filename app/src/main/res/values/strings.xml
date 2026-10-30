@@ -3,7 +3,6 @@
     <string name="tab_recents">Recents</string>
     <string name="tab_contacts">Contacts</string>
     <string name="tab_dialpad">Keypad</string>
-    <string name="placeholder_coming_soon">Coming in a later version</string>
     <string name="cd_tab_recents">Recents tab</string>
     <string name="cd_tab_contacts">Contacts tab</string>
     <string name="cd_tab_dialpad">Keypad tab</string>
@@ -32,10 +31,8 @@
     <string name="cd_contact_avatar">Contact avatar</string>
 
     <!-- Contact Details -->
-    <string name="contact_details_title">Contact Details</string>
     <string name="contact_details_phones">Phone Numbers</string>
     <string name="contact_details_emails">Email Addresses</string>
-    <string name="contact_details_organization">Organization</string>
     <string name="contact_action_edit">Edit</string>
     <string name="contact_action_delete">Delete</string>
     <string name="contact_delete_dialog_title">Delete Contact?</string>
@@ -153,9 +150,6 @@
     <string name="dialpad_contacts_count">%1$d contacts</string>
     <string name="dialpad_show_less">Show less</string>
     <string name="dialpad_message">Message</string>
-    <string name="cd_dialpad_key">Key %1$s</string>
-    <string name="permission_call_title">Phone Call Permission</string>
-    <string name="permission_call_message">Phone needs permission to place direct phone calls. Otherwise, calls will be handed off to the system dialer.</string>
 
     <!-- Recents / Call Log -->
     <string name="recents_search_hint">Search calls</string>
@@ -168,10 +162,7 @@
     <string name="recents_empty_filtered">No calls matching this filter</string>
     <string name="recents_error_title">Unable to load calls</string>
     <string name="recents_error_message">An error occurred while reading your call history: %1$s</string>
-    <string name="favorites_empty_title">No favorites yet</string>
-    <string name="favorites_empty_message">Star contacts to see them here for quick access</string>
     <string name="section_favorites">Favorites</string>
-    <string name="section_recents">Recent calls</string>
 
     <!-- Filters -->
     <string name="filter_all">All</string>
@@ -196,12 +187,8 @@
     <string name="add_to_existing_contact">Add to existing contact</string>
     <string name="action_copy_number">Copy number</string>
     <string name="action_delete_call">Delete from log</string>
-    <string name="snackbar_number_copied">Number copied to clipboard</string>
     <string name="snackbar_call_deleted">Call removed from log</string>
     <string name="cd_favorite_star">Favorite</string>
-    <string name="cd_favorite_add">Add to favorites</string>
-    <string name="cd_favorite_remove">Remove from favorites</string>
-    <string name="cd_call_back">Call back %1$s</string>
     <string name="cd_call_type">%1$s call</string>
     <string name="call_duration_seconds">%1$d sec</string>
     <string name="call_duration_minutes">%1$d min %2$d sec</string>
@@ -211,15 +198,12 @@
     <string name="settings_title">Settings</string>
     <string name="settings_default_phone_app">Default phone app</string>
     <string name="settings_default_phone_app_desc">Set Phone as your default dialer to handle incoming and outgoing calls</string>
-    <string name="settings_is_default">Default phone app is active</string>
     <string name="settings_set_as_default">Set as default</string>
     <string name="cd_settings">Settings</string>
 
     <!-- InCall Service and UI -->
     <string name="call_incoming">Incoming call</string>
     <string name="call_outgoing">Calling…</string>
-    <string name="call_connecting">Connecting…</string>
-    <string name="call_active">Ongoing call</string>
     <string name="call_holding">On hold</string>
     <string name="call_disconnected">Call ended</string>
     <string name="call_action_answer">Answer</string>
@@ -231,15 +215,11 @@
     <string name="call_action_mute">Mute</string>
     <string name="call_action_unmute">Unmute</string>
     <string name="call_action_speaker">Speaker</string>
-    <string name="call_action_earpiece">Earpiece</string>
     <string name="call_action_bluetooth">Bluetooth</string>
     <string name="call_action_hold">Hold</string>
     <string name="call_action_resume">Resume</string>
     <string name="call_action_keypad">Keypad</string>
     <string name="call_action_hide">Hide</string>
-    <string name="call_audio_output">Audio Output</string>
-    <string name="call_audio_wired">Wired headset</string>
-    <string name="call_audio_bluetooth_grant">Bluetooth — allow to see devices</string>
     <string name="call_sim_picker_title">Select SIM card</string>
     <string name="contact_calling_sim_title">Calling SIM</string>
     <string name="contact_calling_sim_desc">SIM used for calls to this contact</string>
@@ -258,7 +238,6 @@
     <string name="photo_crop_preview_title">Set contact photo</string>
     <string name="contact_details_ringtone">Ringtone</string>
     <string name="contact_details_history">History</string>
-    <string name="contact_details_history_show_all">Show all</string>
     <string name="contact_details_history_empty">No calls with this contact yet</string>
     <string name="history_day_today">Today</string>
     <string name="history_day_yesterday">Yesterday</string>
@@ -267,8 +246,6 @@
     <string name="ringtone_custom">Custom ringtone</string>
     <string name="cd_edit_photo">Change contact photo</string>
     <string name="cd_more_options">More options</string>
-    <string name="cd_call_contact">Call %1$s</string>
-    <string name="cd_message_contact">Message %1$s</string>
     <string name="snackbar_photo_updated">Contact photo updated</string>
     <string name="snackbar_photo_removed">Contact photo removed</string>
     <string name="snackbar_ringtone_updated">Ringtone updated</string>
@@ -276,28 +253,19 @@
     <!-- Appearance and Settings -->
     <string name="settings_cat_appearance">Appearance &amp; Display</string>
     <string name="settings_theme">Theme</string>
-    <string name="settings_theme_desc">Select light, dark, or system default appearance</string>
-    <string name="settings_theme_system">System</string>
-    <string name="settings_theme_light">Light</string>
-    <string name="settings_theme_dark">Dark</string>
     <string name="settings_dynamic_color">Dynamic color</string>
-    <string name="settings_dynamic_color_desc">Match app colors to your system wallpaper theme</string>
     <string name="settings_accent_color">Accent color</string>
-    <string name="settings_accent_color_desc">Choose a primary accent for buttons, icons, and highlights</string>
     <string name="settings_accent_presets">Presets</string>
     <string name="settings_custom_color">Custom color</string>
     <string name="settings_custom_color_dialog_title">Enter Hex Color (#RRGGBB)</string>
     <string name="settings_pure_black">Pure black dark mode</string>
     <string name="settings_pure_black_desc">Use true OLED black backgrounds in dark theme</string>
     <string name="settings_font_scale">Font size scale</string>
-    <string name="settings_font_scale_desc">Adjust text sizing throughout the app</string>
 
     <string name="settings_cat_liquid_glass">Liquid glass</string>
     <string name="settings_glass_bottom_bar">Bottom bar</string>
     <string name="settings_glass_bottom_bar_desc">Glass bar and sliding glass tab indicator</string>
     <string name="settings_glass_master_desc">Glass headers, contact details, call screens and bottom bar together</string>
-    <string name="settings_glass_dialpad">Dialpad</string>
-    <string name="settings_glass_dialpad_desc">Glass keys, Call button, no-match pills, and T9 chips</string>
     <string name="settings_glass_headers">Headers</string>
     <string name="settings_glass_headers_desc">Floating glass pill in the Recents and Contacts headers</string>
     <string name="settings_glass_contact_detail">Contact detail</string>
@@ -305,7 +273,6 @@
     <string name="settings_glass_call_screens">Call screens</string>
     <string name="settings_glass_call_screens_desc">Glass controls and dock on the incoming and ongoing call screens</string>
     <string name="settings_glass_intensity">Glass intensity</string>
-    <string name="settings_glass_intensity_desc">How strong the liquid glass effect is</string>
     <string name="settings_reduce_transparency">Reduce transparency</string>
     <string name="settings_reduce_transparency_desc">Make glass surfaces more opaque</string>
     <string name="settings_glass_cards">Glass cards</string>
@@ -329,25 +296,15 @@
     <string name="settings_glass_preview">Live preview</string>
     <string name="settings_edge_refraction">Edge refraction</string>
     <string name="settings_edge_refraction_desc">Slightly magnify the bottom bar backdrop near its ends</string>
-    <string name="settings_lens_bar">Lens bar</string>
     <string name="settings_lens_bar_desc">A real lens-glass bottom bar. Needs Android 13 or later; otherwise the current glass bar is used</string>
     <string name="settings_glass_reset">Reset glass to defaults</string>
 
     <string name="settings_cat_layout">Layout &amp; Density</string>
     <string name="settings_list_density">List density</string>
-    <string name="settings_list_density_compact">Compact</string>
-    <string name="settings_list_density_default">Default</string>
-    <string name="settings_list_density_comfortable">Comfortable</string>
     <string name="settings_card_style">Card style</string>
-    <string name="settings_card_style_rounded">Rounded</string>
-    <string name="settings_card_style_square">Square</string>
-    <string name="settings_card_style_outlined">Outlined</string>
 
     <string name="settings_cat_navigation">Navigation &amp; Behavior</string>
     <string name="settings_default_tab">Default start tab</string>
-    <string name="settings_default_tab_keypad">Keypad</string>
-    <string name="settings_default_tab_recents">Recents</string>
-    <string name="settings_default_tab_contacts">Contacts</string>
     <string name="settings_bottom_labels">Bottom bar labels</string>
     <string name="settings_bottom_labels_desc">Display tab text labels below icons in navigation bar</string>
     <string name="settings_bottom_bar_style">Bottom bar style</string>
@@ -356,19 +313,11 @@
     <string name="settings_bottom_bar_shrink">Shrink on scroll</string>
     <string name="settings_bottom_bar_shrink_desc">Compact the bottom bar to icons only while scrolling down</string>
     <string name="settings_animations">Animations</string>
-    <string name="settings_animations_on">On</string>
-    <string name="settings_animations_reduced">Reduced</string>
-    <string name="settings_animations_off">Off</string>
 
     <string name="settings_cat_contacts">Contacts Display</string>
     <string name="settings_sort_order">Sort contacts by</string>
-    <string name="settings_sort_first_name">First name</string>
-    <string name="settings_sort_last_name">Last name</string>
     <string name="settings_name_format">Name display format</string>
-    <string name="settings_format_first_first">First name first</string>
-    <string name="settings_format_last_first">Last name first</string>
 
-    <string name="settings_cat_reset">Reset</string>
     <string name="settings_reset_button">Reset to defaults</string>
     <string name="settings_cat_calls">Calls</string>
     <string name="settings_cat_privacy">Privacy</string>
@@ -498,7 +447,6 @@
     <string name="recording_silent_message">This recording is silent. Call audio capture may be blocked on this device, or the call was not connected yet.</string>
     <string name="recording_silent_badge">Silent</string>
     <string name="recording_armed">Recording starts when the call connects</string>
-    <string name="recording_active">Recording</string>
     <string name="recents_play_recording">Play recording</string>
     <string name="recents_pause_recording">Stop playback</string>
     <string name="recents_recording_missing">Recording file not found</string>
@@ -586,7 +534,6 @@
     <string name="call_action_stop_recording">Stop rec.</string>
     <string name="recording_error_no_wifi">Wireless debugging only works on Wi-Fi. Connect to Wi-Fi.</string>
     <string name="recording_error_wd_off">Wireless debugging is off.</string>
-    <string name="recording_error_service_not_found">Service not found. Turn off VPN and toggle Wireless debugging off/on.</string>
     <string name="recording_error_key_not_accepted">Key not accepted. Forget \'Phone\' in Paired devices, tap Reset pairing, pair again.</string>
     <string name="recording_copy_details">Copy details</string>
     <string name="recording_pair_success">Paired</string>
@@ -638,7 +585,6 @@
     <string name="search_keywords_quick_decline">decline message reply sms</string>
     <string name="search_keywords_bottom_sheets">sheet dialog popup</string>
     <string name="search_keywords_swipe_actions">swipe gesture delete call</string>
-    <string name="search_keywords_lens_bar">lens droplet refraction</string>
     <string name="search_keywords_recording_pair">pair pairing code wireless debugging wifi adb</string>
     <string name="search_keywords_recording_port">port manual tcp adb</string>
     <string name="search_keywords_recording_offline">offline without wifi reboot</string>
