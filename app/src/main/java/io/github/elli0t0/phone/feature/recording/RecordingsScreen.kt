@@ -25,6 +25,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -105,7 +106,11 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, modifier: Modifier = Modifier) 
                         RecordingDateFilter.entries.forEach { f ->
                             FilterChip(
                                 selected = filter == f, onClick = { vm.onFilterChanged(f) },
-                                label = { Text(stringResource(f.labelRes())) }
+                                label = { Text(stringResource(f.labelRes())) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                                )
                             )
                         }
                     }

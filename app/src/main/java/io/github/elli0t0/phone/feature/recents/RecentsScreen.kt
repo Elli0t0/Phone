@@ -176,7 +176,6 @@ fun RecentsScreen(
     // create-new / add-to-existing chooser dialog.
     var addNumber by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
     var searchVisible by remember { mutableStateOf(uiState.searchQuery.isNotEmpty()) }
-    var menuExpanded by remember { mutableStateOf(false) }
     // Long-press menu, hoisted so expand and menu stay mutually
     // exclusive across rows: expanding dismisses it, opening it
     // collapses any expanded row.
@@ -401,6 +400,16 @@ fun RecentsScreen(
                     // from the top-right with a spring. A Popup draws
                     // above the list, so it never overlaps the first
                     // row or the header.
+                    //
+                    // The menu state lives HERE, inside headerActions,
+                    // not hoisted: the lambda renders twice (header row
+                    // and floating pill), and a shared menuExpanded
+                    // showed the popup from both instances at once —
+                    // the stale one landing over the title. Each
+                    // instance now owns its own menu and its own
+                    // anchor height, so only the visible button's
+                    // popup can show, directly under that button.
+                    var menuExpanded by remember { mutableStateOf(false) }
                     var menuAnchorHeightPx by remember { mutableStateOf(0) }
                     val menuDensity = LocalDensity.current
                     Box(
@@ -464,7 +473,7 @@ fun RecentsScreen(
                                             .clickable { menuExpanded = false; onNavigateToRecordings() }
                                             .padding(
                                                 horizontal = spacing.medium,
-                                                vertical = spacing.small + spacing.extraSmall
+                                                vertical = spacing.small
                                             )
                                             .testTag("recordings_button")
                                     )
@@ -476,7 +485,7 @@ fun RecentsScreen(
                                             .clickable { menuExpanded = false; onNavigateToSettings() }
                                             .padding(
                                                 horizontal = spacing.medium,
-                                                vertical = spacing.small + spacing.extraSmall
+                                                vertical = spacing.small
                                             )
                                             .testTag("settings_button")
                                     )
