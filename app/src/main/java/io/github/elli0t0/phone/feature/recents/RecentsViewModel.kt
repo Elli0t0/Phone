@@ -185,6 +185,10 @@ class RecentsViewModel(
                 CallFilter.MISSED -> call.type == CallType.Missed || call.type == CallType.Rejected
                 CallFilter.INCOMING -> call.type == CallType.Incoming
                 CallFilter.OUTGOING -> call.type == CallType.Outgoing
+                // Pass-through: the ViewModel has no recordings, so
+                // the screen narrows RECORDED sections to groups
+                // with a matched recording instead.
+                CallFilter.RECORDED -> true
             }
 
             val matchesQuery = if (trimmedQuery.isEmpty()) {

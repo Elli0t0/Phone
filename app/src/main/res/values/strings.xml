@@ -154,6 +154,7 @@
     <!-- Recents / Call Log -->
     <string name="recents_search_hint">Search calls</string>
     <string name="recents_pick_date">Pick a date</string>
+    <string name="recents_calls_today">%1$d calls today</string>
     <string name="cd_clear_date_filter">Clear date filter</string>
     <string name="permission_call_log_title">Call log permission</string>
     <string name="permission_call_log_message">Phone needs access to your call history to display recent calls.</string>
@@ -169,6 +170,7 @@
     <string name="filter_missed">Missed</string>
     <string name="filter_incoming">Incoming</string>
     <string name="filter_outgoing">Outgoing</string>
+    <string name="filter_recorded">Recorded</string>
 
     <!-- Call Types -->
     <string name="call_type_incoming">Incoming</string>

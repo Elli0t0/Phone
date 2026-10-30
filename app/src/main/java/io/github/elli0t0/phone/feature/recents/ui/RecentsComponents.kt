@@ -60,7 +60,6 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -83,6 +82,7 @@ import io.github.elli0t0.phone.core.design.insetRowPress
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.settings.model.CardStyle
 import io.github.elli0t0.phone.data.calllog.model.CallGroup
+import io.github.elli0t0.phone.feature.contacts.ui.ContactAvatar
 import io.github.elli0t0.phone.data.recordings.RecordingEntity
 import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import io.github.elli0t0.phone.data.calllog.model.CallType
@@ -272,7 +272,7 @@ fun CallLogRow(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(PhoneDimens.recentsRowHeight)
+                    .padding(vertical = 12.dp)
                     // Only the header row is clickable: the bounded
                     // ripple stays clipped to this row's shape, and
                     // the expanded details and action buttons no
@@ -291,13 +291,31 @@ fun CallLogRow(
                     .then(if (insetCard) Modifier.insetRowPress(rowSource) else Modifier),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Call Type Icon
-                Icon(
-                    painter = painterResource(id = group.type.iconRes),
-                    contentDescription = stringResource(id = group.type.titleRes),
-                    tint = typeColor,
-                    modifier = Modifier.size(PhoneDimens.recentsRowIconSize)
-                )
+                // Avatar with a small direction badge at its
+                // bottom-end corner; the bare direction arrow is gone.
+                Box(modifier = Modifier.size(44.dp)) {
+                    ContactAvatar(
+                        photoUri = group.primaryCall.contactPhotoUri,
+                        displayName = group.displayTitle,
+                        size = 44.dp,
+                        showPersonIcon = group.primaryCall.contactName.isNullOrBlank() &&
+                            group.primaryCall.cachedName.isNullOrBlank()
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(18.dp)
+                            .align(Alignment.BottomEnd)
+                            .background(MaterialTheme.colorScheme.surface, CircleShape)
+                            .padding(2.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = group.type.iconRes),
+                            contentDescription = null,
+                            tint = typeColor,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                }
 
                 Spacer(modifier = Modifier.width(spacing.medium))
 
@@ -314,18 +332,28 @@ fun CallLogRow(
                     ) {
                         Text(
                             text = bidiWrap(group.displayTitle),
-                            style = MaterialTheme.typography.titleMedium.copy(textDirection = TextDirection.Content),
+                            style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Content),
                             color = nameColor,
                             textAlign = TextAlign.Start,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                         if (group.count > 1) {
-                            Text(
-                                text = " (${group.count})",
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                color = nameColor
-                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        MaterialTheme.colorScheme.surfaceVariant,
+                                        RoundedCornerShape(50)
+                                    )
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "(${group.count})",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
 
@@ -339,8 +367,8 @@ fun CallLogRow(
                     }
                     Text(
                         text = bidiWrap(subtitleParts.joinToString(" · ")),
-                        style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.60f),
+                        style = MaterialTheme.typography.bodySmall.copy(textDirection = TextDirection.Content),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Start,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -357,6 +385,7 @@ fun CallLogRow(
                     Spacer(modifier = Modifier.width(spacing.small))
                     RecordingPlayButton(
                         isPlaying = latestRecording.id == playingRecordingId,
+                        size = 36.dp,
                         badgeCount = groupRecordings.size,
                         onClick = { onRecordingPlayClick(latestRecording) }
                     )
@@ -374,7 +403,7 @@ fun CallLogRow(
                 ) {
                     Text(
                         text = formattedTime,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -480,7 +509,7 @@ fun CallLogRow(
             HorizontalDivider(
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = PhoneDimens.recentsDividerAlpha),
                 modifier = Modifier.padding(
-                    start = spacing.medium + PhoneDimens.recentsRowIconSize + spacing.medium,
+                    start = 72.dp,
                     end = spacing.medium
                 )
             )
@@ -504,19 +533,19 @@ fun DaySectionCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(bottom = spacing.small),
-        shape = RoundedCornerShape(PhoneDimens.recentsDayCardCornerRadius)
+        shape = RoundedCornerShape(24.dp)
     ) {
         calls.forEachIndexed { index, group ->
             rowContent(group)
             if (index < calls.lastIndex) {
                 if (insetCard) {
                     HorizontalDivider(
-                        thickness = 0.5.dp,
+                        thickness = 1.dp,
                         color = Color.White.copy(alpha = 0.12f),
                         modifier = Modifier.padding(
                             // Divider starts at the text, not at the row edge:
-                            // row padding + icon + gap.
-                            start = spacing.medium + PhoneDimens.recentsRowIconSize + spacing.medium
+                            // row padding + avatar + gap.
+                            start = 72.dp
                         )
                     )
                 } else {
@@ -524,8 +553,8 @@ fun DaySectionCard(
                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = PhoneDimens.recentsDividerAlpha),
                         modifier = Modifier.padding(
                             // Divider starts at the text, not at the row edge:
-                            // row padding + icon + gap.
-                            start = spacing.medium + PhoneDimens.recentsRowIconSize + spacing.medium,
+                            // row padding + avatar + gap.
+                            start = 72.dp,
                             end = spacing.medium
                         )
                     )

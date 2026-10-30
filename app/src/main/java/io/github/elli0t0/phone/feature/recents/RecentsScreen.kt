@@ -12,6 +12,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -33,6 +35,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AssistChip
@@ -43,6 +46,8 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -73,8 +78,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -88,10 +97,12 @@ import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.LiquidGlassPopupSurface
 import io.github.elli0t0.phone.core.design.Motion
+import io.github.elli0t0.phone.data.calllog.util.CallLogGroupingHelper
 import io.github.elli0t0.phone.data.recordings.RecordingEntity
 import io.github.elli0t0.phone.data.recordings.RecordingMatcher
 import io.github.elli0t0.phone.data.recordings.RecordingQuickPlayer
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
+import io.github.elli0t0.phone.data.settings.model.HeaderSize
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.dialogEnter
 import io.github.elli0t0.phone.core.design.liquidGlass
@@ -109,7 +120,6 @@ import io.github.elli0t0.phone.feature.recents.ui.RecentsEmptyState
 
 import io.github.elli0t0.phone.navigation.StatusBarGradientScrim
 import io.github.elli0t0.phone.navigation.FloatingActionsPill
-import io.github.elli0t0.phone.navigation.PageHeaderItem
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -153,6 +163,25 @@ fun RecentsScreen(
             recordings
         )
     }
+    // RECORDED narrows here, in the screen: the ViewModel has no
+    // recordings, so its RECORDED branch passes everything through
+    // and this keeps only groups with a matched recording.
+    val displayedSections = if (uiState.selectedFilter == CallFilter.RECORDED) {
+        uiState.daySections.mapNotNull { section ->
+            val calls = section.calls.filter { group ->
+                group.calls.any { it.id in recordingByCallId }
+            }
+            if (calls.isEmpty()) null else section.copy(calls = calls)
+        }
+    } else {
+        uiState.daySections
+    }
+    // "N calls today", counted from the displayed (possibly
+    // narrowed) sections, so it always matches the list below.
+    val callsToday = displayedSections
+        .flatMap { it.calls }
+        .flatMap { it.calls }
+        .count { CallLogGroupingHelper.isSameDay(it.date, System.currentTimeMillis()) }
     val quickPlayer = remember { RecordingQuickPlayer(context) }
     DisposableEffect(Unit) { onDispose { quickPlayer.stop() } }
     val permissionState = rememberCallLogPermissionState(
@@ -506,7 +535,7 @@ fun RecentsScreen(
                 .background(Color.Transparent)
                 // No Scaffold top inset here: the sticky bar covers
                 // the status area itself and the header self-insets
-                // (PageHeaderItem), so the list starts at the top.
+                // (RecentsHeaderItem), so the list starts at the top.
                 .padding(
                     PaddingValues(
                         start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
@@ -623,20 +652,48 @@ fun RecentsScreen(
                         // a third of the screen above the results.
                         if (!searchVisible) {
                             item(key = "recents_header") {
-                                PageHeaderItem(
+                                RecentsHeaderItem(
                                     title = stringResource(id = R.string.app_name),
-                                    subtitle = null,
-                                    modifier = Modifier
-                                        .animateItem(),
+                                    callsToday = callsToday,
+                                    modifier = Modifier.animateItem(),
                                     // Same pill as the Contacts actions toolbar;
                                     // the floating pill below keeps the bare
                                     // actions, so this does not double-pill.
-                                    actions = {
-                                        ContactsPillContainer {
-                                            headerActions()
-                                        }
-                                    }
+                                    actions = headerActions
                                 )
+                            }
+                        }
+                        // Filter chips directly under the header, always
+                        // visible instead of hidden behind the filter
+                        // icon (which stays as the more-filters/date
+                        // entry). Scrolls away with the header.
+                        item(key = "recents_filter_chips") {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState())
+                                    .padding(bottom = spacing.small)
+                                    .animateItem(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                listOf(
+                                    CallFilter.ALL,
+                                    CallFilter.MISSED,
+                                    CallFilter.OUTGOING,
+                                    CallFilter.INCOMING,
+                                    CallFilter.RECORDED
+                                ).forEach { filter ->
+                                    FilterChip(
+                                        selected = uiState.selectedFilter == filter,
+                                        onClick = { viewModel.onFilterSelected(filter) },
+                                        label = { Text(text = stringResource(id = filter.titleRes)) },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                                        ),
+                                        modifier = Modifier.testTag("filter_chip_${filter.name.lowercase()}")
+                                    )
+                                }
                             }
                         }
                         // Error State
@@ -665,11 +722,11 @@ fun RecentsScreen(
                         }
 
                         // Loading skeleton or Empty calls state
-                        if (uiState.isLoading && uiState.daySections.isEmpty()) {
+                        if (uiState.isLoading && displayedSections.isEmpty()) {
                             items(count = 5, key = { "skeleton_$it" }) {
                                 RecentsLoadingSkeletonItem()
                             }
-                        } else if (uiState.errorMessage == null && uiState.daySections.isEmpty()) {
+                        } else if (uiState.errorMessage == null && displayedSections.isEmpty()) {
                             item(key = "empty_recents") {
                                 RecentsEmptyState(
                                     isFiltered = uiState.selectedFilter != CallFilter.ALL || uiState.isSearching || uiState.selectedDate != null,
@@ -679,16 +736,16 @@ fun RecentsScreen(
                         } else if (uiState.errorMessage == null) {
 
                             // Grouped Call List with Day Headers
-                            uiState.daySections.forEach { section ->
+                            displayedSections.forEach { section ->
                                 item(key = "header_${section.title}") {
                                     Text(
                                         text = section.title,
-                                        style = MaterialTheme.typography.bodyMedium,
+                                        style = MaterialTheme.typography.labelLarge,
                                         color = MaterialTheme.colorScheme.outline,
                                         modifier = Modifier
                                             .animateItem()
                                             .fillMaxWidth()
-                                            .padding(top = spacing.small, bottom = spacing.extraSmall)
+                                            .padding(start = 20.dp, top = spacing.small, bottom = spacing.extraSmall)
                                             .testTag("day_header_${section.title}")
                                     )
                                 }
@@ -789,6 +846,64 @@ fun RecentsScreen(
             )
         }
         }
+    }
+}
+
+/**
+ * Recents-only header: the large title left-aligned with the
+ * actions pill on the same row (no separate row above it, so no
+ * empty band above the title) and a "N calls today" subtitle
+ * under it. Contacts keeps the shared centered header.
+ */
+@Composable
+private fun RecentsHeaderItem(
+    title: String,
+    callsToday: Int,
+    actions: @Composable RowScope.() -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val scale = when (LocalAppSettings.current.headerSize) {
+        HeaderSize.COMPACT -> 0.85f
+        HeaderSize.STANDARD -> 1f
+        HeaderSize.LARGE -> 1.2f
+    }
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(horizontal = 16.dp)
+            .padding(top = 12.dp * scale, bottom = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp * scale)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineLarge.copy(
+                    fontSize = PhoneDimens.headerTitleExpandedSize * scale,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = (-0.4).sp
+                ),
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Start,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
+            ContactsPillContainer {
+                actions()
+            }
+        }
+        Text(
+            text = stringResource(id = R.string.recents_calls_today, callsToday),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Start,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 

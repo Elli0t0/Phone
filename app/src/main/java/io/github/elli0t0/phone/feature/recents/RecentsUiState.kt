@@ -10,7 +10,8 @@ enum class CallFilter(@StringRes val titleRes: Int) {
     ALL(R.string.filter_all),
     MISSED(R.string.filter_missed),
     INCOMING(R.string.filter_incoming),
-    OUTGOING(R.string.filter_outgoing)
+    OUTGOING(R.string.filter_outgoing),
+    RECORDED(R.string.filter_recorded)
 }
 
 data class RecentsUiState(
