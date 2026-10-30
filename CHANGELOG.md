@@ -164,6 +164,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.17.8]
+
+- The floating actions pill no longer overlaps the search bar: it hides while search is open on Recents and Contacts, and returns when search closes.
+- Short silent recordings are no longer kept: a non-test capture under 2 seconds that is silent (or unmeasured) has its file deleted and no row saved, and rows like that kept by older versions are cleaned up once on start.
+- Recents rows now show a play button when a recording matches the call (matched by number and start time, each recording used at most once). Tapping it plays the recording in place; tapping again (or when it ends) stops, and a missing file shows a "Recording file not found" message.
+- Settings can now be backed up and restored as JSON from the About page: "Back up settings" saves all portable settings to a file, "Restore settings" loads one back, with a toast reporting how many settings were restored (device-specific keys are never exported).
+- After a reboot, if auto-record is on but the recorder is not ready a minute later, a notification warns about it (and says to connect to Wi-Fi once when there is no Wi-Fi, instead of the generic failure text). The manual record button shows the same Wi-Fi hint when that is the reason it cannot start.
+- Dead code removed: the unused LiquidGlassGemButton composable is gone.
+
 ## [0.17.7]
 
 - Recents and Contacts no longer show a collapsed header bar: no title, hairline, or blur band after scrolling. Only the floating actions pill remains once the big header scrolls off, and a subtle gradient behind just the status-bar area keeps the status icons readable over scrolling rows.

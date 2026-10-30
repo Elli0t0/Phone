@@ -13,6 +13,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -26,6 +27,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -79,6 +81,7 @@ import io.github.elli0t0.phone.core.design.insetRowPress
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.settings.model.CardStyle
 import io.github.elli0t0.phone.data.calllog.model.CallGroup
+import io.github.elli0t0.phone.data.recordings.RecordingEntity
 import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import io.github.elli0t0.phone.data.calllog.model.CallType
 import android.text.format.DateFormat
@@ -109,6 +112,9 @@ fun CallLogRow(
     onDeleteClick: () -> Unit,
     showDivider: Boolean = true,
     showSim: Boolean = false,
+    recording: RecordingEntity? = null,
+    isPlayingRecording: Boolean = false,
+    onRecordingClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
@@ -289,6 +295,30 @@ fun CallLogRow(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
+                }
+
+                // Recording playback, when this group has a matched
+                // recording: a play/pause button before the time slot.
+                if (recording != null) {
+                    Spacer(modifier = Modifier.width(spacing.small))
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f))
+                            .clickable { onRecordingClick() }
+                            .testTag("recents_recording_icon"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(if (isPlayingRecording) R.drawable.ic_pause else R.drawable.ic_play),
+                            contentDescription = stringResource(
+                                if (isPlayingRecording) R.string.recents_pause_recording else R.string.recents_play_recording
+                            ),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
 
                 // Time in its own fixed-width slot at the row's

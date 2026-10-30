@@ -3,6 +3,9 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import android.telecom.TelecomManager
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,12 +19,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
@@ -246,6 +253,72 @@ fun AboutCard(
                 title = stringResource(id = R.string.update_check_title),
                 searchId = "update_check",
                 onClick = runUpdateCheck
+            )
+        }
+    }
+}
+
+@Composable
+fun BackupCard(
+    viewModel: SettingsViewModel,
+    spacing: Spacing
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null) scope.launch {
+            val ok = withContext(Dispatchers.IO) {
+                runCatching {
+                    val json = viewModel.exportSettings()
+                    context.contentResolver.openOutputStream(uri, "wt")!!.use {
+                        it.write(json.toByteArray(Charsets.UTF_8))
+                    }
+                }.isSuccess
+            }
+            Toast.makeText(
+                context,
+                if (ok) R.string.settings_backup_done else R.string.settings_backup_failed,
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) scope.launch {
+            val count = withContext(Dispatchers.IO) {
+                runCatching {
+                    val json = context.contentResolver.openInputStream(uri)!!.use {
+                        it.readBytes().toString(Charsets.UTF_8)
+                    }
+                    viewModel.importSettings(json)
+                }.getOrNull()
+            }
+            val text = if (count != null) {
+                context.getString(R.string.settings_restore_done, count)
+            } else {
+                context.getString(R.string.settings_restore_failed)
+            }
+            Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
+        }
+    }
+    Card(
+        shape = settingsListCardShape(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(spacing.medium)) {
+            SettingsRow(
+                title = stringResource(id = R.string.settings_backup_title),
+                subtitle = stringResource(id = R.string.settings_backup_subtitle),
+                onClick = { exportLauncher.launch("phone-settings.json") }
+            )
+            SettingsRow(
+                title = stringResource(id = R.string.settings_restore_title),
+                subtitle = stringResource(id = R.string.settings_restore_subtitle),
+                onClick = { importLauncher.launch(arrayOf("application/json", "text/plain", "*/*")) }
             )
         }
     }

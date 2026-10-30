@@ -58,6 +58,7 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -87,6 +88,9 @@ import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.LiquidGlassPopupSurface
 import io.github.elli0t0.phone.core.design.Motion
+import io.github.elli0t0.phone.data.recordings.RecordingEntity
+import io.github.elli0t0.phone.data.recordings.RecordingMatcher
+import io.github.elli0t0.phone.data.recordings.RecordingQuickPlayer
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.dialogEnter
@@ -137,6 +141,19 @@ fun RecentsScreen(
     )
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    // Recordings matched to call rows, for the per-row playback
+    // icon. Matched once per uiState/recordings change, not per row.
+    val recordings by app.container.recordingsRepository.recordings
+        .collectAsStateWithLifecycle(initialValue = emptyList())
+    val recordingByCallId = remember(uiState.daySections, recordings) {
+        if (recordings.isEmpty()) emptyMap<Long, RecordingEntity>()
+        else RecordingMatcher.match(
+            uiState.daySections.flatMap { s -> s.calls.flatMap { it.calls } },
+            recordings
+        )
+    }
+    val quickPlayer = remember { RecordingQuickPlayer(context) }
+    DisposableEffect(Unit) { onDispose { quickPlayer.stop() } }
     val permissionState = rememberCallLogPermissionState(
         onPermissionChanged = { isGranted ->
             if (isGranted) {
@@ -660,6 +677,7 @@ fun RecentsScreen(
                                         modifier = Modifier
                                             .animateItem()
                                     ) { group ->
+                                        val recording = group.calls.firstNotNullOfOrNull { recordingByCallId[it.id] }
                                         CallLogRow(
                                             group = group,
                                             isExpanded = uiState.expandedCallId == group.id,
@@ -691,7 +709,15 @@ fun RecentsScreen(
                                                 clipboardManager.setText(AnnotatedString(group.number))
                                             },
                                             onDeleteClick = { deleteCallWithUndo(group.id) },
-                                            showDivider = false
+                                            showDivider = false,
+                                            recording = recording,
+                                            isPlayingRecording = recording != null && quickPlayer.playingId == recording.id,
+                                            onRecordingClick = {
+                                                if (recording != null) {
+                                                    val error = quickPlayer.toggle(recording)
+                                                    if (error != null) recentsScope.launch { snackbarHostState.showSnackbar(error) }
+                                                }
+                                            }
                                         )
                                     }
                                 }
@@ -731,15 +757,18 @@ fun RecentsScreen(
         )
         // Floating actions pill: the header's buttons, overlaid at
         // the top-right once the header has scrolled off. No title,
-        // no full-width band — just the buttons.
-        FloatingActionsPill(
-            listState = listState,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .statusBarsPadding()
-                .padding(end = 16.dp, top = 8.dp),
-            actions = headerActions
-        )
+        // no full-width band — just the buttons. Hidden while the
+        // search bar is open so it never overlaps it.
+        if (!searchVisible) {
+            FloatingActionsPill(
+                listState = listState,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .statusBarsPadding()
+                    .padding(end = 16.dp, top = 8.dp),
+                actions = headerActions
+            )
+        }
         }
     }
 }

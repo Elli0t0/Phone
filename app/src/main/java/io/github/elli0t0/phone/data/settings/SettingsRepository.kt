@@ -4,11 +4,13 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
@@ -49,6 +51,7 @@ import io.github.elli0t0.phone.data.settings.model.ListDensity
 import io.github.elli0t0.phone.data.settings.model.StartTab
 import io.github.elli0t0.phone.data.settings.model.ThemeMode
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "phone_settings")
@@ -130,6 +133,10 @@ interface SettingsRepository {
     suspend fun setDuplicatesDismissed(dismissed: Boolean)
     suspend fun setFavoritesHintDismissed(dismissed: Boolean)
     suspend fun resetToDefaults()
+
+    /** JSON backup; default no-ops so other implementations keep compiling. */
+    suspend fun exportToJson(): String = SettingsBackup.encode(emptyMap())
+    suspend fun importFromJson(json: String): Int = 0
 }
 
 class DataStoreSettingsRepository(
@@ -946,6 +953,29 @@ class DataStoreSettingsRepository(
                 .take(5)
                 .joinToString("\n")
         }
+    }
+
+    override suspend fun exportToJson(): String {
+        val prefs = dataStore.data.first()
+        return SettingsBackup.encode(prefs.asMap().mapKeys { it.key.name })
+    }
+
+    override suspend fun importFromJson(json: String): Int {
+        val values = SettingsBackup.decode(json)
+        dataStore.edit { prefs ->
+            for ((name, value) in values) {
+                when (value) {
+                    is Boolean -> prefs[booleanPreferencesKey(name)] = value
+                    is Int -> prefs[intPreferencesKey(name)] = value
+                    is Long -> prefs[longPreferencesKey(name)] = value
+                    is Float -> prefs[floatPreferencesKey(name)] = value
+                    is Double -> prefs[doublePreferencesKey(name)] = value
+                    is String -> prefs[stringPreferencesKey(name)] = value
+                    is Set<*> -> prefs[stringSetPreferencesKey(name)] = value.map { it.toString() }.toSet()
+                }
+            }
+        }
+        return values.size
     }
 
     override suspend fun setSpeedDial(speedDial: Map<Char, String>) {

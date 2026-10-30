@@ -526,6 +526,10 @@ class SettingsViewModel(
     }
     fun setQuickDeclineMessages(messages: List<String>) = onQuickDeclineMessagesChanged(messages)
 
+    /** JSON backup passthroughs; the launchers below call these off the main thread. */
+    suspend fun exportSettings(): String = settingsRepository.exportToJson()
+    suspend fun importSettings(json: String): Int = settingsRepository.importFromJson(json)
+
     fun onResetToDefaults() {
         viewModelScope.launch {
             settingsRepository.resetToDefaults()

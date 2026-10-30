@@ -6,6 +6,8 @@ import android.content.Intent
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Environment
 import android.os.ParcelFileDescriptor
@@ -28,6 +30,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -190,6 +193,16 @@ class RecordingController(
     )
 
     init {
+        // One-off cleanup of short silent rows kept by older
+        // versions: the files themselves were already short and
+        // silent, so only the rows are dropped.
+        scope.launch {
+            runCatching {
+                recordingsRepository.recordings.first()
+                    .filter { !it.isTest && it.isSilent && it.durationMs < MIN_KEEP_MS }
+                    .forEach { recordingsRepository.remove(it) }
+            }
+        }
         scope.launch {
             CallRepository.ongoingCallModel.collect { model ->
                 if (model == null) autoHandledCallId = null
@@ -253,7 +266,7 @@ class RecordingController(
         if (adbBackend.status.value != BackendStatus.READY) {
             adbBackend.refreshStatus()
             if (adbBackend.status.value != BackendStatus.READY) {
-                return Result.failure(IllegalStateException("Recorder is not ready"))
+                return Result.failure(IllegalStateException(notReadyMessage()))
             }
         }
         // Tapped before the call connected: arm instead of recording
@@ -353,6 +366,28 @@ class RecordingController(
      * existing recording channel. Tapping it opens the Call
      * recording page.
      */
+    /**
+     * Post-reboot check (BootReceiver): wait for the system to
+     * settle, then warn if auto-record is on but the recorder
+     * is not ready. The auto-record flag is read AFTER the delay
+     * so the flow carries its real stored value by then.
+     */
+    suspend fun checkReadyAfterBoot() {
+        delay(BOOT_CHECK_DELAY_MS)
+        if (!autoRecordCalls.value) return
+        adbBackend.refreshStatus()
+        if (adbBackend.status.value != BackendStatus.READY) postAutoRecordFailedNotification()
+    }
+
+    private fun hasWifi(): Boolean = runCatching {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        @Suppress("DEPRECATION")
+        cm.allNetworks.any { cm.getNetworkCapabilities(it)?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true }
+    }.getOrDefault(true)
+
+    private fun notReadyMessage() =
+        if (hasWifi()) "Recorder is not ready" else context.getString(R.string.recording_needs_wifi)
+
     private fun postAutoRecordFailedNotification() {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (manager.getNotificationChannel(RecordingForegroundService.CHANNEL_ID) == null) {
@@ -377,7 +412,7 @@ class RecordingController(
         val notification = NotificationCompat.Builder(context, RecordingForegroundService.CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_phone)
             .setContentTitle(context.getString(R.string.settings_call_recording))
-            .setContentText(context.getString(R.string.recording_auto_failed))
+            .setContentText(context.getString(if (hasWifi()) R.string.recording_auto_failed else R.string.recording_needs_wifi))
             .setContentIntent(pending)
             .setAutoCancel(true)
             .build()
@@ -415,6 +450,12 @@ class RecordingController(
             // silent message.
             val silent = result.peak != null && result.peak < 0.01f
             _lastCaptureDiagnostic.value = result.diagnostic()
+            // Short silent (or unmeasured) non-test capture: delete
+            // the file and keep no row for it.
+            if (!session.isTest && result.durationMs < MIN_KEEP_MS && (silent || result.peak == null)) {
+                runCatching { context.contentResolver.delete(session.uri, null, null) }
+                return@onSuccess
+            }
             if (!session.isTest) _lastRecordingSilent.value = silent
             runCatching {
                 recordingsRepository.add(
@@ -460,5 +501,9 @@ class RecordingController(
     companion object {
         private const val TEST_DURATION_MS = 3000L
         private const val AUTO_RECORD_NOTIFICATION_ID = 4403
+        /** Non-test captures shorter than this that are silent (or
+         * unmeasured) are deleted instead of kept. */
+        const val MIN_KEEP_MS = 2000L
+        private const val BOOT_CHECK_DELAY_MS = 60_000L
     }
 }

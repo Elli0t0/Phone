@@ -45,6 +45,14 @@
     <string name="dialpad_add_to_contact">افزودن به مخاطب</string>
     <string name="dialpad_message">پیام</string>
     <string name="settings_debug_log">گزارش اشکال‌زدایی</string>
+    <string name="settings_backup_title">پشتیبان‌گیری از تنظیمات</string>
+    <string name="settings_backup_subtitle">ذخیرهٔ همهٔ تنظیمات در فایل JSON</string>
+    <string name="settings_restore_title">بازیابی تنظیمات</string>
+    <string name="settings_restore_subtitle">بارگذاری تنظیمات از فایل پشتیبان</string>
+    <string name="settings_backup_done">تنظیمات ذخیره شد</string>
+    <string name="settings_backup_failed">پشتیبان‌گیری ناموفق بود</string>
+    <string name="settings_restore_done">%1$d تنظیم بازیابی شد</string>
+    <string name="settings_restore_failed">فایل تنظیمات Phone معتبر نیست</string>
     <string name="add_to_existing_contact">افزودن به مخاطب موجود</string>
     <string name="history_day_today">امروز</string>
     <string name="history_day_yesterday">دیروز</string>
@@ -92,6 +100,9 @@
     <string name="recording_silent_badge">بی‌صدا</string>
     <string name="recording_armed">ضبط با وصل شدن تماس آغاز می‌شود</string>
     <string name="recording_active">در حال ضبط</string>
+    <string name="recents_play_recording">پخش ضبط</string>
+    <string name="recents_pause_recording">توقف پخش</string>
+    <string name="recents_recording_missing">فایل ضبط پیدا نشد</string>
     <string name="recording_rec">REC</string>
     <string name="quick_reply_on_my_way">در راهم</string>
     <string name="quick_reply_call_later">بعداً تماس می‌گیرم</string>
@@ -148,6 +159,7 @@
     <string name="recording_auto_record">ضبط خودکار همه تماس‌ها</string>
     <string name="recording_auto_note">پس از هر راه‌اندازی مجدد، یک بار به Wi-Fi نیاز دارد</string>
     <string name="recording_auto_failed">ضبط خودکار شروع نشد. «Phone > ضبط تماس» را باز کنید.</string>
+    <string name="recording_needs_wifi">ضبط آماده نیست. یک بار به Wi-Fi وصل شوید تا ضبط شروع شود.</string>
     <string name="recording_offline_mode_desc">پس از هر بار راه‌اندازی مجدد، یک بار به Wi-Fi نیاز دارد. یک درگاه اشکال‌زدایی محلی (5555) باز می‌کند که با کلید جفت‌سازی محافظت می‌شود.</string>
     <string name="recording_status_offline_active">درگاه آفلاین فعال است (تا راه‌اندازی مجدد)</string>
     <string name="recording_error_offline_needs_wifi">برای فعال‌سازی دوباره‌ی ضبط آفلاین، یک بار به Wi-Fi وصل شوید.</string>

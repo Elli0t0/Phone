@@ -372,6 +372,14 @@
     <string name="settings_supplementary">Supplementary services</string>
     <string name="settings_permissions">Permissions</string>
     <string name="settings_about_phone">About Phone</string>
+    <string name="settings_backup_title">Back up settings</string>
+    <string name="settings_backup_subtitle">Save all settings to a JSON file</string>
+    <string name="settings_restore_title">Restore settings</string>
+    <string name="settings_restore_subtitle">Load settings from a backup file</string>
+    <string name="settings_backup_done">Settings saved</string>
+    <string name="settings_backup_failed">Backup failed</string>
+    <string name="settings_restore_done">Restored %1$d settings</string>
+    <string name="settings_restore_failed">Not a valid Phone settings file</string>
     <string name="settings_debug_log">Debug log</string>
     <string name="settings_about_version">Version %1$s (%2$d)</string>
     <string name="settings_view_source">View source</string>
@@ -487,6 +495,9 @@
     <string name="recording_silent_badge">Silent</string>
     <string name="recording_armed">Recording starts when the call connects</string>
     <string name="recording_active">Recording</string>
+    <string name="recents_play_recording">Play recording</string>
+    <string name="recents_pause_recording">Stop playback</string>
+    <string name="recents_recording_missing">Recording file not found</string>
     <string name="recording_rec">REC</string>
     <string name="recording_active_call">Recording this call</string>
     <string name="recording_notification_channel">Call recording</string>
@@ -494,6 +505,7 @@
     <string name="recording_auto_record">Record all calls automatically</string>
     <string name="recording_auto_note">Needs Wi-Fi once after every reboot</string>
     <string name="recording_auto_failed">Auto-recording could not start. Open Phone > Call recording.</string>
+    <string name="recording_needs_wifi">Recorder isn't ready. Connect to Wi-Fi once so recording can start.</string>
     <string name="recording_notification_title">Recording call</string>
     <string name="recording_notification_text">Call recording in progress</string>
     <string name="recording_stop">Stop</string>

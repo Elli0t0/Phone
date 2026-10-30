@@ -198,6 +198,9 @@ fun AboutPage(
         spacing = spacing,
         onNavigateBack = onNavigateBack
     ) {
-        AboutCard(settings, viewModel, dialogs, spacing, runUpdateCheck)
+        Column(verticalArrangement = Arrangement.spacedBy(spacing.medium)) {
+            AboutCard(settings, viewModel, dialogs, spacing, runUpdateCheck)
+            BackupCard(viewModel, spacing)
+        }
     }
 }

@@ -965,33 +965,6 @@ fun LiquidGlassChip(
 }
 
 /**
- * Liquid-glass gem button: a saturated, jewel-like circular button for
- * the green Answer and red Decline / End Call buttons. Pass the gem
- * color as [tint]; the selected treatment makes it read as solid glass.
- */
-@Composable
-fun LiquidGlassGemButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    tint: Color,
-    shape: Shape = CircleShape,
-    forceDarkGlass: Boolean = false,
-    floating: Boolean = false,
-    content: @Composable BoxScope.() -> Unit
-) {
-    val source = remember { MutableInteractionSource() }
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = modifier
-            .clip(shape)
-            .clickable(interactionSource = source, indication = null, onClick = onClick)
-            .liquidGlass(shape, tint, true, forceDarkGlass, floating)
-            .glassPress(source),
-        content = content
-    )
-}
-
-/**
  * Liquid-glass popup surface: a larger glass container for dialogs,
  * menus, and bottom sheets. Popups float above content, so [floating]
  * defaults to true and the shadow is drawn outside the shape.

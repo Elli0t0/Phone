@@ -573,18 +573,21 @@ private fun ContactsContent(
         )
         // Floating actions pill: Groups + header buttons, overlaid
         // at the top-right once the header has scrolled off. No
-        // title, no full-width band — just the buttons.
-        FloatingActionsPill(
-            listState = listState,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .statusBarsPadding()
-                .padding(end = 16.dp, top = 8.dp),
-            actions = {
-                groupsIconButton()
-                compactContactsActions()
-            }
-        )
+        // title, no full-width band — just the buttons. Hidden
+        // while the search bar is open so it never overlaps it.
+        if (!searchVisible) {
+            FloatingActionsPill(
+                listState = listState,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .statusBarsPadding()
+                    .padding(end = 16.dp, top = 8.dp),
+                actions = {
+                    groupsIconButton()
+                    compactContactsActions()
+                }
+            )
+        }
         }
     }
 }
