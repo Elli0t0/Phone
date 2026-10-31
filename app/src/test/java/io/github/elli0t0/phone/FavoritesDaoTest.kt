@@ -41,6 +41,18 @@ class FakeFavoritesDao : FavoritesDao {
         entitiesFlow.value = current
     }
 
+    override suspend fun rekeyLookupKey(oldKey: String, newKey: String) {
+        val current = entitiesFlow.value.toMutableList()
+        if (current.any { it.contactLookupKey == newKey }) {
+            current.removeAll { it.contactLookupKey == oldKey }
+        } else {
+            current.replaceAll {
+                if (it.contactLookupKey == oldKey) it.copy(contactLookupKey = newKey) else it
+            }
+        }
+        entitiesFlow.value = current
+    }
+
     override fun isFavoriteFlow(lookupKey: String): Flow<Boolean> {
         return entitiesFlow.map { list ->
             list.any { it.contactLookupKey == lookupKey }
@@ -108,6 +120,23 @@ class FavoritesDaoTest {
         dao.deleteFavoriteByLookupKey("k1")
         assertFalse(dao.isFavorite("k1"))
         assertEquals(0, dao.getCount())
+    }
+
+    @Test
+    fun dao_rekeyLookupKey_renamesAndDropsOnCollision() = runTest {
+        dao.insertFavorite(FavoriteContactEntity("kOld", 1L, position = 0))
+        dao.insertFavorite(FavoriteContactEntity("kOther", 2L, position = 1))
+
+        dao.rekeyLookupKey("kOld", "kNew")
+        assertFalse(dao.isFavorite("kOld"))
+        assertTrue(dao.isFavorite("kNew"))
+        assertEquals(2, dao.getCount())
+
+        // Collision: the new key already exists, so the old row drops.
+        dao.rekeyLookupKey("kNew", "kOther")
+        assertFalse(dao.isFavorite("kNew"))
+        assertTrue(dao.isFavorite("kOther"))
+        assertEquals(1, dao.getCount())
     }
 
     @Test
