@@ -101,6 +101,8 @@ interface SettingsRepository {
     suspend fun setDynamicHighlights(enabled: Boolean)
     suspend fun setBackdrop(backdrop: Backdrop)
     suspend fun setAppBackground(background: AppBackground)
+    suspend fun setAppBackgroundIntensity(intensity: Float)
+    suspend fun setAppBackgroundPaletteId(id: String)
     suspend fun setAppBackgroundDim(dim: Float)
     suspend fun setAppBackgroundPhotoVersion(version: Long)
     suspend fun setDefaultStartTab(tab: StartTab)
@@ -207,6 +209,8 @@ class DataStoreSettingsRepository(
         val DYNAMIC_HIGHLIGHTS = booleanPreferencesKey("dynamic_highlights")
         val BACKDROP = stringPreferencesKey("backdrop")
         val APP_BACKGROUND = stringPreferencesKey("app_background")
+        val APP_BACKGROUND_INTENSITY = floatPreferencesKey("app_background_intensity")
+        val APP_BACKGROUND_PALETTE_ID = stringPreferencesKey("app_background_palette_id")
         val APP_BACKGROUND_DIM = floatPreferencesKey("app_background_dim")
         val APP_BACKGROUND_PHOTO_VERSION = longPreferencesKey("app_background_photo_version")
         val DEFAULT_START_TAB = stringPreferencesKey("default_start_tab")
@@ -336,7 +340,25 @@ class DataStoreSettingsRepository(
         val backdropStr = prefs[Keys.BACKDROP]
         val backdrop = backdropStr?.let { runCatching { Backdrop.valueOf(it) }.getOrNull() } ?: Backdrop.SUBTLE
         val appBackgroundStr = prefs[Keys.APP_BACKGROUND]
-        val appBackground = appBackgroundStr?.let { runCatching { AppBackground.valueOf(it) }.getOrNull() } ?: AppBackground.AURORA
+        val storedBackground = appBackgroundStr?.let { runCatching { AppBackground.valueOf(it) }.getOrNull() } ?: AppBackground.AURORA
+        // Intensity migration (0.18.7, read-time like the legacy
+        // key-style flag): while no intensity was ever stored, the
+        // old Backdrop gate drives it — OFF hides backgrounds by
+        // forcing PLAIN, SUBTLE -> 0.5, VIVID -> 1.0. Once the
+        // slider (or a background pick, see setAppBackground)
+        // writes an intensity, the gate is ignored for good.
+        val rawIntensity = prefs[Keys.APP_BACKGROUND_INTENSITY]
+        val appBackgroundIntensity = (rawIntensity ?: when (backdrop) {
+            Backdrop.SUBTLE -> 0.5f
+            Backdrop.VIVID -> 1.0f
+            else -> 0.7f
+        }).coerceIn(0.1f, 1.0f)
+        val appBackground = if (rawIntensity == null && backdrop == Backdrop.OFF) {
+            AppBackground.PLAIN
+        } else {
+            storedBackground
+        }
+        val appBackgroundPaletteId = prefs[Keys.APP_BACKGROUND_PALETTE_ID] ?: "emerald"
         val appBackgroundDim = (prefs[Keys.APP_BACKGROUND_DIM] ?: 0.35f).coerceIn(0f, 0.9f)
         val appBackgroundPhotoVersion = prefs[Keys.APP_BACKGROUND_PHOTO_VERSION] ?: 0L
 
@@ -516,6 +538,8 @@ class DataStoreSettingsRepository(
             dynamicHighlights = dynamicHighlights,
             backdrop = backdrop,
             appBackground = appBackground,
+            appBackgroundIntensity = appBackgroundIntensity,
+            appBackgroundPaletteId = appBackgroundPaletteId,
             appBackgroundDim = appBackgroundDim,
             appBackgroundPhotoVersion = appBackgroundPhotoVersion,
             defaultStartTab = startTab,
@@ -824,6 +848,30 @@ class DataStoreSettingsRepository(
     override suspend fun setAppBackground(background: AppBackground) {
         dataStore.edit { prefs ->
             prefs[Keys.APP_BACKGROUND] = background.name
+            // Complete the intensity migration on the first pick:
+            // without this, a stored OFF gate would keep forcing
+            // PLAIN after the user chose a background.
+            if (prefs[Keys.APP_BACKGROUND_INTENSITY] == null) {
+                val backdropStr = prefs[Keys.BACKDROP]
+                val backdrop = backdropStr?.let { runCatching { Backdrop.valueOf(it) }.getOrNull() } ?: Backdrop.SUBTLE
+                prefs[Keys.APP_BACKGROUND_INTENSITY] = when (backdrop) {
+                    Backdrop.SUBTLE -> 0.5f
+                    Backdrop.VIVID -> 1.0f
+                    else -> 0.7f
+                }
+            }
+        }
+    }
+
+    override suspend fun setAppBackgroundIntensity(intensity: Float) {
+        dataStore.edit { prefs ->
+            prefs[Keys.APP_BACKGROUND_INTENSITY] = intensity.coerceIn(0.1f, 1.0f)
+        }
+    }
+
+    override suspend fun setAppBackgroundPaletteId(id: String) {
+        dataStore.edit { prefs ->
+            prefs[Keys.APP_BACKGROUND_PALETTE_ID] = id
         }
     }
 

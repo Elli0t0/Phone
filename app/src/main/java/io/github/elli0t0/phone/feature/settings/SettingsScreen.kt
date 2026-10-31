@@ -114,7 +114,6 @@ import io.github.elli0t0.phone.feature.recording.ExcludedNumbersScreen
 import io.github.elli0t0.phone.feature.recording.RecordingSettingsScreen
 import io.github.elli0t0.phone.feature.setup.SetupChecklist
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
-import io.github.elli0t0.phone.data.settings.model.Backdrop
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
 import io.github.elli0t0.phone.data.settings.model.GlassIntensity
@@ -252,12 +251,7 @@ fun SettingsScreen(
     val accentLabel = AccentPreset.entries.find { it.colorValue == settings.accentColor }?.label
         ?: stringResource(id = R.string.settings_custom_color)
     val appearanceSubtitle = "${settings.appStyle.label} · ${settings.themeMode.label} · $accentLabel"
-    val glassSubtitle = "${settings.glassIntensity.label} · " +
-        if (settings.pureBlackDarkMode) {
-            Backdrop.OFF.label
-        } else {
-            settings.backdrop.label
-        }
+    val glassSubtitle = "${settings.glassIntensity.label} · ${settings.appBackground.label}"
     val layoutNavSubtitle = "${settings.listDensity.label} · ${settings.defaultStartTab.label}"
     val keypadSubtitle = "${settings.keypadStyle.label} · ${settings.keyStyle.label}"
     val callsSubtitle = "${settings.callDisplay.label} · ${settings.answerStyle.label}"

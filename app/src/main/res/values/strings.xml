@@ -315,6 +315,11 @@
     <string name="settings_dynamic_highlights">Dynamic highlights</string>
     <string name="settings_backdrop">Backdrop</string>
     <string name="settings_app_background">Background</string>
+    <string name="settings_app_background_intensity">Background intensity</string>
+    <string name="settings_app_background_colors">Colors</string>
+    <string name="settings_app_background_scenes">Scenes</string>
+    <string name="settings_app_background_photo">Photo</string>
+    <string name="settings_app_background_pure_black_note">Pure black is on: backgrounds still show, dimmed over a black base.</string>
     <string name="app_background_photo_failed">Could not use this image</string>
     <string name="app_background_change_photo">Change photo</string>
     <string name="app_background_darkness">Darkness</string>

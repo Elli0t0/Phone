@@ -66,7 +66,7 @@ import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.core.telecom.CallManager
-import io.github.elli0t0.phone.data.settings.model.Backdrop
+import io.github.elli0t0.phone.data.settings.model.AppBackground
 import io.github.elli0t0.phone.data.settings.model.ThemeMode
 import io.github.elli0t0.phone.feature.contacts.ui.ContactSearchBar
 import io.github.elli0t0.phone.feature.setup.SetupWarningCard
@@ -209,9 +209,11 @@ fun DialpadScreen(
 
     // Keypad page background: transparent when the ambient backdrop
     // is live so it shows through, like Recents; otherwise the theme
-    // background, as before.
+    // background, as before. PLAIN is the only background that draws
+    // nothing — including in pure black, where the scene still
+    // shows dimmed over the black base (0.18.7).
     val backdropVisible = LocalAppSettings.current.let {
-        it.backdrop != Backdrop.OFF && !it.pureBlackDarkMode
+        it.appBackground != AppBackground.PLAIN
     }
     // Small screens (< 640dp tall) get smaller keys with tighter
     // rows; the call button stays 72dp.

@@ -67,7 +67,8 @@ enum class SettingsPage {
     CALL_BACKGROUND,
     BLOCKED_NUMBERS,
     RECORDING,
-    ANSWER_STYLE
+    ANSWER_STYLE,
+    APP_BACKGROUND
 }
 
 fun openSettingsPage(dialogs: SettingsDialogState, page: SettingsPage) {
@@ -88,6 +89,7 @@ fun openSettingsPage(dialogs: SettingsDialogState, page: SettingsPage) {
         SettingsPage.BLOCKED_NUMBERS -> dialogs.showBlockedNumbers = true
         SettingsPage.RECORDING -> dialogs.showRecordingPage = true
         SettingsPage.ANSWER_STYLE -> dialogs.showAnswerStylePage = true
+        SettingsPage.APP_BACKGROUND -> dialogs.showAppBackgroundPage = true
     }
 }
 
@@ -95,7 +97,8 @@ fun settingsPageIconRes(page: SettingsPage): Int = when (page) {
     SettingsPage.MAIN,
     SettingsPage.APPEARANCE,
     SettingsPage.APP_STYLE,
-    SettingsPage.KEYPAD_STYLE -> R.drawable.ic_settings
+    SettingsPage.KEYPAD_STYLE,
+    SettingsPage.APP_BACKGROUND -> R.drawable.ic_settings
     SettingsPage.GLASS,
     SettingsPage.GLASS_STUDIO -> R.drawable.ic_filter
     SettingsPage.LAYOUT_NAV -> R.drawable.ic_fullscreen
@@ -317,6 +320,10 @@ val allSettingEntries: List<SettingEntry> = listOf(
     SettingEntry("font_scale", R.string.settings_font_scale, R.string.settings_cat_appearance, SettingsPage.APPEARANCE, anchor = "font_scale"),
     SettingEntry("header_size", R.string.settings_header_size, R.string.settings_cat_appearance, SettingsPage.APPEARANCE, anchor = "header_size"),
     SettingEntry("app_background", R.string.settings_app_background, R.string.settings_cat_appearance, SettingsPage.APPEARANCE, anchor = "app_background"),
+    SettingEntry("background_intensity", R.string.settings_app_background_intensity, R.string.settings_app_background, SettingsPage.APP_BACKGROUND, anchor = "background_intensity"),
+    SettingEntry("background_colors", R.string.settings_app_background_colors, R.string.settings_app_background, SettingsPage.APP_BACKGROUND),
+    SettingEntry("background_scenes", R.string.settings_app_background_scenes, R.string.settings_app_background, SettingsPage.APP_BACKGROUND),
+    SettingEntry("background_photo", R.string.settings_app_background_photo, R.string.settings_app_background, SettingsPage.APP_BACKGROUND),
     // Liquid glass page.
     SettingEntry("glass_master", R.string.settings_cat_liquid_glass, R.string.settings_cat_liquid_glass, SettingsPage.GLASS, anchor = "glass_master"),
     SettingEntry("glass_intensity", R.string.settings_glass_intensity, R.string.settings_cat_liquid_glass, SettingsPage.GLASS, anchor = "glass_intensity"),
@@ -368,7 +375,6 @@ val allSettingEntries: List<SettingEntry> = listOf(
     SettingEntry("studio_edge_refraction", R.string.settings_edge_refraction, R.string.settings_cat_liquid_glass, SettingsPage.GLASS_STUDIO, anchor = "studio_edge_refraction"),
     SettingEntry("studio_droplet_stretch", R.string.settings_droplet_stretch, R.string.settings_cat_liquid_glass, SettingsPage.GLASS_STUDIO, anchor = "studio_droplet_stretch"),
     SettingEntry("studio_haptic", R.string.settings_glass_haptic, R.string.settings_cat_liquid_glass, SettingsPage.GLASS_STUDIO, anchor = "studio_haptic"),
-    SettingEntry("studio_backdrop", R.string.settings_backdrop, R.string.settings_cat_liquid_glass, SettingsPage.GLASS_STUDIO, anchor = "studio_backdrop", keywordsRes = R.string.search_keywords_backdrop),
     SettingEntry("studio_switch_style", R.string.settings_switch_style, R.string.settings_cat_liquid_glass, SettingsPage.GLASS_STUDIO, anchor = "studio_switch_style"),
     SettingEntry("studio_reset", R.string.settings_glass_reset, R.string.settings_cat_liquid_glass, SettingsPage.GLASS_STUDIO, anchor = "studio_reset"),
     // Call background screen (studio groups).

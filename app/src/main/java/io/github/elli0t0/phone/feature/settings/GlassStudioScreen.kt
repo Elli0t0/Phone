@@ -47,7 +47,6 @@ import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.isDarkGlassTheme
 import io.github.elli0t0.phone.data.settings.model.AppSettings
-import io.github.elli0t0.phone.data.settings.model.Backdrop
 import io.github.elli0t0.phone.data.settings.model.DropletStretch
 import io.github.elli0t0.phone.data.settings.model.EdgeLight
 import io.github.elli0t0.phone.data.settings.model.GlassHapticFeedback
@@ -78,7 +77,6 @@ fun GlassStudioScreen(
     var showEdgeLightDialog by remember { mutableStateOf(false) }
     var showDropletStretchDialog by remember { mutableStateOf(false) }
     var showHapticDialog by remember { mutableStateOf(false) }
-    var showBackdropDialog by remember { mutableStateOf(false) }
     var showSwitchStyleDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -290,26 +288,6 @@ fun GlassStudioScreen(
                                 onClick = { showHapticDialog = true }
                             )
 
-                            Spacer(modifier = Modifier.height(spacing.small))
-                            SettingsListDivider()
-                            Spacer(modifier = Modifier.height(spacing.small))
-
-                            SettingsRow(
-                                title = stringResource(id = R.string.settings_backdrop),
-                                searchId = "studio_backdrop",
-                                // Pure black dark mode forces the backdrop off.
-                                subtitle = if (settings.pureBlackDarkMode) {
-                                    Backdrop.OFF.label
-                                } else {
-                                    settings.backdrop.label
-                                },
-                                onClick = { showBackdropDialog = true }
-                            )
-
-                            Spacer(modifier = Modifier.height(spacing.small))
-                            SettingsListDivider()
-                            Spacer(modifier = Modifier.height(spacing.small))
-
                             SettingsRow(
                                 title = stringResource(id = R.string.settings_switch_style),
                                 searchId = "studio_switch_style",
@@ -358,16 +336,6 @@ fun GlassStudioScreen(
             onDismiss = { showHapticDialog = false }
         )
     }
-    if (showBackdropDialog) {
-        SettingsChoiceDialog(
-            title = stringResource(id = R.string.settings_backdrop),
-            options = Backdrop.entries.map { it.label to it },
-            selected = settings.backdrop,
-            onSelect = { viewModel.onBackdropChanged(it); showBackdropDialog = false },
-            onDismiss = { showBackdropDialog = false }
-        )
-    }
-
     if (showSwitchStyleDialog) {
         SettingsChoiceDialog(
             title = stringResource(id = R.string.settings_switch_style),

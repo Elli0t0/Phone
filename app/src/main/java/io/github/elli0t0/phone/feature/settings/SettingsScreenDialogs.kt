@@ -50,7 +50,6 @@ import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
 import io.github.elli0t0.phone.data.settings.model.BottomBarChoice
 import io.github.elli0t0.phone.data.settings.model.bottomBarChoice
-import io.github.elli0t0.phone.data.settings.model.Backdrop
 import io.github.elli0t0.phone.data.settings.model.GlassIntensity
 import io.github.elli0t0.phone.data.settings.model.HeaderSize
 import io.github.elli0t0.phone.data.settings.model.CallDisplay
@@ -369,16 +368,6 @@ if (dialogs.showGlassIntensityDialog) {
         selected = settings.glassIntensity,
         onSelect = { viewModel.onGlassIntensityChanged(it); dialogs.showGlassIntensityDialog = false },
         onDismiss = { dialogs.showGlassIntensityDialog = false }
-    )
-}
-
-if (dialogs.showBackdropDialog) {
-    SettingsChoiceDialog(
-        title = stringResource(id = R.string.settings_backdrop),
-        options = Backdrop.entries.map { it.label to it },
-        selected = settings.backdrop,
-        onSelect = { viewModel.onBackdropChanged(it); dialogs.showBackdropDialog = false },
-        onDismiss = { dialogs.showBackdropDialog = false }
     )
 }
 

@@ -43,8 +43,8 @@ import coil.request.ImageRequest
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AppBackground
 import io.github.elli0t0.phone.data.settings.model.AppSettings
-import io.github.elli0t0.phone.data.settings.model.Backdrop
 import io.github.elli0t0.phone.data.settings.model.CallBackground
+import io.github.elli0t0.phone.data.settings.model.PaletteBackgrounds
 import java.io.File
 import kotlin.math.PI
 import kotlin.math.cos
@@ -118,16 +118,25 @@ private fun backdropPhase(durationMillis: Int): State<Float>? {
 }
 
 /**
- * Backdrop intensity with a Subtle floor: the main backdrop never
- * reaches the renderers with Off (AmbientBackdrop gates it), but
- * the picker previews do, and a preview must show the scene.
+ * Backdrop intensity (0.18.7): the appBackgroundIntensity slider,
+ * 0.1..1.0. Light theme caps it at 0.6 so text stays readable
+ * with glass surfaces on top. This replaces the old Backdrop gate
+ * (Off/Subtle/Vivid), whose values migrate to this slider.
  */
-private fun effectiveStrength(settings: AppSettings): Float =
-    settings.backdrop.strength.coerceAtLeast(0.20f)
+@Composable
+private fun effectiveStrength(settings: AppSettings): Float {
+    val isLight = MaterialTheme.colorScheme.background.luminance() > 0.5f
+    return if (isLight) {
+        settings.appBackgroundIntensity.coerceAtMost(0.6f)
+    } else {
+        settings.appBackgroundIntensity
+    }
+}
 
-/** Backdrop intensity as a 0..1 scale: Subtle 0.5, Vivid 1. */
+/** Backdrop intensity as a 0..1 scale: the slider value itself (light-capped). */
+@Composable
 private fun strengthScale(settings: AppSettings): Float =
-    (effectiveStrength(settings) / 0.40f).coerceIn(0f, 1f)
+    effectiveStrength(settings).coerceIn(0f, 1f)
 
 /** One soft radial-gradient blob, shared by the blob scenes. */
 private fun DrawScope.softBlob(c: Color, cx: Float, cy: Float, r: Float, alpha: Float) = drawCircle(
@@ -144,13 +153,15 @@ private fun DrawScope.softBlob(c: Color, cx: Float, cy: Float, r: Float, alpha: 
  * Ambient backdrop, drawn at the root (MainActivity), as the
  * first child of the container holding the NavHost, behind it.
  *
- * Nothing is drawn when Backdrop is Off or when Pure black dark
- * mode is on (which forces Off). Otherwise the style picker
- * (AppBackground) dispatches to BackdropContent: AURORA keeps the
- * drifting blobs, gradients reuse the call-background brushes,
- * PLAIN draws nothing (the root Box paints the theme background),
- * PHOTO draws the user-chosen image with a dimming veil, and the
- * six custom scenes below paint their own Canvas.
+ * Pure black dark mode still forces a black base, but no longer
+ * hides the background: the scene draws at 0.6 over the base, so
+ * with the scene's own intensity the total is intensity * 0.6.
+ * Otherwise the style picker (AppBackground) dispatches to
+ * BackdropContent: AURORA keeps the drifting blobs, gradients
+ * reuse the call-background brushes, PLAIN draws nothing (the
+ * root Box paints the theme background), PHOTO draws the
+ * user-chosen image with a dimming veil, PALETTE draws its mesh,
+ * and the custom scenes below paint their own Canvas.
  *
  * Animated scenes move only while backdropAnimated() holds; when
  * paused they show a static frame. Every scene is a single
@@ -161,14 +172,20 @@ private fun DrawScope.softBlob(c: Color, cx: Float, cy: Float, r: Float, alpha: 
 @Composable
 fun AmbientBackdrop(modifier: Modifier = Modifier) {
     val settings = LocalAppSettings.current
-    if (settings.pureBlackDarkMode || settings.backdrop == Backdrop.OFF) return
+    if (settings.pureBlackDarkMode) {
+        Box(modifier.fillMaxSize().background(Color.Black)) {
+            Box(Modifier.fillMaxSize().graphicsLayer { alpha = 0.6f }) {
+                BackdropContent(settings.appBackground, Modifier.fillMaxSize())
+            }
+        }
+        return
+    }
     BackdropContent(settings.appBackground, modifier)
 }
 
 /**
- * One background scene, independent of the Backdrop on/off gate:
- * the main backdrop calls this after gating, and the picker
- * calls it per entry for live previews.
+ * One background scene: the main backdrop calls this directly,
+ * and the picker calls it per entry for live previews.
  */
 @Composable
 fun BackdropContent(background: AppBackground, modifier: Modifier = Modifier) {
@@ -183,6 +200,11 @@ fun BackdropContent(background: AppBackground, modifier: Modifier = Modifier) {
         AppBackground.NEON -> NeonBackdrop(modifier)
         AppBackground.MATERIAL_YOU -> MaterialYouBackdrop(modifier, settings)
         AppBackground.GRAIN -> GrainBackdrop(modifier, settings)
+        AppBackground.PALETTE -> PaletteBackdrop(modifier, settings)
+        AppBackground.AURORA_GREEN -> AuroraBlobsBackdrop(modifier, AuroraGreenBlobs)
+        AppBackground.AURORA_PURPLE -> AuroraBlobsBackdrop(modifier, AuroraPurpleBlobs)
+        AppBackground.DUSK -> DuskBackdrop(modifier)
+        AppBackground.BOKEH -> BokehBackdrop(modifier)
         else -> GradientBackdrop(modifier, settings, background)
     }
 }
@@ -192,9 +214,7 @@ private fun GradientBackdrop(modifier: Modifier, settings: AppSettings, backgrou
     val brush = remember(background, settings.accentColor) {
         callBackgroundBrush(background.gradient ?: CallBackground.DEFAULT, settings.accentColor)
     }
-    val isLight = MaterialTheme.colorScheme.background.luminance() > 0.5f
-    // Subtle = 0.5, Vivid = 1.0; capped in light theme so text stays readable.
-    val alpha = (effectiveStrength(settings) * 2.5f).coerceIn(0f, if (isLight) 0.35f else 1f)
+    val alpha = effectiveStrength(settings)
     Box(modifier.fillMaxSize().graphicsLayer { this.alpha = alpha }.background(brush))
 }
 
@@ -214,30 +234,37 @@ private fun PhotoBackdrop(modifier: Modifier, settings: AppSettings) {
     }
 }
 
+/** Fixed hue trios for the Aurora Green / Aurora Purple scenes (0.18.7). */
+private val AuroraGreenBlobs = listOf(Color(0xFF15803D), Color(0xFF22C55E), Color(0xFFA3E635))
+private val AuroraPurpleBlobs = listOf(Color(0xFF7C3AED), Color(0xFF9333EA), Color(0xFFD946EF))
+
 @Composable
-private fun AuroraBlobsBackdrop(modifier: Modifier = Modifier) {
+private fun AuroraBlobsBackdrop(modifier: Modifier = Modifier, colors: List<Color>? = null) {
     val settings = LocalAppSettings.current
     val phase = backdropPhase(28000)
-    val accent = Color(settings.accentColor)
     val strength = effectiveStrength(settings)
+    val blobs = colors ?: run {
+        val accent = Color(settings.accentColor)
+        listOf(accent, accent.hueShift(60f), accent.hueShift(-50f))
+    }
     Canvas(modifier = modifier.fillMaxSize()) {
         val a = (phase?.value ?: 0f) * 2f * PI.toFloat()
         softBlob(
-            accent,
+            blobs[0],
             size.width * (0.25f + 0.10f * cos(a)),
             size.height * (0.30f + 0.06f * sin(a)),
             size.width * 0.9f,
             strength
         )
         softBlob(
-            accent.hueShift(60f),
+            blobs[1],
             size.width * (0.80f + 0.08f * sin(a)),
             size.height * (0.62f + 0.08f * cos(a)),
             size.width * 0.8f,
             strength
         )
         softBlob(
-            accent.hueShift(-50f),
+            blobs[2],
             size.width * (0.40f + 0.10f * cos(a + 2f)),
             size.height * 0.92f,
             size.width * 0.9f,
@@ -310,7 +337,7 @@ private fun NightSkyBackdrop(modifier: Modifier = Modifier) {
     }
     Box(
         modifier = modifier.fillMaxSize()
-            .graphicsLayer { alpha = if (isLight) 0.35f else 1f }
+            .graphicsLayer { alpha = if (isLight) 0.6f else 1f }
     ) {
         Box(
             Modifier.fillMaxSize().background(
@@ -388,7 +415,7 @@ private fun NeonBackdrop(modifier: Modifier = Modifier) {
     val orbs = remember(accent) { arrayOf(accent, accent.hueShift(140f)) }
     Box(
         modifier = modifier.fillMaxSize()
-            .graphicsLayer { alpha = if (isLight) 0.35f else 1f }
+            .graphicsLayer { alpha = if (isLight) 0.6f else 1f }
     ) {
         Box(
             Modifier.fillMaxSize().background(
@@ -432,8 +459,7 @@ private fun MaterialYouBackdrop(modifier: Modifier, settings: AppSettings) {
             listOf(scheme.primaryContainer, scheme.secondaryContainer, scheme.tertiaryContainer)
         )
     }
-    val isLight = scheme.background.luminance() > 0.5f
-    val alpha = (effectiveStrength(settings) * 2.5f).coerceIn(0f, if (isLight) 0.35f else 1f)
+    val alpha = effectiveStrength(settings)
     Box(modifier.fillMaxSize().graphicsLayer { this.alpha = alpha }.background(brush))
 }
 
@@ -448,8 +474,7 @@ private fun GrainBackdrop(modifier: Modifier, settings: AppSettings) {
     val brush = remember(scheme.primaryContainer, scheme.background) {
         Brush.verticalGradient(listOf(scheme.primaryContainer, scheme.background))
     }
-    val isLight = scheme.background.luminance() > 0.5f
-    val alpha = (effectiveStrength(settings) * 2.5f).coerceIn(0f, if (isLight) 0.35f else 1f)
+    val alpha = effectiveStrength(settings)
     val noise = remember {
         val tile = 128
         val bitmap = Bitmap.createBitmap(tile, tile, Bitmap.Config.ARGB_8888)
@@ -474,6 +499,136 @@ private fun GrainBackdrop(modifier: Modifier, settings: AppSettings) {
                     tx += tileW
                 }
                 ty += tileH
+            }
+        }
+    }
+}
+
+/**
+ * Palette mesh (0.18.7): the palette's darkest color as the base,
+ * with three soft blobs drifting over it on a 30s loop — the same
+ * softBlob pattern as MeshBackdrop. Static when animations are
+ * reduced (backdropPhase returns null).
+ */
+@Composable
+private fun PaletteBackdrop(modifier: Modifier = Modifier, settings: AppSettings) {
+    val phase = backdropPhase(30000)
+    val palette = PaletteBackgrounds.find { it.id == settings.appBackgroundPaletteId }
+        ?: PaletteBackgrounds.first()
+    val colors = remember(palette) { palette.colors.map { Color(it) } }
+    val scale = strengthScale(settings)
+    val offsets = remember { floatArrayOf(0f, 2.1f, 4.2f) }
+    val blobs = remember(colors) { listOf(colors[1], colors[2], colors[1].hueShift(25f)) }
+    Canvas(modifier = modifier.fillMaxSize()) {
+        drawRect(colors[0])
+        val a = (phase?.value ?: 0f) * 2f * PI.toFloat()
+        for (i in 0..2) {
+            val p = a + offsets[i]
+            softBlob(
+                blobs[i],
+                size.width * (0.5f + 0.35f * cos(p)),
+                size.height * (0.5f + 0.35f * sin(p)),
+                size.width * 0.75f,
+                0.55f * scale
+            )
+        }
+    }
+}
+
+/**
+ * Dusk (0.18.7): a vertical dusk gradient with a warm sun glow
+ * low on the screen and a faint violet glow high up.
+ */
+@Composable
+private fun DuskBackdrop(modifier: Modifier = Modifier) {
+    val settings = LocalAppSettings.current
+    val phase = backdropPhase(28000)
+    val strength = effectiveStrength(settings)
+    Box(modifier.fillMaxSize()) {
+        Box(
+            Modifier.fillMaxSize().background(
+                Brush.verticalGradient(
+                    listOf(Color(0xFF1E1B4B), Color(0xFF7C2D12), Color(0xFFEA580C))
+                )
+            )
+        )
+        Canvas(Modifier.fillMaxSize()) {
+            val a = (phase?.value ?: 0f) * 2f * PI.toFloat()
+            softBlob(
+                Color(0xFFF97316),
+                size.width * (0.5f + 0.05f * cos(a)),
+                size.height * 0.78f,
+                size.width * 0.7f,
+                strength * 0.8f
+            )
+            softBlob(
+                Color(0xFFA855F7),
+                size.width * (0.5f + 0.05f * sin(a)),
+                size.height * 0.25f,
+                size.width * 0.6f,
+                strength * 0.5f
+            )
+        }
+    }
+}
+
+private data class BokehCircle(
+    val x: Float,
+    val y: Float,
+    val radius: Float,
+    val base: Float,
+    val speed: Float,
+    val offset: Float,
+    val color: Color
+)
+
+/**
+ * Bokeh (0.18.7): twelve slow soft circles drifting over a dark
+ * base, like out-of-focus lights. Positions and tints are seeded,
+ * so a paused scene is steady, not reshuffled.
+ */
+@Composable
+private fun BokehBackdrop(modifier: Modifier = Modifier) {
+    val settings = LocalAppSettings.current
+    val phase = backdropPhase(20000)
+    val scale = strengthScale(settings)
+    val isLight = MaterialTheme.colorScheme.background.luminance() > 0.5f
+    val circles = remember {
+        val random = Random(11)
+        val tints = listOf(
+            Color.White, Color(0xFFFDE68A), Color(0xFFBFDBFE), Color(0xFFFBCFE8)
+        )
+        List(12) {
+            BokehCircle(
+                x = random.nextFloat(),
+                y = random.nextFloat(),
+                radius = 0.05f + random.nextFloat() * 0.11f,
+                base = 0.10f + random.nextFloat() * 0.25f,
+                speed = 0.5f + random.nextFloat(),
+                offset = random.nextFloat() * 2f * PI.toFloat(),
+                color = tints[random.nextInt(tints.size)]
+            )
+        }
+    }
+    Box(
+        modifier = modifier.fillMaxSize()
+            .graphicsLayer { alpha = if (isLight) 0.6f else 1f }
+    ) {
+        Box(
+            Modifier.fillMaxSize().background(
+                Brush.verticalGradient(listOf(Color(0xFF111827), Color.Black))
+            )
+        )
+        Canvas(Modifier.fillMaxSize()) {
+            val a = (phase?.value ?: 0f) * 2f * PI.toFloat()
+            for (circle in circles) {
+                softBlob(
+                    circle.color,
+                    size.width * (circle.x + 0.02f * sin(a * circle.speed + circle.offset)),
+                    size.height * (circle.y + 0.02f * cos(a * circle.speed + circle.offset)),
+                    size.width * circle.radius,
+                    circle.base * scale
+                )
             }
         }
     }

@@ -81,6 +81,11 @@
     <string name="settings_dynamic_highlights">هایلایت‌های پویا</string>
     <string name="settings_backdrop">پس‌زمینه</string>
     <string name="settings_app_background">پس‌زمینه</string>
+    <string name="settings_app_background_intensity">شدت پس‌زمینه</string>
+    <string name="settings_app_background_colors">رنگ‌ها</string>
+    <string name="settings_app_background_scenes">صحنه‌ها</string>
+    <string name="settings_app_background_photo">عکس</string>
+    <string name="settings_app_background_pure_black_note">حالت مشکی خالص روشن است: پس‌زمینه‌ها همچنان با تیرگی کمتر روی پایه‌ی مشکی نمایش داده می‌شوند.</string>
     <string name="app_background_photo_failed">این تصویر قابل استفاده نیست</string>
     <string name="app_background_change_photo">تغییر عکس</string>
     <string name="app_background_darkness">تیرگی</string>

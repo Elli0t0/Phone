@@ -351,8 +351,39 @@ enum class AppBackground(val label: String, val gradient: CallBackground?) {
     MATERIAL_YOU("Material You", null),
     GRAIN("Grain", null),
     PLAIN("Plain", null),
-    PHOTO("Photo", null)
+    PHOTO("Photo", null),
+    /** Data-driven palette mesh (0.18.7): one entry for all palettes, the choice in appBackgroundPaletteId. */
+    PALETTE("Palette", null),
+    AURORA_GREEN("Aurora green", null),
+    AURORA_PURPLE("Aurora purple", null),
+    DUSK("Dusk", null),
+    BOKEH("Bokeh", null)
 }
+
+/**
+ * A palette background (0.18.7): three harmonious ARGB colors,
+ * darkest first. The mesh renders on the darkest color with the
+ * other two drifting over it — no new enum entry per color.
+ */
+data class PaletteBg(val id: String, val label: String, val colors: List<Long>)
+
+val PaletteBackgrounds = listOf(
+    PaletteBg("emerald", "Emerald", listOf(0xFF052E1C, 0xFF0F7A4A, 0xFF34D399)),
+    PaletteBg("mint", "Mint", listOf(0xFF0B3B33, 0xFF2BB59A, 0xFFA7F3D0)),
+    PaletteBg("lime", "Lime", listOf(0xFF1B2E05, 0xFF65A30D, 0xFFD9F99D)),
+    PaletteBg("teal", "Teal", listOf(0xFF042F2E, 0xFF0F766E, 0xFF5EEAD4)),
+    PaletteBg("cyan", "Cyan", listOf(0xFF082F49, 0xFF0284C7, 0xFF7DD3FC)),
+    PaletteBg("sky", "Sky", listOf(0xFF0C2B4D, 0xFF2563EB, 0xFF93C5FD)),
+    PaletteBg("indigo", "Indigo", listOf(0xFF1E1B4B, 0xFF4F46E5, 0xFFA5B4FC)),
+    PaletteBg("violet", "Violet", listOf(0xFF2E1065, 0xFF7C3AED, 0xFFC4B5FD)),
+    PaletteBg("grape", "Grape", listOf(0xFF3B0764, 0xFF9333EA, 0xFFD8B4FE)),
+    PaletteBg("pink", "Pink", listOf(0xFF500724, 0xFFDB2777, 0xFFF9A8D4)),
+    PaletteBg("crimson", "Crimson", listOf(0xFF450A0A, 0xFFDC2626, 0xFFFCA5A5)),
+    PaletteBg("coral", "Coral", listOf(0xFF431407, 0xFFEA580C, 0xFFFDBA74)),
+    PaletteBg("gold", "Gold", listOf(0xFF422006, 0xFFD97706, 0xFFFCD34D)),
+    PaletteBg("graphite", "Graphite", listOf(0xFF111827, 0xFF4B5563, 0xFF9CA3AF)),
+    PaletteBg("mono", "Mono", listOf(0xFF090909, 0xFF525252, 0xFFE5E5E5))
+)
 
 /** Which calls auto-record captures; ALL is the historical behavior. */
 enum class AutoRecordMode(val label: String) {
@@ -433,8 +464,15 @@ data class AppSettings(
     val dynamicHighlights: Boolean = true,
     // Ambient backdrop behind the tab content. Forced Off when
     // Pure black dark mode is on (see AmbientBackdrop).
+    // Kept as the migration source for appBackgroundIntensity
+    // (0.18.7): OFF -> PLAIN, SUBTLE -> 0.5, VIVID -> 1.0. The
+    // Backdrop gate itself is gone; intensity is the control now.
     val backdrop: Backdrop = Backdrop.SUBTLE,
     val appBackground: AppBackground = AppBackground.AURORA,
+    /** Background intensity (0.18.7): 0.1..1.0, replaces the Backdrop gate. */
+    val appBackgroundIntensity: Float = 0.7f,
+    /** Palette id for appBackground == PALETTE (0.18.7). */
+    val appBackgroundPaletteId: String = "emerald",
     val appBackgroundDim: Float = 0.35f,
     val appBackgroundPhotoVersion: Long = 0L,
     val defaultStartTab: StartTab = StartTab.KEYPAD,

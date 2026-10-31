@@ -397,6 +397,18 @@ class SettingsViewModel(
         }
     }
 
+    fun onAppBackgroundIntensityChanged(intensity: Float) {
+        viewModelScope.launch {
+            settingsRepository.setAppBackgroundIntensity(intensity)
+        }
+    }
+
+    fun onAppBackgroundPaletteIdChanged(id: String) {
+        viewModelScope.launch {
+            settingsRepository.setAppBackgroundPaletteId(id)
+        }
+    }
+
     fun onAppBackgroundDimChanged(dim: Float) {
         viewModelScope.launch {
             settingsRepository.setAppBackgroundDim(dim)

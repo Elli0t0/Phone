@@ -164,6 +164,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.18.7]
+
+- Background intensity is now a slider (0.1–1.0, default 0.7) at the top of the Background page, replacing the Off/Subtle/Vivid gate. Old values migrate once: Off hides backgrounds (Plain), Subtle becomes 0.5, Vivid becomes 1.0. Light theme caps intensity at 0.6; there is no 0.4 cap anymore.
+- Pure black no longer hides backgrounds: it keeps the black base and draws the scene dimmed over it, with a note on the Background page. Contacts and keypad screens stay transparent whenever a non-Plain background is set, so the scene shows through in pure black too.
+- 15 data-driven palette backgrounds (Emerald, Mint, Lime, Teal, Cyan, Sky, Indigo, Violet, Grape, Pink, Crimson, Coral, Gold, Graphite, Mono) with no new enum entry per color: the choice is appBackground = Palette plus a palette id, each rendering as a slow-drifting 3-blob mesh on its darkest color, static when animations are reduced.
+- 4 new scenes reusing the existing Canvas helpers: Aurora Green and Aurora Purple (same aurora blobs, different hues), Dusk (vertical gradient + 2 soft blobs), Bokeh (12 slow soft circles).
+- Background page reorganized into Colors (palettes, 3 per row), Scenes, and Photo (photo tile + change button + darkness slider kept). The Backdrop row in Glass Studio and its dialog are gone; the Backdrop field stays only as the migration source and for backup compatibility.
+
 ## [0.18.6]
 
 - Settings reorganized so every setting lives in one place: Appearance (Minimal mode on top, Theme, Accent, Pure black, Font size, Header size, App style, Background), Glass (master switch, Intensity, Reduce transparency, Dynamic highlights, always-visible Glass Studio), Layout & navigation (Density, Swipe actions, Default tab, Bottom bar, Animations), new Keypad page (Keypad style, Key style, Dialpad tones, Speed dial), Calls, Contacts display, Recording, Privacy, and Backup & About (backup, restore, reset, version, update check).

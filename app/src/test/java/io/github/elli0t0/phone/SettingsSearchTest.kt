@@ -116,7 +116,7 @@ class SettingsSearchTest {
                 dialogs.showKeypadStylePage ||
                 dialogs.showGlassStudioPage || dialogs.showCallBackgroundPage ||
                 dialogs.showBlockedNumbers || dialogs.showRecordingPage ||
-                dialogs.showAnswerStylePage
+                dialogs.showAnswerStylePage || dialogs.showAppBackgroundPage
             assertTrue("no flag opens for $page", opened)
         }
     }

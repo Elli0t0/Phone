@@ -47,7 +47,7 @@ import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneBottomSheet
 import io.github.elli0t0.phone.core.permissions.rememberContactsPermissionState
 import io.github.elli0t0.phone.data.contacts.model.ContactDetail
-import io.github.elli0t0.phone.data.settings.model.Backdrop
+import io.github.elli0t0.phone.data.settings.model.AppBackground
 import io.github.elli0t0.phone.feature.contacts.ui.ContactDetailScreen
 import io.github.elli0t0.phone.feature.contacts.ui.ContactEditScreen
 import io.github.elli0t0.phone.feature.contacts.ui.ContactHistoryScreen
@@ -410,9 +410,11 @@ fun ContactsScreen(
     // through the gaps, exactly like Recents (the list screen itself
     // is already transparent; this outer Scaffold was the opaque
     // layer). Otherwise the theme background, as before. List cards
-    // stay opaque either way.
+    // stay opaque either way. PLAIN is the only background that
+    // draws nothing — including in pure black, where the scene
+    // still shows dimmed over the black base (0.18.7).
     val backdropVisible = LocalAppSettings.current.let {
-        it.backdrop != Backdrop.OFF && !it.pureBlackDarkMode
+        it.appBackground != AppBackground.PLAIN
     }
     Scaffold(
         modifier = modifier.fillMaxSize(),
