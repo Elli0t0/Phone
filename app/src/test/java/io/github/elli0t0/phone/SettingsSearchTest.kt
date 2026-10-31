@@ -110,7 +110,7 @@ class SettingsSearchTest {
             val dialogs = SettingsDialogState()
             openSettingsPage(dialogs, page)
             val opened = dialogs.showAppearancePage || dialogs.showGlassPage ||
-                dialogs.showLayoutNavPage || dialogs.showCallsPage ||
+                dialogs.showLayoutNavPage || dialogs.showKeypadPage || dialogs.showCallsPage ||
                 dialogs.showContactsPage || dialogs.showPrivacyPage ||
                 dialogs.showAboutPage || dialogs.showAppStylePage ||
                 dialogs.showKeypadStylePage ||

@@ -107,7 +107,7 @@ class MainActivity : ComponentActivity() {
             val setupCompleted by app.container.setupRepository.setupCompletedFlow.collectAsStateWithLifecycle(
                 initialValue = null
             )
-            PhoneTheme(appSettings = settings) {
+            PhoneTheme(appSettings = settings.withMinimal()) {
                 if (setupCompleted == null) {
                     // Opaque theme background while the setup state loads:
                     // the window background must never show through.

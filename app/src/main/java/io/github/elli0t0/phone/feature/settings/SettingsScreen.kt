@@ -211,7 +211,6 @@ fun SettingsScreen(
         searchQuery = ""
         debouncedQuery = ""
         searchVisible = false
-        if (entry.advanced) dialogs.searchForceAdvanced = true
         dialogs.searchHighlightId = entry.anchor
         openSettingsPage(dialogs, entry.page)
     }
@@ -224,17 +223,6 @@ fun SettingsScreen(
             if (dialogs.searchHighlightId == id) dialogs.searchHighlightId = null
         }
     }
-    val anySettingsPageOpen = dialogs.showAppearancePage || dialogs.showGlassPage ||
-        dialogs.showLayoutNavPage || dialogs.showCallsPage || dialogs.showContactsPage ||
-        dialogs.showPrivacyPage || dialogs.showAboutPage || dialogs.showAppStylePage ||
-        dialogs.showKeypadStylePage ||
-        dialogs.showGlassStudioPage || dialogs.showCallBackgroundPage || dialogs.showAppBackgroundPage ||
-        dialogs.showBlockedNumbers || dialogs.showExcludedNumbers || dialogs.showRecordingPage ||
-        dialogs.showAnswerStylePage
-    LaunchedEffect(anySettingsPageOpen) {
-        if (!anySettingsPageOpen) dialogs.searchForceAdvanced = false
-    }
-
     // Live recording status for the main Call recording row (moved
     // from the Calls card): the backend is built-in ADB, the status
     // from the controller. The row refreshes the status on entry, so
@@ -271,6 +259,7 @@ fun SettingsScreen(
             settings.backdrop.label
         }
     val layoutNavSubtitle = "${settings.listDensity.label} · ${settings.defaultStartTab.label}"
+    val keypadSubtitle = "${settings.keypadStyle.label} · ${settings.keyStyle.label}"
     val callsSubtitle = "${settings.callDisplay.label} · ${settings.answerStyle.label}"
     val contactsSubtitle = "${settings.contactSortOrder.label} · ${settings.contactNameFormat.label}"
     val privacySubtitle = stringResource(
@@ -333,8 +322,7 @@ fun SettingsScreen(
         currentVersionName = currentVersionName
     )
     CompositionLocalProvider(
-        LocalSearchHighlight provides dialogs.searchHighlightId,
-        LocalSearchAdvanced provides dialogs.searchForceAdvanced
+        LocalSearchHighlight provides dialogs.searchHighlightId
     ) {
     Scaffold(
         modifier = modifier.fillMaxSize().testTag("settings_screen"),
@@ -512,6 +500,18 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.height(spacing.small))
 
                         SettingsNavRow(
+                            iconRes = R.drawable.ic_dialpad,
+                            title = stringResource(id = R.string.settings_cat_keypad),
+                            searchId = "nav_keypad",
+                            subtitle = keypadSubtitle,
+                            onClick = { dialogs.showKeypadPage = true }
+                        )
+
+                        Spacer(modifier = Modifier.height(spacing.small))
+                        SettingsListDivider()
+                        Spacer(modifier = Modifier.height(spacing.small))
+
+                        SettingsNavRow(
                             iconRes = R.drawable.ic_phone,
                             title = stringResource(id = R.string.settings_cat_calls),
                             searchId = "nav_calls",
@@ -568,26 +568,6 @@ fun SettingsScreen(
                         )
                     }
                 }
-            }
-            item {
-                Card(
-                    shape = settingsListCardShape(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(spacing.medium)) {
-                        SettingsSwitchRow(
-                            title = stringResource(id = R.string.settings_show_advanced),
-                            searchId = "main_advanced",
-                            subtitle = stringResource(id = R.string.settings_show_advanced_desc),
-                            checked = settings.showAdvancedSettings,
-                            onCheckedChange = { viewModel.onShowAdvancedSettingsChanged(it) }
-                        )
-                    }
-                }
-            }
-            item {
-                ResetCard(dialogs = dialogs, spacing = spacing)
             }
             item {
                 Spacer(modifier = Modifier.height(spacing.large))
@@ -685,6 +665,16 @@ fun SettingsScreen(
             dialogs = dialogs,
             spacing = spacing,
             onNavigateBack = { dialogs.showLayoutNavPage = false }
+        )
+    }
+
+    if (dialogs.showKeypadPage) {
+        KeypadPage(
+            settings = settings,
+            viewModel = viewModel,
+            dialogs = dialogs,
+            spacing = spacing,
+            onNavigateBack = { dialogs.showKeypadPage = false }
         )
     }
 

@@ -48,9 +48,6 @@ import io.github.elli0t0.phone.data.settings.model.AnimationOption
  * result opens its page and briefly highlights its row. Pages are
  * single-card pages, not list items, so there is no row to scroll to:
  * the highlight pulse is the locator, and the page is the navigation.
- * Advanced rows stay hidden unless the advanced toggle is on — except
- * when opened from a search result, which force-shows them for that
- * visit (see [LocalSearchAdvanced]).
  */
 
 /** Every page search can open. MAIN means "already on the main page". */
@@ -59,6 +56,7 @@ enum class SettingsPage {
     APPEARANCE,
     GLASS,
     LAYOUT_NAV,
+    KEYPAD,
     CALLS,
     CONTACTS,
     PRIVACY,
@@ -78,6 +76,7 @@ fun openSettingsPage(dialogs: SettingsDialogState, page: SettingsPage) {
         SettingsPage.APPEARANCE -> dialogs.showAppearancePage = true
         SettingsPage.GLASS -> dialogs.showGlassPage = true
         SettingsPage.LAYOUT_NAV -> dialogs.showLayoutNavPage = true
+        SettingsPage.KEYPAD -> dialogs.showKeypadPage = true
         SettingsPage.CALLS -> dialogs.showCallsPage = true
         SettingsPage.CONTACTS -> dialogs.showContactsPage = true
         SettingsPage.PRIVACY -> dialogs.showPrivacyPage = true
@@ -100,6 +99,7 @@ fun settingsPageIconRes(page: SettingsPage): Int = when (page) {
     SettingsPage.GLASS,
     SettingsPage.GLASS_STUDIO -> R.drawable.ic_filter
     SettingsPage.LAYOUT_NAV -> R.drawable.ic_fullscreen
+    SettingsPage.KEYPAD -> R.drawable.ic_dialpad
     SettingsPage.CALLS,
     SettingsPage.CALL_BACKGROUND,
     SettingsPage.ANSWER_STYLE -> R.drawable.ic_phone
@@ -122,7 +122,6 @@ data class SettingEntry(
     @StringRes val sectionRes: Int,
     val page: SettingsPage,
     val anchor: String? = null,
-    val advanced: Boolean = false,
     @StringRes val keywordsRes: Int = 0
 )
 
@@ -181,8 +180,6 @@ fun searchSettings(
 /** Row id currently highlighted by a search result, or null. Provided at the Settings screen root. */
 val LocalSearchHighlight = compositionLocalOf<String?> { null }
 
-/** True while a search-opened page force-shows its advanced rows. Provided at the Settings screen root. */
-val LocalSearchAdvanced = compositionLocalOf { false }
 
 /**
  * Pulse background for a row with the given highlight id. No-op for any
@@ -304,38 +301,34 @@ val allSettingEntries: List<SettingEntry> = listOf(
     SettingEntry("nav_appearance", R.string.settings_cat_appearance, R.string.settings_cat_appearance, SettingsPage.APPEARANCE, anchor = "nav_appearance"),
     SettingEntry("nav_glass", R.string.settings_cat_liquid_glass, R.string.settings_cat_liquid_glass, SettingsPage.GLASS, anchor = "nav_glass"),
     SettingEntry("nav_layout_nav", R.string.settings_cat_layout_nav, R.string.settings_cat_layout_nav, SettingsPage.LAYOUT_NAV, anchor = "nav_layout_nav"),
+    SettingEntry("nav_keypad", R.string.settings_cat_keypad, R.string.settings_cat_keypad, SettingsPage.KEYPAD, anchor = "nav_keypad"),
     SettingEntry("nav_calls", R.string.settings_cat_calls, R.string.settings_cat_calls, SettingsPage.CALLS, anchor = "nav_calls"),
     SettingEntry("nav_contacts", R.string.settings_cat_contacts, R.string.settings_cat_contacts, SettingsPage.CONTACTS, anchor = "nav_contacts"),
     SettingEntry("nav_recording", R.string.settings_call_recording, R.string.settings_call_recording, SettingsPage.RECORDING, anchor = "nav_recording"),
     SettingEntry("nav_privacy", R.string.settings_cat_privacy, R.string.settings_cat_privacy, SettingsPage.PRIVACY, anchor = "nav_privacy"),
     SettingEntry("nav_about", R.string.settings_cat_about, R.string.settings_cat_about, SettingsPage.ABOUT, anchor = "nav_about"),
-    SettingEntry("main_advanced", R.string.settings_show_advanced, R.string.settings_cat_appearance, SettingsPage.MAIN, anchor = "main_advanced"),
-    SettingEntry("main_reset", R.string.settings_reset_button, R.string.settings_cat_appearance, SettingsPage.MAIN, anchor = "main_reset"),
+    SettingEntry("main_reset", R.string.settings_reset_button, R.string.settings_cat_about, SettingsPage.ABOUT, anchor = "main_reset"),
     // Appearance page.
+    SettingEntry("minimal_mode", R.string.settings_minimal_mode, R.string.settings_cat_appearance, SettingsPage.APPEARANCE, anchor = "minimal_mode"),
     SettingEntry("app_style", R.string.settings_app_style, R.string.settings_cat_appearance, SettingsPage.APP_STYLE),
     SettingEntry("theme", R.string.settings_theme, R.string.settings_cat_appearance, SettingsPage.APPEARANCE, anchor = "theme"),
     SettingEntry("accent", R.string.settings_accent_color, R.string.settings_cat_appearance, SettingsPage.APPEARANCE, anchor = "accent", keywordsRes = R.string.search_keywords_dynamic_color),
     SettingEntry("pure_black", R.string.settings_pure_black, R.string.settings_cat_appearance, SettingsPage.APPEARANCE, anchor = "pure_black", keywordsRes = R.string.search_keywords_pure_black),
     SettingEntry("font_scale", R.string.settings_font_scale, R.string.settings_cat_appearance, SettingsPage.APPEARANCE, anchor = "font_scale"),
     SettingEntry("header_size", R.string.settings_header_size, R.string.settings_cat_appearance, SettingsPage.APPEARANCE, anchor = "header_size"),
+    SettingEntry("app_background", R.string.settings_app_background, R.string.settings_cat_appearance, SettingsPage.APPEARANCE, anchor = "app_background"),
     // Liquid glass page.
     SettingEntry("glass_master", R.string.settings_cat_liquid_glass, R.string.settings_cat_liquid_glass, SettingsPage.GLASS, anchor = "glass_master"),
-    SettingEntry("glass_bottom_bar", R.string.settings_glass_bottom_bar, R.string.settings_cat_liquid_glass, SettingsPage.GLASS, anchor = "glass_bottom_bar", advanced = true),
-    SettingEntry("key_style", R.string.settings_key_style, R.string.settings_cat_liquid_glass, SettingsPage.GLASS, anchor = "key_style"),
-    SettingEntry("glass_headers", R.string.settings_glass_headers, R.string.settings_cat_liquid_glass, SettingsPage.GLASS, anchor = "glass_headers", advanced = true),
-    SettingEntry("glass_contact_detail", R.string.settings_glass_contact_detail, R.string.settings_cat_liquid_glass, SettingsPage.GLASS, anchor = "glass_contact_detail", advanced = true),
-    SettingEntry("glass_call_screens", R.string.settings_glass_call_screens, R.string.settings_cat_liquid_glass, SettingsPage.GLASS, anchor = "glass_call_screens", advanced = true),
     SettingEntry("glass_intensity", R.string.settings_glass_intensity, R.string.settings_cat_liquid_glass, SettingsPage.GLASS, anchor = "glass_intensity"),
     SettingEntry("reduce_transparency", R.string.settings_reduce_transparency, R.string.settings_cat_liquid_glass, SettingsPage.GLASS, anchor = "reduce_transparency"),
-    SettingEntry("glass_cards", R.string.settings_glass_cards, R.string.settings_cat_liquid_glass, SettingsPage.GLASS, anchor = "glass_cards", advanced = true),
     SettingEntry("glass_dynamic_highlights", R.string.settings_dynamic_highlights, R.string.settings_cat_liquid_glass, SettingsPage.GLASS, anchor = "glass_dynamic_highlights"),
-    SettingEntry("glass_backdrop", R.string.settings_backdrop, R.string.settings_cat_liquid_glass, SettingsPage.GLASS, anchor = "glass_backdrop", keywordsRes = R.string.search_keywords_backdrop),
-    SettingEntry("glass_app_background", R.string.settings_app_background, R.string.settings_cat_liquid_glass, SettingsPage.GLASS, anchor = "glass_app_background", keywordsRes = R.string.search_keywords_backdrop),
-    SettingEntry("glass_studio", R.string.settings_glass_studio, R.string.settings_cat_liquid_glass, SettingsPage.GLASS_STUDIO, advanced = true),
+    SettingEntry("glass_studio", R.string.settings_glass_studio, R.string.settings_cat_liquid_glass, SettingsPage.GLASS_STUDIO),
     // Layout & navigation page.
     SettingEntry("list_density", R.string.settings_list_density, R.string.settings_cat_layout_nav, SettingsPage.LAYOUT_NAV, anchor = "list_density"),
-    SettingEntry("card_style", R.string.settings_card_style, R.string.settings_cat_layout_nav, SettingsPage.LAYOUT_NAV, anchor = "card_style"),
-    SettingEntry("keypad_style", R.string.settings_keypad_style, R.string.settings_cat_layout_nav, SettingsPage.KEYPAD_STYLE, anchor = "keypad_style"),
+    SettingEntry("keypad_style", R.string.settings_keypad_style, R.string.settings_cat_keypad, SettingsPage.KEYPAD, anchor = "keypad_style"),
+    SettingEntry("key_style", R.string.settings_key_style, R.string.settings_cat_keypad, SettingsPage.KEYPAD, anchor = "key_style"),
+    SettingEntry("dialpad_tones", R.string.settings_dialpad_tones, R.string.settings_cat_keypad, SettingsPage.KEYPAD, anchor = "dialpad_tones"),
+    SettingEntry("speed_dial", R.string.settings_speed_dial, R.string.settings_cat_keypad, SettingsPage.KEYPAD, anchor = "speed_dial"),
     SettingEntry("swipe_actions", R.string.settings_swipe_actions, R.string.settings_cat_layout_nav, SettingsPage.LAYOUT_NAV, anchor = "swipe_actions", keywordsRes = R.string.search_keywords_swipe_actions),
     SettingEntry("default_tab", R.string.settings_default_tab, R.string.settings_cat_layout_nav, SettingsPage.LAYOUT_NAV, anchor = "default_tab"),
     SettingEntry("bottom_labels", R.string.settings_bottom_labels, R.string.settings_cat_layout_nav, SettingsPage.LAYOUT_NAV, anchor = "bottom_labels"),
@@ -352,6 +345,8 @@ val allSettingEntries: List<SettingEntry> = listOf(
     SettingEntry("call_background", R.string.settings_call_background, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND),
     SettingEntry("default_sim", R.string.settings_default_sim, R.string.settings_cat_calls, SettingsPage.CALLS, anchor = "default_sim", keywordsRes = R.string.search_keywords_default_sim),
     SettingEntry("quick_decline", R.string.settings_quick_decline, R.string.settings_cat_calls, SettingsPage.CALLS, anchor = "quick_decline", keywordsRes = R.string.search_keywords_quick_decline),
+    SettingEntry("confirm_call", R.string.settings_confirm_call, R.string.settings_cat_calls, SettingsPage.CALLS, anchor = "confirm_call"),
+    SettingEntry("vibrate_answer", R.string.settings_vibrate_answer, R.string.settings_cat_calls, SettingsPage.CALLS, anchor = "vibrate_answer"),
     // Contacts page.
     SettingEntry("sort_order", R.string.settings_sort_order, R.string.settings_cat_contacts, SettingsPage.CONTACTS, anchor = "sort_order"),
     SettingEntry("name_format", R.string.settings_name_format, R.string.settings_cat_contacts, SettingsPage.CONTACTS, anchor = "name_format"),
@@ -360,13 +355,10 @@ val allSettingEntries: List<SettingEntry> = listOf(
     // About page.
     SettingEntry("about_phone", R.string.settings_about_phone, R.string.settings_cat_about, SettingsPage.ABOUT, anchor = "about_phone"),
     SettingEntry("update_check", R.string.update_check_title, R.string.settings_cat_about, SettingsPage.ABOUT, anchor = "update_check"),
-    // App style screen (Customize is advanced-gated).
-    SettingEntry("style_font", R.string.settings_font_style, R.string.settings_cat_appearance, SettingsPage.APP_STYLE, anchor = "style_font", advanced = true),
-    SettingEntry("style_card", R.string.settings_card_style, R.string.settings_cat_appearance, SettingsPage.APP_STYLE, anchor = "style_card", advanced = true),
-    SettingEntry("style_key", R.string.settings_key_style, R.string.settings_cat_appearance, SettingsPage.APP_STYLE, anchor = "style_key", advanced = true),
-    SettingEntry("style_switch", R.string.settings_switch_style, R.string.settings_cat_appearance, SettingsPage.APP_STYLE, anchor = "style_switch", advanced = true),
-    SettingEntry("style_transition", R.string.settings_transition_style, R.string.settings_cat_appearance, SettingsPage.APP_STYLE, anchor = "style_transition", advanced = true),
-    SettingEntry("style_sheets", R.string.settings_bottom_sheets, R.string.settings_cat_appearance, SettingsPage.APP_STYLE, anchor = "style_sheets", advanced = true, keywordsRes = R.string.search_keywords_bottom_sheets),
+    // App style screen.
+    SettingEntry("style_font", R.string.settings_font_style, R.string.settings_cat_appearance, SettingsPage.APP_STYLE, anchor = "style_font"),
+    SettingEntry("style_card", R.string.settings_card_style, R.string.settings_cat_appearance, SettingsPage.APP_STYLE, anchor = "style_card"),
+    SettingEntry("style_switch", R.string.settings_switch_style, R.string.settings_cat_appearance, SettingsPage.APP_STYLE, anchor = "style_switch"),
     // Glass Studio screen.
     SettingEntry("studio_blur", R.string.settings_glass_blur_amount, R.string.settings_cat_liquid_glass, SettingsPage.GLASS_STUDIO, anchor = "studio_blur"),
     SettingEntry("studio_tint", R.string.settings_glass_tint, R.string.settings_cat_liquid_glass, SettingsPage.GLASS_STUDIO, anchor = "studio_tint"),
@@ -379,28 +371,28 @@ val allSettingEntries: List<SettingEntry> = listOf(
     SettingEntry("studio_backdrop", R.string.settings_backdrop, R.string.settings_cat_liquid_glass, SettingsPage.GLASS_STUDIO, anchor = "studio_backdrop", keywordsRes = R.string.search_keywords_backdrop),
     SettingEntry("studio_switch_style", R.string.settings_switch_style, R.string.settings_cat_liquid_glass, SettingsPage.GLASS_STUDIO, anchor = "studio_switch_style"),
     SettingEntry("studio_reset", R.string.settings_glass_reset, R.string.settings_cat_liquid_glass, SettingsPage.GLASS_STUDIO, anchor = "studio_reset"),
-    // Call background screen (studio groups; detailed groups are advanced-gated).
-    SettingEntry("studio_layout_preset", R.string.studio_layout_preset, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "studio_layout_preset", advanced = true),
-    SettingEntry("studio_answer_side", R.string.studio_answer_side, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "studio_answer_side", advanced = true),
-    SettingEntry("studio_answer_button_size", R.string.studio_answer_button_size, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "studio_answer_button_size", advanced = true),
-    SettingEntry("studio_quick_replies", R.string.studio_quick_replies, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "studio_quick_replies", advanced = true),
-    SettingEntry("studio_call_controls", R.string.studio_call_controls, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "studio_call_controls", advanced = true),
-    SettingEntry("studio_grid_alignment", R.string.studio_control_grid_alignment, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "studio_grid_alignment", advanced = true),
-    SettingEntry("studio_end_call_position", R.string.studio_end_call_position, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "studio_end_call_position", advanced = true),
-    SettingEntry("studio_end_call_size", R.string.studio_end_call_size, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "studio_end_call_size", advanced = true),
+    // Call background screen (studio groups).
+    SettingEntry("studio_layout_preset", R.string.studio_layout_preset, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "studio_layout_preset"),
+    SettingEntry("studio_answer_side", R.string.studio_answer_side, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "studio_answer_side"),
+    SettingEntry("studio_answer_button_size", R.string.studio_answer_button_size, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "studio_answer_button_size"),
+    SettingEntry("studio_quick_replies", R.string.studio_quick_replies, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "studio_quick_replies"),
+    SettingEntry("studio_call_controls", R.string.studio_call_controls, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "studio_call_controls"),
+    SettingEntry("studio_grid_alignment", R.string.studio_control_grid_alignment, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "studio_grid_alignment"),
+    SettingEntry("studio_end_call_position", R.string.studio_end_call_position, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "studio_end_call_position"),
+    SettingEntry("studio_end_call_size", R.string.studio_end_call_size, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "studio_end_call_size"),
     SettingEntry("call_button_size", R.string.call_button_size, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "call_button_size"),
-    SettingEntry("control_button_size", R.string.call_bg_control_button_size, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "control_button_size", advanced = true),
-    SettingEntry("dtmf_key_size", R.string.call_bg_keypad_key_size, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "dtmf_key_size", advanced = true),
-    SettingEntry("studio_caller_info_position", R.string.studio_caller_info_position, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "studio_caller_info_position", advanced = true),
+    SettingEntry("control_button_size", R.string.call_bg_control_button_size, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "control_button_size"),
+    SettingEntry("dtmf_key_size", R.string.call_bg_keypad_key_size, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "dtmf_key_size"),
+    SettingEntry("studio_caller_info_position", R.string.studio_caller_info_position, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "studio_caller_info_position"),
     SettingEntry("studio_background_style", R.string.settings_call_background_style, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "studio_background_style"),
-    SettingEntry("studio_dim", R.string.settings_call_background_dim, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "studio_dim", advanced = true),
+    SettingEntry("studio_dim", R.string.settings_call_background_dim, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "studio_dim"),
     SettingEntry("studio_show_number", R.string.settings_call_show_number, R.string.settings_cat_calls, SettingsPage.CALL_BACKGROUND, anchor = "studio_show_number"),
-    // Call recording page (Advanced card is advanced-gated).
+    // Call recording page.
     SettingEntry("recording_pair", R.string.settings_call_recording, R.string.settings_call_recording, SettingsPage.RECORDING, anchor = "recording_status", keywordsRes = R.string.search_keywords_recording_pair),
-    SettingEntry("recording_port", R.string.recording_connection_port, R.string.settings_call_recording, SettingsPage.RECORDING, anchor = "recording_port", advanced = true, keywordsRes = R.string.search_keywords_recording_port),
-    SettingEntry("recording_detect", R.string.recording_action_detect_port, R.string.settings_call_recording, SettingsPage.RECORDING, anchor = "recording_detect", advanced = true),
-    SettingEntry("recording_reset_pairing", R.string.recording_action_reset_pairing, R.string.settings_call_recording, SettingsPage.RECORDING, anchor = "recording_reset_pairing", advanced = true),
-    SettingEntry("recording_offline", R.string.recording_offline_mode_title, R.string.settings_call_recording, SettingsPage.RECORDING, anchor = "recording_offline", advanced = true, keywordsRes = R.string.search_keywords_recording_offline),
+    SettingEntry("recording_port", R.string.recording_connection_port, R.string.settings_call_recording, SettingsPage.RECORDING, anchor = "recording_port", keywordsRes = R.string.search_keywords_recording_port),
+    SettingEntry("recording_detect", R.string.recording_action_detect_port, R.string.settings_call_recording, SettingsPage.RECORDING, anchor = "recording_detect"),
+    SettingEntry("recording_reset_pairing", R.string.recording_action_reset_pairing, R.string.settings_call_recording, SettingsPage.RECORDING, anchor = "recording_reset_pairing"),
+    SettingEntry("recording_offline", R.string.recording_offline_mode_title, R.string.settings_call_recording, SettingsPage.RECORDING, anchor = "recording_offline", keywordsRes = R.string.search_keywords_recording_offline),
     SettingEntry("recording_test", R.string.recording_test, R.string.settings_call_recording, SettingsPage.RECORDING, anchor = "recording_test"),
     SettingEntry("recording_open", R.string.recordings_open, R.string.settings_call_recording, SettingsPage.RECORDING, anchor = "recording_open"),
     SettingEntry("recording_auto_mode", R.string.recording_auto_record, R.string.settings_call_recording, SettingsPage.RECORDING, anchor = "recording_auto"),

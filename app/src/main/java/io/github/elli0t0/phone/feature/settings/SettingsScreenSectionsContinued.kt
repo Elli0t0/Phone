@@ -196,6 +196,30 @@ fun CallsCard(
             SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
+            SettingsSwitchRow(
+                title = stringResource(id = R.string.settings_confirm_call),
+                searchId = "confirm_call",
+                subtitle = stringResource(id = R.string.settings_confirm_call_desc),
+                checked = settings.confirmBeforeCall,
+                onCheckedChange = { viewModel.onConfirmBeforeCallChanged(it) }
+            )
+
+            Spacer(modifier = Modifier.height(spacing.small))
+            SettingsListDivider()
+            Spacer(modifier = Modifier.height(spacing.small))
+
+            SettingsSwitchRow(
+                title = stringResource(id = R.string.settings_vibrate_answer),
+                searchId = "vibrate_answer",
+                subtitle = stringResource(id = R.string.settings_vibrate_answer_desc),
+                checked = settings.vibrateOnAnswer,
+                onCheckedChange = { viewModel.onVibrateOnAnswerChanged(it) }
+            )
+
+            Spacer(modifier = Modifier.height(spacing.small))
+            SettingsListDivider()
+            Spacer(modifier = Modifier.height(spacing.small))
+
         }
     }
 }

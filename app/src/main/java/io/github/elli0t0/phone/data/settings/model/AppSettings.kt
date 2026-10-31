@@ -480,6 +480,10 @@ data class AppSettings(
     val adbHelperToken: String? = null,
     val showNumberOnCallScreen: Boolean = true,
     val defaultSim: DefaultSim = DefaultSim.ASK,
+    /** Confirm before placing a call (0.18.6): a "Call X?" sheet on every tap-to-call. */
+    val confirmBeforeCall: Boolean = false,
+    /** Vibrate once when a call is answered (0.18.6). */
+    val vibrateOnAnswer: Boolean = true,
     // Quick-decline message overrides, one per reply chip. A blank entry
     // falls back to the built-in default message for that slot, so an
     // untouched setting keeps the localized defaults.
@@ -493,7 +497,13 @@ data class AppSettings(
     val blockedPrefixes: Set<String> = emptySet(),
     // Restructured Settings (0.16.9): the main page shows eight
     // section rows; advanced rows hide unless this is on.
+    // Kept for backup compatibility (0.18.6 removed the switch and
+    // every advanced gate: all rows always show now).
     val showAdvancedSettings: Boolean = false,
+    /** Minimal mode (0.18.6): derived at the root via withMinimal(),
+     * so the stored values are never overwritten and switching it
+     * off restores everything. */
+    val minimalMode: Boolean = false,
     // Dismissed once, the duplicates banner moves into the Contacts
     // overflow menu; the favorites hint hides for good.
     // The banner hash replaces the boolean: the banner shows again
@@ -522,4 +532,19 @@ data class AppSettings(
                 sheets = bottomSheets
             )
         }
+
+    /** Minimal mode (0.18.6): the effective settings while the mode
+     * is on. The stored values are untouched, so turning it off
+     * restores everything exactly. Applied at the root where
+     * LocalAppSettings is provided; Settings pages keep showing
+     * the real stored values. */
+    fun withMinimal(): AppSettings = if (!minimalMode) this else copy(
+        appStyle = AppStyle.CLEAN,
+        glassBottomBar = false, glassHeaders = false, glassContactDetail = false,
+        glassCallScreens = false, glassCards = false,
+        reduceTransparency = true, dynamicHighlights = false,
+        animationOption = AnimationOption.REDUCED,
+        appBackground = AppBackground.PLAIN,
+        lensBar = false, shrinkBottomBarOnScroll = false
+    )
 }

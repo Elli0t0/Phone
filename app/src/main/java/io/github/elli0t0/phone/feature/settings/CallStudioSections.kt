@@ -64,8 +64,8 @@ import kotlin.math.roundToInt
  * background style, dim, and number visibility. Every change saves
  * immediately and shows in the preview. Split out of
  * CallBackgroundScreen so the studio stays small enough to ship.
- * Detailed groups hide unless advanced settings are on; background
- * style and number visibility always show.
+ * Detailed groups always show (0.18.6 removed the advanced gate);
+ * background style and number visibility always showed.
  */
 @Composable
 fun CallStudioSections(
@@ -80,9 +80,7 @@ fun CallStudioSections(
     val spacing = LocalSpacing.current
     val lightHaptic = rememberLightHaptic()
     val settings = LocalAppSettings.current
-    // Detailed groups hide unless advanced settings are on
-    // (or the screen was opened from a search result).
-    val advanced = settings.showAdvancedSettings || LocalSearchAdvanced.current
+    // Detailed groups always show (0.18.6 removed the advanced gate).
     val context = LocalContext.current
     val app = context.applicationContext as PhoneApplication
     // Same instance SettingsScreen uses (same nav entry owner).
@@ -96,7 +94,6 @@ fun CallStudioSections(
         // Layout preset: one tap that sets answer side and end-call
         // position together. Any manual change after applying a
         // preset leaves no preset selected (custom).
-        if (advanced) {
         StudioGroupCard(title = stringResource(id = R.string.studio_layout_preset), modifier = Modifier.searchHighlight("studio_layout_preset")) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(spacing.small)
@@ -116,11 +113,9 @@ fun CallStudioSections(
                 }
             }
         }
-        }
 
         // Answer side: which side the answer button (or swipe
         // direction) sits on.
-        if (advanced) {
         StudioGroupCard(title = stringResource(id = R.string.studio_answer_side), modifier = Modifier.searchHighlight("studio_answer_side")) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(spacing.small)
@@ -137,11 +132,9 @@ fun CallStudioSections(
                 }
             }
         }
-        }
 
         // Answer button size: how big the answer/decline buttons
         // (or the swipe thumb) are on the incoming call screen.
-        if (advanced) {
         StudioGroupCard(title = stringResource(id = R.string.studio_answer_button_size), modifier = Modifier.searchHighlight("studio_answer_button_size")) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(spacing.small)
@@ -158,10 +151,8 @@ fun CallStudioSections(
                 }
             }
         }
-        }
 
         // Quick replies: show the quick-reply chips on incoming calls.
-        if (advanced) {
         StudioGroupCard(title = null, modifier = Modifier.searchHighlight("studio_quick_replies")) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -181,12 +172,10 @@ fun CallStudioSections(
                 )
             }
         }
-        }
 
         // Call controls: which ongoing-call buttons show, in order.
         // Shown buttons can be reordered (up/down) or hidden;
         // hidden buttons can be added back.
-        if (advanced) {
         val shownButtons = settings.ongoingCallButtons
         val hiddenButtons = OngoingCallButton.entries - shownButtons.toSet()
         StudioGroupCard(title = stringResource(id = R.string.studio_call_controls), modifier = Modifier.searchHighlight("studio_call_controls")) {
@@ -261,11 +250,9 @@ fun CallStudioSections(
             }
             }
         }
-        }
 
         // Control grid alignment: how the ongoing-call buttons
         // spread across each row.
-        if (advanced) {
         StudioGroupCard(title = stringResource(id = R.string.studio_control_grid_alignment), modifier = Modifier.searchHighlight("studio_grid_alignment")) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(spacing.small)
@@ -282,11 +269,9 @@ fun CallStudioSections(
                 }
             }
         }
-        }
 
         // End call position: where the red end-call button sits
         // on the ongoing call screen.
-        if (advanced) {
         StudioGroupCard(title = stringResource(id = R.string.studio_end_call_position), modifier = Modifier.searchHighlight("studio_end_call_position")) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(spacing.small)
@@ -303,10 +288,8 @@ fun CallStudioSections(
                 }
             }
         }
-        }
 
         // End call size: how big the red end-call button is.
-        if (advanced) {
         StudioGroupCard(title = stringResource(id = R.string.studio_end_call_size), modifier = Modifier.searchHighlight("studio_end_call_size")) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(spacing.small)
@@ -323,11 +306,9 @@ fun CallStudioSections(
                 }
             }
         }
-        }
 
         // Caller info position: name/number at the top, or
         // vertically centered above the controls.
-        if (advanced) {
         StudioGroupCard(title = stringResource(id = R.string.studio_caller_info_position), modifier = Modifier.searchHighlight("studio_caller_info_position")) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(spacing.small)
@@ -343,7 +324,6 @@ fun CallStudioSections(
                     )
                 }
             }
-        }
         }
 
         // Background style: swatch + label per option.
@@ -411,7 +391,6 @@ fun CallStudioSections(
         }
 
         // Dim: black scrim over the background, 0-100%.
-        if (advanced) {
         StudioGroupCard(title = null, modifier = Modifier.searchHighlight("studio_dim")) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -443,7 +422,6 @@ fun CallStudioSections(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-        }
         }
 
         // Number under the caller name.

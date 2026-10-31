@@ -9,6 +9,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.PowerManager
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.telecom.Call
 import android.telecom.CallAudioState
 import android.telecom.InCallService
@@ -161,6 +163,17 @@ internal fun PhoneInCallService.handleCallState(call: Call) {
                 }
             }
             isActiveState(call.state) -> {
+                // Vibrate once on answer (0.18.6): only on a real
+                // transition into active from dialing/connecting/
+                // ringing — never on a service rebind to an
+                // already-active call, nor on hold/resume.
+                if (cachedVibrateOnAnswer && answeredVibrationCall != call &&
+                    lastCallState != null && lastCallState != Call.STATE_ACTIVE &&
+                    lastCallState != Call.STATE_HOLDING
+                ) {
+                    answeredVibrationCall = call
+                    vibrateOnAnswer()
+                }
                 startCallActivity()
                 if (isActivityVisible || CallRepository.isCallActivityVisible.value) {
                     transitionToOngoing(call)
@@ -184,7 +197,17 @@ internal fun PhoneInCallService.handleCallState(call: Call) {
     } catch (e: Exception) {
         Log.e(PhoneInCallService.TAG, "handleCallState failed state=${call.state}", e)
     }
+    lastCallState = call.state
     updateProximityWakeLock()
+}
+
+/** One short vibration for an answered call (0.18.6). */
+internal fun PhoneInCallService.vibrateOnAnswer() {
+    runCatching {
+        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator ?: return@runCatching
+        if (!vibrator.hasVibrator()) return@runCatching
+        vibrator.vibrate(VibrationEffect.createOneShot(150, VibrationEffect.DEFAULT_AMPLITUDE))
+    }
 }
 
 internal fun PhoneInCallService.startCallActivity() {

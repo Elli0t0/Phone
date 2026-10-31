@@ -199,6 +199,7 @@ fun SettingsSwitchRow(
     subtitle: String? = null,
     checked: Boolean,
     searchId: String? = null,
+    dimmed: Boolean = false,
     onCheckedChange: (Boolean) -> Unit
 ) {
     Row(
@@ -212,7 +213,9 @@ fun SettingsSwitchRow(
         Column(modifier = Modifier.weight(1f).padding(end = PhoneDimens.settingsSwitchRowTextEndPadding)) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                color = if (dimmed) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    else MaterialTheme.colorScheme.onSurface
             )
             if (subtitle != null) {
                 Text(

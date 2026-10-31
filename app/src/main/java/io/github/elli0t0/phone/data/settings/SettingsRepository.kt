@@ -142,10 +142,13 @@ interface SettingsRepository {
     suspend fun setAdbHelperToken(token: String?)
     suspend fun setShowNumberOnCallScreen(show: Boolean)
     suspend fun setDefaultSim(defaultSim: DefaultSim)
+    suspend fun setConfirmBeforeCall(enabled: Boolean)
+    suspend fun setVibrateOnAnswer(enabled: Boolean)
     suspend fun setQuickDeclineMessages(messages: List<String>)
     suspend fun setSpeedDial(speedDial: Map<Char, String>)
     suspend fun setBlockedPrefixes(prefixes: Set<String>)
     suspend fun setShowAdvancedSettings(show: Boolean)
+    suspend fun setMinimalMode(enabled: Boolean)
     suspend fun setDuplicatesDismissed(dismissed: Boolean)
     suspend fun setDuplicatesDismissedHash(hash: String)
     suspend fun setFavoritesHintDismissed(dismissed: Boolean)
@@ -251,6 +254,9 @@ class DataStoreSettingsRepository(
         val SPEED_DIAL = stringPreferencesKey("speed_dial")
         val BLOCKED_PREFIXES = stringPreferencesKey("blocked_prefixes")
         val SHOW_ADVANCED_SETTINGS = booleanPreferencesKey("show_advanced_settings")
+        val MINIMAL_MODE = booleanPreferencesKey("minimal_mode")
+        val CONFIRM_BEFORE_CALL = booleanPreferencesKey("confirm_before_call")
+        val VIBRATE_ON_ANSWER = booleanPreferencesKey("vibrate_on_answer")
         val DUPLICATES_DISMISSED = booleanPreferencesKey("duplicates_dismissed")
         val DUPLICATES_DISMISSED_HASH = stringPreferencesKey("duplicates_dismissed_hash")
         val FAVORITES_HINT_DISMISSED = booleanPreferencesKey("favorites_hint_dismissed")
@@ -462,6 +468,9 @@ class DataStoreSettingsRepository(
             .filter { it.isNotEmpty() }
             .toSet()
         val showAdvancedSettings = prefs[Keys.SHOW_ADVANCED_SETTINGS] ?: false
+        val minimalMode = prefs[Keys.MINIMAL_MODE] ?: false
+        val confirmBeforeCall = prefs[Keys.CONFIRM_BEFORE_CALL] ?: false
+        val vibrateOnAnswer = prefs[Keys.VIBRATE_ON_ANSWER] ?: true
         val duplicatesDismissed = prefs[Keys.DUPLICATES_DISMISSED] ?: false
         val duplicatesDismissedHash = prefs[Keys.DUPLICATES_DISMISSED_HASH]
         val favoritesHintDismissed = prefs[Keys.FAVORITES_HINT_DISMISSED] ?: false
@@ -545,10 +554,13 @@ class DataStoreSettingsRepository(
             adbHelperToken = adbHelperToken,
             showNumberOnCallScreen = showNumberOnCallScreen,
             defaultSim = defaultSim,
+            confirmBeforeCall = confirmBeforeCall,
+            vibrateOnAnswer = vibrateOnAnswer,
             quickDeclineOverrides = quickDeclineOverrides,
             speedDial = speedDial,
             blockedPrefixes = blockedPrefixes,
             showAdvancedSettings = showAdvancedSettings,
+            minimalMode = minimalMode,
             duplicatesDismissed = duplicatesDismissed,
             duplicatesDismissedHash = duplicatesDismissedHash,
             favoritesHintDismissed = favoritesHintDismissed
@@ -1107,6 +1119,24 @@ class DataStoreSettingsRepository(
     override suspend fun setShowAdvancedSettings(show: Boolean) {
         dataStore.edit { prefs ->
             prefs[Keys.SHOW_ADVANCED_SETTINGS] = show
+        }
+    }
+
+    override suspend fun setMinimalMode(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.MINIMAL_MODE] = enabled
+        }
+    }
+
+    override suspend fun setConfirmBeforeCall(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.CONFIRM_BEFORE_CALL] = enabled
+        }
+    }
+
+    override suspend fun setVibrateOnAnswer(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.VIBRATE_ON_ANSWER] = enabled
         }
     }
 

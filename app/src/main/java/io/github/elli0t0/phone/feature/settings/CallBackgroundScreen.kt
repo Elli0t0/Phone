@@ -91,11 +91,9 @@ fun CallBackgroundScreen(
 ) {
     val spacing = LocalSpacing.current
     val settings = LocalAppSettings.current
-    // Detailed studio groups hide unless advanced settings are on
-    // (or the screen was opened from a search result); the preview,
-    // the unified button size, background style and number
-    // visibility (in CallStudioSections) always show.
-    val advanced = settings.showAdvancedSettings || LocalSearchAdvanced.current
+    // Detailed studio groups always show (0.18.6 removed the
+    // advanced gate); the preview, the unified button size,
+    // background style and number visibility always showed.
     val context = LocalContext.current
     val app = context.applicationContext as PhoneApplication
     // Same instance SettingsScreen uses (same nav entry owner).
@@ -333,7 +331,7 @@ fun CallBackgroundScreen(
                 // Button size: one level for the end-call, answer,
                 // control and keypad sizes together. Mixed states
                 // show the end-call size until a level unifies them.
-                // The four individual rows are advanced-only.
+                // The four individual rows below the unified row.
                 item {
                     StudioGroupCard(
                         title = stringResource(id = R.string.call_button_size),
@@ -360,7 +358,7 @@ fun CallBackgroundScreen(
                 // to keep each file small enough to ship. Each group
                 // is a card item in the page.
                 // Control button size: how big the ongoing-call buttons are.
-                if (advanced) item {
+                item {
                     StudioGroupCard(
                         title = stringResource(id = R.string.call_bg_control_button_size),
                         modifier = Modifier.searchHighlight("control_button_size")
@@ -383,7 +381,7 @@ fun CallBackgroundScreen(
                 }
 
                 // Keypad key size: how big the in-call keypad keys are.
-                if (advanced) item {
+                item {
                     StudioGroupCard(
                         title = stringResource(id = R.string.call_bg_keypad_key_size),
                         modifier = Modifier.searchHighlight("dtmf_key_size")
@@ -405,24 +403,9 @@ fun CallBackgroundScreen(
                     }
                 }
 
-                // Dialpad tones: quiet local key tones during a call,
-                // off by default. The tones the other side hears come
-                // from the DTMF queue, not from this switch.
-                if (advanced) item {
-                    StudioGroupCard(title = null) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(text = stringResource(id = R.string.settings_dialpad_tones), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-                            AppSwitch(checked = settings.dialpadTones, onCheckedChange = { settingsViewModel.onDialpadTonesChanged(it) }, modifier = Modifier.testTag("dialpad_tones_switch"))
-                        }
-                    }
-                }
-
                 // Avatar size: how big the caller avatar is on
                 // the incoming call screen.
-                if (advanced) item {
+                item {
                     StudioGroupCard(title = stringResource(id = R.string.call_bg_avatar_size)) {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(spacing.small)
@@ -443,7 +426,7 @@ fun CallBackgroundScreen(
 
                 // Avatar shape for the caller avatar on the
                 // incoming call screen.
-                if (advanced) item {
+                item {
                     StudioGroupCard(title = stringResource(id = R.string.call_bg_avatar_shape)) {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(spacing.small)
@@ -463,7 +446,7 @@ fun CallBackgroundScreen(
                 }
 
                 // Quick replies position: above (default) or below the answer buttons.
-                if (advanced) item {
+                item {
                     StudioGroupCard(title = null) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,

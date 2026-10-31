@@ -45,6 +45,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import io.github.elli0t0.phone.core.design.GlassDropdownMenu
+import io.github.elli0t0.phone.core.design.ConfirmCallSheet
+import io.github.elli0t0.phone.core.design.PendingCall
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -199,12 +201,14 @@ fun RecentsScreen(
     // Read here, not inside initiateCall: the handler is not a
     // @Composable context, so it cannot read a CompositionLocal.
     val defaultSim = LocalAppSettings.current.defaultSim
+    val confirmBeforeCall = LocalAppSettings.current.confirmBeforeCall
     val clipboardManager = LocalClipboardManager.current
     // App-level snackbar host (MainActivity): one host above the
     // floating bar for every screen, no per-screen host under the bar.
     val snackbarHostState = LocalAppSnackbarHostState.current
 
     var simPickerTargetNumber by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
+    var pendingConfirmCall by remember { androidx.compose.runtime.mutableStateOf<PendingCall?>(null) }
     // Unknown number chosen for in-app "Add to contacts": shows the
     // create-new / add-to-existing chooser dialog.
     var addNumber by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
@@ -215,12 +219,18 @@ fun RecentsScreen(
     val simAccounts = remember(context) { io.github.elli0t0.phone.core.telecom.TelecomHelper.getCallCapablePhoneAccounts(context) }
     val recentsScope = androidx.compose.runtime.rememberCoroutineScope()
 
-    fun initiateCall(number: String, lookupKey: String? = null) {
+    fun initiateCall(number: String, lookupKey: String? = null, confirmed: Boolean = false) {
         if (PhoneNumberUtils.isEmergencyNumber(PhoneNumberFormatter.normalizeDigits(number))) {
             // Emergency: skip the SIM picker and saved-SIM lookup
             // entirely; placeCall hands emergency numbers to the
             // system dialer.
             CallManager.placeCall(context, number)
+            return
+        }
+        // Confirm-first (0.18.6): the sheet re-enters here confirmed,
+        // so the SIM flow below runs exactly once per tap.
+        if (confirmBeforeCall && !confirmed) {
+            pendingConfirmCall = PendingCall(number = number, lookupKey = lookupKey, label = number)
             return
         }
         if (simAccounts.size <= 1) {
@@ -445,6 +455,17 @@ fun RecentsScreen(
                 CallManager.placeCall(context, num, sim.handle)
             },
             onDismiss = { simPickerTargetNumber = null }
+        )
+    }
+
+    pendingConfirmCall?.let { pending ->
+        ConfirmCallSheet(
+            pending = pending,
+            onConfirm = {
+                pendingConfirmCall = null
+                initiateCall(pending.number, pending.lookupKey, confirmed = true)
+            },
+            onDismiss = { pendingConfirmCall = null }
         )
     }
 

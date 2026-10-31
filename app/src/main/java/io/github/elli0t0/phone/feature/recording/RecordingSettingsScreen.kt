@@ -70,7 +70,6 @@ import io.github.elli0t0.phone.core.recording.PairResult
 import io.github.elli0t0.phone.core.recording.RecordingSession
 import io.github.elli0t0.phone.data.settings.model.AutoRecordMode
 import io.github.elli0t0.phone.data.settings.model.SwitchStyle
-import io.github.elli0t0.phone.feature.settings.LocalSearchAdvanced
 import io.github.elli0t0.phone.feature.settings.SettingsChoiceDialog
 import io.github.elli0t0.phone.feature.settings.searchHighlight
 import io.github.elli0t0.phone.navigation.InnerTopBar
@@ -98,10 +97,6 @@ fun RecordingSettingsScreen(
         )
     )
     val status by viewModel.backendStatus.collectAsStateWithLifecycle()
-    // Hoisted: the Advanced card's condition sits at LazyListScope
-    // level (not a @Composable scope), so the settings read must
-    // happen here in the function body, not in the condition.
-    val showAdvancedSettings = LocalAppSettings.current.showAdvancedSettings || LocalSearchAdvanced.current
     val session by viewModel.session.collectAsStateWithLifecycle()
     val lastError by viewModel.lastError.collectAsStateWithLifecycle()
     val recordingStats by viewModel.recordingStats.collectAsStateWithLifecycle()
@@ -516,7 +511,6 @@ fun RecordingSettingsScreen(
                 }
             }
 
-            if (showAdvancedSettings) {
                 item {
                     Card(
                         colors = CardDefaults.cardColors(
@@ -627,7 +621,6 @@ fun RecordingSettingsScreen(
                             )
                         }
                     }
-                }
             }
 
             val active = session as? RecordingSession.Recording

@@ -50,7 +50,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import io.github.elli0t0.phone.LocalAppSnackbarHostState
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
+import io.github.elli0t0.phone.core.design.ConfirmCallSheet
 import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.PendingCall
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
@@ -98,6 +100,7 @@ fun ContactDetailScreen(
     // Read here, not inside placeCallWithSim: the handler is not a
     // @Composable context, so it cannot read a CompositionLocal.
     val defaultSim = LocalAppSettings.current.defaultSim
+    val confirmBeforeCall = LocalAppSettings.current.confirmBeforeCall
     // App-level snackbar host (MainActivity): one host above the
     // floating bar for every screen, no per-screen host under the bar.
     val snackbarHostState = LocalAppSnackbarHostState.current
@@ -106,17 +109,27 @@ fun ContactDetailScreen(
     var showMoreMenu by remember { mutableStateOf(false) }
     var phonePickerAction by remember { mutableStateOf<String?>(null) } // "call" or "message"
     var simPickerNumber by remember { mutableStateOf<String?>(null) }
+    var pendingConfirmCall by remember { mutableStateOf<PendingCall?>(null) }
     var showCallingSimDialog by remember { mutableStateOf(false) }
     val simAccounts = remember(context) { TelecomHelper.getCallCapablePhoneAccounts(context) }
     val simRowSource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
 
-    fun placeCallWithSim(number: String) {
+    fun placeCallWithSim(number: String, confirmed: Boolean = false) {
         if (PhoneNumberUtils.isEmergencyNumber(PhoneNumberFormatter.normalizeDigits(number))) {
             // Emergency: skip the SIM picker and saved-SIM lookup
             // entirely; placeCall hands emergency numbers to the
             // system dialer.
             CallManager.placeCall(context, number)
+            return
+        }
+        // Confirm-first (0.18.6): the sheet re-enters here confirmed,
+        // so the SIM flow below runs exactly once per tap.
+        if (confirmBeforeCall && !confirmed) {
+            pendingConfirmCall = PendingCall(
+                number = number,
+                label = uiState.contact?.displayName?.ifBlank { null } ?: number
+            )
             return
         }
         if (simAccounts.size <= 1) {
@@ -146,6 +159,17 @@ fun ContactDetailScreen(
                 CallManager.placeCall(context, num, sim.handle)
             },
             onDismiss = { simPickerNumber = null }
+        )
+    }
+
+    pendingConfirmCall?.let { pending ->
+        ConfirmCallSheet(
+            pending = pending,
+            onConfirm = {
+                pendingConfirmCall = null
+                placeCallWithSim(pending.number, confirmed = true)
+            },
+            onDismiss = { pendingConfirmCall = null }
         )
     }
 

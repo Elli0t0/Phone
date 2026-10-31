@@ -164,6 +164,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.18.6]
+
+- Settings reorganized so every setting lives in one place: Appearance (Minimal mode on top, Theme, Accent, Pure black, Font size, Header size, App style, Background), Glass (master switch, Intensity, Reduce transparency, Dynamic highlights, always-visible Glass Studio), Layout & navigation (Density, Swipe actions, Default tab, Bottom bar, Animations), new Keypad page (Keypad style, Key style, Dialpad tones, Speed dial), Calls, Contacts display, Recording, Privacy, and Backup & About (backup, restore, reset, version, update check).
+- Removed duplicates: Card style from Layout, Key style from Glass, Keypad style from Layout, Background from Glass. Removed the per-section glass switches (their fields stay for backup compatibility), the Advanced settings switch and every advanced gate (everything shows now), Transition style, Bottom sheets, and the Backdrop row (Backdrop still lives in Glass Studio).
+- Minimal mode (top switch on Appearance): turns off glass, dynamic highlights, animations (reduced), backgrounds (plain) and the lens/shrinking bars, derived at the root so your stored settings are untouched and fully restored when you switch it off. While on, the glass/background rows show "Off in Minimal mode".
+- New on Calls: "Confirm before calling" (off by default, "Call X?" sheet on keypad, Recents and contacts taps, never for emergency numbers) and "Vibrate when call is answered" (on by default, once per call).
+- Speed dial assignments can now be viewed and removed from the Keypad page (assigning is still long-press on a keypad digit).
+
 ## [0.18.5]
 
 - Selection bar shows just the count on one line, with smaller 40dp buttons, and is glass like the bottom bar instead of flat.

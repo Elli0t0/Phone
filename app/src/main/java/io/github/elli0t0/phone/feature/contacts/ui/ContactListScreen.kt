@@ -28,6 +28,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import io.github.elli0t0.phone.core.design.GlassDropdownMenu
+import io.github.elli0t0.phone.core.design.ConfirmCallSheet
+import io.github.elli0t0.phone.core.design.PendingCall
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -219,12 +221,29 @@ private fun ContactsContent(
     val app = context.applicationContext as PhoneApplication
     val coroutineScope = rememberCoroutineScope()
     val defaultSim = LocalAppSettings.current.defaultSim
+    val confirmBeforeCall = LocalAppSettings.current.confirmBeforeCall
     val simAccounts = remember(context) { TelecomHelper.getCallCapablePhoneAccounts(context) }
     var simPickerNumber by remember { mutableStateOf<String?>(null) }
+    var pendingConfirmCall by remember { mutableStateOf<PendingCall?>(null) }
 
-    fun placeCallWithSim(number: String, lookupKey: String?) {
+    fun placeCallWithSim(
+        number: String,
+        lookupKey: String?,
+        displayName: String? = null,
+        confirmed: Boolean = false
+    ) {
         if (PhoneNumberUtils.isEmergencyNumber(PhoneNumberFormatter.normalizeDigits(number))) {
             CallManager.placeCall(context, number)
+            return
+        }
+        // Confirm-first (0.18.6): the sheet re-enters here confirmed,
+        // so the SIM flow below runs exactly once per tap.
+        if (confirmBeforeCall && !confirmed) {
+            pendingConfirmCall = PendingCall(
+                number = number,
+                lookupKey = lookupKey,
+                label = displayName?.ifBlank { null } ?: number
+            )
             return
         }
         if (simAccounts.size <= 1) {
@@ -252,6 +271,17 @@ private fun ContactsContent(
                 CallManager.placeCall(context, num, sim.handle)
             },
             onDismiss = { simPickerNumber = null }
+        )
+    }
+
+    pendingConfirmCall?.let { pending ->
+        ConfirmCallSheet(
+            pending = pending,
+            onConfirm = {
+                pendingConfirmCall = null
+                placeCallWithSim(pending.number, pending.lookupKey, confirmed = true)
+            },
+            onDismiss = { pendingConfirmCall = null }
         )
     }
     val listState = rememberLazyListState()
@@ -603,7 +633,7 @@ private fun ContactsContent(
                         onContactClick = onContactClick,
                         onSwipeCall = { contact ->
                             contact.primaryNumberPreview?.let { number ->
-                                placeCallWithSim(number, contact.lookupKey)
+                                placeCallWithSim(number, contact.lookupKey, contact.displayName)
                             }
                         },
                         onSwipeMessage = { contact ->

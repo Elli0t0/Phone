@@ -30,6 +30,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import io.github.elli0t0.phone.core.design.GlassDropdownMenu
+import io.github.elli0t0.phone.core.design.ConfirmCallSheet
+import io.github.elli0t0.phone.core.design.PendingCall
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -111,6 +113,7 @@ fun DialpadScreen(
     // Read here, not inside dialNumber: the handler is not a
     // @Composable context, so it cannot read a CompositionLocal.
     val defaultSim = LocalAppSettings.current.defaultSim
+    val confirmBeforeCall = LocalAppSettings.current.confirmBeforeCall
     val animationOption = LocalAppSettings.current.animationOption
     val keyStyle = LocalAppSettings.current.effectiveStyle.keys
     // Read here, not inside the long-press handler: it runs outside
@@ -121,6 +124,7 @@ fun DialpadScreen(
 
     val simAccounts = remember(context) { io.github.elli0t0.phone.core.telecom.TelecomHelper.getCallCapablePhoneAccounts(context) }
     var simPickerTargetNumber by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
+    var pendingConfirmCall by remember { androidx.compose.runtime.mutableStateOf<PendingCall?>(null) }
     var searchVisible by remember { androidx.compose.runtime.mutableStateOf(false) }
     var menuExpanded by remember { androidx.compose.runtime.mutableStateOf(false) }
 
@@ -176,6 +180,18 @@ fun DialpadScreen(
     // Shared light haptic for every keypad tap (follows the system
     // haptics setting), replacing the two local View-based helpers.
     val lightHaptic = rememberLightHaptic()
+
+    pendingConfirmCall?.let { pending ->
+        ConfirmCallSheet(
+            pending = pending,
+            onConfirm = {
+                pendingConfirmCall = null
+                lightHaptic()
+                callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
+            },
+            onDismiss = { pendingConfirmCall = null }
+        )
+    }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -421,7 +437,14 @@ fun DialpadScreen(
             onCallClick = {
                 if (uiState.canCall) {
                     lightHaptic()
-                    callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
+                    val number = uiState.rawNumber
+                    if (confirmBeforeCall &&
+                        !PhoneNumberUtils.isEmergencyNumber(PhoneNumberFormatter.normalizeDigits(number))
+                    ) {
+                        pendingConfirmCall = PendingCall(number = number, label = number)
+                    } else {
+                        callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
+                    }
                 }
             }
         )

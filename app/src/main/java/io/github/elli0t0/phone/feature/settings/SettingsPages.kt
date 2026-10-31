@@ -125,6 +125,25 @@ fun LayoutNavPage(
 }
 
 @Composable
+fun KeypadPage(
+    settings: AppSettings,
+    viewModel: SettingsViewModel,
+    dialogs: SettingsDialogState,
+    spacing: Spacing,
+    onNavigateBack: () -> Unit
+) {
+    SettingsSectionPage(
+        title = stringResource(id = R.string.settings_cat_keypad),
+        backTestTag = "btn_keypad_back",
+        pageTestTag = "keypad_page",
+        spacing = spacing,
+        onNavigateBack = onNavigateBack
+    ) {
+        KeypadCard(settings, viewModel, dialogs, spacing)
+    }
+}
+
+@Composable
 fun CallsPage(
     settings: AppSettings,
     viewModel: SettingsViewModel,
@@ -201,6 +220,7 @@ fun AboutPage(
         Column(verticalArrangement = Arrangement.spacedBy(spacing.medium)) {
             AboutCard(settings, viewModel, dialogs, spacing, runUpdateCheck)
             BackupCard(viewModel, spacing)
+            ResetCard(dialogs = dialogs, spacing = spacing)
         }
     }
 }

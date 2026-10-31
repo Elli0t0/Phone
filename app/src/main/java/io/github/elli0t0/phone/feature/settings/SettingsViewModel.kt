@@ -191,6 +191,30 @@ class SettingsViewModel(
         }
     }
 
+    fun onMinimalModeChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setMinimalMode(enabled)
+        }
+    }
+
+    fun onConfirmBeforeCallChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setConfirmBeforeCall(enabled)
+        }
+    }
+
+    fun onVibrateOnAnswerChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setVibrateOnAnswer(enabled)
+        }
+    }
+
+    fun onSpeedDialEntryRemoved(digit: Char) {
+        viewModelScope.launch {
+            settingsRepository.setSpeedDial(settingsState.value.speedDial - digit)
+        }
+    }
+
     fun onGlassBottomBarChanged(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setGlassBottomBar(enabled)

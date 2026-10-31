@@ -42,7 +42,6 @@ import io.github.elli0t0.phone.data.settings.model.AccentChoice
 import io.github.elli0t0.phone.data.settings.model.accentChoice
 import kotlin.math.roundToInt
 import io.github.elli0t0.phone.data.settings.model.AppSettings
-import io.github.elli0t0.phone.data.settings.model.Backdrop
 import androidx.compose.runtime.Composable
 import io.github.elli0t0.phone.core.design.Spacing
 import android.content.Context
@@ -70,6 +69,18 @@ fun AppearanceCard(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(spacing.medium)) {
+            SettingsSwitchRow(
+                title = stringResource(id = R.string.settings_minimal_mode),
+                searchId = "minimal_mode",
+                subtitle = stringResource(id = R.string.settings_minimal_mode_desc),
+                checked = settings.minimalMode,
+                onCheckedChange = { viewModel.onMinimalModeChanged(it) }
+            )
+
+            Spacer(modifier = Modifier.height(spacing.small))
+            SettingsListDivider()
+            Spacer(modifier = Modifier.height(spacing.small))
+
             SettingsRow(
                 title = stringResource(id = R.string.settings_app_style),
                 subtitle = settings.appStyle.label,
@@ -204,6 +215,26 @@ fun AppearanceCard(
                 subtitle = settings.headerSize.label,
                 onClick = { dialogs.showHeaderSizeDialog = true }
             )
+
+            Spacer(modifier = Modifier.height(spacing.small))
+            SettingsListDivider()
+            Spacer(modifier = Modifier.height(spacing.small))
+
+            SettingsRow(
+                title = stringResource(id = R.string.settings_app_background),
+                searchId = "app_background",
+                titleColor = if (settings.minimalMode) {
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+                subtitle = if (settings.minimalMode) {
+                    stringResource(id = R.string.settings_off_in_minimal_mode)
+                } else {
+                    settings.appBackground.label
+                },
+                onClick = { dialogs.showAppBackgroundPage = true }
+            )
         }
     }
 }
@@ -215,10 +246,12 @@ fun GlassCard(
     dialogs: SettingsDialogState,
     spacing: Spacing
 ) {
-    // Individual glass switches hide unless advanced settings are on
-    // (or the page was opened from a search result); the master
-    // switch below always shows.
-    val advanced = settings.showAdvancedSettings || LocalSearchAdvanced.current
+    // Minimal mode turns every glass surface off at the root, so
+    // these rows show the stored values dimmed with an "off"
+    // subtitle instead of their value while it is on.
+    val minimal = settings.minimalMode
+    val offSubtitle = stringResource(id = R.string.settings_off_in_minimal_mode)
+    val dimmedTitle = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
     Card(
         shape = settingsListCardShape(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -228,9 +261,10 @@ fun GlassCard(
             SettingsSwitchRow(
                 title = stringResource(id = R.string.settings_cat_liquid_glass),
                 searchId = "glass_master",
-                subtitle = stringResource(id = R.string.settings_glass_master_desc),
+                subtitle = if (minimal) offSubtitle else stringResource(id = R.string.settings_glass_master_desc),
                 checked = settings.glassHeaders || settings.glassContactDetail ||
                     settings.glassCallScreens || settings.glassBottomBar,
+                dimmed = minimal,
                 onCheckedChange = { viewModel.onGlassMasterChanged(it) }
             )
 
@@ -238,77 +272,11 @@ fun GlassCard(
             SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
-            if (advanced) {
-            SettingsSwitchRow(
-                title = stringResource(id = R.string.settings_glass_bottom_bar),
-                searchId = "glass_bottom_bar",
-                subtitle = stringResource(id = R.string.settings_glass_bottom_bar_desc),
-                checked = settings.glassBottomBar,
-                onCheckedChange = { viewModel.onGlassBottomBarChanged(it) }
-            )
-
-            Spacer(modifier = Modifier.height(spacing.small))
-            SettingsListDivider()
-            Spacer(modifier = Modifier.height(spacing.small))
-            }
-
-            SettingsRow(
-                title = stringResource(id = R.string.settings_key_style),
-                searchId = "key_style",
-                subtitle = settings.keyStyle.label,
-                onClick = { dialogs.showKeyStyleDialog = true }
-            )
-
-            Spacer(modifier = Modifier.height(spacing.small))
-            SettingsListDivider()
-            Spacer(modifier = Modifier.height(spacing.small))
-
-            if (advanced) {
-            SettingsSwitchRow(
-                title = stringResource(id = R.string.settings_glass_headers),
-                searchId = "glass_headers",
-                subtitle = stringResource(id = R.string.settings_glass_headers_desc),
-                checked = settings.glassHeaders,
-                onCheckedChange = { viewModel.onGlassHeadersChanged(it) }
-            )
-
-            Spacer(modifier = Modifier.height(spacing.small))
-            SettingsListDivider()
-            Spacer(modifier = Modifier.height(spacing.small))
-            }
-
-            if (advanced) {
-            SettingsSwitchRow(
-                title = stringResource(id = R.string.settings_glass_contact_detail),
-                searchId = "glass_contact_detail",
-                subtitle = stringResource(id = R.string.settings_glass_contact_detail_desc),
-                checked = settings.glassContactDetail,
-                onCheckedChange = { viewModel.onGlassContactDetailChanged(it) }
-            )
-
-            Spacer(modifier = Modifier.height(spacing.small))
-            SettingsListDivider()
-            Spacer(modifier = Modifier.height(spacing.small))
-            }
-
-            if (advanced) {
-            SettingsSwitchRow(
-                title = stringResource(id = R.string.settings_glass_call_screens),
-                searchId = "glass_call_screens",
-                subtitle = stringResource(id = R.string.settings_glass_call_screens_desc),
-                checked = settings.glassCallScreens,
-                onCheckedChange = { viewModel.onGlassCallScreensChanged(it) }
-            )
-
-            Spacer(modifier = Modifier.height(spacing.small))
-            SettingsListDivider()
-            Spacer(modifier = Modifier.height(spacing.small))
-            }
-
             SettingsRow(
                 title = stringResource(id = R.string.settings_glass_intensity),
                 searchId = "glass_intensity",
-                subtitle = settings.glassIntensity.label,
+                titleColor = if (minimal) dimmedTitle else MaterialTheme.colorScheme.onSurface,
+                subtitle = if (minimal) offSubtitle else settings.glassIntensity.label,
                 onClick = { dialogs.showGlassIntensityDialog = true }
             )
 
@@ -328,25 +296,12 @@ fun GlassCard(
             SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
-            if (advanced) {
-            SettingsSwitchRow(
-                title = stringResource(id = R.string.settings_glass_cards),
-                searchId = "glass_cards",
-                subtitle = stringResource(id = R.string.settings_glass_cards_desc),
-                checked = settings.glassCards,
-                onCheckedChange = { viewModel.onGlassCardsChanged(it) }
-            )
-
-            Spacer(modifier = Modifier.height(spacing.small))
-            SettingsListDivider()
-            Spacer(modifier = Modifier.height(spacing.small))
-            }
-
             SettingsSwitchRow(
                 title = stringResource(id = R.string.settings_dynamic_highlights),
                 searchId = "glass_dynamic_highlights",
-                subtitle = stringResource(id = R.string.settings_dynamic_highlights_desc),
+                subtitle = if (minimal) offSubtitle else stringResource(id = R.string.settings_dynamic_highlights_desc),
                 checked = settings.dynamicHighlights,
+                dimmed = minimal,
                 onCheckedChange = { viewModel.onDynamicHighlightsChanged(it) }
             )
 
@@ -355,41 +310,11 @@ fun GlassCard(
             Spacer(modifier = Modifier.height(spacing.small))
 
             SettingsRow(
-                title = stringResource(id = R.string.settings_backdrop),
-                searchId = "glass_backdrop",
-                // Pure black dark mode forces the backdrop off.
-                subtitle = if (settings.pureBlackDarkMode) {
-                    Backdrop.OFF.label
-                } else {
-                    settings.backdrop.label
-                },
-                onClick = { dialogs.showBackdropDialog = true }
-            )
-
-            Spacer(modifier = Modifier.height(spacing.small))
-            SettingsListDivider()
-            Spacer(modifier = Modifier.height(spacing.small))
-
-            SettingsRow(
-                title = stringResource(id = R.string.settings_app_background),
-                searchId = "glass_app_background",
-                subtitle = settings.appBackground.label,
-                onClick = { dialogs.showAppBackgroundPage = true }
-            )
-
-            // Glass Studio is advanced: hidden unless the
-            // advanced toggle is on (or opened from a search result).
-            if (settings.showAdvancedSettings || LocalSearchAdvanced.current) {
-            Spacer(modifier = Modifier.height(spacing.small))
-            SettingsListDivider()
-            Spacer(modifier = Modifier.height(spacing.small))
-
-            SettingsRow(
                 title = stringResource(id = R.string.settings_glass_studio),
-                subtitle = stringResource(id = R.string.settings_glass_studio_desc),
+                titleColor = if (minimal) dimmedTitle else MaterialTheme.colorScheme.onSurface,
+                subtitle = if (minimal) offSubtitle else stringResource(id = R.string.settings_glass_studio_desc),
                 onClick = { dialogs.showGlassStudioPage = true }
             )
-            }
         }
     }
 }

@@ -47,6 +47,14 @@ class PhoneInCallService : InCallService() {
     // in onCreate; until the first emission arrives the default applies.
     @Volatile
     internal var cachedCallDisplay: CallDisplay = CallDisplay.FULL_SCREEN
+    // Cached vibrate-on-answer setting (default on, 0.18.6).
+    @Volatile
+    internal var cachedVibrateOnAnswer: Boolean = true
+    // The call already vibrated for on answer (once per call), and the
+    // last state seen, so a service rebind to an already-active call
+    // or a hold/resume never vibrates again.
+    internal var answeredVibrationCall: Call? = null
+    internal var lastCallState: Int? = null
     internal var settingsJob: Job? = null
 
     @Volatile
@@ -147,6 +155,8 @@ class PhoneInCallService : InCallService() {
         lookupJob?.cancel()
         callStartTimeoutJob?.cancel()
         callStartTimeoutJob = null
+        if (answeredVibrationCall == call) answeredVibrationCall = null
+        lastCallState = null
         try {
             stopForeground(STOP_FOREGROUND_REMOVE)
         } catch (e: Exception) {
@@ -280,7 +290,10 @@ class PhoneInCallService : InCallService() {
         settingsJob = serviceScope.launch {
             runCatching {
                 (application as? PhoneApplication)?.container?.settingsRepository?.settingsFlow
-                    ?.collect { cachedCallDisplay = it.callDisplay }
+                    ?.collect {
+                        cachedCallDisplay = it.callDisplay
+                        cachedVibrateOnAnswer = it.vibrateOnAnswer
+                    }
             }
         }
         try {

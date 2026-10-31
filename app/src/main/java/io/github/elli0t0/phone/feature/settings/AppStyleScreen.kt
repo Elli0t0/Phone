@@ -57,7 +57,6 @@ import io.github.elli0t0.phone.data.settings.model.FontStyle
 import io.github.elli0t0.phone.data.settings.model.KeyStyle
 import io.github.elli0t0.phone.data.settings.model.StylePreset
 import io.github.elli0t0.phone.data.settings.model.SwitchStyle
-import io.github.elli0t0.phone.data.settings.model.TransitionStyle
 
 /**
  * The App style page: two preset cards (Classic, Clean) with a mini
@@ -75,18 +74,11 @@ fun AppStyleScreen(
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
-    // LazyColumn item conditions are not a @Composable scope, so the
-    // search-override read is hoisted here (0.16.9 lesson, repeated).
-    // Individual options show only for Custom (0.17.7): preset users
-    // see a Customize entry row instead, which flips to Custom
-    // keeping the preset's values. Search still force-shows them so
-    // a searched option can be found from any style.
-    val showCustomize = settings.appStyle == AppStyle.CUSTOM || LocalSearchAdvanced.current
+    // Customize always shows (0.18.6): the advanced gate is gone,
+    // and picking any individual option flips the style to Custom.
     var showFontDialog by remember { mutableStateOf(false) }
     var showCardDialog by remember { mutableStateOf(false) }
-    var showKeyDialog by remember { mutableStateOf(false) }
     var showSwitchDialog by remember { mutableStateOf(false) }
-    var showTransitionDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier.fillMaxSize().testTag("app_style_screen")
@@ -176,25 +168,10 @@ fun AppStyleScreen(
                         )
                     }
                 }
-                if (showCustomize) item {
+                item {
                     SettingsSectionHeader(title = stringResource(id = R.string.settings_app_style_customize))
                 }
-                if (settings.appStyle != AppStyle.CUSTOM) item {
-                    Card(
-                        shape = settingsListCardShape(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(spacing.medium)) {
-                            SettingsRow(
-                                title = stringResource(id = R.string.settings_app_style_customize),
-                                subtitle = settings.appStyle.label,
-                                onClick = { viewModel.onAppStyleChanged(AppStyle.CUSTOM) }
-                            )
-                        }
-                    }
-                }
-                if (showCustomize) item {
+                item {
                     Card(
                         shape = settingsListCardShape(),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -224,44 +201,10 @@ fun AppStyleScreen(
                             Spacer(modifier = Modifier.height(spacing.small))
 
                             SettingsRow(
-                                title = stringResource(id = R.string.settings_key_style),
-                                searchId = "style_key",
-                                subtitle = settings.keyStyle.label,
-                                onClick = { showKeyDialog = true }
-                            )
-
-                            Spacer(modifier = Modifier.height(spacing.small))
-                            SettingsListDivider()
-                            Spacer(modifier = Modifier.height(spacing.small))
-
-                            SettingsRow(
                                 title = stringResource(id = R.string.settings_switch_style),
                                 searchId = "style_switch",
                                 subtitle = settings.switchStyle.label,
                                 onClick = { showSwitchDialog = true }
-                            )
-
-                            Spacer(modifier = Modifier.height(spacing.small))
-                            SettingsListDivider()
-                            Spacer(modifier = Modifier.height(spacing.small))
-
-                            SettingsRow(
-                                title = stringResource(id = R.string.settings_transition_style),
-                                searchId = "style_transition",
-                                subtitle = settings.transitionStyle.label,
-                                onClick = { showTransitionDialog = true }
-                            )
-
-                            Spacer(modifier = Modifier.height(spacing.small))
-                            SettingsListDivider()
-                            Spacer(modifier = Modifier.height(spacing.small))
-
-                            SettingsSwitchRow(
-                                title = stringResource(id = R.string.settings_bottom_sheets),
-                                searchId = "style_sheets",
-                                subtitle = stringResource(id = R.string.settings_bottom_sheets_desc),
-                                checked = settings.bottomSheets,
-                                onCheckedChange = { viewModel.onBottomSheetsChanged(it) }
                             )
                         }
                     }
@@ -290,16 +233,6 @@ fun AppStyleScreen(
             onDismiss = { showCardDialog = false }
         )
     }
-    if (showKeyDialog) {
-        StyleChoicePicker(
-            title = stringResource(id = R.string.settings_key_style),
-            options = KeyStyle.entries.map { it.label to it },
-            selected = settings.keyStyle,
-            sheets = settings.effectiveStyle.sheets,
-            onSelect = { viewModel.onKeyStyleChanged(it); showKeyDialog = false },
-            onDismiss = { showKeyDialog = false }
-        )
-    }
     if (showSwitchDialog) {
         StyleChoicePicker(
             title = stringResource(id = R.string.settings_switch_style),
@@ -308,16 +241,6 @@ fun AppStyleScreen(
             sheets = settings.effectiveStyle.sheets,
             onSelect = { viewModel.onSwitchStyleChanged(it); showSwitchDialog = false },
             onDismiss = { showSwitchDialog = false }
-        )
-    }
-    if (showTransitionDialog) {
-        StyleChoicePicker(
-            title = stringResource(id = R.string.settings_transition_style),
-            options = TransitionStyle.entries.map { it.label to it },
-            selected = settings.transitionStyle,
-            sheets = settings.effectiveStyle.sheets,
-            onSelect = { viewModel.onTransitionStyleChanged(it); showTransitionDialog = false },
-            onDismiss = { showTransitionDialog = false }
         )
     }
 }
