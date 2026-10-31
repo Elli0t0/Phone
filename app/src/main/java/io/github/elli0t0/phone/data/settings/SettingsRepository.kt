@@ -29,6 +29,7 @@ import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.data.settings.model.AppBackground
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.MaterialYouTint
+import io.github.elli0t0.phone.data.settings.model.QuickCallSource
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
 import io.github.elli0t0.phone.data.settings.model.AutoRecordMode
 import io.github.elli0t0.phone.data.settings.model.Backdrop
@@ -150,6 +151,12 @@ interface SettingsRepository {
     suspend fun setVibrateOnAnswer(enabled: Boolean)
     suspend fun setQuickDeclineMessages(messages: List<String>)
     suspend fun setSpeedDial(speedDial: Map<Char, String>)
+    suspend fun setSpeedDialEnabled(enabled: Boolean)
+    suspend fun setShowSpeedDialOnKeys(show: Boolean)
+    suspend fun setQuickCallEnabled(enabled: Boolean)
+    suspend fun setQuickCallSource(source: QuickCallSource)
+    suspend fun setQuickCallCount(count: Int)
+    suspend fun setQuickCallHidden(hidden: Set<String>)
     suspend fun setBlockedPrefixes(prefixes: Set<String>)
     suspend fun setShowAdvancedSettings(show: Boolean)
     suspend fun setMinimalMode(enabled: Boolean)
@@ -259,6 +266,12 @@ class DataStoreSettingsRepository(
         val DEFAULT_SIM = stringPreferencesKey("default_sim")
         val QUICK_DECLINE_MESSAGES = stringPreferencesKey("quick_decline_messages")
         val SPEED_DIAL = stringPreferencesKey("speed_dial")
+        val SPEED_DIAL_ENABLED = booleanPreferencesKey("speed_dial_enabled")
+        val SHOW_SPEED_DIAL_ON_KEYS = booleanPreferencesKey("show_speed_dial_on_keys")
+        val QUICK_CALL_ENABLED = booleanPreferencesKey("quick_call_enabled")
+        val QUICK_CALL_SOURCE = stringPreferencesKey("quick_call_source")
+        val QUICK_CALL_COUNT = intPreferencesKey("quick_call_count")
+        val QUICK_CALL_HIDDEN = stringPreferencesKey("quick_call_hidden")
         val BLOCKED_PREFIXES = stringPreferencesKey("blocked_prefixes")
         val SHOW_ADVANCED_SETTINGS = booleanPreferencesKey("show_advanced_settings")
         val MINIMAL_MODE = booleanPreferencesKey("minimal_mode")
@@ -493,6 +506,18 @@ class DataStoreSettingsRepository(
                 if (digit != null && number != null) digit to number else null
             }
             .toMap()
+        // Quick call (0.19.3): source falls back to BOTH on unknown
+        // names, count clamps to 3..8, hidden splits on ';' (lookup
+        // keys never contain it, same as the speed-dial encoding).
+        val quickCallSource = prefs[Keys.QUICK_CALL_SOURCE]?.let {
+            runCatching { QuickCallSource.valueOf(it) }.getOrNull()
+        } ?: QuickCallSource.BOTH
+        val quickCallCount = (prefs[Keys.QUICK_CALL_COUNT] ?: 5).coerceIn(3, 8)
+        val quickCallHidden = (prefs[Keys.QUICK_CALL_HIDDEN] ?: "")
+            .split(";")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .toSet()
         val blockedPrefixes = (prefs[Keys.BLOCKED_PREFIXES] ?: "")
             .split(";")
             .map { it.trim() }
@@ -592,6 +617,12 @@ class DataStoreSettingsRepository(
             vibrateOnAnswer = vibrateOnAnswer,
             quickDeclineOverrides = quickDeclineOverrides,
             speedDial = speedDial,
+            speedDialEnabled = prefs[Keys.SPEED_DIAL_ENABLED] ?: true,
+            showSpeedDialOnKeys = prefs[Keys.SHOW_SPEED_DIAL_ON_KEYS] ?: false,
+            quickCallEnabled = prefs[Keys.QUICK_CALL_ENABLED] ?: true,
+            quickCallSource = quickCallSource,
+            quickCallCount = quickCallCount,
+            quickCallHidden = quickCallHidden,
             blockedPrefixes = blockedPrefixes,
             showAdvancedSettings = showAdvancedSettings,
             minimalMode = minimalMode,
@@ -1169,6 +1200,47 @@ class DataStoreSettingsRepository(
             prefs[Keys.SPEED_DIAL] = speedDial.entries
                 .filter { it.key in '2'..'9' && it.value.isNotBlank() }
                 .joinToString(";") { "${it.key}=${it.value.trim()}" }
+        }
+    }
+
+    // Standalone setters: quick call and speed dial are not style
+    // fields, so they never flip APP_STYLE to Custom.
+    override suspend fun setSpeedDialEnabled(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.SPEED_DIAL_ENABLED] = enabled
+        }
+    }
+
+    override suspend fun setShowSpeedDialOnKeys(show: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.SHOW_SPEED_DIAL_ON_KEYS] = show
+        }
+    }
+
+    override suspend fun setQuickCallEnabled(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.QUICK_CALL_ENABLED] = enabled
+        }
+    }
+
+    override suspend fun setQuickCallSource(source: QuickCallSource) {
+        dataStore.edit { prefs ->
+            prefs[Keys.QUICK_CALL_SOURCE] = source.name
+        }
+    }
+
+    override suspend fun setQuickCallCount(count: Int) {
+        dataStore.edit { prefs ->
+            prefs[Keys.QUICK_CALL_COUNT] = count.coerceIn(3, 8)
+        }
+    }
+
+    override suspend fun setQuickCallHidden(hidden: Set<String>) {
+        dataStore.edit { prefs ->
+            prefs[Keys.QUICK_CALL_HIDDEN] = hidden
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+                .joinToString(";")
         }
     }
 

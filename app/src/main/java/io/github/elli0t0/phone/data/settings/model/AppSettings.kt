@@ -43,6 +43,13 @@ enum class KeypadStyle(val label: String) {
     SQUIRCLE("Squircle")
 }
 
+/** Quick call strip source (0.19.3): which contacts fill the strip. */
+enum class QuickCallSource(val label: String) {
+    RECENTS("Recents"),
+    FAVORITES("Favorites"),
+    BOTH("Both")
+}
+
 enum class SwitchStyle(val label: String) {
     DEFAULT("Default"),
     GREEN("Green")
@@ -561,6 +568,18 @@ data class AppSettings(
     // Speed dial: digit ('2'-'9') to number, assigned by long-pressing
     // a digit with a number typed. '1' is always voicemail.
     val speedDial: Map<Char, String> = emptyMap(),
+    // Speed dial master switch (0.19.3): off hides the whole feature,
+    // including digit long-press behavior.
+    val speedDialEnabled: Boolean = true,
+    // Show speed dial names on keys (0.19.3): the first 6 letters of
+    // the resolved contact name in small text under the digit.
+    val showSpeedDialOnKeys: Boolean = false,
+    // Quick call strip above the keys (0.19.3).
+    val quickCallEnabled: Boolean = true,
+    val quickCallSource: QuickCallSource = QuickCallSource.BOTH,
+    val quickCallCount: Int = 5,
+    // Lookup keys removed from the strip via its long-press menu.
+    val quickCallHidden: Set<String> = emptySet(),
     // App-side blocked prefixes: numbers starting with one of these
     // are rejected on arrival (the platform provider only matches
     // exact numbers, so prefixes live here, not there).

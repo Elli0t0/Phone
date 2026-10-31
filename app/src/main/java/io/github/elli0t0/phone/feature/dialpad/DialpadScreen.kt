@@ -80,6 +80,7 @@ fun DialpadScreen(
     onNavigateToSettings: () -> Unit = {},
     onCreateContact: (String) -> Unit = {},
     onAddToExistingContact: (String) -> Unit = {},
+    onOpenContact: (Long) -> Unit = {},
     externalNumber: String? = null,
     onExternalNumberConsumed: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -92,7 +93,8 @@ fun DialpadScreen(
             repository = repository,
             savedStateHandle = androidx.lifecycle.SavedStateHandle(),
             callLogRepository = app.container.callLogRepository,
-            favoritesRepository = app.container.favoritesRepository
+            favoritesRepository = app.container.favoritesRepository,
+            settingsRepository = app.container.settingsRepository
         )
     )
 
@@ -123,6 +125,9 @@ fun DialpadScreen(
     // composition and cannot read a CompositionLocal (same reason as
     // dialNumber above).
     val speedDial = LocalAppSettings.current.speedDial
+    val speedDialEnabled = LocalAppSettings.current.speedDialEnabled
+    val quickCallEnabled = LocalAppSettings.current.quickCallEnabled
+    val quickCallHidden = LocalAppSettings.current.quickCallHidden
     val coroutineScope = rememberCoroutineScope()
 
     val simAccounts = remember(context) { io.github.elli0t0.phone.core.telecom.TelecomHelper.getCallCapablePhoneAccounts(context) }
@@ -130,6 +135,14 @@ fun DialpadScreen(
     var pendingConfirmCall by remember { androidx.compose.runtime.mutableStateOf<PendingCall?>(null) }
     var searchVisible by remember { androidx.compose.runtime.mutableStateOf(false) }
     var menuExpanded by remember { androidx.compose.runtime.mutableStateOf(false) }
+    // Speed dial assign/replace (0.19.3): the digit awaiting a
+    // contact pick, and the digit whose assignment a typed number
+    // would replace (with the existing name and the typed number
+    // captured at open time).
+    var assignSheetDigit by remember { androidx.compose.runtime.mutableStateOf<Char?>(null) }
+    var replaceDialogDigit by remember { androidx.compose.runtime.mutableStateOf<Char?>(null) }
+    var replaceDialogExisting by remember { androidx.compose.runtime.mutableStateOf("") }
+    var replaceDialogTyped by remember { androidx.compose.runtime.mutableStateOf("") }
 
     fun dialNumber(number: String, lookupKey: String? = null) {
         if (PhoneNumberUtils.isEmergencyNumber(PhoneNumberFormatter.normalizeDigits(number))) {
@@ -157,6 +170,19 @@ fun DialpadScreen(
         }
     }
 
+    // Call through the confirm sheet when it is on, exactly like the
+    // call button does; the sheet's number (not the typed number) is
+    // what the permission launcher dials after confirmation.
+    fun callWithConfirm(number: String, lookupKey: String?, label: String) {
+        if (confirmBeforeCall &&
+            !PhoneNumberUtils.isEmergencyNumber(PhoneNumberFormatter.normalizeDigits(number))
+        ) {
+            pendingConfirmCall = PendingCall(number = number, lookupKey = lookupKey, label = label)
+        } else {
+            dialNumber(number, lookupKey)
+        }
+    }
+
     if (simPickerTargetNumber != null) {
         io.github.elli0t0.phone.feature.call.ui.DualSimPickerDialog(
             simAccounts = simAccounts,
@@ -172,12 +198,20 @@ fun DialpadScreen(
         )
     }
 
-    // Permission launcher for CALL_PHONE
+    // Permission launcher for CALL_PHONE. The confirmed number wins
+    // over the typed number: strip taps confirm a contact's number,
+    // and confirming must dial that number, not what is typed.
     val callPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { _ ->
         // On either granted or denied, placeCall handles it (ACTION_CALL or ACTION_DIAL fallback)
-        dialNumber(uiState.rawNumber)
+        val pending = pendingConfirmCall
+        pendingConfirmCall = null
+        if (pending != null) {
+            dialNumber(pending.number, pending.lookupKey)
+        } else {
+            dialNumber(uiState.rawNumber)
+        }
     }
 
     // Shared light haptic for every keypad tap (follows the system
@@ -188,11 +222,79 @@ fun DialpadScreen(
         ConfirmCallSheet(
             pending = pending,
             onConfirm = {
-                pendingConfirmCall = null
                 lightHaptic()
                 callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
             },
             onDismiss = { pendingConfirmCall = null }
+        )
+    }
+
+    // Speed dial replace confirmation (0.19.3): a typed number never
+    // silently overwrites an assigned digit.
+    replaceDialogDigit?.let { digit ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { replaceDialogDigit = null },
+            title = { Text(text = stringResource(id = R.string.settings_speed_dial)) },
+            text = {
+                Text(
+                    text = stringResource(
+                        id = R.string.speed_dial_replace_message,
+                        replaceDialogExisting,
+                        replaceDialogTyped
+                    )
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    coroutineScope.launch {
+                        app.container.settingsRepository.setSpeedDial(
+                            speedDial + (digit to replaceDialogTyped)
+                        )
+                    }
+                    replaceDialogDigit = null
+                    Toast.makeText(
+                        context,
+                        context.getString(
+                            R.string.dialpad_speed_dial_saved,
+                            digit.toString()
+                        ),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }) {
+                    Text(text = stringResource(id = R.string.speed_dial_replace))
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { replaceDialogDigit = null }) {
+                    Text(text = stringResource(id = R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    // Speed dial assign sheet (0.19.3): empty keypad + long-press on
+    // an unassigned digit opens the contact picker for that digit.
+    assignSheetDigit?.let { digit ->
+        io.github.elli0t0.phone.feature.contacts.ui.ContactPickerSheet(
+            contactsRepository = repository,
+            title = stringResource(id = R.string.speed_dial_assign_title, digit.toString()),
+            onDismiss = { assignSheetDigit = null },
+            onPick = { number ->
+                assignSheetDigit = null
+                coroutineScope.launch {
+                    app.container.settingsRepository.setSpeedDial(
+                        speedDial + (digit to number)
+                    )
+                }
+                Toast.makeText(
+                    context,
+                    context.getString(
+                        R.string.dialpad_speed_dial_saved,
+                        digit.toString()
+                    ),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         )
     }
 
@@ -335,17 +437,6 @@ fun DialpadScreen(
                 lightHaptic()
                 viewModel.onContactSelected(it)
             },
-            onRedial = { entry ->
-                lightHaptic()
-                dialNumber(entry.number)
-            },
-            onFavoriteClick = { contact ->
-                lightHaptic()
-                val num = contact.primaryNumberPreview ?: ""
-                if (num.isNotBlank()) {
-                    dialNumber(num, contact.lookupKey)
-                }
-            },
             onCreateContactAction = {
                 lightHaptic()
                 onCreateContact(uiState.rawNumber)
@@ -383,11 +474,53 @@ fun DialpadScreen(
             onStopBackspaceRepeat = viewModel::stopBackspaceRepeat,
             caption = numberCaption
         )
+        // Quick call strip (0.19.3): just above the keys, under the
+        // number display. Hidden while typing (the suggestion chips
+        // take over), while a name search is active, in Minimal mode
+        // (the Minimal keypad stays pixel-identical), and when the
+        // setting is off — the keys below simply reflow, with no gap.
+        if (!minimal && quickCallEnabled && uiState.rawNumber.isEmpty() &&
+            !(searchVisible && uiState.nameSearchQuery.isNotBlank()) &&
+            uiState.quickCall.isNotEmpty()
+        ) {
+            QuickCallStrip(
+                entries = uiState.quickCall,
+                onCall = { entry ->
+                    lightHaptic()
+                    callWithConfirm(entry.number, entry.contact.lookupKey, entry.contact.displayName)
+                },
+                onMessage = { entry ->
+                    lightHaptic()
+                    context.startActivity(
+                        Intent(
+                            Intent.ACTION_SENDTO,
+                            Uri.parse("smsto:${Uri.encode(entry.number)}")
+                        )
+                    )
+                },
+                onOpenContact = { entry ->
+                    onOpenContact(entry.contact.id)
+                },
+                onRemove = { entry ->
+                    coroutineScope.launch {
+                        app.container.settingsRepository.setQuickCallHidden(
+                            quickCallHidden + entry.contact.lookupKey
+                        )
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = spacing.small)
+            )
+        }
         DialpadKeypadGrid(
             // No tick here: KeypadKey ticks on press-down.
             // Minimal (0.18.10): the MINIMAL style is forced,
             // whatever the stored keypad style is.
             keypadStyle = if (minimal) KeypadStyle.MINIMAL else LocalAppSettings.current.keypadStyle,
+            // Speed-dial names on keys (0.19.3): Minimal gets none,
+            // so the Minimal keypad stays pixel-identical.
+            speedDialLabels = if (minimal) emptyMap() else uiState.speedDialLabels,
             onKeyPressed = { digit ->
                 viewModel.onKeyPressed(digit)
             },
@@ -399,44 +532,66 @@ fun DialpadScreen(
                         // getVoiceMailNumber takes an account handle
                         // (there is no zero-arg version); try each
                         // call-capable account, first non-blank wins.
-                        val voicemail = runCatching {
-                            val telecom = context.getSystemService(Context.TELECOM_SERVICE)
-                                as? TelecomManager
-                            simAccounts.firstNotNullOfOrNull { account ->
-                                runCatching { telecom?.getVoiceMailNumber(account.handle) }
-                                    .getOrNull()?.takeIf { it.isNotBlank() }
+                        // Off when the Speed dial feature is off:
+                        // slot 1 is part of the feature.
+                        if (speedDialEnabled) {
+                            val voicemail = runCatching {
+                                val telecom = context.getSystemService(Context.TELECOM_SERVICE)
+                                    as? TelecomManager
+                                simAccounts.firstNotNullOfOrNull { account ->
+                                    runCatching { telecom?.getVoiceMailNumber(account.handle) }
+                                        .getOrNull()?.takeIf { it.isNotBlank() }
+                                }
+                            }.getOrNull()
+                            if (voicemail != null) {
+                                dialNumber(voicemail)
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    R.string.dialpad_voicemail_unavailable,
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
-                        }.getOrNull()
-                        if (voicemail != null) {
-                            dialNumber(voicemail)
+                        }
+                    }
+                    !speedDialEnabled -> {
+                        // Feature off: digit long-press does nothing.
+                    }
+                    uiState.rawNumber.isNotBlank() -> {
+                        // Typed number + long-press: assign it, but
+                        // NEVER silently overwrite — an assigned digit
+                        // asks first ("Replace Maman with 0912...?").
+                        val existing = speedDial[digit]?.takeIf { it.isNotBlank() }
+                        if (existing != null) {
+                            replaceDialogDigit = digit
+                            replaceDialogExisting = viewModel.speedDialDisplayName(existing)
+                            replaceDialogTyped = uiState.rawNumber
                         } else {
+                            coroutineScope.launch {
+                                app.container.settingsRepository.setSpeedDial(
+                                    speedDial + (digit to uiState.rawNumber)
+                                )
+                            }
                             Toast.makeText(
                                 context,
-                                R.string.dialpad_voicemail_unavailable,
+                                context.getString(
+                                    R.string.dialpad_speed_dial_saved,
+                                    digit.toString()
+                                ),
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
                     }
-                    uiState.rawNumber.isNotBlank() -> {
-                        // Typed number + long-press assigns it to
-                        // this digit for later speed dialing.
-                        coroutineScope.launch {
-                            app.container.settingsRepository.setSpeedDial(
-                                speedDial + (digit to uiState.rawNumber)
-                            )
-                        }
-                        Toast.makeText(
-                            context,
-                            context.getString(
-                                R.string.dialpad_speed_dial_saved,
-                                digit.toString()
-                            ),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
                     else -> {
-                        // Empty keypad: dial the assigned number, if any.
-                        speedDial[digit]?.takeIf { it.isNotBlank() }?.let { dialNumber(it) }
+                        // Empty keypad: dial the assigned number, if
+                        // any; otherwise open the assign sheet for
+                        // this digit.
+                        val assigned = speedDial[digit]?.takeIf { it.isNotBlank() }
+                        if (assigned != null) {
+                            dialNumber(assigned)
+                        } else {
+                            assignSheetDigit = digit
+                        }
                     }
                 }
             },

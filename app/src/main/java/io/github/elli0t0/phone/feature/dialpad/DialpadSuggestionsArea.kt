@@ -10,10 +10,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -27,7 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import io.github.elli0t0.phone.R
-import io.github.elli0t0.phone.core.design.LocalMinimal
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
@@ -43,8 +39,6 @@ fun ColumnScope.DialpadSuggestionsArea(
     onSearchRowClick: (ContactSummary) -> Unit,
     onSearchRowCallClick: (ContactSummary) -> Unit,
     onSuggestionSelect: (ContactSummary) -> Unit,
-    onRedial: (QuickRedialEntry) -> Unit,
-    onFavoriteClick: (ContactSummary) -> Unit,
     onCreateContactAction: () -> Unit,
     onAddToExistingContactAction: () -> Unit,
     onMessageAction: () -> Unit
@@ -71,11 +65,10 @@ fun ColumnScope.DialpadSuggestionsArea(
         uiState.matchingContacts.isNotEmpty()
     val showNoMatchActions = uiState.rawNumber.isNotEmpty() &&
         !showSearchRows && !showChips
-    // Empty keypad: favorites and recents share the area, pinned
-    // to the top so the flexible gap sits above the number display,
-    // not between the display and the keys. T9 chips pin to the
-    // top too; search rows fill the area.
-    val isEmptyState = uiState.rawNumber.isEmpty() && !showSearchRows && !showChips
+    // Empty keypad: this area stays empty (0.19.3) — the Quick call
+    // strip below the number display replaces the old favorites
+    // strip and recent chips, so the number display sits higher.
+    // T9 chips pin to the top too; search rows fill the area.
     // T9 Matching contacts list above the keypad
     Box(
         modifier = Modifier
@@ -114,30 +107,6 @@ fun ColumnScope.DialpadSuggestionsArea(
             modifier = Modifier.fillMaxWidth(),
             contactCounts = uiState.matchingContactCounts
         )
-    } else if (isEmptyState) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(spacing.medium)
-        ) {
-            if (uiState.favorites.isNotEmpty()) {
-                FavoritesStrip(
-                    favorites = uiState.favorites,
-                    onFavoriteClick = onFavoriteClick,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-            if (uiState.quickRedial.isNotEmpty() && !LocalMinimal.current) {
-                // Empty keypad: one-tap redial for the last 3 recent
-                // numbers.
-                QuickRedialChips(
-                    entries = uiState.quickRedial,
-                    onRedial = { entry ->
-                        onRedial(entry)
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        }
     }
     }
     // No-match actions animate in/out below the list area

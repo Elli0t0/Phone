@@ -9,7 +9,11 @@ import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
 import io.github.elli0t0.phone.data.calllog.CallLogRepository
 import io.github.elli0t0.phone.data.contacts.ContactsRepository
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
+import io.github.elli0t0.phone.data.contacts.util.findByNumber
 import io.github.elli0t0.phone.data.favorites.FavoritesRepository
+import io.github.elli0t0.phone.data.settings.SettingsRepository
+import io.github.elli0t0.phone.data.settings.model.AppSettings
+import io.github.elli0t0.phone.data.settings.model.QuickCallSource
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +30,8 @@ class DialpadViewModel(
     private val savedStateHandle: SavedStateHandle,
     coroutineScope: kotlinx.coroutines.CoroutineScope? = null,
     private val callLogRepository: CallLogRepository? = null,
-    private val favoritesRepository: FavoritesRepository? = null
+    private val favoritesRepository: FavoritesRepository? = null,
+    private val settingsRepository: SettingsRepository? = null
 ) : ViewModel() {
 
     private val KEY_RAW_NUMBER = "dialpad_raw_number"
@@ -45,6 +50,12 @@ class DialpadViewModel(
 
     private var allContactsCache: List<ContactSummary> = emptyList()
 
+    // Quick call strip inputs (0.19.3): the strip recomputes whenever
+    // any of them changes.
+    private var recentEntriesCache: List<QuickRedialEntry> = emptyList()
+    private var favoritesCache: List<ContactSummary> = emptyList()
+    private var latestSettings: AppSettings? = null
+
     private val activeScope = coroutineScope ?: try {
         viewModelScope
     } catch (_: Exception) {
@@ -57,20 +68,36 @@ class DialpadViewModel(
             contactsRepository.getContactsFlow().collectLatest { contacts ->
                 allContactsCache = contacts
                 updateMatchingContacts(_rawNumber.value)
+                updateQuickCall()
+                updateSpeedDialLabels()
+            }
+        }
+
+        // Quick-call settings (0.19.3): source, count, hidden, and the
+        // speed-dial toggles feed the strip and the key labels.
+        if (settingsRepository != null) {
+            activeScope?.launch {
+                settingsRepository.settingsFlow.collectLatest { settings ->
+                    latestSettings = settings
+                    updateQuickCall()
+                    updateSpeedDialLabels()
+                }
             }
         }
 
         // Quick redial: the last 3 distinct recent numbers, newest
         // first, for the empty-keypad chips. Empty when the call-log
         // permission is missing (the repository emits an empty list).
+        // The full deduped list feeds the Quick call strip (0.19.3);
+        // the strip resolves numbers to contacts and drops numbers
+        // with no contact.
         if (callLogRepository != null) {
             activeScope?.launch {
                 callLogRepository.getCallLogsFlow().collectLatest { entries ->
                     val seen = mutableSetOf<String>()
-                    val recent = entries
+                    val deduped = entries
                         .filter { it.number.isNotBlank() }
                         .filter { seen.add(PhoneNumberMatcher.normalize(it.number)) }
-                        .take(3)
                         .map { entry ->
                             QuickRedialEntry(
                                 number = entry.number,
@@ -79,7 +106,9 @@ class DialpadViewModel(
                                     ?: entry.formattedNumber
                             )
                         }
-                    _uiState.value = _uiState.value.copy(quickRedial = recent)
+                    recentEntriesCache = deduped
+                    _uiState.value = _uiState.value.copy(quickRedial = deduped.take(3))
+                    updateQuickCall()
                 }
             }
         }
@@ -91,9 +120,12 @@ class DialpadViewModel(
             activeScope?.launch {
                 favoritesRepository.getFavoritesFlow(contactsRepository.getContactsFlow())
                     .collectLatest { favorites ->
+                        val dialable = favorites.filter { !it.primaryNumberPreview.isNullOrBlank() }
+                        favoritesCache = dialable
                         _uiState.value = _uiState.value.copy(
-                            favorites = favorites.filter { !it.primaryNumberPreview.isNullOrBlank() }
+                            favorites = dialable
                         )
+                        updateQuickCall()
                     }
             }
         }
@@ -108,6 +140,71 @@ class DialpadViewModel(
                 }
         }
     }
+
+    /**
+     * Quick call strip (0.19.3): favorites first, then recents, per
+     * the source setting. Recents resolve to contacts by number and
+     * drop numbers with no contact (every card needs a lookup key
+     * for the hide action and the open-contact action). Hidden
+     * lookup keys are excluded, duplicates collapse by lookup key,
+     * and the list caps at the count setting.
+     */
+    private fun updateQuickCall() {
+        val settings = latestSettings
+        if (settings == null || !settings.quickCallEnabled) {
+            _uiState.value = _uiState.value.copy(quickCall = emptyList())
+            return
+        }
+        val hidden = settings.quickCallHidden
+        val seenKeys = mutableSetOf<String>()
+        val strip = mutableListOf<QuickCallEntry>()
+        fun add(contact: ContactSummary, number: String) {
+            if (contact.lookupKey in hidden) return
+            if (!seenKeys.add(contact.lookupKey)) return
+            if (number.isBlank()) return
+            strip.add(QuickCallEntry(contact = contact, number = number))
+        }
+        if (settings.quickCallSource != QuickCallSource.RECENTS) {
+            favoritesCache.forEach { contact ->
+                add(contact, contact.primaryNumberPreview ?: "")
+            }
+        }
+        if (settings.quickCallSource != QuickCallSource.FAVORITES) {
+            recentEntriesCache.forEach { entry ->
+                val contact = allContactsCache.findByNumber(entry.number) ?: return@forEach
+                add(contact, entry.number)
+            }
+        }
+        _uiState.value = _uiState.value.copy(
+            quickCall = strip.take(settings.quickCallCount)
+        )
+    }
+
+    /**
+     * Speed-dial key labels (0.19.3): digit to the first 6 letters of
+     * the resolved contact name. Empty when the feature or the toggle
+     * is off, and when a number resolves to no contact.
+     */
+    private fun updateSpeedDialLabels() {
+        val settings = latestSettings
+        if (settings == null || !settings.speedDialEnabled || !settings.showSpeedDialOnKeys) {
+            _uiState.value = _uiState.value.copy(speedDialLabels = emptyMap())
+            return
+        }
+        val labels = settings.speedDial.entries.mapNotNull { (digit, number) ->
+            val name = allContactsCache.findByNumber(number)
+                ?.displayName?.trim()?.takeIf { it.isNotBlank() }
+                ?: return@mapNotNull null
+            digit to name.take(6)
+        }.toMap()
+        _uiState.value = _uiState.value.copy(speedDialLabels = labels)
+    }
+
+    /** Resolved contact name for a speed-dial number, else the number itself. */
+    fun speedDialDisplayName(number: String): String =
+        allContactsCache.findByNumber(number)
+            ?.displayName?.trim()?.takeIf { it.isNotBlank() }
+            ?: number
 
     private fun updateMatchingContacts(query: String) {
         val matches = if (query.isNotBlank()) {
@@ -242,12 +339,14 @@ class DialpadViewModel(
             repository: ContactsRepository,
             savedStateHandle: SavedStateHandle,
             callLogRepository: CallLogRepository? = null,
-            favoritesRepository: FavoritesRepository? = null
+            favoritesRepository: FavoritesRepository? = null,
+            settingsRepository: SettingsRepository? = null
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return DialpadViewModel(
-                    repository, savedStateHandle, null, callLogRepository, favoritesRepository
+                    repository, savedStateHandle, null, callLogRepository, favoritesRepository,
+                    settingsRepository
                 ) as T
             }
         }

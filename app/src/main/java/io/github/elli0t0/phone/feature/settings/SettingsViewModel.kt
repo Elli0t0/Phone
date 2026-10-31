@@ -21,6 +21,7 @@ import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.data.settings.model.AppBackground
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.MaterialYouTint
+import io.github.elli0t0.phone.data.settings.model.QuickCallSource
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
 import io.github.elli0t0.phone.data.settings.model.Backdrop
 import io.github.elli0t0.phone.data.settings.model.DropletStretch
@@ -213,6 +214,54 @@ class SettingsViewModel(
     fun onSpeedDialEntryRemoved(digit: Char) {
         viewModelScope.launch {
             settingsRepository.setSpeedDial(settingsState.value.speedDial - digit)
+        }
+    }
+
+    fun onSpeedDialEntrySet(digit: Char, number: String) {
+        viewModelScope.launch {
+            settingsRepository.setSpeedDial(settingsState.value.speedDial + (digit to number))
+        }
+    }
+
+    fun onSpeedDialCleared() {
+        viewModelScope.launch {
+            settingsRepository.setSpeedDial(emptyMap())
+        }
+    }
+
+    fun onSpeedDialEnabledChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setSpeedDialEnabled(enabled)
+        }
+    }
+
+    fun onShowSpeedDialOnKeysChanged(show: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setShowSpeedDialOnKeys(show)
+        }
+    }
+
+    fun onQuickCallEnabledChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setQuickCallEnabled(enabled)
+        }
+    }
+
+    fun onQuickCallSourceChanged(source: QuickCallSource) {
+        viewModelScope.launch {
+            settingsRepository.setQuickCallSource(source)
+        }
+    }
+
+    fun onQuickCallCountChanged(count: Int) {
+        viewModelScope.launch {
+            settingsRepository.setQuickCallCount(count)
+        }
+    }
+
+    fun onQuickCallHiddenReset() {
+        viewModelScope.launch {
+            settingsRepository.setQuickCallHidden(emptySet())
         }
     }
 

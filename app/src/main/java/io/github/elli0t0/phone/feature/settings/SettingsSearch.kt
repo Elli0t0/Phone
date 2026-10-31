@@ -68,7 +68,8 @@ enum class SettingsPage {
     BLOCKED_NUMBERS,
     RECORDING,
     ANSWER_STYLE,
-    APP_BACKGROUND
+    APP_BACKGROUND,
+    SPEED_DIAL
 }
 
 fun openSettingsPage(dialogs: SettingsDialogState, page: SettingsPage) {
@@ -90,6 +91,7 @@ fun openSettingsPage(dialogs: SettingsDialogState, page: SettingsPage) {
         SettingsPage.RECORDING -> dialogs.showRecordingPage = true
         SettingsPage.ANSWER_STYLE -> dialogs.showAnswerStylePage = true
         SettingsPage.APP_BACKGROUND -> dialogs.showAppBackgroundPage = true
+        SettingsPage.SPEED_DIAL -> dialogs.showSpeedDialPage = true
     }
 }
 
@@ -111,6 +113,7 @@ fun settingsPageIconRes(page: SettingsPage): Int = when (page) {
     SettingsPage.BLOCKED_NUMBERS -> R.drawable.ic_block
     SettingsPage.ABOUT -> R.drawable.ic_info
     SettingsPage.RECORDING -> R.drawable.ic_record
+    SettingsPage.SPEED_DIAL -> R.drawable.ic_dialpad
 }
 
 /**
@@ -336,7 +339,13 @@ val allSettingEntries: List<SettingEntry> = listOf(
     SettingEntry("keypad_style", R.string.settings_keypad_style, R.string.settings_cat_keypad, SettingsPage.KEYPAD, anchor = "keypad_style"),
     SettingEntry("key_style", R.string.settings_key_style, R.string.settings_cat_keypad, SettingsPage.KEYPAD, anchor = "key_style"),
     SettingEntry("dialpad_tones", R.string.settings_dialpad_tones, R.string.settings_cat_keypad, SettingsPage.KEYPAD, anchor = "dialpad_tones"),
+    SettingEntry("quick_call", R.string.settings_quick_call, R.string.settings_cat_keypad, SettingsPage.KEYPAD, anchor = "quick_call"),
+    SettingEntry("quick_call_source", R.string.settings_quick_call_source, R.string.settings_cat_keypad, SettingsPage.KEYPAD, anchor = "quick_call_source"),
+    SettingEntry("quick_call_count", R.string.settings_quick_call_count, R.string.settings_cat_keypad, SettingsPage.KEYPAD, anchor = "quick_call_count"),
+    SettingEntry("quick_call_reset_hidden", R.string.settings_quick_call_reset_hidden, R.string.settings_cat_keypad, SettingsPage.KEYPAD, anchor = "quick_call_reset_hidden"),
     SettingEntry("speed_dial", R.string.settings_speed_dial, R.string.settings_cat_keypad, SettingsPage.KEYPAD, anchor = "speed_dial"),
+    SettingEntry("speed_dial_enabled", R.string.settings_speed_dial, R.string.settings_cat_keypad, SettingsPage.SPEED_DIAL, anchor = "speed_dial_enabled"),
+    SettingEntry("speed_dial_show_on_keys", R.string.settings_speed_dial_show_on_keys, R.string.settings_cat_keypad, SettingsPage.SPEED_DIAL, anchor = "speed_dial_show_on_keys"),
     SettingEntry("swipe_actions", R.string.settings_swipe_actions, R.string.settings_cat_layout_nav, SettingsPage.LAYOUT_NAV, anchor = "swipe_actions", keywordsRes = R.string.search_keywords_swipe_actions),
     SettingEntry("default_tab", R.string.settings_default_tab, R.string.settings_cat_layout_nav, SettingsPage.LAYOUT_NAV, anchor = "default_tab"),
     SettingEntry("bottom_labels", R.string.settings_bottom_labels, R.string.settings_cat_layout_nav, SettingsPage.LAYOUT_NAV, anchor = "bottom_labels"),

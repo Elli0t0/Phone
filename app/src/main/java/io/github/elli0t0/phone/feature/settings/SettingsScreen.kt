@@ -735,6 +735,7 @@ fun SettingsScreen(
     BackHandler(enabled = dialogs.showAnswerStylePage) { dialogs.showAnswerStylePage = false }
     BackHandler(enabled = dialogs.showAppStylePage) { dialogs.showAppStylePage = false }
     BackHandler(enabled = dialogs.showKeypadStylePage) { dialogs.showKeypadStylePage = false }
+    BackHandler(enabled = dialogs.showSpeedDialPage) { dialogs.showSpeedDialPage = false }
     BackHandler(enabled = dialogs.showGlassStudioPage) { dialogs.showGlassStudioPage = false }
     BackHandler(enabled = dialogs.showBlockedNumbers) { dialogs.showBlockedNumbers = false }
     BackHandler(enabled = dialogs.showRecordingPage) { dialogs.showRecordingPage = false }
@@ -763,6 +764,16 @@ fun SettingsScreen(
             settings = settings,
             viewModel = viewModel,
             onNavigateBack = { dialogs.showKeypadStylePage = false }
+        )
+    }
+
+    if (dialogs.showSpeedDialPage) {
+        SpeedDialScreen(
+            settings = settings,
+            viewModel = viewModel,
+            contactsRepository = app.container.contactsRepository,
+            spacing = spacing,
+            onNavigateBack = { dialogs.showSpeedDialPage = false }
         )
     }
 

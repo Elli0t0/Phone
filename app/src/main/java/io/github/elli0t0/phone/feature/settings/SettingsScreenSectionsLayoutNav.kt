@@ -30,6 +30,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.data.settings.model.AppSettings
+import io.github.elli0t0.phone.data.settings.model.QuickCallSource
 import io.github.elli0t0.phone.data.settings.model.BottomBarChoice
 import io.github.elli0t0.phone.data.settings.model.bottomBarChoice
 import androidx.compose.runtime.Composable
@@ -183,7 +184,7 @@ fun KeypadCard(
     dialogs: SettingsDialogState,
     spacing: Spacing
 ) {
-    var showSpeedDialDialog by remember { mutableStateOf(false) }
+    var showQuickCallSourceDialog by remember { mutableStateOf(false) }
     Card(
         shape = settingsListCardShape(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -234,70 +235,112 @@ fun KeypadCard(
             SettingsListDivider()
             Spacer(modifier = Modifier.height(spacing.small))
 
+            SettingsSwitchRow(
+                title = stringResource(id = R.string.settings_quick_call),
+                searchId = "quick_call",
+                subtitle = stringResource(id = R.string.settings_quick_call_desc),
+                checked = settings.quickCallEnabled,
+                onCheckedChange = { viewModel.onQuickCallEnabledChanged(it) }
+            )
+
+            Spacer(modifier = Modifier.height(spacing.small))
+            SettingsListDivider()
+            Spacer(modifier = Modifier.height(spacing.small))
+
+            SettingsRow(
+                title = stringResource(id = R.string.settings_quick_call_source),
+                searchId = "quick_call_source",
+                subtitle = settings.quickCallSource.label,
+                enabled = settings.quickCallEnabled,
+                onClick = { showQuickCallSourceDialog = true }
+            )
+
+            Spacer(modifier = Modifier.height(spacing.small))
+            SettingsListDivider()
+            Spacer(modifier = Modifier.height(spacing.small))
+
+            // Count slider (3..8): the value writes on release, like
+            // the background intensity slider, not per frame.
+            var quickCallCountDraft by remember(settings.quickCallCount) {
+                mutableStateOf(settings.quickCallCount)
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .searchHighlight("quick_call_count"),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(id = R.string.settings_quick_call_count),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = if (settings.quickCallEnabled) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        }
+                    )
+                    Text(
+                        text = quickCallCountDraft.toString(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                androidx.compose.material3.Slider(
+                    value = quickCallCountDraft.toFloat(),
+                    onValueChange = { quickCallCountDraft = it.toInt() },
+                    valueRange = 3f..8f,
+                    steps = 4,
+                    enabled = settings.quickCallEnabled,
+                    onValueChangeFinished = {
+                        viewModel.onQuickCallCountChanged(quickCallCountDraft)
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(spacing.small))
+            SettingsListDivider()
+            Spacer(modifier = Modifier.height(spacing.small))
+
+            SettingsRow(
+                title = stringResource(id = R.string.settings_quick_call_reset_hidden),
+                searchId = "quick_call_reset_hidden",
+                subtitle = if (settings.quickCallHidden.isEmpty()) {
+                    stringResource(id = R.string.settings_quick_call_hidden_none)
+                } else {
+                    stringResource(
+                        id = R.string.settings_quick_call_hidden_count,
+                        settings.quickCallHidden.size
+                    )
+                },
+                enabled = settings.quickCallEnabled && settings.quickCallHidden.isNotEmpty(),
+                onClick = { viewModel.onQuickCallHiddenReset() }
+            )
+
+            Spacer(modifier = Modifier.height(spacing.small))
+            SettingsListDivider()
+            Spacer(modifier = Modifier.height(spacing.small))
+
             SettingsRow(
                 title = stringResource(id = R.string.settings_speed_dial),
                 searchId = "speed_dial",
                 subtitle = stringResource(id = R.string.settings_speed_dial_desc),
-                onClick = { showSpeedDialDialog = true }
+                onClick = { dialogs.showSpeedDialPage = true }
             )
         }
     }
-    if (showSpeedDialDialog) {
-        SpeedDialDialog(
-            settings = settings,
-            viewModel = viewModel,
-            onDismiss = { showSpeedDialDialog = false }
+    if (showQuickCallSourceDialog) {
+        SettingsChoiceDialog(
+            title = stringResource(id = R.string.settings_quick_call_source),
+            options = QuickCallSource.entries.map { it.label to it },
+            selected = settings.quickCallSource,
+            onSelect = {
+                viewModel.onQuickCallSourceChanged(it)
+                showQuickCallSourceDialog = false
+            },
+            onDismiss = { showQuickCallSourceDialog = false }
         )
     }
 }
 
-@Composable
-private fun SpeedDialDialog(
-    settings: AppSettings,
-    viewModel: SettingsViewModel,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(text = stringResource(id = R.string.settings_speed_dial)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = stringResource(id = R.string.settings_speed_dial_desc),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                if (settings.speedDial.isEmpty()) {
-                    Text(
-                        text = stringResource(id = R.string.settings_speed_dial_empty),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                } else {
-                    settings.speedDial.entries.sortedBy { it.key }.forEach { (digit, number) ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "$digit \u2192 $number",
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.weight(1f)
-                            )
-                            IconButton(onClick = { viewModel.onSpeedDialEntryRemoved(digit) }) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_delete),
-                                    contentDescription = null
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(text = stringResource(id = R.string.action_close))
-            }
-        }
-    )
-}

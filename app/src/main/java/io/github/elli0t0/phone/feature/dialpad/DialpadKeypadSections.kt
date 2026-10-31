@@ -10,10 +10,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -27,6 +30,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
@@ -48,7 +53,12 @@ fun DialpadKeypadGrid(
     onLongPressDigit: (Char) -> Unit,
     keySize: Dp = 72.dp,
     verticalSpacing: Dp = 12.dp,
-    keypadStyle: KeypadStyle = KeypadStyle.GLASS
+    keypadStyle: KeypadStyle = KeypadStyle.GLASS,
+    // Speed-dial names on keys (0.19.3): digit to the first 6 letters
+    // of the contact name, shown in small text under the key. The
+    // screen passes an empty map in Minimal mode, so the Minimal
+    // keypad stays pixel-identical.
+    speedDialLabels: Map<Char, String> = emptyMap()
 ) {
     val spacing = LocalSpacing.current
     // Keypad Grid (Keys 1-9, *, 0, #): centered rows with 20dp
@@ -66,17 +76,34 @@ fun DialpadKeypadGrid(
                 horizontalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 rowKeys.forEach { dialKey ->
-                    KeypadKey(
-                        dialKey = dialKey,
-                        style = keypadStyle,
-                        size = keySize,
-                        onClick = {
-                            onKeyPressed(dialKey.digit)
-                        },
-                        onLongClick = {
-                            onLongPressDigit(dialKey.digit)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        KeypadKey(
+                            dialKey = dialKey,
+                            style = keypadStyle,
+                            size = keySize,
+                            onClick = {
+                                onKeyPressed(dialKey.digit)
+                            },
+                            onLongClick = {
+                                onLongPressDigit(dialKey.digit)
+                            }
+                        )
+                        val speedLabel = speedDialLabels[dialKey.digit]
+                        if (speedLabel != null) {
+                            Text(
+                                text = speedLabel,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.width(keySize)
+                                    .padding(top = 2.dp),
+                                textAlign = TextAlign.Center
+                            )
                         }
-                    )
+                    }
                 }
             }
         }
