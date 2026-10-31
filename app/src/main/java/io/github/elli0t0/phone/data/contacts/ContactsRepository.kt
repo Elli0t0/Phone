@@ -3,6 +3,7 @@ package io.github.elli0t0.phone.data.contacts
 import io.github.elli0t0.phone.data.contacts.model.ContactDetail
 import io.github.elli0t0.phone.data.contacts.model.ContactGroup
 import io.github.elli0t0.phone.data.contacts.model.ContactInput
+import io.github.elli0t0.phone.data.contacts.model.ContactMergeOutcome
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 import kotlinx.coroutines.flow.Flow
 
