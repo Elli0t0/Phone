@@ -164,6 +164,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.18.4]
+
+- Swipe row reveal fixed: the colored background no longer collapses to a thin strip in lists, and swipe is suppressed while selecting.
+- Merge stays on the duplicates screen: only the merged group leaves, "All duplicates merged" shows briefly when the last group goes, and merges keep running if you leave the screen. The duplicates banner now reappears only when a new set of duplicates is found, and merging links contacts together instead of copying and deleting them, with Undo.
+- Multi-select in Recents and Contacts: long-press a row to start selecting, tap to toggle, Back or a search/filter change to exit. The bottom bar becomes a selection bar with Share, Delete and More, and selected rows show a check circle. Recents shares the selection as text grouped by day and deletes every call in the selected groups with one Undo. Contacts shares the selection as provider vCards, deletes with one confirmation and a deleted/failed count, and can merge the selection or add it to favorites. The Recents long-press menu is gone: its actions live in the selection bar for a single row.
+- The details screen's Share button now shares the full provider vCard instead of a short text card.
+
 ## [0.18.3]
 
 - Swipe actions on Recents and Contacts rows: swipe right to call, left to message, with a green call or blue message background that follows the swipe. Rows always spring back; nothing is dismissed. The toggle is in Settings → Layout & navigation → Swipe actions, on by default, and the snap-back is instant when animations are off. Swiping a Recents row left now messages instead of deleting; delete is still on the row's long-press menu.
