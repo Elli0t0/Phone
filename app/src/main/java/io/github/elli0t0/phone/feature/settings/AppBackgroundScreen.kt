@@ -223,7 +223,8 @@ fun AppBackgroundScreen(
                             AnimeScenePreview(
                                 spec = spec,
                                 selected = settings.appBackground == spec.background,
-                                onClick = { viewModel.onAppBackgroundChanged(spec.background) }
+                                onClick = { viewModel.onAppBackgroundChanged(spec.background) },
+                                modifier = Modifier.weight(1f)
                             )
                         }
                     }
@@ -327,13 +328,14 @@ private fun PaletteSwatch(
 private fun AnimeScenePreview(
     spec: SceneSpec,
     selected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val previewShape = RoundedCornerShape(20.dp)
     val intensity = scenePreviewIntensity()
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.weight(1f)
+        modifier = modifier
     ) {
         Box(
             modifier = Modifier
