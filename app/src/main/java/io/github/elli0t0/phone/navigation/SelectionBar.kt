@@ -67,7 +67,9 @@ fun SelectionBar(state: SelectionBarState, modifier: Modifier = Modifier) {
                 checked = state.allSelected,
                 onCheckedChange = { state.onToggleSelectAll() }
             )
-            state.actions()
+            // Qualified call to an extension-typed property: the
+            // RowScope receiver must be passed explicitly.
+            state.actions(this)
         }
     }
 }
