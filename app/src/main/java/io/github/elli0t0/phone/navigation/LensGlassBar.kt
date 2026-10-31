@@ -18,6 +18,10 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.backdrops.LayerBackdrop
+
+// Bar blur radius in dp (0.19.5): one place to tune how much the
+// page shows through the lens bar. The droplet stays blur-free.
+private const val BAR_BLUR_DP = 2.5f
 import com.kyant.backdrop.drawBackdrop
 import com.kyant.backdrop.effects.blur
 import com.kyant.backdrop.effects.lens
@@ -51,9 +55,9 @@ fun LensBarSurface(
             shape = { pillShape },
             effects = {
                 vibrancy()
-                // Text under the bar is only very slightly blurred:
-                // 3.5dp, not 10dp. The black tint stays 0.20.
-                blur(3.5.dp.toPx() * blurAmount)
+                // Text under the bar is only very slightly blurred.
+                // The black tint stays 0.20.
+                blur(BAR_BLUR_DP.dp.toPx() * blurAmount)
                 // Aberration off, explicitly: the library default must
                 // not separate channels behind the tabs (a green
                 // fringe over bright page content reads as a glow
@@ -125,16 +129,18 @@ fun LensDropletSurface(
                 backdrop = backdrop,
                 shape = { pillShape },
                 effects = {
-                    vibrancy()
+                    // No vibrancy here: it over-saturated avatars
+                    // into cyan blobs. The lens alone bends the
+                    // content underneath, sharp and unblurred.
                     val lift = liftValue()
                     // Aberration OFF: with it on, the channel separation
                     // fringed the droplet's rim rainbow and threw a green
                     // channel blob beside it. The bend itself (refraction)
                     // is unchanged, so the lens look stays.
                     lens(
-                        refractionHeight = 14.dp.toPx() * (1f + 0.8f * lift),
+                        refractionHeight = 10.dp.toPx() * (1f + 0.4f * lift),
                         refractionAmount = min(
-                            36.dp.toPx() * (1f + 0.9f * lift),
+                            20.dp.toPx() * (1f + 0.45f * lift),
                             size.minDimension
                         ),
                         chromaticAberration = false

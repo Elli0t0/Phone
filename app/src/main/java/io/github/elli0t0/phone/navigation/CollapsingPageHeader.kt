@@ -26,10 +26,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import kotlin.math.min
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.elli0t0.phone.core.design.GlassSurface
@@ -250,9 +252,13 @@ fun FloatingActionsPill(
 /**
  * Status-bar gradient scrim: a fade of the page background behind
  * the status bar only (no title, no hairline, no band), so the
- * status icons stay readable over scrolling rows. Shown only when
- * the floating actions pill is visible, i.e. once the large header
- * has scrolled off — the same reveal condition as the pill.
+ * status icons stay readable over scrolling rows. It appears as
+ * soon as the list scrolls at all — the old firstVisibleItemIndex
+ * > 0 gate left the content colliding with the clock while the
+ * header collapsed with index still 0 — and its alpha ramps with
+ * the first item's scroll offset over 24dp (index > 0 is full).
+ * The gradient is solid background at 0.96 down to the status bar
+ * bottom, then fades to transparent over 14dp.
  */
 @Composable
 fun StatusBarGradientScrim(
@@ -260,19 +266,33 @@ fun StatusBarGradientScrim(
     modifier: Modifier = Modifier
 ) {
     val visible by remember {
-        derivedStateOf { listState.firstVisibleItemIndex > 0 }
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 0 ||
+                listState.firstVisibleItemScrollOffset > 0
+        }
     }
     if (!visible) return
+    val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val h = statusBarTop + 14.dp
+    val bg = MaterialTheme.colorScheme.background
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 8.dp)
+            .height(h)
+            .graphicsLayer {
+                // State read inside the lambda, so the alpha
+                // tracks the scroll without extra recompositions.
+                alpha = if (listState.firstVisibleItemIndex > 0) 1f
+                    else min(
+                        1f,
+                        listState.firstVisibleItemScrollOffset / 24.dp.toPx()
+                    )
+            }
             .background(
                 Brush.verticalGradient(
-                    listOf(
-                        MaterialTheme.colorScheme.background.copy(alpha = 0.9f),
-                        Color.Transparent
-                    )
+                    0f to bg.copy(alpha = 0.96f),
+                    (statusBarTop / h) to bg.copy(alpha = 0.96f),
+                    1f to Color.Transparent
                 )
             )
     )

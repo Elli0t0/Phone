@@ -164,6 +164,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.19.5]
+
+- Fixed the lens that only grew once. Root cause: the bar's down handler launched two coroutines — one stopping the running animations (including lift) and one animating lift to 1 — and the stop, which suspends while a release spring is still running, resumed after the animation started and killed it. Lift is now derived state: a `pressed` flag drives an animateFloatAsState (press spring 0.6/400, release 0.8/300, 0 when Animations is not On), so nothing can cancel it; the flag clears on release and unconditionally in the gesture's finally block, including cancellation by navigation. No lift.animateTo/stop calls remain.
+- Smaller lens pop: the lens droplet now grows 10% wider / 30% taller (was 25% / 75%) and translates 10dp up at full lift, so it sits ~1.3x the pill height, ~14dp above the bar, with nothing below it. The bar's own lift goes 3% to 2%; the selected tab content keeps its 1.12x scale.
+- Lens values retuned: droplet refraction 10dp × (1 + 0.4·lift) and amount min(20dp × (1 + 0.45·lift), size), vibrancy removed from the droplet (it over-saturated avatars into cyan blobs), still no blur on the droplet and no chromatic aberration, rim and shadow unchanged. Bar blur is now a single tunable constant (BAR_BLUR_DP = 2.5, was 3.5); the bar keeps its vibrancy and 0.20 tint.
+- Status-bar scrim fixed: it now appears as soon as the list scrolls at all (index > 0 or offset > 0), instead of only past the first item, which left content colliding with the clock while the header collapsed at index 0. Its alpha ramps with the first item's scroll offset over 24dp (full once past item 0), and the gradient is solid background at 0.96 down to the status-bar bottom, fading to transparent over 14dp. Recents and Contacts already use it; the keypad has no list scrolling under the status bar, so no new call site. No minimal branches touched.
+
 ## [0.19.4]
 
 - More Material You tints. The default look and the 5 blue tints are byte-identical: their brush branches are unchanged, and existing enum names are untouched, so old saved values keep working.

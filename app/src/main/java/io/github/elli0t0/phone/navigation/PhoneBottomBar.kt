@@ -4,6 +4,7 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
@@ -204,11 +205,20 @@ fun PhoneBottomBar(
     }
 
     // Drag state. dragX is the droplet center in px (physical, from
-    // the bar's left edge); lift is 0 resting, 1 finger down.
-    // releaseSpringActive covers the release spring so the
-    // external-change snap below cannot cut it short.
+    // the bar's left edge). Lift is DERIVED state (0.19.5), not an
+    // animated value: the old manual lift.animateTo was killed by
+    // lift.stop() in the down-launch whenever a release spring was
+    // still running, so the lens only grew once. pressed drives it;
+    // nothing else writes to lift. Read lift.value only inside
+    // graphicsLayer / draw / effects lambdas, never in composition.
     val dragX = remember { Animatable(0f) }
-    val lift = remember { Animatable(0f) }
+    var pressed by remember { mutableStateOf(false) }
+    val lift = animateFloatAsState(
+        targetValue = if (pressed && animationOption == AnimationOption.ON) 1f else 0f,
+        animationSpec = if (pressed) spring(dampingRatio = 0.6f, stiffness = 400f)
+            else spring(dampingRatio = 0.8f, stiffness = 300f),
+        label = "barLift"
+    )
     val dragSpeed = remember { Animatable(0f) }
     var dragging by remember { mutableStateOf(false) }
     var releaseSpringActive by remember { mutableStateOf(false) }
@@ -408,19 +418,24 @@ fun PhoneBottomBar(
                         }
                         // Speed stretch: low-passed drag speed, capped
                         // at 25%. Lift magnifies the droplet: the lens
-                        // path grows clearly bigger (25% wider, 75%
-                        // taller) and overflows the bar; the Haze
-                        // droplet keeps its 12% lift. Both are 0 when
-                        // Animations is Off/Reduced.
+                        // path grows 10% wider and 30% taller and pops
+                        // 10dp UP, so at full lift the lens is ~1.3x
+                        // the pill height, ~14dp above the bar, and
+                        // nothing hangs below it. The Haze droplet
+                        // keeps its 12% lift. All are 0 when Animations
+                        // is Off/Reduced.
                         val speedStretch = if (animationOption == AnimationOption.ON) {
                             minOf(abs(dragSpeed.value) / 4000f, 0.25f)
                         } else {
                             0f
                         }
-                        val liftX = if (lensBackdrop != null) 0.25f else 0.12f
-                        val liftY = if (lensBackdrop != null) 0.75f else 0.12f
+                        val liftX = if (lensBackdrop != null) 0.10f else 0.12f
+                        val liftY = if (lensBackdrop != null) 0.30f else 0.12f
                         scaleX = (1f + bulge / pillWidthPx) * (1f + liftX * lift.value) * (1f + speedStretch)
                         scaleY = 1f + liftY * lift.value
+                        if (lensBackdrop != null) {
+                            translationY = -10.dp.toPx() * lift.value
+                        }
                     }
                     .width(pillWidth)
                     .fillMaxHeight()
@@ -471,10 +486,10 @@ fun PhoneBottomBar(
                             val w = size.width.toFloat()
                             if (w <= 0f) return@awaitEachGesture
                             dragging = true
+                            pressed = true
                             releaseSpringActive = false
                             scope.launch {
                                 dragX.stop()
-                                lift.stop()
                                 dragSpeed.stop()
                                 dragSpeed.snapTo(0f)
                                 dragX.snapTo(down.position.x.coerceIn(0f, w))
@@ -484,14 +499,6 @@ fun PhoneBottomBar(
                             try {
                                 press = PressInteraction.Press(down.position)
                                 itemSources[last].tryEmit(press)
-                                if (animationOptionState.value == AnimationOption.ON) {
-                                    scope.launch {
-                                        lift.animateTo(
-                                            1f,
-                                            spring(dampingRatio = 0.55f, stiffness = 260f)
-                                        )
-                                    }
-                                }
                                 var lastX = down.position.x
                                 var lastT = down.uptimeMillis
                                 var smoothSpeed = 0f
@@ -534,6 +541,7 @@ fun PhoneBottomBar(
                                 }
                                 press = null
                                 dragging = false
+                                pressed = false
                                 scope.launch {
                                     dragSpeed.snapTo(0f)
                                     pillProgress.stop()
@@ -543,12 +551,6 @@ fun PhoneBottomBar(
                                 pillToIndex = last
                                 if (animationOptionState.value == AnimationOption.ON) {
                                     releaseSpringActive = true
-                                    scope.launch {
-                                        lift.animateTo(
-                                            0f,
-                                            spring(dampingRatio = 0.7f, stiffness = 320f)
-                                        )
-                                    }
                                     scope.launch {
                                         dragX.animateTo(
                                             centerOf(last, w),
@@ -563,9 +565,13 @@ fun PhoneBottomBar(
                             } finally {
                                 // Cancelled mid-drag: release the press
                                 // and clear the flags so nothing sticks.
+                                // pressed clears unconditionally, also
+                                // when the gesture is cancelled (e.g.
+                                // by navigation) mid-press.
                                 press?.let {
                                     itemSources[last].tryEmit(PressInteraction.Release(it))
                                 }
+                                pressed = false
                                 if (dragging) {
                                     dragging = false
                                     releaseSpringActive = false
@@ -773,10 +779,10 @@ fun PhoneBottomBar(
                     }
             )
         }
-        // The bar itself lifts slightly with the finger (3%).
+        // The bar itself lifts slightly with the finger (2%).
         // The lift value is read only in this graphicsLayer lambda.
         val barLiftModifier = Modifier.graphicsLayer {
-            val s = 1f + 0.03f * lift.value
+            val s = 1f + 0.02f * lift.value
             scaleX = s
             scaleY = s
         }
@@ -785,11 +791,10 @@ fun PhoneBottomBar(
             // behind the bar; the droplet and items draw on top of
             // it, never through it. The clip sits ONLY on the child
             // Box holding the surface: the droplet and items are
-            // unclipped, so the lifted lens overflows the bar above
-            // and below. zIndex keeps the overflowing lens above
-            // page content. The bottom overshoot (~17dp at full
-            // lift) stays inside the 12dp bottom margin plus the
-            // system navigation inset.
+            // unclipped, so the lifted lens overflows the bar above.
+            // zIndex keeps the overflowing lens above page content.
+            // At full lift the lens is ~1.3x the pill height and
+            // translated 10dp up, so nothing hangs below the bar.
             Box(
                 modifier = Modifier
                     .width(barWidth)
