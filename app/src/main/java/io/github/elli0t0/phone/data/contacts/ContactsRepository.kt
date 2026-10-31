@@ -5,6 +5,7 @@ import io.github.elli0t0.phone.data.contacts.model.ContactGroup
 import io.github.elli0t0.phone.data.contacts.model.ContactInput
 import io.github.elli0t0.phone.data.contacts.model.ContactMergeOutcome
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
+import io.github.elli0t0.phone.data.contacts.model.DeleteContactsResult
 import kotlinx.coroutines.flow.Flow
 
 interface ContactsRepository {
@@ -38,6 +39,15 @@ interface ContactsRepository {
      * Deletes a contact from the device.
      */
     suspend fun deleteContact(contactId: Long, lookupKey: String): Result<Unit>
+
+    /**
+     * Deletes several contacts in ONE applyBatch (one delete op per
+     * lookup URI), cleaning their favorite and per-contact SIM rows
+     * like the single delete does. Read-only contacts fail
+     * individually and are reported, never aborting the rest.
+     */
+    suspend fun deleteContacts(lookupKeys: List<String>): DeleteContactsResult =
+        DeleteContactsResult(deleted = 0, failed = lookupKeys.size)
 
     /**
      * The device owner's own profile contact from ContactsContract.Profile,

@@ -1,10 +1,23 @@
 package io.github.elli0t0.phone.feature.contacts
 
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarResult
@@ -17,8 +30,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.LocalAppSnackbarHostState
@@ -37,6 +54,8 @@ import io.github.elli0t0.phone.feature.contacts.ui.ContactListScreen
 import io.github.elli0t0.phone.feature.contacts.ui.GroupsScreen
 import io.github.elli0t0.phone.feature.contacts.ui.ContactPickerScreen
 import io.github.elli0t0.phone.navigation.CreateContactRequest
+import io.github.elli0t0.phone.navigation.LocalSetSelectionBarState
+import io.github.elli0t0.phone.navigation.SelectionBarState
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -164,6 +183,199 @@ fun ContactsScreen(
         }
     }
 
+    // Bulk-delete report: "Deleted X" or "Deleted X, failed Y".
+    // Declared before the effect: the effect closes the dialog.
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    val deleteReport = uiState.deleteReport
+    LaunchedEffect(deleteReport) {
+        if (deleteReport != null) {
+            val message = if (deleteReport.failed > 0) {
+                context.getString(
+                    R.string.snackbar_contacts_deleted_partial,
+                    deleteReport.deleted,
+                    deleteReport.failed
+                )
+            } else {
+                context.getString(R.string.snackbar_contacts_deleted, deleteReport.deleted)
+            }
+            snackbarHostState.showSnackbar(message)
+            listViewModel.clearDeleteReport()
+            showDeleteConfirm = false
+        }
+    }
+
+    // Selection bar: published hoisted so MainActivity swaps the
+    // bottom bar; Back exits selection mode. Only on the list.
+    val selection = uiState.selection
+    val setSelectionBar = LocalSetSelectionBarState.current
+    val clipboardManager = LocalClipboardManager.current
+    val isListDestination = currentDestination is ContactsNavDestination.List
+    BackHandler(enabled = selection.isActive && isListDestination) {
+        listViewModel.clearSelection()
+    }
+    LaunchedEffect(selection, uiState.filteredContacts, uiState.favorites, uiState.allContacts, isListDestination) {
+        if (selection.isActive && isListDestination) {
+            val selectedContacts = uiState.allContacts.filter { it.id in selection.ids }
+            val allVisibleIds = if (uiState.searchQuery.isEmpty()) {
+                (uiState.filteredContacts.map { it.id } +
+                    uiState.favorites.map { it.id }).distinct()
+            } else {
+                uiState.filteredContacts.map { it.id }
+            }
+            val allSelected = allVisibleIds.isNotEmpty() &&
+                selectedContacts.size == allVisibleIds.size
+            setSelectionBar(
+                SelectionBarState(
+                    title = context.getString(R.string.selection_selected, selection.ids.size),
+                    allSelected = allSelected,
+                    onClose = { listViewModel.clearSelection() },
+                    onToggleSelectAll = {
+                        if (allSelected) {
+                            listViewModel.clearSelection()
+                        } else {
+                            listViewModel.selectAllSelection(allVisibleIds)
+                        }
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = {
+                                shareContacts(
+                                    context,
+                                    selectedContacts.map { it.lookupKey }
+                                )
+                            }
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_share),
+                                contentDescription = stringResource(id = R.string.action_share),
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        IconButton(onClick = { showDeleteConfirm = true }) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_delete),
+                                contentDescription = stringResource(id = R.string.action_delete),
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                        Box {
+                            var moreExpanded by remember { mutableStateOf(false) }
+                            IconButton(onClick = { moreExpanded = true }) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_more_vert),
+                                    contentDescription = stringResource(id = R.string.action_more),
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = moreExpanded,
+                                onDismissRequest = { moreExpanded = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(id = R.string.action_add_to_favorites)) },
+                                    onClick = {
+                                        listViewModel.addSelectedToFavorites()
+                                        moreExpanded = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(id = R.string.action_copy_numbers)) },
+                                    onClick = {
+                                        val numbers = selectedContacts
+                                            .mapNotNull { it.primaryNumberPreview }
+                                            .filter { it.isNotBlank() }
+                                            .distinct()
+                                        if (numbers.isNotEmpty()) {
+                                            clipboardManager.setText(
+                                                AnnotatedString(numbers.joinToString("\n"))
+                                            )
+                                        }
+                                        moreExpanded = false
+                                    }
+                                )
+                                if (selectedContacts.size >= 2) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(id = R.string.action_merge_selected)) },
+                                        onClick = {
+                                            listViewModel.mergeSelectedContacts()
+                                            moreExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                )
+            )
+        } else {
+            setSelectionBar(null)
+        }
+    }
+    DisposableEffect(Unit) { onDispose { setSelectionBar(null) } }
+
+    // Bulk-delete confirmation: names (up to 3 + "and N more"),
+    // progress while deleting, dismiss blocked until it finishes.
+    if (showDeleteConfirm) {
+        val selectedContacts = uiState.allContacts.filter { it.id in selection.ids }
+        val names = selectedContacts.take(3).map { it.displayName }
+        val extraCount = selectedContacts.size - names.size
+        AlertDialog(
+            onDismissRequest = { if (!uiState.isDeleting) showDeleteConfirm = false },
+            title = {
+                Text(
+                    stringResource(
+                        id = R.string.dialog_delete_contacts_title,
+                        selectedContacts.size
+                    )
+                )
+            },
+            text = {
+                Column {
+                    Text(stringResource(id = R.string.dialog_delete_contacts_message))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    names.forEach { name ->
+                        Text(
+                            text = name,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                    if (extraCount > 0) {
+                        Text(
+                            text = stringResource(
+                                id = R.string.dialog_delete_contacts_more,
+                                extraCount
+                            ),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                    if (uiState.isDeleting) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        CircularProgressIndicator()
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !uiState.isDeleting,
+                    onClick = { listViewModel.deleteSelectedContacts() }
+                ) {
+                    Text(
+                        stringResource(id = R.string.action_delete),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    enabled = !uiState.isDeleting,
+                    onClick = { showDeleteConfirm = false }
+                ) {
+                    Text(stringResource(id = R.string.action_cancel))
+                }
+            }
+        )
+    }
+
     // Merged snackbar with Undo: the action unlinks the merged
     // groups again; dismissing it (or its timeout) keeps the merge.
     val showMergeUndo = uiState.showMergeUndo
@@ -243,7 +455,8 @@ fun ContactsScreen(
                         onMergeRequest = listViewModel::requestMerge,
                         onDismissMerge = listViewModel::dismissMergeDialog,
                         onConfirmMerge = { keepId -> listViewModel.confirmMerge(keepId) },
-                        onConfirmMergeAll = listViewModel::confirmMergeAll
+                        onConfirmMergeAll = listViewModel::confirmMergeAll,
+                        onToggleSelection = listViewModel::toggleSelection
                     )
                 }
 

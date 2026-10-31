@@ -100,6 +100,7 @@ fun ContactListScreen(
     onDismissMerge: () -> Unit,
     onConfirmMerge: (Long) -> Unit,
     onConfirmMergeAll: () -> Unit = {},
+    onToggleSelection: (Long) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
@@ -152,7 +153,8 @@ fun ContactListScreen(
                         onShowDuplicates = onShowDuplicates,
                         onDismissDuplicatesCard = onDismissDuplicatesCard,
                         onDismissFavoritesHint = onDismissFavoritesHint,
-                        onGroupsClick = onGroupsClick
+                        onGroupsClick = onGroupsClick,
+                        onToggleSelection = onToggleSelection
                     )
                 }
                 is ContactsPermissionStatus.NotAsked,
@@ -192,7 +194,8 @@ private fun ContactsContent(
     onShowDuplicates: () -> Unit,
     onDismissDuplicatesCard: () -> Unit,
     onDismissFavoritesHint: () -> Unit,
-    onGroupsClick: () -> Unit
+    onGroupsClick: () -> Unit,
+    onToggleSelection: (Long) -> Unit = {}
 ) {
     val spacing = LocalSpacing.current
     // Hoisted: the hint condition sits at LazyListScope level (not a
@@ -547,7 +550,10 @@ private fun ContactsContent(
                                 FavoriteContactCard(
                                     contact = contact,
                                     onClick = { onContactClick(contact) },
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.weight(1f),
+                                    isSelected = contact.id in uiState.selection.ids,
+                                    selectionActive = uiState.selection.isActive,
+                                    onSelectionToggle = { onToggleSelection(contact.id) }
                                 )
                             }
                             repeat(3 - rowContacts.size) {
@@ -624,6 +630,9 @@ private fun ContactsContent(
                                 context.startActivity(Intent(Intent.ACTION_SENDTO, uri))
                             }
                         },
+                        selectionActive = uiState.selection.isActive,
+                        isSelected = { it.id in uiState.selection.ids },
+                        onSelectionToggle = { onToggleSelection(it.id) },
                         modifier = Modifier
                             .animateItem()
                             .firstLoadReveal(revealIndex++, listRevealed)

@@ -130,6 +130,32 @@ class AndroidCallLogRepository(
         }
     }
 
+    override suspend fun deleteCalls(ids: Collection<Long>): Int = withContext(Dispatchers.IO) {
+        try {
+            var deleted = 0
+            val removedIds = mutableSetOf<Long>()
+            for (chunk in deleteCallChunks(ids)) {
+                val placeholders = chunk.joinToString(",") { "?" }
+                val count = contentResolver.delete(
+                    CallLog.Calls.CONTENT_URI,
+                    "${CallLog.Calls._ID} IN ($placeholders)",
+                    chunk.map { it.toString() }.toTypedArray()
+                )
+                deleted += count
+                if (count > 0) removedIds += chunk
+            }
+            // One flow update and one cache write for the whole batch.
+            if (removedIds.isNotEmpty()) {
+                val updated = _callLogsFlow.value.filter { it.id !in removedIds }
+                _callLogsFlow.value = updated
+                saveCachedList(updated)
+            }
+            deleted
+        } catch (_: Exception) {
+            0
+        }
+    }
+
 
     // The paged query lives in AndroidCallLogHistory.kt; this override
     // only delegates so the class still implements the interface.

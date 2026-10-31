@@ -2,6 +2,8 @@ package io.github.elli0t0.phone.feature.contacts.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,6 +52,7 @@ import io.github.elli0t0.phone.core.design.FavoriteHintOrange
 import io.github.elli0t0.phone.core.design.GlassListCard
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.SwipeActionRow
+import io.github.elli0t0.phone.core.design.SelectionCheckCircle
 import io.github.elli0t0.phone.core.design.LiquidGlassCard
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
@@ -178,7 +181,11 @@ fun ContactGroupCard(
     modifier: Modifier = Modifier,
     // Null (e.g. group members) means no swipe actions on these rows.
     onSwipeCall: ((ContactSummary) -> Unit)? = null,
-    onSwipeMessage: ((ContactSummary) -> Unit)? = null
+    onSwipeMessage: ((ContactSummary) -> Unit)? = null,
+    // Selection: null toggle means rows are never selectable here.
+    selectionActive: Boolean = false,
+    isSelected: (ContactSummary) -> Boolean = { false },
+    onSelectionToggle: ((ContactSummary) -> Unit)? = null
 ) {
     val spacing = LocalSpacing.current
     val insetCard = LocalAppSettings.current.effectiveStyle.card == CardStyle.INSET
@@ -193,7 +200,10 @@ fun ContactGroupCard(
                 contact = contact,
                 onClick = { onContactClick(contact) },
                 onSwipeCall = onSwipeCall,
-                onSwipeMessage = onSwipeMessage
+                onSwipeMessage = onSwipeMessage,
+                isSelected = isSelected(contact),
+                selectionActive = selectionActive,
+                onSelectionToggle = onSelectionToggle?.let { toggle -> { toggle(contact) } }
             )
             if (index < contacts.lastIndex) {
                 if (insetCard) {
@@ -225,13 +235,17 @@ fun ContactGroupCard(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ContactGroupRow(
     contact: ContactSummary,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     onSwipeCall: ((ContactSummary) -> Unit)? = null,
-    onSwipeMessage: ((ContactSummary) -> Unit)? = null
+    onSwipeMessage: ((ContactSummary) -> Unit)? = null,
+    isSelected: Boolean = false,
+    selectionActive: Boolean = false,
+    onSelectionToggle: (() -> Unit)? = null
 ) {
     val spacing = LocalSpacing.current
     val displayName = contact.displayName.ifBlank {
@@ -247,6 +261,7 @@ private fun ContactGroupRow(
         enabled = LocalAppSettings.current.swipeActionsEnabled &&
             onSwipeCall != null && onSwipeMessage != null &&
             !swipeNumber.isNullOrBlank(),
+        suppressed = selectionActive,
         onSwipeCall = { swipeNumber?.let { onSwipeCall?.invoke(contact) } },
         onSwipeMessage = { swipeNumber?.let { onSwipeMessage?.invoke(contact) } },
         modifier = modifier.fillMaxWidth()
@@ -254,11 +269,31 @@ private fun ContactGroupRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .background(
+                if (isSelected) {
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
+                } else {
+                    Color.Transparent
+                }
+            )
             .bouncyClick(rowSource)
-            .clickable(
+            .combinedClickable(
                 interactionSource = rowSource,
-                indication = if (insetCard) null else ripple()
-            ) { lightHaptic(); onClick() }
+                indication = if (insetCard) null else ripple(),
+                // While selecting, tap toggles; long-press enters
+                // selection (with a light haptic) or toggles.
+                onClick = {
+                    if (selectionActive) {
+                        onSelectionToggle?.invoke()
+                    } else {
+                        lightHaptic(); onClick()
+                    }
+                },
+                onLongClick = {
+                    if (!selectionActive) lightHaptic()
+                    onSelectionToggle?.invoke()
+                }
+            )
             .then(if (insetCard) Modifier.insetRowPress(rowSource) else Modifier)
             .testTag("contact_item_${contact.id}")
             .padding(
@@ -267,12 +302,19 @@ private fun ContactGroupRow(
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        ContactAvatar(
-            photoUri = contact.photoUri,
-            displayName = displayName,
-            size = PhoneDimens.contactsRowAvatarSize,
-            modifier = Modifier.testTag("avatar_${contact.id}")
-        )
+        if (isSelected) {
+            SelectionCheckCircle(
+                size = PhoneDimens.contactsRowAvatarSize,
+                modifier = Modifier.testTag("avatar_${contact.id}")
+            )
+        } else {
+            ContactAvatar(
+                photoUri = contact.photoUri,
+                displayName = displayName,
+                size = PhoneDimens.contactsRowAvatarSize,
+                modifier = Modifier.testTag("avatar_${contact.id}")
+            )
+        }
         Spacer(modifier = Modifier.width(spacing.medium))
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -586,11 +628,15 @@ fun SearchEmptyState(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FavoriteContactCard(
     contact: ContactSummary,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isSelected: Boolean = false,
+    selectionActive: Boolean = false,
+    onSelectionToggle: (() -> Unit)? = null
 ) {
     val displayName = contact.displayName.ifBlank {
         contact.primaryNumberPreview ?: stringResource(id = R.string.contact_unknown)
@@ -610,10 +656,21 @@ fun FavoriteContactCard(
             .clip(MaterialTheme.shapes.large)
             .background(gradientBrush)
             .bouncyClick(cardSource)
-            .clickable(
+            .combinedClickable(
                 interactionSource = cardSource,
-                indication = ripple()
-            ) { lightHaptic(); onClick() }
+                indication = ripple(),
+                onClick = {
+                    if (selectionActive) {
+                        onSelectionToggle?.invoke()
+                    } else {
+                        lightHaptic(); onClick()
+                    }
+                },
+                onLongClick = {
+                    if (!selectionActive) lightHaptic()
+                    onSelectionToggle?.invoke()
+                }
+            )
             .testTag("favorite_card_${contact.id}")
             .padding(PhoneDimens.contactsFavoriteCardPadding),
         contentAlignment = Alignment.Center
@@ -632,6 +689,16 @@ fun FavoriteContactCard(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+        }
+        // Selected tiles get a check at the top-end corner.
+        if (isSelected) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(PhoneDimens.contactsFavoriteCardPadding)
+            ) {
+                SelectionCheckCircle(size = 24.dp)
+            }
         }
     }
 }

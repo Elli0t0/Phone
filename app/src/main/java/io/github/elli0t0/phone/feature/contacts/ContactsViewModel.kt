@@ -4,9 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.common.Selection
 import io.github.elli0t0.phone.data.contacts.ContactsRepository
 import io.github.elli0t0.phone.data.contacts.model.ContactMergeOutcome
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
+import io.github.elli0t0.phone.data.contacts.model.DeleteContactsResult
 import io.github.elli0t0.phone.data.contacts.model.DuplicateGroup
 import io.github.elli0t0.phone.data.contacts.util.ContactGroupingUtil
 import io.github.elli0t0.phone.data.contacts.util.ContactMergeUtil
@@ -24,6 +26,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
@@ -64,6 +67,15 @@ class ContactsViewModel(
         val linkedOutcomes: List<ContactMergeOutcome>,
         val mergedCount: Int
     )
+
+    /** Multi-select state, kept in one flow so the uiState combine stays at 5 inputs. */
+    private data class SelectionUi(
+        val selection: Selection = Selection(),
+        val isDeleting: Boolean = false,
+        val deleteReport: DeleteContactsResult? = null
+    )
+
+    private val _selectionUi = MutableStateFlow(SelectionUi())
 
     // Merges ignore provider reloads they caused themselves for ~500 ms,
     // so a stale reload cannot re-add the just-merged group.
@@ -197,7 +209,7 @@ class ContactsViewModel(
         MergeUiState(allDuplicatesMerged, mergeBatch)
     }
 
-    val uiState: StateFlow<ContactsUiState> = combine(
+    private val baseUiState: StateFlow<ContactsUiState> = combine(
         contactsListFlow,
         contactsUiExtrasFlow,
         mergeUiFlow,
@@ -233,12 +245,31 @@ class ContactsViewModel(
         initialValue = ContactsUiState(isLoading = true)
     )
 
+    // Selection folds in second so the base combine stays at 5 flows.
+    val uiState: StateFlow<ContactsUiState> = combine(
+        baseUiState,
+        _selectionUi
+    ) { base, sel ->
+        base.copy(
+            selection = sel.selection,
+            isDeleting = sel.isDeleting,
+            deleteReport = sel.deleteReport
+        )
+    }
+    .stateIn(
+        scope = activeScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = ContactsUiState(isLoading = true)
+    )
+
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
+        clearSelection()
     }
 
     fun clearSearchQuery() {
         _searchQuery.value = ""
+        clearSelection()
     }
 
     fun showMessage(messageRes: Int) {
@@ -247,6 +278,92 @@ class ContactsViewModel(
 
     fun clearMessage() {
         _userMessageRes.value = null
+    }
+
+    // Multi-select: long-press enters (first toggle from empty),
+    // tap toggles while active, deselecting the last row exits.
+    fun toggleSelection(id: Long) {
+        _selectionUi.update { it.copy(selection = it.selection.toggle(id)) }
+    }
+
+    fun selectAllSelection(ids: Collection<Long>) {
+        _selectionUi.update { it.copy(selection = it.selection.selectAll(ids)) }
+    }
+
+    fun clearSelection() {
+        if (_selectionUi.value.selection.isActive) {
+            _selectionUi.update { it.copy(selection = Selection()) }
+        }
+    }
+
+    private fun selectedSummaries(): List<ContactSummary> {
+        val ids = _selectionUi.value.selection.ids
+        return latestContacts.filter { it.id in ids }
+    }
+
+    /** Bulk delete: one confirmation dialog, one applyBatch, progress, never on the UI thread. */
+    fun deleteSelectedContacts() {
+        val selected = selectedSummaries()
+        if (selected.isEmpty()) return
+        _selectionUi.update { it.copy(isDeleting = true) }
+        mergeScope.launch {
+            try {
+                val result = contactsRepository.deleteContacts(selected.map { it.lookupKey })
+                _selectionUi.update {
+                    it.copy(
+                        isDeleting = false,
+                        selection = Selection(),
+                        deleteReport = result
+                    )
+                }
+            } catch (_: Exception) {
+                _selectionUi.update {
+                    it.copy(
+                        isDeleting = false,
+                        deleteReport = DeleteContactsResult(0, selected.size)
+                    )
+                }
+            }
+        }
+    }
+
+    fun clearDeleteReport() {
+        _selectionUi.update { it.copy(deleteReport = null) }
+    }
+
+    /** Merge the selection into its first contact, using the link logic from Part 2. */
+    fun mergeSelectedContacts() {
+        val selected = selectedSummaries()
+        if (selected.size < 2) return
+        val keep = selected.first()
+        val targets = selected.drop(1).map { it.id }
+        mergeScope.launch {
+            _isMerging.value = true
+            try {
+                val result = contactsRepository.mergeContacts(keep.id, targets)
+                result.onSuccess { outcome ->
+                    clearSelection()
+                    onMergeSuccess(listOf(outcome), 1)
+                }.onFailure {
+                    _userMessageRes.value = R.string.snackbar_contact_error
+                }
+            } finally {
+                _isMerging.value = false
+            }
+        }
+    }
+
+    /** Add every selected contact to favorites; the grid itself is the feedback. */
+    fun addSelectedToFavorites() {
+        val selected = selectedSummaries()
+        val repo = favoritesRepository ?: return
+        if (selected.isEmpty()) return
+        activeScope.launch {
+            for (contact in selected) {
+                runCatching { repo.addFavorite(contact.lookupKey, contact.id) }
+            }
+            clearSelection()
+        }
     }
 
     fun findDuplicates() {

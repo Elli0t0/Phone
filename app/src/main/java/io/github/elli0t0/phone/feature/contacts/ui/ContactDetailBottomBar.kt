@@ -2,11 +2,9 @@ package io.github.elli0t0.phone.feature.contacts.ui
 
 import android.app.Activity
 import android.content.Context
-import android.content.Intent
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
-import android.provider.ContactsContract
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -99,6 +97,7 @@ import io.github.elli0t0.phone.data.contacts.model.ContactEmail
 import io.github.elli0t0.phone.data.contacts.model.ContactPhone
 import io.github.elli0t0.phone.data.contacts.util.ContactPhotoUtil
 import io.github.elli0t0.phone.feature.contacts.ContactDetailUiState
+import io.github.elli0t0.phone.feature.contacts.shareContacts
 
 
 @Composable
@@ -250,37 +249,11 @@ fun DetailBottomBarAction(
     }
 }
 
-// Share the contact as a vCard.
+// Share the contact as a provider vCard: the full stored details,
+// not the old hand-built text that dropped notes, birthday and
+// address. Same path the bulk share uses.
 fun shareContact(context: Context, contact: ContactDetail) {
-    val vCard = buildString {
-        appendLine("BEGIN:VCARD")
-        appendLine("VERSION:3.0")
-        appendLine("FN:${contact.displayName}")
-        if (!contact.organization.isNullOrBlank()) {
-            appendLine("ORG:${contact.organization}")
-        }
-        contact.phones.forEach { phone ->
-            val type = when (phone.type) {
-                ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE -> "CELL"
-                ContactsContract.CommonDataKinds.Phone.TYPE_HOME -> "HOME"
-                ContactsContract.CommonDataKinds.Phone.TYPE_WORK -> "WORK"
-                else -> "VOICE"
-            }
-            appendLine("TEL;TYPE=$type:${phone.number}")
-        }
-        contact.emails.forEach { email ->
-            appendLine("EMAIL:${email.address}")
-        }
-        appendLine("END:VCARD")
-    }
-    val intent = Intent(Intent.ACTION_SEND).apply {
-        type = "text/x-vcard"
-        putExtra(Intent.EXTRA_TEXT, vCard)
-        putExtra(Intent.EXTRA_SUBJECT, contact.displayName)
-    }
-    context.startActivity(
-        Intent.createChooser(intent, context.getString(R.string.action_share))
-    )
+    shareContacts(context, listOf(contact.lookupKey))
 }
 
 /**

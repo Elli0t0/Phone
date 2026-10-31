@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
+import io.github.elli0t0.phone.core.common.Selection
 import io.github.elli0t0.phone.data.calllog.CallLogRepository
 import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import io.github.elli0t0.phone.data.calllog.model.CallType
@@ -51,8 +52,11 @@ class RecentsViewModel(
     private val _selectedDate = MutableStateFlow<LocalDate?>(null)
     private val _expandedCallId = MutableStateFlow<Long?>(null)
     // Rows swiped (or menu-deleted) but not yet confirmed: hidden
-    // from the list until the Undo snackbar resolves.
+    // from the list until the Undo snackbar resolves. These are CALL
+    // ids, applied to the flat call list BEFORE grouping — a group
+    // of 3 calls disappears fully, not just its primary row.
     private val _pendingDeleteIds = MutableStateFlow<Set<Long>>(emptySet())
+    private val _selection = MutableStateFlow(Selection())
     private val _userMessageRes = MutableStateFlow<Int?>(null)
     private val _reloadTrigger = MutableStateFlow(0L)
     private val _errorMessage = MutableStateFlow<String?>(null)
@@ -122,8 +126,8 @@ class RecentsViewModel(
         _pendingDeleteIds
     ) { logData, filterInput, pendingDeleteIds ->
         val filteredCalls = filterCalls(logData.calls, filterInput.filter, filterInput.query, filterInput.date)
-        val grouped = CallLogGroupingHelper.groupConsecutiveCalls(filteredCalls)
             .filter { it.id !in pendingDeleteIds }
+        val grouped = CallLogGroupingHelper.groupConsecutiveCalls(filteredCalls)
         RecentsSections(
             daySections = CallLogGroupingHelper.organizeIntoDaySections(grouped),
             favorites = logData.favorites,
@@ -142,8 +146,9 @@ class RecentsViewModel(
     val uiState: StateFlow<RecentsUiState> = combine(
         sectionsFlow,
         _expandedCallId,
-        _userMessageRes
-    ) { sections, expandedId, messageRes ->
+        _userMessageRes,
+        _selection
+    ) { sections, expandedId, messageRes, selection ->
         RecentsUiState(
             daySections = sections.daySections,
             favorites = sections.favorites,
@@ -154,7 +159,8 @@ class RecentsViewModel(
             isSearching = sections.isSearching,
             isLoading = sections.isLoading,
             userMessageRes = messageRes,
-            errorMessage = sections.errorMessage
+            errorMessage = sections.errorMessage,
+            selection = selection
         )
     }
     .stateIn(
@@ -208,14 +214,17 @@ class RecentsViewModel(
 
     fun onFilterSelected(filter: CallFilter) {
         _selectedFilter.value = filter
+        clearSelection()
     }
 
     fun onDateSelected(date: LocalDate?) {
         _selectedDate.value = date
+        clearSelection()
     }
 
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
+        clearSelection()
     }
 
     fun onToggleExpandCall(callId: Long) {
@@ -228,24 +237,42 @@ class RecentsViewModel(
         _expandedCallId.value = null
     }
 
-    // Deferred delete for the swipe/menu Undo snackbar: the row
-    // hides immediately, the call-log entry is removed only when the
-    // snackbar resolves without Undo.
-    fun requestDelete(callId: Long) {
-        if (_expandedCallId.value == callId) {
+    // Multi-select: long-press enters (first toggle from empty),
+    // tap toggles while active, deselecting the last row exits.
+    // Entering selection collapses any expanded row.
+    fun toggleSelection(id: Long) {
+        val wasActive = _selection.value.isActive
+        _selection.value = _selection.value.toggle(id)
+        if (!wasActive && _selection.value.isActive) {
             _expandedCallId.value = null
         }
-        _pendingDeleteIds.value = _pendingDeleteIds.value + callId
     }
 
-    fun undoDelete(callId: Long) {
-        _pendingDeleteIds.value = _pendingDeleteIds.value - callId
+    fun selectAllSelection(ids: Collection<Long>) {
+        _selection.value = _selection.value.selectAll(ids)
     }
 
-    fun confirmDelete(callId: Long) {
-        _pendingDeleteIds.value = _pendingDeleteIds.value - callId
+    fun clearSelection() {
+        if (_selection.value.isActive) {
+            _selection.value = Selection()
+        }
+    }
+
+    // Deferred delete for the Undo snackbar: the rows hide at once,
+    // the call-log entries are removed only when the snackbar
+    // resolves without Undo.
+    fun requestDelete(callIds: Collection<Long>) {
+        _pendingDeleteIds.value = _pendingDeleteIds.value + callIds
+    }
+
+    fun undoDelete(callIds: Collection<Long>) {
+        _pendingDeleteIds.value = _pendingDeleteIds.value - callIds
+    }
+
+    fun confirmDelete(callIds: Collection<Long>) {
+        _pendingDeleteIds.value = _pendingDeleteIds.value - callIds
         activeScope?.launch {
-            callLogRepository.deleteCall(callId)
+            callLogRepository.deleteCalls(callIds)
         }
     }
 

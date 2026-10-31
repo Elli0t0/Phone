@@ -5,6 +5,7 @@ import android.net.Uri
 import android.provider.ContactsContract
 import android.telephony.PhoneNumberUtils
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -119,6 +120,8 @@ import io.github.elli0t0.phone.feature.recents.ui.CallLogRow
 import io.github.elli0t0.phone.feature.recents.ui.DaySectionCard
 import io.github.elli0t0.phone.feature.recents.ui.RecentsEmptyState
 
+import io.github.elli0t0.phone.navigation.LocalSetSelectionBarState
+import io.github.elli0t0.phone.navigation.SelectionBarState
 import io.github.elli0t0.phone.navigation.StatusBarGradientScrim
 import io.github.elli0t0.phone.navigation.FloatingActionsPill
 import java.time.Instant
@@ -206,10 +209,6 @@ fun RecentsScreen(
     // create-new / add-to-existing chooser dialog.
     var addNumber by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
     var searchVisible by remember { mutableStateOf(uiState.searchQuery.isNotEmpty()) }
-    // Long-press menu, hoisted so expand and menu stay mutually
-    // exclusive across rows: expanding dismisses it, opening it
-    // collapses any expanded row.
-    var menuCallId by remember { mutableStateOf<Long?>(null) }
     var filterMenuExpanded by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
@@ -241,30 +240,193 @@ fun RecentsScreen(
         }
     }
 
-    // Delete with Undo: the row hides at once, the call-log entry
-    // is removed only when the snackbar resolves without Undo (or
-    // the screen goes away, so a pending delete never lingers).
-    fun deleteCallWithUndo(callId: Long) {
-        viewModel.requestDelete(callId)
+    // Bulk delete with Undo: the rows hide at once, the call-log
+    // entries are removed only when the snackbar resolves without
+    // Undo (or the screen goes away, so a pending delete never
+    // lingers). One snackbar for the whole batch.
+    fun deleteCallsWithUndo(callIds: Collection<Long>) {
+        if (callIds.isEmpty()) return
+        viewModel.clearSelection()
+        viewModel.requestDelete(callIds)
         recentsScope.launch {
             var undone = false
             try {
                 val result = snackbarHostState.showSnackbar(
-                    message = context.getString(R.string.snackbar_call_deleted),
+                    message = context.getString(R.string.snackbar_calls_deleted, callIds.size),
                     actionLabel = context.getString(R.string.action_undo),
                     duration = SnackbarDuration.Long
                 )
                 if (result == SnackbarResult.ActionPerformed) {
-                    viewModel.undoDelete(callId)
+                    viewModel.undoDelete(callIds)
                     undone = true
                 }
             } finally {
                 if (!undone) {
-                    viewModel.confirmDelete(callId)
+                    viewModel.confirmDelete(callIds)
                 }
             }
         }
     }
+
+    // Share the selection as plain text: one line per call, newest
+    // first, grouped by day; grouped rows expand to their calls.
+    fun shareSelectedCalls() {
+        val selectedIds = uiState.selection.ids
+        if (selectedIds.isEmpty()) return
+        val dateFormat = java.text.DateFormat.getDateTimeInstance(
+            java.text.DateFormat.MEDIUM,
+            java.text.DateFormat.SHORT
+        )
+        val text = buildString {
+            for (section in displayedSections) {
+                val groups = section.calls.filter { it.id in selectedIds }
+                if (groups.isEmpty()) continue
+                appendLine(section.title)
+                for (group in groups) {
+                    for (call in group.calls) {
+                        val duration = if (call.durationSeconds > 0) {
+                            val mins = call.durationSeconds / 60
+                            val secs = call.durationSeconds % 60
+                            "%d:%02d".format(mins, secs)
+                        } else {
+                            "0:00"
+                        }
+                        appendLine(
+                            "${call.displayTitle} · ${call.formattedNumber.ifBlank { call.number }} · " +
+                                "${context.getString(call.type.titleRes)} · " +
+                                "${dateFormat.format(java.util.Date(call.date))} · $duration"
+                        )
+                    }
+                }
+            }
+        }
+        if (text.isBlank()) return
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, text)
+        }
+        context.startActivity(
+            Intent.createChooser(intent, context.getString(R.string.action_share))
+        )
+    }
+
+    fun copySelectedNumbers() {
+        val selectedIds = uiState.selection.ids
+        val numbers = displayedSections
+            .flatMap { it.calls }
+            .filter { it.id in selectedIds }
+            .map { it.number }
+            .filter { it.isNotBlank() }
+            .distinct()
+        if (numbers.isNotEmpty()) {
+            clipboardManager.setText(AnnotatedString(numbers.joinToString("\n")))
+        }
+    }
+
+    // Selection bar: published hoisted so MainActivity swaps the
+    // bottom bar; Back exits selection mode.
+    val selection = uiState.selection
+    val setSelectionBar = LocalSetSelectionBarState.current
+    val displayedGroupIds = displayedSections.flatMap { it.calls }.map { it.id }
+    BackHandler(enabled = selection.isActive) { viewModel.clearSelection() }
+    LaunchedEffect(selection, displayedSections) {
+        if (selection.isActive) {
+            val selectedGroups = displayedSections
+                .flatMap { it.calls }
+                .filter { it.id in selection.ids }
+            val allSelected = displayedGroupIds.isNotEmpty() &&
+                selectedGroups.size == displayedGroupIds.size
+            setSelectionBar(
+                SelectionBarState(
+                    title = context.getString(R.string.selection_selected, selection.ids.size),
+                    allSelected = allSelected,
+                    onClose = { viewModel.clearSelection() },
+                    onToggleSelectAll = {
+                        if (allSelected) {
+                            viewModel.clearSelection()
+                        } else {
+                            viewModel.selectAllSelection(displayedGroupIds)
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { shareSelectedCalls() }) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_share),
+                                contentDescription = stringResource(id = R.string.action_share),
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        if (permissionState.hasWritePermission) {
+                            IconButton(
+                                onClick = {
+                                    deleteCallsWithUndo(
+                                        selectedGroups.flatMap { group ->
+                                            group.calls.map { it.id }
+                                        }
+                                    )
+                                }
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_delete),
+                                    contentDescription = stringResource(id = R.string.action_delete_call),
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                        Box {
+                            var moreExpanded by remember { mutableStateOf(false) }
+                            IconButton(onClick = { moreExpanded = true }) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_more_vert),
+                                    contentDescription = stringResource(id = R.string.action_more),
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = moreExpanded,
+                                onDismissRequest = { moreExpanded = false }
+                            ) {
+                                if (selectedGroups.size == 1) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(id = R.string.action_copy_number)) },
+                                        onClick = { copySelectedNumbers(); moreExpanded = false }
+                                    )
+                                    val single = selectedGroups.first()
+                                    if (single.primaryCall.contactId != null) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(id = R.string.action_open_contact)) },
+                                            onClick = {
+                                                single.primaryCall.contactId?.let { id ->
+                                                    onNavigateToContactDetail(id)
+                                                }
+                                                moreExpanded = false
+                                            }
+                                        )
+                                    } else {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(id = R.string.action_add_contact)) },
+                                            onClick = {
+                                                addNumber = single.number
+                                                moreExpanded = false
+                                            }
+                                        )
+                                    }
+                                } else {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(id = R.string.action_copy_numbers)) },
+                                        onClick = { copySelectedNumbers(); moreExpanded = false }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                )
+            )
+        } else {
+            setSelectionBar(null)
+        }
+    }
+    DisposableEffect(Unit) { onDispose { setSelectionBar(null) } }
 
     if (simPickerTargetNumber != null) {
         io.github.elli0t0.phone.feature.call.ui.DualSimPickerDialog(
@@ -760,16 +922,12 @@ fun RecentsScreen(
                                         CallLogRow(
                                             group = group,
                                             isExpanded = uiState.expandedCallId == group.id,
-                                            showMenu = menuCallId == group.id,
-                                            canWriteCallLog = permissionState.hasWritePermission,
-                                            showSim = simAccounts.size > 1,
+                                            isSelected = group.id in uiState.selection.ids,
+                                            selectionActive = uiState.selection.isActive,
+                                            onSelectionToggle = { viewModel.toggleSelection(group.id) },
                                             onRowClick = {
-                                                menuCallId = null
                                                 viewModel.onToggleExpandCall(group.id)
                                             },
-                                            onCollapse = { viewModel.onCollapseExpandedCall() },
-                                            onShowMenu = { menuCallId = group.id },
-                                            onDismissMenu = { menuCallId = null },
                                             onCallClick = { initiateCall(group.number) },
                                             onMessageClick = {
                                                 val uri = Uri.parse("smsto:${Uri.encode(group.number)}")
@@ -784,10 +942,7 @@ fun RecentsScreen(
                                             onAddContactClick = {
                                                 addNumber = group.number
                                             },
-                                            onCopyNumberClick = {
-                                                clipboardManager.setText(AnnotatedString(group.number))
-                                            },
-                                            onDeleteClick = { deleteCallWithUndo(group.id) },
+                                            showSim = simAccounts.size > 1,
                                             showDivider = false,
                                             recordingByCallId = recordingByCallId,
                                             playingRecordingId = quickPlayer.playingId,

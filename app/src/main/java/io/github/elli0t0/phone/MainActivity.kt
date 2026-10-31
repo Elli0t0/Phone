@@ -78,9 +78,13 @@ import io.github.elli0t0.phone.core.design.PhoneTheme
 import io.github.elli0t0.phone.core.design.bottomBarSizeSpec
 import io.github.elli0t0.phone.core.permissions.SetupPermissions
 import io.github.elli0t0.phone.data.settings.model.AppSettings
+import io.github.elli0t0.phone.navigation.LocalSelectionBarState
+import io.github.elli0t0.phone.navigation.LocalSetSelectionBarState
 import io.github.elli0t0.phone.navigation.PhoneBottomBar
 import io.github.elli0t0.phone.navigation.PhoneNavHost
 import io.github.elli0t0.phone.navigation.Screen
+import io.github.elli0t0.phone.navigation.SelectionBar
+import io.github.elli0t0.phone.navigation.SelectionBarState
 import io.github.elli0t0.phone.core.telecom.PhoneNavLog
 
 class MainActivity : ComponentActivity() {
@@ -332,13 +336,19 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
     val useLensBar = isLensBarActive(appSettings)
     val lensBackdrop = if (useLensBar) rememberLayerBackdrop() else null
 
+    // Selection bar: published by a selecting list through
+    // LocalSetSelectionBarState, read here to swap the bottom bar.
+    var selectionBarState by remember { mutableStateOf<SelectionBarState?>(null) }
+
     // The bottom bar is an overlay: content runs edge-to-edge behind it,
     // and each list keeps its own bottom clearance above the bar.
     // The root Box paints one opaque theme background so the window
     // background never shows through during a tab transition.
     CompositionLocalProvider(
         LocalAppSnackbarHostState provides snackbarHostState,
-        LocalHazeState provides hazeState
+        LocalHazeState provides hazeState,
+        LocalSelectionBarState provides selectionBarState,
+        LocalSetSelectionBarState provides { selectionBarState = it }
     ) {
     Box(
         modifier = Modifier.fillMaxSize()
@@ -450,8 +460,14 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
                     )
             )
         }
+        // Selection replaces the navigation bar (slide-up, same as
+        // the bar's own enter/exit): only on a bottom-bar tab, so a
+        // stale state can never cover an inner screen.
+        val selectionBar = LocalSelectionBarState.current
+        val showSelectionBar = selectionBar != null &&
+            Screen.bottomNavItems.any { it.route == currentRoute }
         AnimatedVisibility(
-            visible = showBottomBar,
+            visible = showBottomBar && !showSelectionBar,
             enter = barEnter,
             exit = barExit,
             modifier = Modifier.align(Alignment.BottomCenter)
@@ -463,6 +479,14 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
                 shrinkProgress = { barShrinkProgress.value },
                 lensBackdrop = lensBackdrop
             )
+        }
+        AnimatedVisibility(
+            visible = showSelectionBar,
+            enter = barEnter,
+            exit = barExit,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            selectionBar?.let { SelectionBar(it) }
         }
         // One app-level snackbar host above the floating bar: nav
         // inset + bar bottom margin + current bar height + a small

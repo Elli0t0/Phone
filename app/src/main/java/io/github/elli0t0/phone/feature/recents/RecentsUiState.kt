@@ -2,6 +2,7 @@ package io.github.elli0t0.phone.feature.recents
 
 import androidx.annotation.StringRes
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.common.Selection
 import io.github.elli0t0.phone.data.calllog.util.DaySection
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 import java.time.LocalDate
@@ -24,6 +25,7 @@ data class RecentsUiState(
     val isSearching: Boolean = false,
     val isLoading: Boolean = false,
     val userMessageRes: Int? = null,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val selection: Selection = Selection()
 )
 

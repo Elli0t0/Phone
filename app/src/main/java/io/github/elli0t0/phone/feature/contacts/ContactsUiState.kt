@@ -1,7 +1,9 @@
 package io.github.elli0t0.phone.feature.contacts
 
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
+import io.github.elli0t0.phone.data.contacts.model.DeleteContactsResult
 import io.github.elli0t0.phone.data.contacts.model.DuplicateGroup
+import io.github.elli0t0.phone.core.common.Selection
 
 data class ContactsUiState(
     val searchQuery: String = "",
@@ -20,5 +22,8 @@ data class ContactsUiState(
     val isMerging: Boolean = false,
     val allDuplicatesMerged: Boolean = false,
     val showMergeUndo: Boolean = false,
-    val mergedGroupCount: Int = 0
+    val mergedGroupCount: Int = 0,
+    val selection: Selection = Selection(),
+    val isDeleting: Boolean = false,
+    val deleteReport: DeleteContactsResult? = null
 )

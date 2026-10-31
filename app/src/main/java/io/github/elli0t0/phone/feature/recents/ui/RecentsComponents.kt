@@ -31,8 +31,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -52,7 +50,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -63,6 +60,8 @@ import androidx.compose.ui.unit.sp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.AccentBlue
 import io.github.elli0t0.phone.core.design.SwipeActionRow
+import io.github.elli0t0.phone.core.design.SelectionCheckCircle
+import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.core.design.GlassListCard
 import io.github.elli0t0.phone.core.design.CallAnswerGreen
 import io.github.elli0t0.phone.core.design.CallRejectedOrange
@@ -141,18 +140,14 @@ fun RecordingPlayButton(
 fun CallLogRow(
     group: CallGroup,
     isExpanded: Boolean,
-    showMenu: Boolean,
-    canWriteCallLog: Boolean,
     onRowClick: () -> Unit,
-    onCollapse: () -> Unit,
-    onShowMenu: () -> Unit,
-    onDismissMenu: () -> Unit,
     onCallClick: () -> Unit,
     onMessageClick: () -> Unit,
     onOpenContactClick: () -> Unit,
     onAddContactClick: () -> Unit,
-    onCopyNumberClick: () -> Unit,
-    onDeleteClick: () -> Unit,
+    isSelected: Boolean = false,
+    selectionActive: Boolean = false,
+    onSelectionToggle: () -> Unit = {},
     showDivider: Boolean = true,
     showSim: Boolean = false,
     recordingByCallId: Map<Long, RecordingEntity> = emptyMap(),
@@ -209,6 +204,7 @@ fun CallLogRow(
     // Shared press source: bouncyClick and combinedClickable observe the
     // same press state, so the row bounces (0.90) while pressed and ripples.
     val rowSource = remember { MutableInteractionSource() }
+    val lightHaptic = rememberLightHaptic()
     val insetCard = LocalAppSettings.current.effectiveStyle.card == CardStyle.INSET
     val swipeEnabled = LocalAppSettings.current.swipeActionsEnabled
 
@@ -242,6 +238,13 @@ fun CallLogRow(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .background(
+                        if (isSelected) {
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
+                        } else {
+                            Color.Transparent
+                        }
+                    )
                     .padding(vertical = 12.dp)
                     // Only the header row is clickable: the bounded
                     // ripple stays clipped to this row's shape, and
@@ -251,39 +254,48 @@ fun CallLogRow(
                     .combinedClickable(
                         interactionSource = rowSource,
                         indication = if (insetCard) null else ripple(),
-                        onClick = onRowClick,
-                        // Collapse first (this row or any other),
-                        // then open the menu: expand and menu never
-                        // coexist, so the menu can never cover
-                        // expanded details text.
-                        onLongClick = { onCollapse(); onShowMenu() }
+                        // While selecting, tap toggles; otherwise it
+                        // expands. Long-press enters selection (with
+                        // a light haptic) or toggles while selecting;
+                        // the old context menu lives in the selection
+                        // bar's overflow for a single selection now.
+                        onClick = if (selectionActive) onSelectionToggle else onRowClick,
+                        onLongClick = {
+                            if (!selectionActive) lightHaptic()
+                            onSelectionToggle()
+                        }
                     )
                     .then(if (insetCard) Modifier.insetRowPress(rowSource) else Modifier),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Avatar with a small direction badge at its
                 // bottom-end corner; the bare direction arrow is gone.
-                Box(modifier = Modifier.size(44.dp)) {
-                    ContactAvatar(
-                        photoUri = group.primaryCall.contactPhotoUri,
-                        displayName = group.displayTitle,
-                        size = 44.dp,
-                        showPersonIcon = group.primaryCall.contactName.isNullOrBlank() &&
-                            group.primaryCall.cachedName.isNullOrBlank()
-                    )
-                    Box(
-                        modifier = Modifier
-                            .size(18.dp)
-                            .align(Alignment.BottomEnd)
-                            .background(MaterialTheme.colorScheme.surface, CircleShape)
-                            .padding(2.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(id = group.type.iconRes),
-                            contentDescription = null,
-                            tint = typeColor,
-                            modifier = Modifier.fillMaxSize()
+                // A selected row swaps the avatar for a check circle.
+                if (isSelected) {
+                    SelectionCheckCircle(size = 44.dp)
+                } else {
+                    Box(modifier = Modifier.size(44.dp)) {
+                        ContactAvatar(
+                            photoUri = group.primaryCall.contactPhotoUri,
+                            displayName = group.displayTitle,
+                            size = 44.dp,
+                            showPersonIcon = group.primaryCall.contactName.isNullOrBlank() &&
+                                group.primaryCall.cachedName.isNullOrBlank()
                         )
+                        Box(
+                            modifier = Modifier
+                                .size(18.dp)
+                                .align(Alignment.BottomEnd)
+                                .background(MaterialTheme.colorScheme.surface, CircleShape)
+                                .padding(2.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(id = group.type.iconRes),
+                                contentDescription = null,
+                                tint = typeColor,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
                     }
                 }
 
@@ -364,7 +376,7 @@ fun CallLogRow(
                 // Time in its own fixed-width slot at the row's
                 // trailing edge, separated from the name column so a
                 // long RTL name can never collide with it. Call-back
-                // stays reachable via swipe right, long-press menu,
+                // stays reachable via swipe right, the selection bar,
                 // and the expanded details.
                 Spacer(modifier = Modifier.width(spacing.medium))
                 Box(
@@ -378,47 +390,6 @@ fun CallLogRow(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    // Long press context menu, anchored to the row's
-                    // end side (the time slot) with a small offset,
-                    // so it opens over the row's right half. Expanded
-                    // details are collapsed whenever it opens, so it
-                    // can never cover detail lines; the stock menu
-                    // still flips above when there is no room below.
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = onDismissMenu,
-                        offset = DpOffset(0.dp, 4.dp)
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(id = R.string.action_call)) },
-                            onClick = { onDismissMenu(); onCallClick() }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(id = R.string.action_message)) },
-                            onClick = { onDismissMenu(); onMessageClick() }
-                        )
-                        if (group.primaryCall.contactId != null) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(id = R.string.action_open_contact)) },
-                                onClick = { onDismissMenu(); onOpenContactClick() }
-                            )
-                        } else {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(id = R.string.action_add_contact)) },
-                                onClick = { onDismissMenu(); onAddContactClick() }
-                            )
-                        }
-                        DropdownMenuItem(
-                            text = { Text(stringResource(id = R.string.action_copy_number)) },
-                            onClick = { onDismissMenu(); onCopyNumberClick() }
-                        )
-                        if (canWriteCallLog) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(id = R.string.action_delete_call), color = MaterialTheme.colorScheme.error) },
-                                onClick = { onDismissMenu(); onDeleteClick() }
-                            )
-                        }
-                    }
                 }
             }
 
@@ -445,6 +416,7 @@ fun CallLogRow(
         }
         SwipeActionRow(
             enabled = swipeEnabled && group.number.isNotBlank(),
+            suppressed = selectionActive,
             onSwipeCall = onCallClick,
             onSwipeMessage = onMessageClick
         ) {

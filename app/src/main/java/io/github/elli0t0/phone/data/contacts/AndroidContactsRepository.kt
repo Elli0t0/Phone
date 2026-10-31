@@ -28,6 +28,7 @@ import io.github.elli0t0.phone.data.contacts.model.ContactGroup
 import io.github.elli0t0.phone.data.contacts.model.ContactInput
 import io.github.elli0t0.phone.data.contacts.model.ContactMergeOutcome
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
+import io.github.elli0t0.phone.data.contacts.model.DeleteContactsResult
 import io.github.elli0t0.phone.data.contacts.util.ContactMergeUtil
 import io.github.elli0t0.phone.data.favorites.ContactSimDao
 import io.github.elli0t0.phone.data.favorites.FavoritesDao
@@ -483,6 +484,48 @@ class AndroidContactsRepository(
             Unit
         }
     }
+
+    override suspend fun deleteContacts(lookupKeys: List<String>): DeleteContactsResult =
+        withContext(Dispatchers.IO) {
+            val keys = lookupKeys.filter { it.isNotBlank() }.distinct()
+            if (keys.isEmpty()) return@withContext DeleteContactsResult(0, 0)
+            val deletedKeys = mutableSetOf<String>()
+            runCatching {
+                val ops = ArrayList<ContentProviderOperation>()
+                for (key in keys) {
+                    ops += ContentProviderOperation.newDelete(
+                        Uri.withAppendedPath(Contacts.CONTENT_LOOKUP_URI, key)
+                    ).build()
+                }
+                val results = contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
+                results.forEachIndexed { index, result ->
+                    if ((result.count ?: 0) > 0) deletedKeys += keys[index]
+                }
+            }.onFailure {
+                // A failing op aborts the whole batch: fall back to
+                // one-by-one deletes so one read-only contact cannot
+                // block the rest.
+                for (key in keys) {
+                    if (key in deletedKeys) continue
+                    runCatching {
+                        val count = contentResolver.delete(
+                            Uri.withAppendedPath(Contacts.CONTENT_LOOKUP_URI, key),
+                            null,
+                            null
+                        )
+                        if (count > 0) deletedKeys += key
+                    }
+                }
+            }
+            // Same cleanup the single delete does, plus the
+            // per-contact SIM row: a deleted contact must leave no
+            // stale Room rows behind.
+            for (key in deletedKeys) {
+                runCatching { favoritesDao?.deleteFavoriteByLookupKey(key) }
+                runCatching { contactSimDao?.deleteByLookupKey(key) }
+            }
+            DeleteContactsResult(deleted = deletedKeys.size, failed = keys.size - deletedKeys.size)
+        }
 
     override suspend fun getProfileContact(): ContactSummary? = withContext(Dispatchers.IO) {
         try {
