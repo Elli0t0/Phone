@@ -164,6 +164,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.19.1]
+
+- Duplicate-merge root cause fixed: rescans no longer use the stale cached contacts list. New ContactsRepository.getContactsSnapshot() runs a fresh one-shot query (the query behind contactsFlow); ContactsViewModel.refreshDuplicates() scans from that snapshot plus fresh numbers and replaces the group list outright, so groups that really merged vanish and groups that failed stay. The ignoreRescanUntilMs hack and the liveIds check are deleted; findDuplicates, the silent init scan, confirmMerge, confirmMergeAll, undoMerge, and the multi-select merge all use the helper (delay 600 ms after the merge so the provider settles).
+- Merge verification: after applyAggregationExceptions, the link is verified (up to 3 tries, 200 ms apart) by checking every target raw contact now resolves to the kept contact (null-safe: an unresolvable kept contact counts as not joined). A silent no-op falls back to mergeByCopy and reports linked = false, so the snackbar has no Undo and the group cannot rebuild.
+- Finder fallback narrowed: primaryNumberPreview is used only when the numbers map is empty overall (query failure). A contact absent from a non-empty map has no numbers and is skipped for number grouping.
+- Honest results: mergedCount counts only verified merges. 0 merged shows "Couldn't merge these contacts (read-only account?)"; a partial batch shows "Merged X of Y" (with Undo when at least one merge was linked). The merge-all dialog already existed; its message now reads "Merge N groups? Nothing is deleted; you can undo."
+- Tests: finder skips a contact absent from a non-empty numbers map, still groups by preview when the map is empty; existing finder and hash tests unchanged.
+
 ## [0.19.0]
 
 - Material You blue family: a new MaterialYouTint (NONE + Navy, Cobalt, Royal blue, Sky, Ice, each with dark and light blues) stored as materialYouTint (DataStore key, backup, search). NONE renders today's Material You exactly; a blue tint keeps the theme top (primary container) and blends only the bottom toward the blue (midpoint lerped 20% toward blue). The backdrop alpha stays today's intensity rule, so NONE is pixel-identical to before. Background page: a Material You section first with 6 tall tiles (same card as the other swatches), each rendering its own tint's gradient; picking a tile sets the tint, then MATERIAL_YOU.

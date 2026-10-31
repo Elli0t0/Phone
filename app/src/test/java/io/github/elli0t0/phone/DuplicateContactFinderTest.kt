@@ -99,4 +99,36 @@ class DuplicateContactFinderTest {
         )
         assertTrue(groups.isEmpty())
     }
+
+    @Test
+    fun findDuplicates_skipsContactAbsentFromNonEmptyNumbersMap() {
+        // Contact 2 shares contact 1's preview number, but it has no
+        // entry in a non-empty numbers map: it has no numbers, so
+        // its stale preview must not rebuild the group.
+        val contacts = listOf(
+            summary(1, "Alice", "09123456789"),
+            summary(2, "Bob", "09123456789"),
+            summary(3, "Carol", "09111111111")
+        )
+        val groups = DuplicateContactFinder.findDuplicates(
+            contacts,
+            mapOf(1L to listOf("09123456789"), 3L to listOf("09111111111")),
+            "IR"
+        )
+        assertTrue(groups.isEmpty())
+    }
+
+    @Test
+    fun findDuplicates_groupsByPreviewWhenNumbersMapIsEmpty() {
+        // Empty map means the numbers query failed: the preview is
+        // the only signal, so grouping by it stays.
+        val contacts = listOf(
+            summary(1, "Alice", "09123456789"),
+            summary(2, "Alice Work", "+989123456789")
+        )
+        val groups = DuplicateContactFinder.findDuplicates(contacts, emptyMap(), "IR")
+        assertEquals(1, groups.size)
+        assertEquals(DuplicateReason.SAME_NUMBER, groups[0].reason)
+        assertEquals(listOf(1L, 2L), groups[0].contacts.map { it.id })
+    }
 }

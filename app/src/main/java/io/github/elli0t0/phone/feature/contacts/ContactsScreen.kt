@@ -384,20 +384,32 @@ fun ContactsScreen(
         )
     }
 
-    // Merged snackbar with Undo: the action unlinks the merged
-    // groups again; dismissing it (or its timeout) keeps the merge.
-    val showMergeUndo = uiState.showMergeUndo
-    LaunchedEffect(showMergeUndo) {
-        if (showMergeUndo) {
-            val message = if (uiState.mergedGroupCount > 1) {
-                context.getString(R.string.snackbar_contacts_merged_all, uiState.mergedGroupCount)
-            } else {
-                context.getString(R.string.snackbar_contacts_merged)
+    // Merged snackbar: Undo only when at least one merge was linked;
+    // a partial batch reads "Merged X of Y", a copy-only batch has
+    // no Undo action. Dismissing it (or its timeout) keeps the merge.
+    val showMergedSnackbar = uiState.mergedSnackbarVisible
+    LaunchedEffect(showMergedSnackbar) {
+        if (showMergedSnackbar) {
+            val message = when {
+                uiState.mergedGroupTotal > uiState.mergedGroupCount -> context.getString(
+                    R.string.snackbar_contacts_merged_partial,
+                    uiState.mergedGroupCount,
+                    uiState.mergedGroupTotal
+                )
+                uiState.mergedGroupCount > 1 -> context.getString(
+                    R.string.snackbar_contacts_merged_all,
+                    uiState.mergedGroupCount
+                )
+                else -> context.getString(R.string.snackbar_contacts_merged)
             }
-            val result = snackbarHostState.showSnackbar(
-                message = message,
-                actionLabel = context.getString(R.string.action_undo)
-            )
+            val result = if (uiState.showMergeUndo) {
+                snackbarHostState.showSnackbar(
+                    message = message,
+                    actionLabel = context.getString(R.string.action_undo)
+                )
+            } else {
+                snackbarHostState.showSnackbar(message = message)
+            }
             if (result == SnackbarResult.ActionPerformed) {
                 listViewModel.undoMerge()
             } else {

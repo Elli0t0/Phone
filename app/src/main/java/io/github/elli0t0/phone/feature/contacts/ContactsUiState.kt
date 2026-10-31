@@ -23,6 +23,8 @@ data class ContactsUiState(
     val allDuplicatesMerged: Boolean = false,
     val showMergeUndo: Boolean = false,
     val mergedGroupCount: Int = 0,
+    val mergedGroupTotal: Int = 0,
+    val mergedSnackbarVisible: Boolean = false,
     val selection: Selection = Selection(),
     val isDeleting: Boolean = false,
     val deleteReport: DeleteContactsResult? = null

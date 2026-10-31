@@ -337,7 +337,7 @@
     <string name="duplicates_merge_confirm">ادغام</string>
     <string name="duplicates_merge_all">ادغام همه (%1$d)</string>
     <string name="duplicates_merge_all_title">همه موارد تکراری ادغام شوند؟</string>
-    <string name="duplicates_merge_all_message">همه %1$d گروه تکراری ادغام شوند؟ در هر گروه، اولین مخاطب حفظ می‌شود.</string>
+    <string name="duplicates_merge_all_message">%1$d گروه ادغام شوند؟ هیچ‌چیز حذف نمی‌شود و می‌توانید بازگردانید.</string>
     <string name="duplicates_merge_all_confirm">ادغام همه</string>
     <string name="duplicates_all_merged">همه موارد تکراری ادغام شدند</string>
     <string name="duplicates_choose_keep">انتخاب کنید کدام مخاطب حفظ شود</string>
@@ -412,6 +412,8 @@
     <string name="snackbar_contact_deleted">مخاطب حذف شد</string>
     <string name="snackbar_contacts_merged">مخاطبان ادغام شدند</string>
     <string name="snackbar_contacts_merged_all">%1$d گروه تکراری ادغام شد</string>
+    <string name="snackbar_contacts_merged_partial">%1$d از %2$d گروه ادغام شد</string>
+    <string name="snackbar_contacts_merge_failed">مخاطب‌ها ادغام نشدند (حساب فقط‌خواندنی است؟)</string>
     <string name="snackbar_contact_error">خطایی رخ داد. لطفاً دوباره تلاش کنید.</string>
     <string name="cd_call_button">دکمه تماس</string>
     <string name="cd_backspace_button">دکمه پس‌بر</string>

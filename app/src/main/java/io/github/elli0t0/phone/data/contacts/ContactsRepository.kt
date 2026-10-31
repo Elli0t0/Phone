@@ -15,6 +15,13 @@ interface ContactsRepository {
     fun getContactsFlow(): Flow<List<ContactSummary>>
 
     /**
+     * One-shot fresh query of all contacts, bypassing the cached flow:
+     * after a merge, the flow's last emission may still predate the
+     * provider change, so duplicate rescans must use this instead.
+     */
+    suspend fun getContactsSnapshot(): List<ContactSummary> = emptyList()
+
+    /**
      * Flow emitting detailed data for a specific contact.
      */
     fun getContactDetail(lookupKey: String, contactId: Long): Flow<ContactDetail?>

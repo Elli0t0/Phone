@@ -34,6 +34,7 @@ import io.github.elli0t0.phone.data.favorites.ContactSimDao
 import io.github.elli0t0.phone.data.favorites.FavoritesDao
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -87,6 +88,10 @@ class AndroidContactsRepository(
         .stateIn(scope, SharingStarted.Lazily, emptyList())
 
     override fun getContactsFlow(): Flow<List<ContactSummary>> = contactsFlow
+
+    override suspend fun getContactsSnapshot(): List<ContactSummary> = withContext(Dispatchers.IO) {
+        queryContactsSummaries(contentResolver)
+    }
 
     override fun getContactDetail(lookupKey: String, contactId: Long): Flow<ContactDetail?> = callbackFlow {
         val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
@@ -742,6 +747,27 @@ class AndroidContactsRepository(
                     // Read-only accounts reject aggregation exceptions:
                     // fall back to copying every field into the kept
                     // contact, then deleting the others. Not undoable.
+                    mergeByCopy(keepContactId, targets)
+                    return@withContext Result.success(
+                        ContactMergeOutcome(keepRawId, targetRawIds, linked = false)
+                    )
+                }
+                // Verify the link really happened: the provider applies
+                // aggregation asynchronously, so a silent no-op (no
+                // exception, no link) would otherwise rebuild the same
+                // group on the next scan. Retry briefly, then fall
+                // back to copy-merge, which deletes the targets.
+                var allJoined = false
+                for (attempt in 0 until 3) {
+                    val keepContact = queryContactIdFromRawContact(contentResolver, keepRawId)
+                    allJoined = keepContact != null &&
+                        targetRawIds.all {
+                            queryContactIdFromRawContact(contentResolver, it) == keepContact
+                        }
+                    if (allJoined || attempt == 2) break
+                    delay(200)
+                }
+                if (!allJoined) {
                     mergeByCopy(keepContactId, targets)
                     return@withContext Result.success(
                         ContactMergeOutcome(keepRawId, targetRawIds, linked = false)

@@ -30,11 +30,17 @@ object DuplicateContactFinder {
 
         val byNumberKey = mutableMapOf<String, MutableSet<Long>>()
         for (summary in summaries) {
-            val numbers = numbersByContactId[summary.id].orEmpty()
-            val candidates = if (numbers.isNotEmpty()) {
+            val numbers = numbersByContactId[summary.id]
+            // Fall back to the summary preview only when the whole
+            // map is empty (permission/query failure). A contact
+            // absent from a non-empty map has no numbers — it must
+            // not regroup from a stale preview after a merge.
+            val candidates = if (numbers != null) {
                 numbers
-            } else {
+            } else if (numbersByContactId.isEmpty()) {
                 listOfNotNull(summary.primaryNumberPreview)
+            } else {
+                emptyList()
             }
             for (number in candidates) {
                 val key = PhoneNumberMatcher.groupingKey(number, regionIso) ?: continue
