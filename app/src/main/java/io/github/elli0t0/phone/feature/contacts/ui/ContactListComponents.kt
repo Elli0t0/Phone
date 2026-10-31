@@ -49,6 +49,7 @@ import io.github.elli0t0.phone.core.design.FavoriteCardGradients
 import io.github.elli0t0.phone.core.design.FavoriteHintOrange
 import io.github.elli0t0.phone.core.design.GlassListCard
 import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.SwipeActionRow
 import io.github.elli0t0.phone.core.design.LiquidGlassCard
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
@@ -174,7 +175,10 @@ fun ContactRow(
 fun ContactGroupCard(
     contacts: List<ContactSummary>,
     onContactClick: (ContactSummary) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // Null (e.g. group members) means no swipe actions on these rows.
+    onSwipeCall: ((ContactSummary) -> Unit)? = null,
+    onSwipeMessage: ((ContactSummary) -> Unit)? = null
 ) {
     val spacing = LocalSpacing.current
     val insetCard = LocalAppSettings.current.effectiveStyle.card == CardStyle.INSET
@@ -187,7 +191,9 @@ fun ContactGroupCard(
         contacts.forEachIndexed { index, contact ->
             ContactGroupRow(
                 contact = contact,
-                onClick = { onContactClick(contact) }
+                onClick = { onContactClick(contact) },
+                onSwipeCall = onSwipeCall,
+                onSwipeMessage = onSwipeMessage
             )
             if (index < contacts.lastIndex) {
                 if (insetCard) {
@@ -223,7 +229,9 @@ fun ContactGroupCard(
 private fun ContactGroupRow(
     contact: ContactSummary,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onSwipeCall: ((ContactSummary) -> Unit)? = null,
+    onSwipeMessage: ((ContactSummary) -> Unit)? = null
 ) {
     val spacing = LocalSpacing.current
     val displayName = contact.displayName.ifBlank {
@@ -232,8 +240,19 @@ private fun ContactGroupRow(
     val rowSource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
     val insetCard = LocalAppSettings.current.effectiveStyle.card == CardStyle.INSET
+    // The first number is the swipe target; a row without one
+    // cannot call or message, so it never swipes.
+    val swipeNumber = contact.primaryNumberPreview
+    SwipeActionRow(
+        enabled = LocalAppSettings.current.swipeActionsEnabled &&
+            onSwipeCall != null && onSwipeMessage != null &&
+            !swipeNumber.isNullOrBlank(),
+        onSwipeCall = { swipeNumber?.let { onSwipeCall?.invoke(contact) } },
+        onSwipeMessage = { swipeNumber?.let { onSwipeMessage?.invoke(contact) } },
+        modifier = modifier.fillMaxWidth()
+    ) {
     Row(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
             .bouncyClick(rowSource)
             .clickable(
@@ -262,6 +281,7 @@ private fun ContactGroupRow(
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
+    }
     }
 }
 

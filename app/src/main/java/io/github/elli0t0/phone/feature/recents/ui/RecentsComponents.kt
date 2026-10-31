@@ -38,13 +38,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.ripple
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -66,8 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.AccentBlue
-import io.github.elli0t0.phone.core.design.SwipeCallGreen
-import io.github.elli0t0.phone.core.design.SwipeDeleteRed
+import io.github.elli0t0.phone.core.design.SwipeActionRow
 import io.github.elli0t0.phone.core.design.GlassListCard
 import io.github.elli0t0.phone.core.design.CallAnswerGreen
 import io.github.elli0t0.phone.core.design.CallRejectedOrange
@@ -75,11 +70,9 @@ import io.github.elli0t0.phone.core.design.LiquidGlassIconButton
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.Motion
-import io.github.elli0t0.phone.core.design.OnAccentBlue
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.bouncyClick
 import io.github.elli0t0.phone.core.design.insetRowPress
-import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.settings.model.CardStyle
 import io.github.elli0t0.phone.data.calllog.model.CallGroup
 import io.github.elli0t0.phone.feature.contacts.ui.ContactAvatar
@@ -216,9 +209,8 @@ fun CallLogRow(
     // Shared press source: bouncyClick and combinedClickable observe the
     // same press state, so the row bounces (0.90) while pressed and ripples.
     val rowSource = remember { MutableInteractionSource() }
-    val lightHaptic = rememberLightHaptic()
     val insetCard = LocalAppSettings.current.effectiveStyle.card == CardStyle.INSET
-    val swipeEnabled = LocalAppSettings.current.effectiveStyle.swipeActions
+    val swipeEnabled = LocalAppSettings.current.swipeActionsEnabled
 
     // Icon color by call type.
     val typeColor = callTypeColor(group.type)
@@ -229,32 +221,10 @@ fun CallLogRow(
         MaterialTheme.colorScheme.onSurface
     }
 
-    // Swipe to act: start->end = call back (snaps back), end->start
-    // = delete (dismisses; the screen shows an Undo snackbar).
-    // Start/end are layout directions, so RTL swaps the physical
-    // swipe directions automatically.
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            when (value) {
-                SwipeToDismissBoxValue.StartToEnd -> {
-                    onCallClick()
-                    false
-                }
-                SwipeToDismissBoxValue.EndToStart -> {
-                    onDeleteClick()
-                    true
-                }
-                SwipeToDismissBoxValue.Settled -> true
-            }
-        }
-    )
-    // Light haptic the moment the swipe crosses the dismiss
-    // threshold (target leaves Settled), not on release.
-    LaunchedEffect(dismissState.targetValue) {
-        if (dismissState.targetValue != SwipeToDismissBoxValue.Settled) {
-            lightHaptic()
-        }
-    }
+    // Swipe to act: right = call back, left = message. The row
+    // always springs back after the action fires; delete stays
+    // on the long-press menu, not on a swipe.
+    // (Threshold haptic + snap-back live in SwipeActionRow.)
 
     Column(
         modifier = modifier.fillMaxWidth()
@@ -473,36 +443,11 @@ fun CallLogRow(
                 }
             }
         }
-        if (swipeEnabled) {
-            SwipeToDismissBox(
-                state = dismissState,
-                backgroundContent = {
-                    val target = dismissState.targetValue
-                    if (target != SwipeToDismissBoxValue.Settled) {
-                        val isCall = target == SwipeToDismissBoxValue.StartToEnd
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(if (isCall) SwipeCallGreen else SwipeDeleteRed),
-                            contentAlignment = if (isCall) Alignment.CenterStart else Alignment.CenterEnd
-                        ) {
-                            Icon(
-                                painter = painterResource(
-                                    id = if (isCall) R.drawable.ic_phone else R.drawable.ic_delete
-                                ),
-                                contentDescription = null,
-                                tint = OnAccentBlue,
-                                modifier = Modifier
-                                    .padding(horizontal = spacing.medium)
-                                    .size(PhoneDimens.recentsSwipeRevealIconSize)
-                            )
-                        }
-                    }
-                }
-            ) {
-                rowContent()
-            }
-        } else {
+        SwipeActionRow(
+            enabled = swipeEnabled && group.number.isNotBlank(),
+            onSwipeCall = onCallClick,
+            onSwipeMessage = onMessageClick
+        ) {
             rowContent()
         }
         if (showDivider) {

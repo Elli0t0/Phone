@@ -83,7 +83,7 @@ interface SettingsRepository {
     suspend fun setFontStyle(style: FontStyle)
     suspend fun setTransitionStyle(style: TransitionStyle)
     suspend fun setBottomSheets(enabled: Boolean)
-    suspend fun setSwipeActions(enabled: Boolean)
+    suspend fun setSwipeActionsEnabled(enabled: Boolean)
     suspend fun setGlassHeaders(enabled: Boolean)
     suspend fun setGlassContactDetail(enabled: Boolean)
     suspend fun setGlassCallScreens(enabled: Boolean)
@@ -182,7 +182,7 @@ class DataStoreSettingsRepository(
         val FONT_STYLE = stringPreferencesKey("font_style")
         val TRANSITION_STYLE = stringPreferencesKey("transition_style")
         val BOTTOM_SHEETS = booleanPreferencesKey("bottom_sheets")
-        val SWIPE_ACTIONS = booleanPreferencesKey("swipe_actions")
+        val SWIPE_ACTIONS_ENABLED = booleanPreferencesKey("swipe_actions_enabled")
         // Legacy key style flag, read only: migrates to KEY_STYLE when
         // the new key is absent (true -> Glass, false -> Simple).
         val GLASS_DIALPAD = booleanPreferencesKey("glass_dialpad")
@@ -302,7 +302,7 @@ class DataStoreSettingsRepository(
         val transitionStyleStr = prefs[Keys.TRANSITION_STYLE]
         val transitionStyle = transitionStyleStr?.let { runCatching { TransitionStyle.valueOf(it) }.getOrNull() } ?: TransitionStyle.FADE
         val bottomSheets = prefs[Keys.BOTTOM_SHEETS] ?: false
-        val swipeActions = prefs[Keys.SWIPE_ACTIONS] ?: false
+        val swipeActionsEnabled = prefs[Keys.SWIPE_ACTIONS_ENABLED] ?: true
         val glassHeaders = prefs[Keys.GLASS_HEADERS] ?: true
         val glassContactDetail = prefs[Keys.GLASS_CONTACT_DETAIL] ?: true
         val glassCallScreens = prefs[Keys.GLASS_CALL_SCREENS] ?: true
@@ -486,7 +486,7 @@ class DataStoreSettingsRepository(
             fontStyle = fontStyle,
             transitionStyle = transitionStyle,
             bottomSheets = bottomSheets,
-            swipeActions = swipeActions,
+            swipeActionsEnabled = swipeActionsEnabled,
             glassHeaders = glassHeaders,
             glassContactDetail = glassContactDetail,
             glassCallScreens = glassCallScreens,
@@ -608,7 +608,6 @@ class DataStoreSettingsRepository(
                 prefs[Keys.SWITCH_STYLE] = preset.switch.name
                 prefs[Keys.TRANSITION_STYLE] = preset.transitions.name
                 prefs[Keys.BOTTOM_SHEETS] = preset.sheets
-                prefs[Keys.SWIPE_ACTIONS] = preset.swipeActions
             }
         }
     }
@@ -634,10 +633,9 @@ class DataStoreSettingsRepository(
         }
     }
 
-    override suspend fun setSwipeActions(enabled: Boolean) {
+    override suspend fun setSwipeActionsEnabled(enabled: Boolean) {
         dataStore.edit { prefs ->
-            prefs[Keys.SWIPE_ACTIONS] = enabled
-            prefs[Keys.APP_STYLE] = AppStyle.CUSTOM.name
+            prefs[Keys.SWIPE_ACTIONS_ENABLED] = enabled
         }
     }
 

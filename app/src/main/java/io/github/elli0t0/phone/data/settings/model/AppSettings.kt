@@ -83,8 +83,7 @@ data class StylePreset(
     val keys: KeyStyle,
     val switch: SwitchStyle,
     val transitions: TransitionStyle,
-    val sheets: Boolean,
-    val swipeActions: Boolean
+    val sheets: Boolean
 ) {
     companion object {
         val CLASSIC = StylePreset(
@@ -93,8 +92,7 @@ data class StylePreset(
             keys = KeyStyle.GLASS,
             switch = SwitchStyle.DEFAULT,
             transitions = TransitionStyle.FADE,
-            sheets = false,
-            swipeActions = false
+            sheets = false
         )
         val CLEAN = StylePreset(
             font = FontStyle.INTER,
@@ -102,8 +100,7 @@ data class StylePreset(
             keys = KeyStyle.FLAT,
             switch = SwitchStyle.GREEN,
             transitions = TransitionStyle.PUSH,
-            sheets = true,
-            swipeActions = true
+            sheets = true
         )
     }
 }
@@ -399,6 +396,10 @@ data class AppSettings(
     val keyStyle: KeyStyle = KeyStyle.GLASS,
     /** Dialpad digit-key look, independent of the app-style preset. */
     val keypadStyle: KeypadStyle = KeypadStyle.GLASS,
+    // Row swipe actions (right = call, left = message), on by
+    // default. Standalone like keypadStyle: picking an app-style
+    // preset never flips it.
+    val swipeActionsEnabled: Boolean = true,
     val switchStyle: SwitchStyle = SwitchStyle.DEFAULT,
     // Master look preset (see StylePreset). The individual values
     // below are the look when appStyle is CUSTOM, and are copied from
@@ -408,7 +409,6 @@ data class AppSettings(
     val fontStyle: FontStyle = FontStyle.SYSTEM,
     val transitionStyle: TransitionStyle = TransitionStyle.FADE,
     val bottomSheets: Boolean = false,
-    val swipeActions: Boolean = false,
     val glassHeaders: Boolean = true,
     val glassContactDetail: Boolean = true,
     val glassCallScreens: Boolean = true,
@@ -514,8 +514,7 @@ data class AppSettings(
                 keys = keyStyle,
                 switch = switchStyle,
                 transitions = transitionStyle,
-                sheets = bottomSheets,
-                swipeActions = swipeActions
+                sheets = bottomSheets
             )
         }
 }

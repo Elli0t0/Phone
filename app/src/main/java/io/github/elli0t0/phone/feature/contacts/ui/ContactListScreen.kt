@@ -1,5 +1,8 @@
 package io.github.elli0t0.phone.feature.contacts.ui
 
+import android.content.Intent
+import android.net.Uri
+import android.telephony.PhoneNumberUtils
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -66,6 +69,16 @@ import io.github.elli0t0.phone.feature.contacts.ContactsUiState
 import io.github.elli0t0.phone.navigation.StatusBarGradientScrim
 import io.github.elli0t0.phone.navigation.FloatingActionsPill
 import io.github.elli0t0.phone.navigation.PageHeaderItem
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import io.github.elli0t0.phone.PhoneApplication
+import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
+import io.github.elli0t0.phone.core.telecom.CallManager
+import io.github.elli0t0.phone.core.telecom.SimCallHelper
+import io.github.elli0t0.phone.core.telecom.SimCallResolution
+import io.github.elli0t0.phone.core.telecom.TelecomHelper
+import io.github.elli0t0.phone.feature.call.ui.DualSimPickerDialog
+import kotlinx.coroutines.launch
 
 @Composable
 fun ContactListScreen(
@@ -191,6 +204,49 @@ private fun ContactsContent(
     var listRevealed by remember { mutableStateOf(false) }
     LaunchedEffect(uiState.allContacts.isNotEmpty()) {
         if (uiState.allContacts.isNotEmpty()) listRevealed = true
+    }
+    // Swipe-to-call machinery, mirroring Recents: emergency numbers
+    // and single-SIM go direct, otherwise the saved per-contact SIM
+    // (by lookup key, falling back to the number) or the default SIM
+    // decides, else the SIM picker shows.
+    val context = LocalContext.current
+    val app = context.applicationContext as PhoneApplication
+    val coroutineScope = rememberCoroutineScope()
+    val defaultSim = LocalAppSettings.current.defaultSim
+    val simAccounts = remember(context) { TelecomHelper.getCallCapablePhoneAccounts(context) }
+    var simPickerNumber by remember { mutableStateOf<String?>(null) }
+
+    fun placeCallWithSim(number: String, lookupKey: String?) {
+        if (PhoneNumberUtils.isEmergencyNumber(PhoneNumberFormatter.normalizeDigits(number))) {
+            CallManager.placeCall(context, number)
+            return
+        }
+        if (simAccounts.size <= 1) {
+            CallManager.placeCall(context, number)
+            return
+        }
+        coroutineScope.launch {
+            when (val res = SimCallHelper.resolveSim(
+                context, number, lookupKey, simAccounts,
+                app.container.contactSimRepository, defaultSim
+            )) {
+                is SimCallResolution.UseSim -> CallManager.placeCall(context, number, res.sim.handle)
+                is SimCallResolution.ShowDialog -> simPickerNumber = number
+            }
+        }
+    }
+
+    if (simPickerNumber != null && simAccounts.size > 1) {
+        DualSimPickerDialog(
+            simAccounts = simAccounts,
+            targetNumber = simPickerNumber.orEmpty(),
+            onSimSelected = { sim ->
+                val num = simPickerNumber.orEmpty()
+                simPickerNumber = null
+                CallManager.placeCall(context, num, sim.handle)
+            },
+            onDismiss = { simPickerNumber = null }
+        )
     }
     val listState = rememberLazyListState()
     val contactCount = uiState.allContacts.size
@@ -555,6 +611,17 @@ private fun ContactsContent(
                     ContactGroupCard(
                         contacts = contactsInGroup,
                         onContactClick = onContactClick,
+                        onSwipeCall = { contact ->
+                            contact.primaryNumberPreview?.let { number ->
+                                placeCallWithSim(number, contact.lookupKey)
+                            }
+                        },
+                        onSwipeMessage = { contact ->
+                            contact.primaryNumberPreview?.let { number ->
+                                val uri = Uri.parse("smsto:${Uri.encode(number)}")
+                                context.startActivity(Intent(Intent.ACTION_SENDTO, uri))
+                            }
+                        },
                         modifier = Modifier
                             .animateItem()
                             .firstLoadReveal(revealIndex++, listRevealed)

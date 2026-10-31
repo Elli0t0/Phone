@@ -590,7 +590,7 @@
     <string name="settings_bottom_sheets">Bottom sheets</string>
     <string name="settings_bottom_sheets_desc">Open dialogs as bottom sheets with a grabber</string>
     <string name="settings_swipe_actions">Swipe actions</string>
-    <string name="settings_swipe_actions_desc">Swipe Recents rows to call back or delete</string>
+    <string name="settings_swipe_actions_desc">Swipe a row right to call, left to message</string>
     <string name="settings_show_advanced">Show advanced settings</string>
     <string name="settings_show_advanced_desc">Show advanced options in Glass Studio, Call Studio and recording</string>
     <string name="settings_cat_layout_nav">Layout &amp; navigation</string>

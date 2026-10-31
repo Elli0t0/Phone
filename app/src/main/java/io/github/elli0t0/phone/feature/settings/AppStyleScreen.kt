@@ -263,18 +263,6 @@ fun AppStyleScreen(
                                 checked = settings.bottomSheets,
                                 onCheckedChange = { viewModel.onBottomSheetsChanged(it) }
                             )
-
-                            Spacer(modifier = Modifier.height(spacing.small))
-                            SettingsListDivider()
-                            Spacer(modifier = Modifier.height(spacing.small))
-
-                            SettingsSwitchRow(
-                                title = stringResource(id = R.string.settings_swipe_actions),
-                                searchId = "style_swipe",
-                                subtitle = stringResource(id = R.string.settings_swipe_actions_desc),
-                                checked = settings.swipeActions,
-                                onCheckedChange = { viewModel.onSwipeActionsChanged(it) }
-                            )
                         }
                     }
                 }

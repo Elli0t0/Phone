@@ -76,6 +76,18 @@ fun LayoutCard(
                 subtitle = settings.keypadStyle.label,
                 onClick = { dialogs.showKeypadStylePage = true }
             )
+
+            Spacer(modifier = Modifier.height(spacing.small))
+            SettingsListDivider()
+            Spacer(modifier = Modifier.height(spacing.small))
+
+            SettingsSwitchRow(
+                title = stringResource(id = R.string.settings_swipe_actions),
+                searchId = "swipe_actions",
+                subtitle = stringResource(id = R.string.settings_swipe_actions_desc),
+                checked = settings.swipeActionsEnabled,
+                onCheckedChange = { viewModel.onSwipeActionsEnabledChanged(it) }
+            )
         }
     }
 }

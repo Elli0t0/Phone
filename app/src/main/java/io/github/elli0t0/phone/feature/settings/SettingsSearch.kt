@@ -336,6 +336,7 @@ val allSettingEntries: List<SettingEntry> = listOf(
     SettingEntry("list_density", R.string.settings_list_density, R.string.settings_cat_layout_nav, SettingsPage.LAYOUT_NAV, anchor = "list_density"),
     SettingEntry("card_style", R.string.settings_card_style, R.string.settings_cat_layout_nav, SettingsPage.LAYOUT_NAV, anchor = "card_style"),
     SettingEntry("keypad_style", R.string.settings_keypad_style, R.string.settings_cat_layout_nav, SettingsPage.KEYPAD_STYLE, anchor = "keypad_style"),
+    SettingEntry("swipe_actions", R.string.settings_swipe_actions, R.string.settings_cat_layout_nav, SettingsPage.LAYOUT_NAV, anchor = "swipe_actions", keywordsRes = R.string.search_keywords_swipe_actions),
     SettingEntry("default_tab", R.string.settings_default_tab, R.string.settings_cat_layout_nav, SettingsPage.LAYOUT_NAV, anchor = "default_tab"),
     SettingEntry("bottom_labels", R.string.settings_bottom_labels, R.string.settings_cat_layout_nav, SettingsPage.LAYOUT_NAV, anchor = "bottom_labels"),
     SettingEntry("bottom_bar_style", R.string.settings_bottom_bar_style, R.string.settings_cat_layout_nav, SettingsPage.LAYOUT_NAV, anchor = "bottom_bar_style", keywordsRes = R.string.search_keywords_bottom_bar),
@@ -366,7 +367,6 @@ val allSettingEntries: List<SettingEntry> = listOf(
     SettingEntry("style_switch", R.string.settings_switch_style, R.string.settings_cat_appearance, SettingsPage.APP_STYLE, anchor = "style_switch", advanced = true),
     SettingEntry("style_transition", R.string.settings_transition_style, R.string.settings_cat_appearance, SettingsPage.APP_STYLE, anchor = "style_transition", advanced = true),
     SettingEntry("style_sheets", R.string.settings_bottom_sheets, R.string.settings_cat_appearance, SettingsPage.APP_STYLE, anchor = "style_sheets", advanced = true, keywordsRes = R.string.search_keywords_bottom_sheets),
-    SettingEntry("style_swipe", R.string.settings_swipe_actions, R.string.settings_cat_appearance, SettingsPage.APP_STYLE, anchor = "style_swipe", advanced = true, keywordsRes = R.string.search_keywords_swipe_actions),
     // Glass Studio screen.
     SettingEntry("studio_blur", R.string.settings_glass_blur_amount, R.string.settings_cat_liquid_glass, SettingsPage.GLASS_STUDIO, anchor = "studio_blur"),
     SettingEntry("studio_tint", R.string.settings_glass_tint, R.string.settings_cat_liquid_glass, SettingsPage.GLASS_STUDIO, anchor = "studio_tint"),

@@ -232,7 +232,7 @@
     <string name="settings_bottom_sheets">برگه‌های پایینی</string>
     <string name="settings_bottom_sheets_desc">باز کردن پنجره‌ها به‌صورت برگه‌ی پایینی با دستگیره</string>
     <string name="settings_swipe_actions">کنش‌های کشویی</string>
-    <string name="settings_swipe_actions_desc">کشیدن ردیف‌های اخیر برای تماس مجدد یا حذف</string>
+    <string name="settings_swipe_actions_desc">کشیدن ردیف به راست برای تماس، به چپ برای پیام</string>
     <string name="settings_show_advanced">نمایش تنظیمات پیشرفته</string>
     <string name="settings_show_advanced_desc">نمایش گزینه‌های پیشرفته در استودیو شیشه، استودیو تماس و ضبط</string>
     <string name="settings_cat_layout_nav">چیدمان و ناوبری</string>

@@ -52,7 +52,7 @@ val CallDeclineRed = Color(0xFFE53935)
 val CallAnswerGreen = Color(0xFF43A047)
 // Recents swipe actions: call back green, delete red.
 val SwipeCallGreen = Color(0xFF34C759)
-val SwipeDeleteRed = Color(0xFFFF3B30)
+val SwipeMessageBlue = Color(0xFF1565C0)
 // Real-blur tint overlay: dark glass over #1C1C1E, light glass over
 // white (alphas live in PhoneDimens, scaled by GlassIntensity).
 val GlassBlurTintDark = Color(0xFF1C1C1E)

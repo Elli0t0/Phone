@@ -251,9 +251,9 @@ class SettingsViewModel(
         }
     }
 
-    fun onSwipeActionsChanged(enabled: Boolean) {
+    fun onSwipeActionsEnabledChanged(enabled: Boolean) {
         viewModelScope.launch {
-            settingsRepository.setSwipeActions(enabled)
+            settingsRepository.setSwipeActionsEnabled(enabled)
         }
     }
 

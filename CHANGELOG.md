@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.18.3]
+
+- Swipe actions on Recents and Contacts rows: swipe right to call, left to message, with a green call or blue message background that follows the swipe. Rows always spring back; nothing is dismissed. The toggle is in Settings → Layout & navigation → Swipe actions, on by default, and the snap-back is instant when animations are off. Swiping a Recents row left now messages instead of deleting; delete is still on the row's long-press menu.
+
 ## [0.18.2]
 
 - Edit Contact no longer clips long numbers in the phone field, the details History list and the edit form's Cancel/Save pill no longer overlap the bottom bar, Recents says "No calls today" at zero and uses singular/plural correctly, recording rows show the formatted number, and Contacts headers match the Recents alignment.
