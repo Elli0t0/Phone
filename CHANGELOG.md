@@ -164,6 +164,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.18.9]
+
+- 10 anime-style animated scenes, drawn procedurally with Canvas (no bitmaps, no copyrighted characters), each in its own file under core/design/scenes/ and registered through a data-driven SceneSpec (new scene = enum entry + file + one registry line, no renderer edit): Blue Sky (bright blue gradient, 5 drifting parallax clouds), Twilight (indigo-to-pink horizon, orange streaks, sun glow), Starry Night (80 twinkling stars, a shooting star every ~8s, mountain silhouette), Sakura Night (navy sky, pale moon, 25 rotating falling petals), Rain City (blue-teal sky, skyline with warm lit windows, diagonal rain, puddle glow), Ocean Sunset (orange-pink sky, 3-blue sine waves, reflected sun column), Neon City (purple-blue sky, 2 skyline layers, pulsing magenta/cyan glow lines), plus plain blue gradients Cobalt, Ice, Deep Sea.
+- All scenes respect the background intensity slider, freeze at a fixed phase when animations are reduced or off, quantize motion to ~30fps, and draw only remembered primitives (no per-frame allocations).
+- Background page: the new scenes sit under Scenes in a 2-per-row grid of wide mini-previews showing a static frame of the real scene; the classic scenes keep their 3-per-row live swatches.
+
 ## [0.18.8]
 
 - Recents grouped-row recording button fixed: it now plays/stops the newest matched recording of the group, and the pause icon shows only while that exact recording is playing. Root cause was a null == null comparison: when the latest call had no recording and nothing was playing, the old latest-call check evaluated true and showed pause. The "open the group instead of playing" fallback is reverted. The count badge (2+ recordings) and the expanded breakdown's per-call buttons are unchanged; the owning call's row shows pause by the same id check while the group's recording plays.

@@ -42,6 +42,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AppBackground
+import io.github.elli0t0.phone.core.design.scenes.AnimeScenes
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.PaletteBackgrounds
@@ -190,6 +191,13 @@ fun AmbientBackdrop(modifier: Modifier = Modifier) {
 @Composable
 fun BackdropContent(background: AppBackground, modifier: Modifier = Modifier) {
     val settings = LocalAppSettings.current
+    // Data-driven anime scenes (0.18.9): the registry owns the
+    // dispatch, so a new scene needs no edit here.
+    val animeSpec = AnimeScenes.find { it.background == background }
+    if (animeSpec != null) {
+        animeSpec.content(effectiveStrength(settings), backdropAnimated(), modifier)
+        return
+    }
     when (background) {
         AppBackground.AURORA -> AuroraBlobsBackdrop(modifier)
         AppBackground.PLAIN -> Unit

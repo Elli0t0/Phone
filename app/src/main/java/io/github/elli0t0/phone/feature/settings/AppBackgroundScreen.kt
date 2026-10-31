@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -47,6 +48,10 @@ import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.BackdropContent
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.saveAppBackgroundPhoto
+import io.github.elli0t0.phone.core.design.scenes.AnimeSceneBackgrounds
+import io.github.elli0t0.phone.core.design.scenes.AnimeScenes
+import io.github.elli0t0.phone.core.design.scenes.SceneSpec
+import io.github.elli0t0.phone.core.design.scenes.scenePreviewIntensity
 import io.github.elli0t0.phone.data.settings.model.AppBackground
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.PaletteBackgrounds
@@ -106,7 +111,9 @@ fun AppBackgroundScreen(
         mutableStateOf(settings.appBackgroundDim)
     }
     val scenes = remember {
-        AppBackground.entries.filter { it != AppBackground.PALETTE && it != AppBackground.PHOTO }
+        AppBackground.entries.filter {
+            it != AppBackground.PALETTE && it != AppBackground.PHOTO && it !in AnimeSceneBackgrounds
+        }
     }
 
     Scaffold(modifier = modifier.fillMaxSize().testTag("app_background_screen")) { inner ->
@@ -207,6 +214,20 @@ fun AppBackgroundScreen(
                         }
                     }
                 }
+                items(AnimeScenes.chunked(2)) { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = spacing.small),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        row.forEach { spec ->
+                            AnimeScenePreview(
+                                spec = spec,
+                                selected = settings.appBackground == spec.background,
+                                onClick = { viewModel.onAppBackgroundChanged(spec.background) }
+                            )
+                        }
+                    }
+                }
                 item {
                     SettingsSectionHeader(stringResource(R.string.settings_app_background_photo))
                 }
@@ -296,6 +317,61 @@ private fun PaletteSwatch(
         }
         Text(
             palette.label,
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(top = 4.dp)
+        )
+    }
+}
+
+@Composable
+private fun AnimeScenePreview(
+    spec: SceneSpec,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    val previewShape = RoundedCornerShape(20.dp)
+    val intensity = scenePreviewIntensity()
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.weight(1f)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(110.dp)
+                .clip(previewShape)
+                .then(
+                    if (selected) {
+                        Modifier.border(2.dp, MaterialTheme.colorScheme.primary, previewShape)
+                    } else {
+                        Modifier
+                    }
+                )
+                .clickable { onClick() },
+            contentAlignment = Alignment.Center
+        ) {
+            // Static frame: the real scene, frozen (animate = false).
+            spec.content(intensity, false, Modifier.fillMaxSize())
+            if (selected) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(6.dp)
+                        .size(22.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painterResource(R.drawable.ic_check), contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+            }
+        }
+        Text(
+            spec.background.label,
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.padding(top = 4.dp)
         )

@@ -357,7 +357,17 @@ enum class AppBackground(val label: String, val gradient: CallBackground?) {
     AURORA_GREEN("Aurora green", null),
     AURORA_PURPLE("Aurora purple", null),
     DUSK("Dusk", null),
-    BOKEH("Bokeh", null)
+    BOKEH("Bokeh", null),
+    BLUE_SKY("Blue Sky", null),
+    TWILIGHT("Twilight", null),
+    STARRY_NIGHT("Starry Night", null),
+    SAKURA_NIGHT("Sakura Night", null),
+    RAIN_CITY("Rain City", null),
+    OCEAN_SUNSET("Ocean Sunset", null),
+    NEON_CITY("Neon City", null),
+    COBALT("Cobalt", null),
+    ICE("Ice", null),
+    DEEP_SEA("Deep Sea", null)
 }
 
 /**
