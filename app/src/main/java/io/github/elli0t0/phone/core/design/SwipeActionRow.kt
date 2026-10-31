@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.Icon
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlin.math.abs
