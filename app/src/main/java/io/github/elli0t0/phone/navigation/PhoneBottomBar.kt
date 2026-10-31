@@ -50,6 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -126,7 +127,7 @@ import kotlin.math.sin
  * shrinkProgress compacts the bar to icons only as it goes 0 to 1.
  * Drag: one pointerInput on the item Row owns all touches (the items
  * have no clickable; accessibility goes through semantics Role.Tab).
- * While dragging, the droplet follows the finger with lift (12%) and
+ * While dragging, the droplet follows the finger with lift and
  * speed stretch; on release it springs to the nearest tab and that
  * tab is selected. A tap selects the tab under the finger. All
  * animated values are read only inside layout/draw/graphicsLayer
@@ -406,30 +407,27 @@ fun PhoneBottomBar(
                             0f
                         }
                         // Speed stretch: low-passed drag speed, capped
-                        // at 25%. Lift magnifies the droplet 12%.
-                        // Both are 0 when Animations is Off/Reduced.
+                        // at 25%. Lift magnifies the droplet: the lens
+                        // path grows clearly bigger (25% wider, 75%
+                        // taller) and overflows the bar; the Haze
+                        // droplet keeps its 12% lift. Both are 0 when
+                        // Animations is Off/Reduced.
                         val speedStretch = if (animationOption == AnimationOption.ON) {
                             minOf(abs(dragSpeed.value) / 4000f, 0.25f)
                         } else {
                             0f
                         }
-                        val liftScale = 1f + 0.12f * lift.value
-                        scaleX = (1f + bulge / pillWidthPx) * liftScale * (1f + speedStretch)
-                        scaleY = liftScale
+                        val liftX = if (lensBackdrop != null) 0.25f else 0.12f
+                        val liftY = if (lensBackdrop != null) 0.75f else 0.12f
+                        scaleX = (1f + bulge / pillWidthPx) * (1f + liftX * lift.value) * (1f + speedStretch)
+                        scaleY = 1f + liftY * lift.value
                     }
                     .width(pillWidth)
                     .fillMaxHeight()
                     .padding(vertical = PhoneDimens.bottomBarItemInset)
-                    // Lens only: contain the droplet's effect strictly
-                    // to its pill. The surface clips itself, but an
-                    // effect overshoot (refraction spread past the
-                    // surface box) would otherwise paint past the
-                    // pill and read as a ghost behind nearby tabs.
-                    // The Haze branch is untouched: its glow is meant
-                    // to extend past the pill and fade.
-                    .then(
-                        if (lensBackdrop != null) Modifier.clip(pillShape) else Modifier
-                    )
+                    // No clip here: the lens droplet intentionally
+                    // overflows the bar while lifted (the Haze glow
+                    // was already meant to extend past the pill).
             ) {
                 if (lensBackdrop != null) {
                     // Lens mode draws only the lens droplet: no Haze
@@ -490,7 +488,7 @@ fun PhoneBottomBar(
                                     scope.launch {
                                         lift.animateTo(
                                             1f,
-                                            spring(dampingRatio = 0.6f, stiffness = 400f)
+                                            spring(dampingRatio = 0.55f, stiffness = 260f)
                                         )
                                     }
                                 }
@@ -548,11 +546,7 @@ fun PhoneBottomBar(
                                     scope.launch {
                                         lift.animateTo(
                                             0f,
-                                            // MediumBouncy is 0.5f; the
-                                            // named constant does not
-                                            // exist in this Compose
-                                            // version's animation-core.
-                                            spring(dampingRatio = 0.5f, stiffness = 300f)
+                                            spring(dampingRatio = 0.7f, stiffness = 320f)
                                         )
                                     }
                                     scope.launch {
@@ -647,7 +641,19 @@ fun PhoneBottomBar(
                     ) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
+                            verticalArrangement = Arrangement.Center,
+                            modifier = Modifier.graphicsLayer {
+                                // Selected tab grows 1.12x while the
+                                // finger is held (lens path only); lift
+                                // is read only inside this lambda.
+                                val s = if (lensBackdrop != null && tabSelected) {
+                                    1f + 0.12f * lift.value
+                                } else {
+                                    1f
+                                }
+                                scaleX = s
+                                scaleY = s
+                            }
                         ) {
                             Box(
                                 modifier = Modifier.graphicsLayer {
@@ -777,21 +783,29 @@ fun PhoneBottomBar(
         if (lensBackdrop != null) {
             // Real lens-glass bar: the surface samples the backdrop
             // behind the bar; the droplet and items draw on top of
-            // it, never through it.
+            // it, never through it. The clip sits ONLY on the child
+            // Box holding the surface: the droplet and items are
+            // unclipped, so the lifted lens overflows the bar above
+            // and below. zIndex keeps the overflowing lens above
+            // page content. The bottom overshoot (~17dp at full
+            // lift) stays inside the 12dp bottom margin plus the
+            // system navigation inset.
             Box(
                 modifier = Modifier
                     .width(barWidth)
                     .then(barHeightModifier)
                     .then(barLiftModifier)
-                    .clip(pillShape)
+                    .zIndex(1f)
             ) {
-                LensBarSurface(
-                    backdrop = lensBackdrop,
-                    pillShape = pillShape,
-                    blurAmount = LocalAppSettings.current.glassBlurAmount,
-                    tintAmount = LocalAppSettings.current.glassTintAmount,
-                    modifier = Modifier.fillMaxSize()
-                )
+                Box(Modifier.matchParentSize().clip(pillShape)) {
+                    LensBarSurface(
+                        backdrop = lensBackdrop,
+                        pillShape = pillShape,
+                        blurAmount = LocalAppSettings.current.glassBlurAmount,
+                        tintAmount = LocalAppSettings.current.glassTintAmount,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
                 barContent()
             }
         } else if (LocalAppSettings.current.bottomBarStyle == BottomBarStyle.GLASS && glassBottomBar) {

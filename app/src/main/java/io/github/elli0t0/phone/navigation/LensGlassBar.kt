@@ -1,14 +1,21 @@
 package io.github.elli0t0.phone.navigation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.drawBackdrop
@@ -44,7 +51,9 @@ fun LensBarSurface(
             shape = { pillShape },
             effects = {
                 vibrancy()
-                blur(10.dp.toPx() * blurAmount)
+                // Text under the bar is only very slightly blurred:
+                // 3.5dp, not 10dp. The black tint stays 0.20.
+                blur(3.5.dp.toPx() * blurAmount)
                 // Aberration off, explicitly: the library default must
                 // not separate channels behind the tabs (a green
                 // fringe over bright page content reads as a glow
@@ -74,11 +83,15 @@ fun LensBarSurface(
 
 /**
  * Selected-tab droplet: a pure lens, no blur, so content under it
- * stays sharp and bends. liftValue is read only inside the effects
- * lambda, which the library re-evaluates on snapshot reads without
- * recomposition; the droplet also grows with lift. The amount is
- * clamped to the surface size, so it stays valid even when the bar
- * shrinks.
+ * stays sharp and bends. liftValue is read only inside the effects,
+ * graphicsLayer, and draw lambdas, which re-evaluate on snapshot
+ * reads without recomposition; the droplet also grows with lift.
+ * The amount is clamped to the surface size, so it stays valid even
+ * when the bar shrinks. Nothing here clips: while the finger is
+ * held, the droplet grows bigger than the bar and overflows its
+ * frame above and below (the caller scales it and leaves the
+ * container unclipped), magnifying the content under it. A soft
+ * shadow under the lens fades in only while lifted.
  */
 @Composable
 fun LensDropletSurface(
@@ -87,41 +100,63 @@ fun LensDropletSurface(
     liftValue: () -> Float,
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier
-            .clip(pillShape)
-            .drawBackdrop(
-            backdrop = backdrop,
-            shape = { pillShape },
-            effects = {
-                vibrancy()
-                val lift = liftValue()
-                // Aberration OFF: with it on, the channel separation
-                // fringed the droplet's rim rainbow and threw a green
-                // channel blob beside it. The bend itself (refraction)
-                // is unchanged, so the lens look stays.
-                lens(
-                    refractionHeight = 12.dp.toPx() * (1f + 0.5f * lift),
-                    refractionAmount = min(
-                        28.dp.toPx() * (1f + 0.6f * lift),
-                        size.minDimension
+    Box(modifier = modifier) {
+        // Soft shadow under the lens, only while lifted: a band
+        // straddling the lens's bottom edge, darkest at the edge
+        // and fading downward. Drawn before the lens surface, so
+        // only the part below the lens shows.
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(24.dp)
+                .align(Alignment.BottomCenter)
+                .offset(y = 12.dp)
+                .graphicsLayer { alpha = 0.18f * liftValue() }
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color.Black, Color.Transparent)
                     ),
-                    chromaticAberration = false
+                    RoundedCornerShape(50)
                 )
-            },
-            onDrawSurface = {
-                drawRect(Color.White.copy(alpha = 0.10f))
-                drawRoundRect(
-                    brush = Brush.verticalGradient(
-                        listOf(
-                            Color.White.copy(alpha = 0.65f),
-                            Color.White.copy(alpha = 0.30f)
-                        )
-                    ),
-                    cornerRadius = CornerRadius(size.height / 2f, size.height / 2f),
-                    style = Stroke(1.dp.toPx())
-                )
-            }
         )
-    )
+        Box(
+            modifier = Modifier.fillMaxSize()
+                .drawBackdrop(
+                backdrop = backdrop,
+                shape = { pillShape },
+                effects = {
+                    vibrancy()
+                    val lift = liftValue()
+                    // Aberration OFF: with it on, the channel separation
+                    // fringed the droplet's rim rainbow and threw a green
+                    // channel blob beside it. The bend itself (refraction)
+                    // is unchanged, so the lens look stays.
+                    lens(
+                        refractionHeight = 14.dp.toPx() * (1f + 0.8f * lift),
+                        refractionAmount = min(
+                            36.dp.toPx() * (1f + 0.9f * lift),
+                            size.minDimension
+                        ),
+                        chromaticAberration = false
+                    )
+                },
+                onDrawSurface = {
+                    val lift = liftValue()
+                    drawRect(Color.White.copy(alpha = 0.10f))
+                    // Thin bright rim, stronger with lift: the bright
+                    // end goes from white 55% at rest to 85% lifted.
+                    drawRoundRect(
+                        brush = Brush.verticalGradient(
+                            listOf(
+                                Color.White.copy(alpha = 0.55f + 0.30f * lift),
+                                Color.White.copy(alpha = 0.30f)
+                            )
+                        ),
+                        cornerRadius = CornerRadius(size.height / 2f, size.height / 2f),
+                        style = Stroke(1.dp.toPx())
+                    )
+                }
+            )
+        )
+    }
 }

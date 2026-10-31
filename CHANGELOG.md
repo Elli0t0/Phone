@@ -164,6 +164,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.19.2]
+
+- Lens bar droplet now overflows the bar while held: the clip is removed from LensDropletSurface and from the droplet container, and the lens bar's outer Box no longer clips — the clip sits only on a child Box holding LensBarSurface, with barContent (droplet + icons) unclipped beside it. No ancestor clips the bar (verified: no clip/clipToBounds in PhoneNavHost or around the bar in MainActivity); the bar container gets zIndex(1f). Bottom overshoot at full lift (~17dp past the bar edge) stays inside the 12dp bottom margin plus the system navigation inset.
+- Bigger, springier lift (lens path): droplet scaleX gains 25% and scaleY 75% with lift (was 12% both); press springs to lift 1 with spring(0.55, 260), release back to 0 with spring(0.7, 320); no lift when Animations is Off/Reduced; the bar itself keeps its 3% lift. The Haze droplet keeps its 12% lift, and the Haze bar, glow, and droplet are otherwise untouched.
+- Stronger magnification: droplet lens refractionHeight 14dp × (1 + 0.8·lift), refractionAmount min(36dp × (1 + 0.9·lift), size); rim bright end goes white 55% at rest to 85% lifted; a soft shadow under the lens (band straddling the bottom edge, fading downward, alpha 0.18 × lift) shows only while lifted.
+- Text under the bar only slightly blurred: LensBarSurface blur 10dp → 3.5dp (× blurAmount); black tint stays 0.20 × tintAmount. The droplet stays blur-free (sharp, magnified).
+- Selected icon + label scale 1.12× while lifted (lens path only, lift read only inside the graphicsLayer lambda).
+
 ## [0.19.1]
 
 - Duplicate-merge root cause fixed: rescans no longer use the stale cached contacts list. New ContactsRepository.getContactsSnapshot() runs a fresh one-shot query (the query behind contactsFlow); ContactsViewModel.refreshDuplicates() scans from that snapshot plus fresh numbers and replaces the group list outright, so groups that really merged vanish and groups that failed stay. The ignoreRescanUntilMs hack and the liveIds check are deleted; findDuplicates, the silent init scan, confirmMerge, confirmMergeAll, undoMerge, and the multi-select merge all use the helper (delay 600 ms after the merge so the provider settles).
