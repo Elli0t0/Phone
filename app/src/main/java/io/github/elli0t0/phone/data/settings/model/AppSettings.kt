@@ -383,13 +383,59 @@ enum class AppBackground(val label: String, val gradient: CallBackground?) {
  * theme top and blends only the bottom toward the blue. Null means
  * no tint (NONE); dark/light are the blue for each theme.
  */
-enum class MaterialYouTint(val label: String, val dark: Long?, val light: Long?) {
+enum class MaterialYouTint(
+    val label: String,
+    val dark: Long?,
+    val light: Long?,
+    // Two-tone combos (0.19.4): an optional mid color blended at 45%.
+    // Singles leave both null and keep the single-color rule.
+    val darkMid: Long? = null,
+    val lightMid: Long? = null
+) {
     NONE("Material You", null, null),
     NAVY("Navy", 0xFF0A1F44, 0xFFD6E4FF),
     COBALT("Cobalt", 0xFF0F3D91, 0xFFC2D8FF),
     ROYAL("Royal blue", 0xFF1E5BD8, 0xFFB3CCFF),
     SKY("Sky", 0xFF2F8BE6, 0xFFBFE0FF),
-    ICE("Ice", 0xFF5FA8E8, 0xFFDCEEFF)
+    ICE("Ice", 0xFF5FA8E8, 0xFFDCEEFF),
+    VIOLET("Violet", 0xFF3B1E6E, 0xFFE0D2FF),
+    GRAPE("Grape", 0xFF5A1E7A, 0xFFEBD0FF),
+    ROSE("Rose", 0xFF7A1E45, 0xFFFFD0E4),
+    CRIMSON("Crimson", 0xFF7A1620, 0xFFFFD0D4),
+    CORAL("Coral", 0xFFB5472E, 0xFFFFD9CF),
+    AMBER("Amber", 0xFF8A5A0A, 0xFFFFE6B8),
+    GOLD("Gold", 0xFF7A6A12, 0xFFFFF1B0),
+    LIME("Lime", 0xFF3E6B12, 0xFFE2F7B8),
+    EMERALD("Emerald", 0xFF0F6B45, 0xFFC4F2DC),
+    TEAL("Teal", 0xFF0B5E5A, 0xFFBFEFEA),
+    GRAPHITE("Graphite", 0xFF3A3F47, 0xFFD9DDE3),
+    MOCHA("Mocha", 0xFF5A3B2E, 0xFFEBD8CC),
+    // Combos: bottom + mid light colors mirror the matching singles.
+    AURORA(
+        "Aurora",
+        dark = 0xFF0B5E5A, light = 0xFFBFEFEA,
+        darkMid = 0xFF3B1E6E, lightMid = 0xFFE0D2FF
+    ),
+    DUSK(
+        "Dusk",
+        dark = 0xFF7A1E45, light = 0xFFFFD0E4,
+        darkMid = 0xFF3B1E6E, lightMid = 0xFFE0D2FF
+    ),
+    OCEAN_DEEP(
+        "Deep ocean",
+        dark = 0xFF0A1F44, light = 0xFFD6E4FF,
+        darkMid = 0xFF0B5E5A, lightMid = 0xFFBFEFEA
+    ),
+    SUNRISE(
+        "Sunrise",
+        dark = 0xFF8A5A0A, light = 0xFFFFE6B8,
+        darkMid = 0xFF7A1E45, lightMid = 0xFFFFD0E4
+    ),
+    NEBULA(
+        "Nebula",
+        dark = 0xFF1E5BD8, light = 0xFFB3CCFF,
+        darkMid = 0xFF5A1E7A, lightMid = 0xFFEBD0FF
+    )
 }
 
 /**

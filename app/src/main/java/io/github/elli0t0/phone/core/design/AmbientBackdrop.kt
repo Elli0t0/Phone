@@ -463,21 +463,25 @@ private fun NeonBackdrop(modifier: Modifier = Modifier) {
 /**
  * Material You gradient for one tint, shared by the live backdrop
  * and the picker's tiles so both render the same gradient. NONE is
- * today's look exactly (theme containers top to bottom); a blue
- * tint keeps the theme top and blends only the bottom toward blue.
+ * today's look exactly (theme containers top to bottom); a tint
+ * keeps the theme top and blends only the bottom toward its color.
+ * A combo (0.19.4) adds a mid color at 45%, blended 55% toward it.
+ * The NONE and blue branches are byte-identical to 0.19.0.
  */
 @Composable
 fun materialYouBrush(tint: MaterialYouTint): Brush {
     val scheme = MaterialTheme.colorScheme
     val isLight = scheme.background.luminance() > 0.5f
-    val blue = (if (isLight) tint.light else tint.dark)?.let { Color(it) }
+    val bottom = (if (isLight) tint.light else tint.dark)?.let { Color(it) }
+    val mid = (if (isLight) tint.lightMid else tint.darkMid)?.let { Color(it) }
     return remember(
         scheme.primaryContainer,
         scheme.secondaryContainer,
         scheme.tertiaryContainer,
-        blue
+        bottom,
+        mid
     ) {
-        if (blue == null) {
+        if (bottom == null) {
             Brush.verticalGradient(
                 listOf(
                     scheme.primaryContainer,
@@ -485,11 +489,17 @@ fun materialYouBrush(tint: MaterialYouTint): Brush {
                     scheme.tertiaryContainer
                 )
             )
+        } else if (mid != null) {
+            Brush.verticalGradient(
+                0f to scheme.primaryContainer,
+                0.45f to lerp(scheme.secondaryContainer, mid, 0.55f),
+                1f to bottom
+            )
         } else {
             Brush.verticalGradient(
                 0f to scheme.primaryContainer,
-                0.5f to lerp(scheme.secondaryContainer, blue, 0.2f),
-                1f to blue
+                0.5f to lerp(scheme.secondaryContainer, bottom, 0.2f),
+                1f to bottom
             )
         }
     }

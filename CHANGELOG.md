@@ -164,6 +164,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.19.4]
+
+- More Material You tints. The default look and the 5 blue tints are byte-identical: their brush branches are unchanged, and existing enum names are untouched, so old saved values keep working.
+- 12 new single-color bottoms (same rule: theme top stays, only the bottom blends): Violet, Grape, Rose, Crimson, Coral, Amber, Gold, Lime, Emerald, Teal, Graphite, Mocha, each with matching dark/light colors.
+- 5 two-tone combos via optional darkMid/lightMid on the enum: Aurora (teal bottom, violet mid), Dusk (rose bottom, violet mid), Deep ocean (navy bottom, teal mid), Sunrise (amber bottom, rose mid), Nebula (royal bottom, grape mid). Combo brush: theme primaryContainer at 0, secondaryContainer lerped 55% toward the mid at 0.45, bottom at 1; light colors mirror the matching singles.
+- Background page "Material You" section is now grouped with small headers, 3 tiles per row, same 96×160 tile size and check as before: Default, Blue, Warm, Green & Teal, Purple & Pink, Neutral, Combos. Every tint appears exactly once; tile previews render the live gradient.
+- Settings search gains one entry per new tint (17), each opening the Background page with its own tile highlighted (per-tile anchors, keeping the registry's unique-anchor rule). The intensity slider applies to all tints through the existing backdrop alpha.
+
 ## [0.19.3]
 
 - Quick call strip replaces the top Recent chips: a horizontally scrollable row of 68dp cards (52dp avatar circle + first name below, 1 line, 12sp, 12dp gaps, edge fade) placed just above the keys, under the number display. Tap calls (respects Confirm before calling + SIM picker); long-press opens a small glass menu: Message, Open contact (opens the contact's detail via the Contacts tab), Remove from strip. Hidden while a number is typed (the suggestion chips take over) and while a name search is active. The top area now holds only search + ⋮, so the number display sits higher; when the strip is off, the keys reflow with no gap.

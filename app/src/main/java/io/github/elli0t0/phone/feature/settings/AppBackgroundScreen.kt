@@ -189,23 +189,43 @@ fun AppBackgroundScreen(
                 item {
                     SettingsSectionHeader(stringResource(R.string.settings_app_background_material_you))
                 }
-                items(MaterialYouTint.entries.chunked(3)) { row ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(bottom = spacing.small),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        row.forEach { tint ->
-                            MaterialYouTile(
-                                tint = tint,
-                                selected = settings.appBackground == AppBackground.MATERIAL_YOU &&
-                                    settings.materialYouTint == tint,
-                                onClick = {
-                                    // Tint first, then the background: the
-                                    // intermediate frame never shows a wrong tint.
-                                    viewModel.onMaterialYouTintChanged(tint)
-                                    viewModel.onAppBackgroundChanged(AppBackground.MATERIAL_YOU)
-                                }
-                            )
+                // Tint groups (0.19.4): small headers over 3-per-row
+                // tile grids, same tile size and check as before.
+                materialYouGroups.forEach { group ->
+                    item {
+                        Text(
+                            text = stringResource(group.titleRes),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = spacing.small, bottom = spacing.extraSmall)
+                        )
+                    }
+                    items(group.tints.chunked(3)) { row ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = spacing.small),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            row.forEach { tint ->
+                                MaterialYouTile(
+                                    tint = tint,
+                                    // Per-tile anchor (unique per entry,
+                                    // as the search registry requires):
+                                    // searching a tint highlights the
+                                    // tile itself on this page.
+                                    anchor = "material_you_tint_" +
+                                        tint.name.lowercase(),
+                                    selected = settings.appBackground == AppBackground.MATERIAL_YOU &&
+                                        settings.materialYouTint == tint,
+                                    onClick = {
+                                        // Tint first, then the background: the
+                                        // intermediate frame never shows a wrong tint.
+                                        viewModel.onMaterialYouTintChanged(tint)
+                                        viewModel.onAppBackgroundChanged(AppBackground.MATERIAL_YOU)
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -361,9 +381,57 @@ fun AppBackgroundScreen(
     }
 }
 
+/** One Material You tile group (0.19.4): a small header over its tiles. */
+private data class MaterialYouGroup(
+    val titleRes: Int,
+    val tints: List<MaterialYouTint>
+)
+
+/** Tint groups in page order; every tint appears exactly once. */
+private val materialYouGroups = listOf(
+    MaterialYouGroup(
+        R.string.material_you_group_default,
+        listOf(MaterialYouTint.NONE)
+    ),
+    MaterialYouGroup(
+        R.string.settings_app_background_blue,
+        listOf(
+            MaterialYouTint.NAVY, MaterialYouTint.COBALT, MaterialYouTint.ROYAL,
+            MaterialYouTint.SKY, MaterialYouTint.ICE
+        )
+    ),
+    MaterialYouGroup(
+        R.string.material_you_group_warm,
+        listOf(
+            MaterialYouTint.CRIMSON, MaterialYouTint.CORAL,
+            MaterialYouTint.AMBER, MaterialYouTint.GOLD
+        )
+    ),
+    MaterialYouGroup(
+        R.string.material_you_group_green_teal,
+        listOf(MaterialYouTint.LIME, MaterialYouTint.EMERALD, MaterialYouTint.TEAL)
+    ),
+    MaterialYouGroup(
+        R.string.material_you_group_purple_pink,
+        listOf(MaterialYouTint.VIOLET, MaterialYouTint.GRAPE, MaterialYouTint.ROSE)
+    ),
+    MaterialYouGroup(
+        R.string.material_you_group_neutral,
+        listOf(MaterialYouTint.GRAPHITE, MaterialYouTint.MOCHA)
+    ),
+    MaterialYouGroup(
+        R.string.material_you_group_combos,
+        listOf(
+            MaterialYouTint.AURORA, MaterialYouTint.DUSK, MaterialYouTint.OCEAN_DEEP,
+            MaterialYouTint.SUNRISE, MaterialYouTint.NEBULA
+        )
+    )
+)
+
 @Composable
 private fun MaterialYouTile(
     tint: MaterialYouTint,
+    anchor: String,
     selected: Boolean,
     onClick: () -> Unit
 ) {
@@ -373,7 +441,7 @@ private fun MaterialYouTile(
     val swatchShape = RoundedCornerShape(20.dp)
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.width(96.dp)
+        modifier = Modifier.width(96.dp).searchHighlight(anchor)
     ) {
         Box(
             modifier = Modifier
