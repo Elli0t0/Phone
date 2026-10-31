@@ -358,27 +358,22 @@ fun CallLogRow(
                 }
 
                 // Recording playback, when this group has matched
-                // recordings: the button plays the LATEST call's
-                // recording only. If the latest call itself has
-                // none, the button opens the expanded breakdown
-                // instead of silently playing an older call.
-                // Per-call buttons live in the expanded breakdown.
+                // recordings: the button plays/stops the NEWEST
+                // matched recording of the group. The pause icon
+                // shows only while that exact recording is playing
+                // (playingId == its id) — never for an expanded or
+                // not-playable state. Per-call buttons live in the
+                // expanded breakdown, where the owning call's row
+                // shows pause by the same id check.
                 val groupRecordings = group.calls.mapNotNull { recordingByCallId[it.id] }
-                val latestCallRecording =
-                    group.calls.firstOrNull()?.let { recordingByCallId[it.id] }
                 if (groupRecordings.isNotEmpty()) {
+                    val newestRecording = groupRecordings.first()
                     Spacer(modifier = Modifier.width(spacing.small))
                     RecordingPlayButton(
-                        isPlaying = latestCallRecording?.id == playingRecordingId,
+                        isPlaying = newestRecording.id == playingRecordingId,
                         size = 36.dp,
                         badgeCount = groupRecordings.size,
-                        onClick = {
-                            if (latestCallRecording != null) {
-                                onRecordingPlayClick(latestCallRecording)
-                            } else if (!isExpanded) {
-                                onRowClick()
-                            }
-                        }
+                        onClick = { onRecordingPlayClick(newestRecording) }
                     )
                 }
 

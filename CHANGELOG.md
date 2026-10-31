@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.18.8]
+
+- Recents grouped-row recording button fixed: it now plays/stops the newest matched recording of the group, and the pause icon shows only while that exact recording is playing. Root cause was a null == null comparison: when the latest call had no recording and nothing was playing, the old latest-call check evaluated true and showed pause. The "open the group instead of playing" fallback is reverted. The count badge (2+ recordings) and the expanded breakdown's per-call buttons are unchanged; the owning call's row shows pause by the same id check while the group's recording plays.
+
 ## [0.18.7]
 
 - Background intensity is now a slider (0.1–1.0, default 0.7) at the top of the Background page, replacing the Off/Subtle/Vivid gate. Old values migrate once: Off hides backgrounds (Plain), Subtle becomes 0.5, Vivid becomes 1.0. Light theme caps intensity at 0.6; there is no 0.4 cap anymore.
