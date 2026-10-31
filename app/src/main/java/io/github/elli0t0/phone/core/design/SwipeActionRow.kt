@@ -4,12 +4,10 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -22,6 +20,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
@@ -49,19 +51,30 @@ import kotlin.math.roundToInt
  * setting is off (spring when on, short tween when reduced).
  *
  * The drag offset lives in plain float state: it is read only
- * inside offset/graphicsLayer lambdas, so a drag frame neither
- * recomposes the row nor allocates. The settle animation runs
- * one coroutine per release, never one per frame.
+ * inside offset/graphicsLayer/draw lambdas, so a drag frame
+ * neither recomposes the row nor allocates. The settle animation
+ * runs one coroutine per release, never one per frame.
+ *
+ * The reveal draws only the exposed strip (matchParentSize +
+ * drawBehind): a fillMaxSize background inside a wrap-content
+ * Box collapses to a thin strip under LazyColumn's unbounded
+ * max height, and the row content itself stays transparent, so
+ * nothing bleeds through behind it.
+ *
+ * When suppressed (selection mode), only the content renders:
+ * the drag state is dropped with the branch, so the row can
+ * never stay displaced.
  */
 @Composable
 fun SwipeActionRow(
     enabled: Boolean,
+    suppressed: Boolean = false,
     onSwipeCall: () -> Unit,
     onSwipeMessage: () -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    if (!enabled) {
+    if (!enabled || suppressed) {
         Box(modifier = modifier) { content() }
         return
     }
@@ -127,10 +140,12 @@ fun SwipeActionRow(
     Box(
         modifier = modifier
             .onSizeChanged { rowWidthPx = it.width.toFloat() }
+            .clipToBounds()
     ) {
         // Revealed background: green + call icon on the physical
         // left when the row moves right, blue + message icon on
-        // the physical right when it moves left.
+        // the physical right when it moves left. Only the exposed
+        // strip is painted; the row content stays transparent.
         if (offsetX != 0f) {
             val isCall = offsetX > 0f
             val progress = if (rowWidthPx > 0f) {
@@ -138,6 +153,14 @@ fun SwipeActionRow(
             } else {
                 0f
             }
+            val color = if (isCall) SwipeCallGreen else SwipeMessageBlue
+            Box(
+                Modifier.matchParentSize().drawBehind {
+                    val w = abs(offsetX)
+                    val left = if (offsetX > 0f) 0f else size.width - w
+                    drawRect(color, topLeft = Offset(left, 0f), size = Size(w, size.height))
+                }
+            )
             // Physical sides: CenterStart is layout-aware, so the
             // physical left is Start in LTR and End in RTL.
             val iconAlignment = when {
@@ -147,9 +170,7 @@ fun SwipeActionRow(
                 else -> Alignment.CenterStart
             }
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(if (isCall) SwipeCallGreen else SwipeMessageBlue),
+                modifier = Modifier.matchParentSize(),
                 contentAlignment = iconAlignment
             ) {
                 Icon(
