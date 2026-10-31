@@ -20,6 +20,7 @@ import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.data.settings.model.AppBackground
 import io.github.elli0t0.phone.data.settings.model.AppSettings
+import io.github.elli0t0.phone.data.settings.model.MaterialYouTint
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
 import io.github.elli0t0.phone.data.settings.model.Backdrop
 import io.github.elli0t0.phone.data.settings.model.DropletStretch
@@ -406,6 +407,12 @@ class SettingsViewModel(
     fun onAppBackgroundPaletteIdChanged(id: String) {
         viewModelScope.launch {
             settingsRepository.setAppBackgroundPaletteId(id)
+        }
+    }
+
+    fun onMaterialYouTintChanged(tint: MaterialYouTint) {
+        viewModelScope.launch {
+            settingsRepository.setMaterialYouTint(tint)
         }
     }
 

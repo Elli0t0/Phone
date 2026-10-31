@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.BackdropContent
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.materialYouBrush
 import io.github.elli0t0.phone.core.design.saveAppBackgroundPhoto
 import io.github.elli0t0.phone.core.design.scenes.AnimeSceneBackgrounds
 import io.github.elli0t0.phone.core.design.scenes.AnimeScenes
@@ -54,6 +55,7 @@ import io.github.elli0t0.phone.core.design.scenes.SceneSpec
 import io.github.elli0t0.phone.core.design.scenes.scenePreviewIntensity
 import io.github.elli0t0.phone.data.settings.model.AppBackground
 import io.github.elli0t0.phone.data.settings.model.AppSettings
+import io.github.elli0t0.phone.data.settings.model.MaterialYouTint
 import io.github.elli0t0.phone.data.settings.model.PaletteBackgrounds
 import io.github.elli0t0.phone.data.settings.model.PaletteBg
 import io.github.elli0t0.phone.navigation.InnerTopBar
@@ -67,11 +69,11 @@ import kotlin.math.roundToInt
  * App background picker: the same page pattern as CallBackgroundScreen
  * (Scaffold + InnerTopBar + LazyColumn). Intensity (0.18.7) is a
  * slider at the top of this page, replacing the old Backdrop
- * Off/Subtle/Vivid gate. Sections: Colors (data-driven palettes,
- * 3 per row), Scenes (every other background, each swatch
- * rendering its real scene live, so animated backgrounds drift,
- * twinkle, and pulse in the picker too), Photo (user image with
- * its darkness slider). PLAIN is the bare theme background.
+ * Off/Subtle/Vivid gate. Sections in order: Material You (NONE +
+ * 5 blue tints), Blue (blue palettes + Blue Sky, Ocean, Midnight),
+ * Colors (the other palettes), Scenes (anime scenes, 2 per row),
+ * Classic (every other background), Photo (user image with its
+ * darkness slider). PLAIN is the bare theme background.
  */
 @Composable
 fun AppBackgroundScreen(
@@ -110,9 +112,21 @@ fun AppBackgroundScreen(
     var dimDraft by remember(settings.appBackgroundDim) {
         mutableStateOf(settings.appBackgroundDim)
     }
-    val scenes = remember {
+    // Blue palettes in section order (0.19.0), then the rest.
+    val bluePaletteIds = listOf("cobalt", "ice", "deepsea", "sky", "indigo", "cyan", "teal")
+    val bluePalettes = remember {
+        bluePaletteIds.mapNotNull { id -> PaletteBackgrounds.find { it.id == id } }
+    }
+    val otherPalettes = remember {
+        PaletteBackgrounds.filter { it.id !in bluePaletteIds }
+    }
+    // Classic: everything the other sections don't own — Material
+    // You has its own section, Ocean/Midnight moved to Blue.
+    val classicScenes = remember {
         AppBackground.entries.filter {
-            it != AppBackground.PALETTE && it != AppBackground.PHOTO && it !in AnimeSceneBackgrounds
+            it != AppBackground.PALETTE && it != AppBackground.PHOTO &&
+                it !in AnimeSceneBackgrounds && it != AppBackground.MATERIAL_YOU &&
+                it != AppBackground.OCEAN && it != AppBackground.MIDNIGHT
         }
     }
 
@@ -173,9 +187,81 @@ fun AppBackgroundScreen(
                     }
                 }
                 item {
+                    SettingsSectionHeader(stringResource(R.string.settings_app_background_material_you))
+                }
+                items(MaterialYouTint.entries.chunked(3)) { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = spacing.small),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        row.forEach { tint ->
+                            MaterialYouTile(
+                                tint = tint,
+                                selected = settings.appBackground == AppBackground.MATERIAL_YOU &&
+                                    settings.materialYouTint == tint,
+                                onClick = {
+                                    // Tint first, then the background: the
+                                    // intermediate frame never shows a wrong tint.
+                                    viewModel.onMaterialYouTintChanged(tint)
+                                    viewModel.onAppBackgroundChanged(AppBackground.MATERIAL_YOU)
+                                }
+                            )
+                        }
+                    }
+                }
+                item {
+                    SettingsSectionHeader(stringResource(R.string.settings_app_background_blue))
+                }
+                items(bluePalettes.chunked(3)) { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = spacing.small),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        row.forEach { palette ->
+                            PaletteSwatch(
+                                palette = palette,
+                                selected = settings.appBackground == AppBackground.PALETTE &&
+                                    settings.appBackgroundPaletteId == palette.id,
+                                onClick = {
+                                    // Id first, then the background: the
+                                    // intermediate frame still shows the
+                                    // old background, never a wrong palette.
+                                    viewModel.onAppBackgroundPaletteIdChanged(palette.id)
+                                    viewModel.onAppBackgroundChanged(AppBackground.PALETTE)
+                                }
+                            )
+                        }
+                    }
+                }
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = spacing.small),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        AppBackgroundSwatch(
+                            bg = AppBackground.BLUE_SKY,
+                            selected = settings.appBackground == AppBackground.BLUE_SKY,
+                            photoExists = photoExists,
+                            onClick = { viewModel.onAppBackgroundChanged(AppBackground.BLUE_SKY) }
+                        )
+                        AppBackgroundSwatch(
+                            bg = AppBackground.OCEAN,
+                            selected = settings.appBackground == AppBackground.OCEAN,
+                            photoExists = photoExists,
+                            onClick = { viewModel.onAppBackgroundChanged(AppBackground.OCEAN) }
+                        )
+                        AppBackgroundSwatch(
+                            bg = AppBackground.MIDNIGHT,
+                            selected = settings.appBackground == AppBackground.MIDNIGHT,
+                            photoExists = photoExists,
+                            onClick = { viewModel.onAppBackgroundChanged(AppBackground.MIDNIGHT) }
+                        )
+                    }
+                }
+                item {
                     SettingsSectionHeader(stringResource(R.string.settings_app_background_colors))
                 }
-                items(PaletteBackgrounds.chunked(3)) { row ->
+                items(otherPalettes.chunked(3)) { row ->
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(bottom = spacing.small),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -199,21 +285,6 @@ fun AppBackgroundScreen(
                 item {
                     SettingsSectionHeader(stringResource(R.string.settings_app_background_scenes))
                 }
-                items(scenes.chunked(3)) { row ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(bottom = spacing.small),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        row.forEach { bg ->
-                            AppBackgroundSwatch(
-                                bg = bg,
-                                selected = settings.appBackground == bg,
-                                photoExists = photoExists,
-                                onClick = { viewModel.onAppBackgroundChanged(bg) }
-                            )
-                        }
-                    }
-                }
                 items(AnimeScenes.chunked(2)) { row ->
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(bottom = spacing.small),
@@ -225,6 +296,24 @@ fun AppBackgroundScreen(
                                 selected = settings.appBackground == spec.background,
                                 onClick = { viewModel.onAppBackgroundChanged(spec.background) },
                                 modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+                item {
+                    SettingsSectionHeader(stringResource(R.string.settings_app_background_classic))
+                }
+                items(classicScenes.chunked(3)) { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = spacing.small),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        row.forEach { bg ->
+                            AppBackgroundSwatch(
+                                bg = bg,
+                                selected = settings.appBackground == bg,
+                                photoExists = photoExists,
+                                onClick = { viewModel.onAppBackgroundChanged(bg) }
                             )
                         }
                     }
@@ -269,6 +358,61 @@ fun AppBackgroundScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun MaterialYouTile(
+    tint: MaterialYouTint,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    // Same tall card as the other background swatches (96x160,
+    // 20dp radius, check badge), rendering this tint's gradient —
+    // not the currently selected one.
+    val swatchShape = RoundedCornerShape(20.dp)
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.width(96.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(96.dp, 160.dp)
+                .clip(swatchShape)
+                .background(materialYouBrush(tint))
+                .then(
+                    if (selected) {
+                        Modifier.border(2.dp, MaterialTheme.colorScheme.primary, swatchShape)
+                    } else {
+                        Modifier
+                    }
+                )
+                .clickable { onClick() },
+            contentAlignment = Alignment.Center
+        ) {
+            if (selected) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(6.dp)
+                        .size(22.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painterResource(R.drawable.ic_check), contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+            }
+        }
+        Text(
+            tint.label,
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(top = 4.dp)
+        )
     }
 }
 

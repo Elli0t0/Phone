@@ -82,6 +82,9 @@
     <string name="settings_backdrop">پس‌زمینه</string>
     <string name="settings_app_background">پس‌زمینه</string>
     <string name="settings_app_background_intensity">شدت پس‌زمینه</string>
+    <string name="settings_app_background_material_you">Material You</string>
+    <string name="settings_app_background_blue">آبی</string>
+    <string name="settings_app_background_classic">کلاسیک</string>
     <string name="settings_app_background_colors">رنگ‌ها</string>
     <string name="settings_app_background_scenes">صحنه‌ها</string>
     <string name="settings_app_background_photo">عکس</string>

@@ -164,6 +164,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.19.0]
+
+- Material You blue family: a new MaterialYouTint (NONE + Navy, Cobalt, Royal blue, Sky, Ice, each with dark and light blues) stored as materialYouTint (DataStore key, backup, search). NONE renders today's Material You exactly; a blue tint keeps the theme top (primary container) and blends only the bottom toward the blue (midpoint lerped 20% toward blue). The backdrop alpha stays today's intensity rule, so NONE is pixel-identical to before. Background page: a Material You section first with 6 tall tiles (same card as the other swatches), each rendering its own tint's gradient; picking a tile sets the tint, then MATERIAL_YOU.
+- Blue palettes: 3 new data-driven palettes (Cobalt, Ice, Deep Sea, dark base on top, brighter blue at the bottom) rendering as the existing slow-drifting 3-blob mesh on the darkest color, static when animations are reduced. Sky, Indigo, Cyan, Teal palettes already existed and are reused, not duplicated.
+- Background page reorganized: intensity slider on top, then Material You, Blue (7 blue palettes + Blue Sky, Ocean, Midnight tiles), Colors (the other palettes), Scenes (anime scenes, 2 per row, static-frame previews), Classic (the remaining backgrounds, including Plain), Photo. Tile size, shape, and selected check unchanged. Intensity slider, pure-black note, anime scenes, and existing palettes are unchanged; old backups still restore (missing tint defaults to NONE, unknown tint names fall back to NONE).
+- Items 1 and 4 of the spec needed no change: the intensity slider with OFF/SUBTLE/VIVID migration and pure-black intensity × 0.6 note shipped in 0.18.7, and all 7 anime scenes shipped in 0.18.9.
+
 ## [0.18.10]
 
 - Minimal mode is now a full stock-dialer look, built by branching on a LocalMinimal flag instead of deriving altered settings, so your stored settings are never overwritten and switching it off restores everything exactly. It ignores glass, backgrounds, card style, header size, key style, accent tint, and dynamic color, and uses a neutral palette: black screens (keypad 0xFF151517), 0xFF1C1C1E cards, 0xFF2C2C2E dividers, 0xFF2A2A2C nav pill with 0xFF48484A selected tab, white text, 0xFFA0A0A5 secondary, 0xFF4CAF68 call green; light theme mirrors the same structure on 0xFFF2F2F7 with white cards.

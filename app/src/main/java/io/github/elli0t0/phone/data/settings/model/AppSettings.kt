@@ -371,6 +371,21 @@ enum class AppBackground(val label: String, val gradient: CallBackground?) {
 }
 
 /**
+ * Material You blue tint (0.19.0): NONE keeps today's Material You
+ * exactly (theme containers top to bottom); a blue tint keeps the
+ * theme top and blends only the bottom toward the blue. Null means
+ * no tint (NONE); dark/light are the blue for each theme.
+ */
+enum class MaterialYouTint(val label: String, val dark: Long?, val light: Long?) {
+    NONE("Material You", null, null),
+    NAVY("Navy", 0xFF0A1F44, 0xFFD6E4FF),
+    COBALT("Cobalt", 0xFF0F3D91, 0xFFC2D8FF),
+    ROYAL("Royal blue", 0xFF1E5BD8, 0xFFB3CCFF),
+    SKY("Sky", 0xFF2F8BE6, 0xFFBFE0FF),
+    ICE("Ice", 0xFF5FA8E8, 0xFFDCEEFF)
+}
+
+/**
  * A palette background (0.18.7): three harmonious ARGB colors,
  * darkest first. The mesh renders on the darkest color with the
  * other two drifting over it — no new enum entry per color.
@@ -392,7 +407,12 @@ val PaletteBackgrounds = listOf(
     PaletteBg("coral", "Coral", listOf(0xFF431407, 0xFFEA580C, 0xFFFDBA74)),
     PaletteBg("gold", "Gold", listOf(0xFF422006, 0xFFD97706, 0xFFFCD34D)),
     PaletteBg("graphite", "Graphite", listOf(0xFF111827, 0xFF4B5563, 0xFF9CA3AF)),
-    PaletteBg("mono", "Mono", listOf(0xFF090909, 0xFF525252, 0xFFE5E5E5))
+    PaletteBg("mono", "Mono", listOf(0xFF090909, 0xFF525252, 0xFFE5E5E5)),
+    // Blue palettes (0.19.0): dark base on top, brighter blue at
+    // the bottom, the same family as the Material You blues.
+    PaletteBg("cobalt", "Cobalt", listOf(0xFF070F24, 0xFF123A8A, 0xFF3B82F6)),
+    PaletteBg("ice", "Ice", listOf(0xFF0A1C2B, 0xFF4A90C4, 0xFFBFE0FF)),
+    PaletteBg("deepsea", "Deep Sea", listOf(0xFF05111F, 0xFF0A2A52, 0xFF1565C0))
 )
 
 /** Which calls auto-record captures; ALL is the historical behavior. */
@@ -483,6 +503,8 @@ data class AppSettings(
     val appBackgroundIntensity: Float = 0.7f,
     /** Palette id for appBackground == PALETTE (0.18.7). */
     val appBackgroundPaletteId: String = "emerald",
+    // Material You blue tint (0.19.0): NONE is today's look.
+    val materialYouTint: MaterialYouTint = MaterialYouTint.NONE,
     val appBackgroundDim: Float = 0.35f,
     val appBackgroundPhotoVersion: Long = 0L,
     val defaultStartTab: StartTab = StartTab.KEYPAD,

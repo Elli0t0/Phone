@@ -316,6 +316,9 @@
     <string name="settings_backdrop">Backdrop</string>
     <string name="settings_app_background">Background</string>
     <string name="settings_app_background_intensity">Background intensity</string>
+    <string name="settings_app_background_material_you">Material You</string>
+    <string name="settings_app_background_blue">Blue</string>
+    <string name="settings_app_background_classic">Classic</string>
     <string name="settings_app_background_colors">Colors</string>
     <string name="settings_app_background_scenes">Scenes</string>
     <string name="settings_app_background_photo">Photo</string>

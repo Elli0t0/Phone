@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -44,6 +45,7 @@ import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.AppBackground
 import io.github.elli0t0.phone.core.design.scenes.AnimeScenes
 import io.github.elli0t0.phone.data.settings.model.AppSettings
+import io.github.elli0t0.phone.data.settings.model.MaterialYouTint
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import io.github.elli0t0.phone.data.settings.model.PaletteBackgrounds
 import java.io.File
@@ -458,20 +460,47 @@ private fun NeonBackdrop(modifier: Modifier = Modifier) {
  * On Android 12+ with Dynamic color on, the scheme is the system
  * palette; otherwise it is the static palette, same rendering.
  */
+/**
+ * Material You gradient for one tint, shared by the live backdrop
+ * and the picker's tiles so both render the same gradient. NONE is
+ * today's look exactly (theme containers top to bottom); a blue
+ * tint keeps the theme top and blends only the bottom toward blue.
+ */
 @Composable
-private fun MaterialYouBackdrop(modifier: Modifier, settings: AppSettings) {
+fun materialYouBrush(tint: MaterialYouTint): Brush {
     val scheme = MaterialTheme.colorScheme
-    val brush = remember(
+    val isLight = scheme.background.luminance() > 0.5f
+    val blue = (if (isLight) tint.light else tint.dark)?.let { Color(it) }
+    return remember(
         scheme.primaryContainer,
         scheme.secondaryContainer,
-        scheme.tertiaryContainer
+        scheme.tertiaryContainer,
+        blue
     ) {
-        Brush.verticalGradient(
-            listOf(scheme.primaryContainer, scheme.secondaryContainer, scheme.tertiaryContainer)
-        )
+        if (blue == null) {
+            Brush.verticalGradient(
+                listOf(
+                    scheme.primaryContainer,
+                    scheme.secondaryContainer,
+                    scheme.tertiaryContainer
+                )
+            )
+        } else {
+            Brush.verticalGradient(
+                0f to scheme.primaryContainer,
+                0.5f to lerp(scheme.secondaryContainer, blue, 0.2f),
+                1f to blue
+            )
+        }
     }
+}
+
+@Composable
+private fun MaterialYouBackdrop(modifier: Modifier, settings: AppSettings) {
+    // Alpha stays today's intensity rule, so NONE stays identical;
+    // only the gradient's bottom changes with the tint.
     val alpha = effectiveStrength(settings)
-    Box(modifier.fillMaxSize().graphicsLayer { this.alpha = alpha }.background(brush))
+    Box(modifier.fillMaxSize().graphicsLayer { this.alpha = alpha }.background(materialYouBrush(settings.materialYouTint)))
 }
 
 /**

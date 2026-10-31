@@ -324,6 +324,7 @@ val allSettingEntries: List<SettingEntry> = listOf(
     SettingEntry("background_colors", R.string.settings_app_background_colors, R.string.settings_app_background, SettingsPage.APP_BACKGROUND),
     SettingEntry("background_scenes", R.string.settings_app_background_scenes, R.string.settings_app_background, SettingsPage.APP_BACKGROUND),
     SettingEntry("background_photo", R.string.settings_app_background_photo, R.string.settings_app_background, SettingsPage.APP_BACKGROUND),
+    SettingEntry("material_you_tint", R.string.settings_app_background_material_you, R.string.settings_app_background, SettingsPage.APP_BACKGROUND),
     // Liquid glass page.
     SettingEntry("glass_master", R.string.settings_cat_liquid_glass, R.string.settings_cat_liquid_glass, SettingsPage.GLASS, anchor = "glass_master"),
     SettingEntry("glass_intensity", R.string.settings_glass_intensity, R.string.settings_cat_liquid_glass, SettingsPage.GLASS, anchor = "glass_intensity"),
