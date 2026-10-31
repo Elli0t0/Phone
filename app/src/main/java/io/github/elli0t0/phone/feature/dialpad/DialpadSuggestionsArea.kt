@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.design.LocalMinimal
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
@@ -125,7 +126,7 @@ fun ColumnScope.DialpadSuggestionsArea(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-            if (uiState.quickRedial.isNotEmpty()) {
+            if (uiState.quickRedial.isNotEmpty() && !LocalMinimal.current) {
                 // Empty keypad: one-tap redial for the last 3 recent
                 // numbers.
                 QuickRedialChips(

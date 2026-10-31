@@ -32,7 +32,9 @@ import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.KeypadCallButtonGreenDark
 import io.github.elli0t0.phone.core.design.KeypadCallButtonGreenLight
+import io.github.elli0t0.phone.core.design.LocalMinimal
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.minimalPalette
 import io.github.elli0t0.phone.core.design.OnAccentBlue
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.liquidGlass
@@ -87,6 +89,48 @@ fun DialpadCallButtonRow(
     darkTheme: Boolean,
     onCallClick: () -> Unit
 ) {
+    // Minimal (0.18.10): a solid round 68dp button in the minimal
+    // call green — no glass, no gloss, no bounce.
+    if (LocalMinimal.current) {
+        val callButtonSource = remember { MutableInteractionSource() }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    bottom = PhoneDimens.keypadCallButtonBottomPadding,
+                    end = 68.dp
+                ),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(modifier = Modifier.size(68.dp))
+            Box(
+                modifier = Modifier
+                    .size(68.dp)
+                    .clip(CircleShape)
+                    .clickable(
+                        interactionSource = callButtonSource,
+                        indication = null
+                    ) {
+                        onCallClick()
+                    }
+                    .background(
+                        color = minimalPalette().callGreen,
+                        shape = CircleShape
+                    )
+                    .testTag("btn_call"),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_phone),
+                    contentDescription = stringResource(id = R.string.cd_call_button),
+                    tint = Color.White,
+                    modifier = Modifier.size(30.dp)
+                )
+            }
+        }
+        return
+    }
     // One centered green call button, 72dp like the keys. Left of
     // it an empty 72dp box, right of it nothing: the 72dp end
     // padding balances the left box, so the button stays centered

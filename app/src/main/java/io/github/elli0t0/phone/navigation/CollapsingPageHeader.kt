@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -35,6 +36,7 @@ import io.github.elli0t0.phone.core.design.GlassSurface
 import io.github.elli0t0.phone.core.design.LiquidGlassPillShape
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalHazeState
+import io.github.elli0t0.phone.core.design.LocalMinimal
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.data.settings.model.HeaderSize
 
@@ -60,6 +62,48 @@ fun PageHeaderItem(
         HeaderSize.COMPACT -> 0.85f
         HeaderSize.STANDARD -> 1f
         HeaderSize.LARGE -> 1.2f
+    }
+    // Minimal (0.18.10): tall title area (38% of screen height) with
+    // the title big, bold and centered, then a plain icon row
+    // aligned right — no pill, no glass, no subtitle, no chips.
+    // The header size setting is ignored here.
+    if (LocalMinimal.current) {
+        val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(screenHeight * 0.38f),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.headlineLarge.copy(
+                        fontSize = 34.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = (-0.4).sp
+                    ),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+                content = actions
+            )
+        }
+        return
     }
     Column(
         modifier = modifier
@@ -136,7 +180,10 @@ fun FloatingActionsPill(
     modifier: Modifier = Modifier,
     actions: @Composable RowScope.() -> Unit,
     revealAfterIndex: Int = 0,
-    wrapInPill: Boolean = true
+    wrapInPill: Boolean = true,
+    // Minimal (0.18.10): when set, the tall header collapses to a
+    // small centered title once it scrolls off, instead of a pill.
+    minimalTitle: String? = null
 ) {
     val pillVisible by remember {
         derivedStateOf {
@@ -144,6 +191,27 @@ fun FloatingActionsPill(
         }
     }
     if (!pillVisible) return
+    if (LocalMinimal.current && minimalTitle != null) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(top = 8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = minimalTitle,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        return
+    }
     Box(modifier = modifier) {
         // The pill content is shared by the glass and flat branches.
         val pillContent: @Composable () -> Unit = {

@@ -67,6 +67,7 @@ import io.github.elli0t0.phone.core.design.CallAnswerGreen
 import io.github.elli0t0.phone.core.design.CallRejectedOrange
 import io.github.elli0t0.phone.core.design.LiquidGlassIconButton
 import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.LocalMinimal
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneDimens
@@ -207,6 +208,10 @@ fun CallLogRow(
     val lightHaptic = rememberLightHaptic()
     val insetCard = LocalAppSettings.current.effectiveStyle.card == CardStyle.INSET
     val swipeEnabled = LocalAppSettings.current.swipeActionsEnabled
+    // Minimal (0.18.10): taller rows (~84dp: 44dp avatar + 2x20dp
+    // padding), no swipe actions, no swipe tint.
+    val minimal = LocalMinimal.current
+    val rowVerticalPadding = if (minimal) 20.dp else 12.dp
 
     // Icon color by call type.
     val typeColor = callTypeColor(group.type)
@@ -245,7 +250,7 @@ fun CallLogRow(
                             Color.Transparent
                         }
                     )
-                    .padding(vertical = 12.dp)
+                    .padding(vertical = rowVerticalPadding)
                     // Only the header row is clickable: the bounded
                     // ripple stays clipped to this row's shape, and
                     // the expanded details and action buttons no
@@ -419,7 +424,7 @@ fun CallLogRow(
             }
         }
         SwipeActionRow(
-            enabled = swipeEnabled && group.number.isNotBlank(),
+            enabled = swipeEnabled && !minimal && group.number.isNotBlank(),
             suppressed = selectionActive,
             onSwipeCall = onCallClick,
             onSwipeMessage = onMessageClick
@@ -430,7 +435,7 @@ fun CallLogRow(
             HorizontalDivider(
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = PhoneDimens.recentsDividerAlpha),
                 modifier = Modifier.padding(
-                    start = 72.dp,
+                    start = if (minimal) 76.dp else 72.dp,
                     end = spacing.medium
                 )
             )
@@ -449,7 +454,11 @@ fun DaySectionCard(
     rowContent: @Composable (CallGroup) -> Unit
 ) {
     val spacing = LocalSpacing.current
-    val insetCard = LocalAppSettings.current.effectiveStyle.card == CardStyle.INSET
+    // Minimal (0.18.10): the card itself is the flat 28dp minimal
+    // card (GlassListCard branch); dividers start at 76dp in the
+    // theme divider color, never the inset white.
+    val minimal = LocalMinimal.current
+    val insetCard = LocalAppSettings.current.effectiveStyle.card == CardStyle.INSET && !minimal
     GlassListCard(
         modifier = modifier
             .fillMaxWidth()
@@ -475,7 +484,7 @@ fun DaySectionCard(
                         modifier = Modifier.padding(
                             // Divider starts at the text, not at the row edge:
                             // row padding + avatar + gap.
-                            start = 72.dp,
+                            start = if (minimal) 76.dp else 72.dp,
                             end = spacing.medium
                         )
                     )

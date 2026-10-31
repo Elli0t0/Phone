@@ -473,7 +473,17 @@ fun SettingsScreen(
                             iconRes = R.drawable.ic_filter,
                             title = stringResource(id = R.string.settings_cat_liquid_glass),
                             searchId = "nav_glass",
-                            subtitle = glassSubtitle,
+                            titleColor = if (settings.minimalMode) {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
+                            subtitle = if (settings.minimalMode) {
+                                stringResource(id = R.string.settings_off_in_minimal_mode)
+                            } else {
+                                glassSubtitle
+                            },
+                            enabled = !settings.minimalMode,
                             onClick = { dialogs.showGlassPage = true }
                         )
 

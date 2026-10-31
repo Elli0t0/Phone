@@ -548,9 +548,10 @@ data class AppSettings(
     // Kept for backup compatibility (0.18.6 removed the switch and
     // every advanced gate: all rows always show now).
     val showAdvancedSettings: Boolean = false,
-    /** Minimal mode (0.18.6): derived at the root via withMinimal(),
-     * so the stored values are never overwritten and switching it
-     * off restores everything. */
+    /** Minimal mode (0.18.10): the stock-dialer look. Components
+     * branch on LocalMinimal (set from this flag at the root), so
+     * the stored values are never overwritten and switching it off
+     * restores everything exactly. */
     val minimalMode: Boolean = false,
     // Dismissed once, the duplicates banner moves into the Contacts
     // overflow menu; the favorites hint hides for good.
@@ -581,18 +582,4 @@ data class AppSettings(
             )
         }
 
-    /** Minimal mode (0.18.6): the effective settings while the mode
-     * is on. The stored values are untouched, so turning it off
-     * restores everything exactly. Applied at the root where
-     * LocalAppSettings is provided; Settings pages keep showing
-     * the real stored values. */
-    fun withMinimal(): AppSettings = if (!minimalMode) this else copy(
-        appStyle = AppStyle.CLEAN,
-        glassBottomBar = false, glassHeaders = false, glassContactDetail = false,
-        glassCallScreens = false, glassCards = false,
-        reduceTransparency = true, dynamicHighlights = false,
-        animationOption = AnimationOption.REDUCED,
-        appBackground = AppBackground.PLAIN,
-        lensBar = false, shrinkBottomBarOnScroll = false
-    )
 }

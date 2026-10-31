@@ -77,7 +77,10 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
+import io.github.elli0t0.phone.core.design.LocalMinimal
+import io.github.elli0t0.phone.core.design.PhoneBottomSheet
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -214,6 +217,9 @@ fun RecentsScreen(
     var addNumber by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
     var searchVisible by remember { mutableStateOf(uiState.searchQuery.isNotEmpty()) }
     var filterMenuExpanded by remember { mutableStateOf(false) }
+    // Minimal: the filter icon opens this sheet instead of the
+    // dropdown menu, and instead of the filter chips row.
+    var showFilterSheet by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val simAccounts = remember(context) { io.github.elli0t0.phone.core.telecom.TelecomHelper.getCallCapablePhoneAccounts(context) }
@@ -525,7 +531,13 @@ fun RecentsScreen(
                 ) {
                     Box {
                         androidx.compose.material3.IconButton(
-                            onClick = { filterMenuExpanded = true },
+                            onClick = {
+                                if (LocalMinimal.current) {
+                                    showFilterSheet = true
+                                } else {
+                                    filterMenuExpanded = true
+                                }
+                            },
                             modifier = Modifier.testTag("button_recents_filter")
                         ) {
                             androidx.compose.material3.Icon(
@@ -845,6 +857,9 @@ fun RecentsScreen(
                         // visible instead of hidden behind the filter
                         // icon (which stays as the more-filters/date
                         // entry). Scrolls away with the header.
+                        // Minimal: no chips — filtering opens from the
+                        // filter icon in a bottom sheet instead.
+                        if (!LocalMinimal.current) {
                         item(key = "recents_filter_chips") {
                             Row(
                                 modifier = Modifier
@@ -873,6 +888,7 @@ fun RecentsScreen(
                                     )
                                 }
                             }
+                        }
                         }
                         // Error State
                         if (uiState.errorMessage != null) {
@@ -1013,8 +1029,81 @@ fun RecentsScreen(
                     .align(Alignment.TopEnd)
                     .statusBarsPadding()
                     .padding(end = 16.dp, top = 8.dp),
-                actions = headerActions
+                actions = headerActions,
+                minimalTitle = stringResource(id = R.string.app_name)
             )
+        }
+        // Minimal filter sheet: the same filter options the chips
+        // and the dropdown menu offer, as plain rows.
+        if (showFilterSheet) {
+            PhoneBottomSheet(onDismissRequest = { showFilterSheet = false }) {
+                CallFilter.entries.forEach { filter ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                showFilterSheet = false
+                                viewModel.onFilterSelected(filter)
+                            }
+                            .padding(
+                                horizontal = spacing.medium,
+                                vertical = spacing.small
+                            ),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (filter == uiState.selectedFilter) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_check),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(spacing.small))
+                        } else {
+                            Spacer(modifier = Modifier.width(24.dp + spacing.small))
+                        }
+                        Text(
+                            text = stringResource(id = filter.titleRes),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = spacing.extraSmall)
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            showFilterSheet = false
+                            showDatePicker = true
+                        }
+                        .padding(
+                            horizontal = spacing.medium,
+                            vertical = spacing.small
+                        ),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (uiState.selectedDate != null) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_check),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(spacing.small))
+                    } else {
+                        Spacer(modifier = Modifier.width(24.dp + spacing.small))
+                    }
+                    Text(
+                        text = stringResource(id = R.string.recents_pick_date),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                Spacer(modifier = Modifier.height(spacing.medium))
+            }
         }
         }
     }
@@ -1037,6 +1126,48 @@ private fun RecentsHeaderItem(
         HeaderSize.COMPACT -> 0.85f
         HeaderSize.STANDARD -> 1f
         HeaderSize.LARGE -> 1.2f
+    }
+    // Minimal (0.18.10): tall centered title, plain icon row below,
+    // no pill, no subtitle, no filter chips (the filter icon opens
+    // a bottom sheet instead).
+    if (LocalMinimal.current) {
+        val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(screenHeight * 0.38f),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.headlineLarge.copy(
+                        fontSize = 34.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = (-0.4).sp
+                    ),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                actions()
+            }
+        }
+        return
     }
     Column(
         modifier = modifier

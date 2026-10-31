@@ -59,6 +59,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.LocalMinimal
+import io.github.elli0t0.phone.core.design.minimalPalette
+import io.github.elli0t0.phone.data.settings.model.KeypadStyle
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.dialogEnter
 import io.github.elli0t0.phone.core.design.liquidGlass
@@ -212,6 +215,9 @@ fun DialpadScreen(
     // background, as before. PLAIN is the only background that draws
     // nothing — including in pure black, where the scene still
     // shows dimmed over the black base (0.18.7).
+    // Minimal (0.18.10): the keypad screen's own background
+    // (0xFF151517 dark), backgrounds ignored.
+    val minimal = LocalMinimal.current
     val backdropVisible = LocalAppSettings.current.let {
         it.appBackground != AppBackground.PLAIN
     }
@@ -225,7 +231,9 @@ fun DialpadScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                if (backdropVisible) {
+                if (minimal) {
+                    minimalPalette().keypadBg
+                } else if (backdropVisible) {
                     Color.Transparent
                 } else {
                     MaterialTheme.colorScheme.background
@@ -377,7 +385,9 @@ fun DialpadScreen(
         )
         DialpadKeypadGrid(
             // No tick here: KeypadKey ticks on press-down.
-            keypadStyle = LocalAppSettings.current.keypadStyle,
+            // Minimal (0.18.10): the MINIMAL style is forced,
+            // whatever the stored keypad style is.
+            keypadStyle = if (minimal) KeypadStyle.MINIMAL else LocalAppSettings.current.keypadStyle,
             onKeyPressed = { digit ->
                 viewModel.onKeyPressed(digit)
             },

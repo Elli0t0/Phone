@@ -589,6 +589,13 @@ fun Modifier.liquidGlass(
     premium: Boolean = false,
     tilt: State<Offset>? = null,
 ): Modifier {
+    // Minimal (0.18.10): no glass anywhere — a flat card in the
+    // theme surface, whatever tint or blur the caller asked for.
+    if (LocalMinimal.current) {
+        return this
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surface)
+    }
     val dark = isDarkGlassTheme() || forceDarkGlass
     val base = if (tint != Color.Unspecified) tint else MaterialTheme.colorScheme.primary
     val settings = LocalAppSettings.current
@@ -836,6 +843,26 @@ fun GlassListCard(
     shape: Shape = RoundedCornerShape(24.dp),
     content: @Composable ColumnScope.() -> Unit
 ) {
+    // Minimal (0.18.10): one flat 28dp card, never glass, never
+    // inset — whatever shape or style the caller passed.
+    if (LocalMinimal.current) {
+        Card(
+            modifier = modifier,
+            shape = RoundedCornerShape(28.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            content = {
+                CompositionLocalProvider(
+                    LocalContentColor provides MaterialTheme.colorScheme.onSurface
+                ) {
+                    content()
+                }
+            }
+        )
+        return
+    }
     if (LocalAppSettings.current.effectiveStyle.card == CardStyle.INSET) {
         // Inset list card: solid 14dp card, never glass, whatever
         // shape the caller passed.

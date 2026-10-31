@@ -98,14 +98,36 @@ fun PhoneTheme(
         }
     }
 
-    val colorScheme = if (darkTheme && appSettings.pureBlackDarkMode) {
-        baseColorScheme.copy(
-            background = Color.Black,
-            surface = Color.Black,
-            surfaceVariant = Color(0xFF121212)
-        )
-    } else {
-        baseColorScheme
+    val colorScheme = when {
+        // Minimal (0.18.10): the stock look ignores accent tint and
+        // dynamic color — a neutral palette, dark or light by theme.
+        appSettings.minimalMode -> {
+            val p = MinimalColors.palette(darkTheme)
+            baseColorScheme.copy(
+                primary = p.text,
+                onPrimary = p.bg,
+                secondary = p.secondary,
+                background = p.bg,
+                onBackground = p.text,
+                surface = p.card,
+                onSurface = p.text,
+                surfaceVariant = p.card,
+                onSurfaceVariant = p.secondary,
+                surfaceContainer = p.card,
+                surfaceContainerHigh = p.card,
+                surfaceContainerHighest = p.card,
+                outline = p.divider,
+                outlineVariant = p.divider
+            )
+        }
+        darkTheme && appSettings.pureBlackDarkMode -> {
+            baseColorScheme.copy(
+                background = Color.Black,
+                surface = Color.Black,
+                surfaceVariant = Color(0xFF121212)
+            )
+        }
+        else -> baseColorScheme
     }
 
     val currentDensity = LocalDensity.current
@@ -142,7 +164,8 @@ fun PhoneTheme(
     CompositionLocalProvider(
         LocalDensity provides customDensity,
         LocalSpacing provides dynamicSpacing,
-        LocalAppSettings provides appSettings
+        LocalAppSettings provides appSettings,
+        LocalMinimal provides appSettings.minimalMode
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

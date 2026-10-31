@@ -37,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -104,6 +105,7 @@ fun SettingsRow(
     subtitle: String? = null,
     titleColor: Color = MaterialTheme.colorScheme.onSurface,
     searchId: String? = null,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
     val rowSource = remember { MutableInteractionSource() }
@@ -116,7 +118,8 @@ fun SettingsRow(
             .pressScale(rowSource)
             .clickable(
                 interactionSource = rowSource,
-                indication = if (insetCard) null else ripple()
+                indication = if (insetCard) null else ripple(),
+                enabled = enabled
             ) { lightHaptic(); onClick() }
             .then(if (insetCard) Modifier.insetRowPress(rowSource) else Modifier)
             .padding(vertical = PhoneDimens.settingsRowVerticalPadding)
@@ -144,6 +147,8 @@ fun SettingsNavRow(
     title: String,
     subtitle: String? = null,
     searchId: String? = null,
+    titleColor: Color = MaterialTheme.colorScheme.onSurface,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
     val rowSource = remember { MutableInteractionSource() }
@@ -156,7 +161,8 @@ fun SettingsNavRow(
             .pressScale(rowSource)
             .clickable(
                 interactionSource = rowSource,
-                indication = if (insetCard) null else ripple()
+                indication = if (insetCard) null else ripple(),
+                enabled = enabled
             ) { lightHaptic(); onClick() }
             .then(if (insetCard) Modifier.insetRowPress(rowSource) else Modifier)
             .padding(vertical = PhoneDimens.settingsRowVerticalPadding),
@@ -173,7 +179,7 @@ fun SettingsNavRow(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
+                color = titleColor
             )
             if (subtitle != null) {
                 Text(
@@ -200,12 +206,14 @@ fun SettingsSwitchRow(
     checked: Boolean,
     searchId: String? = null,
     dimmed: Boolean = false,
+    enabled: Boolean = true,
     onCheckedChange: (Boolean) -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .searchHighlight(searchId)
+            .alpha(if (enabled) 1f else 0.5f)
             .padding(vertical = PhoneDimens.settingsSwitchRowVerticalPadding),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
@@ -227,7 +235,7 @@ fun SettingsSwitchRow(
         }
         AppSwitch(
             checked = checked,
-            onCheckedChange = onCheckedChange
+            onCheckedChange = if (enabled) onCheckedChange else { {} }
         )
     }
 }

@@ -10,6 +10,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.input.pointer.pointerInput
@@ -69,6 +70,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -83,6 +85,8 @@ import io.github.elli0t0.phone.core.design.BottomBarLightSelectedContent
 import io.github.elli0t0.phone.core.design.BottomBarLightUnselected
 import io.github.elli0t0.phone.core.design.GlassSurface
 import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.LocalMinimal
+import io.github.elli0t0.phone.core.design.minimalPalette
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.bottomBarSizeSpec
@@ -143,6 +147,16 @@ fun PhoneBottomBar(
     // then samples this backdrop instead of using Haze.
     lensBackdrop: LayerBackdrop? = null
 ) {
+    // Minimal (0.18.10): flat pill, no blur, no lens, no droplet —
+    // the whole lens/droplet machinery below is skipped.
+    if (LocalMinimal.current) {
+        MinimalBottomBar(
+            navController = navController,
+            currentRoute = currentRoute,
+            modifier = modifier
+        )
+        return
+    }
     val darkTheme = when (LocalAppSettings.current.themeMode) {
         ThemeMode.LIGHT -> false
         ThemeMode.DARK -> true
@@ -886,4 +900,76 @@ private fun HazeDropletLens(pillShape: RoundedCornerShape) {
                 )
             }
     )
+}
+
+/**
+ * Minimal (0.18.10) bottom bar: flat pill, 62% of the screen width,
+ * 64dp tall, 32dp radius, navPill fill, no blur, no lens. Three
+ * tabs always with labels; the selected tab is an inner navSelected
+ * pill with a bold label, unselected tabs show the outline icon.
+ * Sits 12dp above the gesture bar, like the standard bar.
+ */
+@Composable
+private fun MinimalBottomBar(
+    navController: NavController,
+    currentRoute: String?,
+    modifier: Modifier = Modifier
+) {
+    val palette = minimalPalette()
+    BoxWithConstraints(
+        modifier = modifier
+            .navigationBarsPadding()
+            .padding(bottom = PhoneDimens.bottomBarBottomMargin)
+            .testTag("phone_bottom_bar"),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            modifier = Modifier
+                .width(maxWidth * 0.62f)
+                .height(64.dp)
+                .clip(RoundedCornerShape(32.dp))
+                .background(palette.navPill)
+                .padding(4.dp)
+        ) {
+            Screen.bottomNavItems.forEach { tab ->
+                val sel = tab.route == currentRoute
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(28.dp))
+                        .background(if (sel) palette.navSelected else Color.Transparent)
+                        .clickable {
+                            if (currentRoute != tab.route) {
+                                navController.navigate(tab.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        }
+                        .testTag("tab_${tab.route}"),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        painter = painterResource(
+                            id = if (sel) tab.iconResSelected else tab.iconRes
+                        ),
+                        contentDescription = stringResource(id = tab.contentDescriptionRes),
+                        tint = if (sel) palette.text else palette.secondary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        text = stringResource(id = tab.titleRes),
+                        fontSize = 12.sp,
+                        fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal,
+                        color = if (sel) palette.text else palette.secondary
+                    )
+                }
+            }
+        }
+    }
 }

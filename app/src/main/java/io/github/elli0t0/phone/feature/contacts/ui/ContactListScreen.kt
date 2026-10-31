@@ -57,6 +57,7 @@ import io.github.elli0t0.phone.core.design.LiquidGlassChip
 import io.github.elli0t0.phone.core.design.LiquidGlassPill
 import io.github.elli0t0.phone.core.design.LiquidGlassPillShape
 import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.LocalMinimal
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.dialogEnter
@@ -487,11 +488,35 @@ private fun ContactsContent(
             // Reveal index: assigned in list order, so the
             // first 8 rows stagger in on first load.
             var revealIndex = 0
+            // Minimal (0.18.10): the duplicates card comes FIRST,
+            // above the header; otherwise the header comes first.
+            val minimal = LocalMinimal.current
+            val showDuplicatesCard = uiState.showDuplicatesCard &&
+                uiState.searchQuery.isEmpty()
+            if (minimal && showDuplicatesCard) {
+                item(key = "duplicates_card") {
+                    DuplicatesCard(
+                        duplicateCount = uiState.duplicateGroups.sumOf { it.contacts.size },
+                        onMergeClick = onShowDuplicates,
+                        onDismiss = onDismissDuplicatesCard,
+                        modifier = Modifier
+                            .animateItem()
+                            .firstLoadReveal(revealIndex++, listRevealed)
+                            .statusBarsPadding()
+                            .padding(
+                                top = spacing.medium,
+                                bottom = PhoneDimens.duplicatesCardFavoritesGap
+                            )
+                    )
+                }
+            }
             // Large header as the first list item: scrolls away naturally.
             // Split glass top bar lives inside the header bottom
             // (Groups pill left, actions pill right), so the header
             // block caps at its height fraction instead of stacking
             // a second row below it. It reveals with the header.
+            // Minimal: the plain icon actions render under the tall
+            // centered title instead of the pills.
             item(key = "contacts_header") {
                 PageHeaderItem(
                     title = stringResource(id = R.string.tab_contacts),
@@ -499,11 +524,11 @@ private fun ContactsContent(
                     modifier = Modifier
                         .animateItem()
                         .firstLoadReveal(revealIndex++, listRevealed),
-                    bottomContent = topBarPills
+                    bottomContent = topBarPills,
+                    actions = compactContactsActions
                 )
             }
-            if (uiState.showDuplicatesCard && uiState.searchQuery.isEmpty()
-            ) {
+            if (!minimal && showDuplicatesCard) {
                 item(key = "duplicates_card") {
                     DuplicatesCard(
                         duplicateCount = uiState.duplicateGroups.sumOf { it.contacts.size },
@@ -614,6 +639,19 @@ private fun ContactsContent(
                 }
             }
 
+            // Minimal (0.18.10): a Groups card between the profile
+            // and the A–Z cards — the header's Groups pill is gone.
+            if (minimal && uiState.searchQuery.isEmpty()) {
+                item(key = "groups_card") {
+                    GroupsCard(
+                        onClick = onGroupsClick,
+                        modifier = Modifier
+                            .animateItem()
+                            .firstLoadReveal(revealIndex++, listRevealed)
+                    )
+                }
+            }
+
             uiState.groupedContacts.forEach { (letter, contactsInGroup) ->
                 item(key = "header_$letter") {
                     Text(
@@ -675,7 +713,8 @@ private fun ContactsContent(
                 actions = {
                     groupsIconButton()
                     compactContactsActions()
-                }
+                },
+                minimalTitle = stringResource(id = R.string.tab_contacts)
             )
         }
         }

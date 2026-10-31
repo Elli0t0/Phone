@@ -452,7 +452,7 @@
     <string name="settings_dialpad_tones_desc">Quiet local key tones during a call</string>
     <string name="settings_cat_keypad">Keypad</string>
     <string name="settings_minimal_mode">Minimal mode</string>
-    <string name="settings_minimal_mode_desc">Glass, animations and backgrounds off. Your settings are kept and restored when you switch it off.</string>
+    <string name="settings_minimal_mode_desc">Stock phone look</string>
     <string name="settings_off_in_minimal_mode">Off in Minimal mode</string>
     <string name="settings_confirm_call">Confirm before calling</string>
     <string name="settings_confirm_call_desc">Show a “Call X?” sheet before placing a call</string>

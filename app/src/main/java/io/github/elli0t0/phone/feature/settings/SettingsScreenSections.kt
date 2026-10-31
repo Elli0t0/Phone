@@ -212,7 +212,17 @@ fun AppearanceCard(
             SettingsRow(
                 title = stringResource(id = R.string.settings_header_size),
                 searchId = "header_size",
-                subtitle = settings.headerSize.label,
+                titleColor = if (settings.minimalMode) {
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+                subtitle = if (settings.minimalMode) {
+                    stringResource(id = R.string.settings_off_in_minimal_mode)
+                } else {
+                    settings.headerSize.label
+                },
+                enabled = !settings.minimalMode,
                 onClick = { dialogs.showHeaderSizeDialog = true }
             )
 
@@ -233,6 +243,7 @@ fun AppearanceCard(
                 } else {
                     settings.appBackground.label
                 },
+                enabled = !settings.minimalMode,
                 onClick = { dialogs.showAppBackgroundPage = true }
             )
         }
@@ -246,9 +257,10 @@ fun GlassCard(
     dialogs: SettingsDialogState,
     spacing: Spacing
 ) {
-    // Minimal mode turns every glass surface off at the root, so
-    // these rows show the stored values dimmed with an "off"
-    // subtitle instead of their value while it is on.
+    // Minimal mode ignores every glass surface (components branch
+    // on LocalMinimal), so these rows show the stored values dimmed
+    // with an "off" subtitle instead of their value while it is on,
+    // and they are not clickable.
     val minimal = settings.minimalMode
     val offSubtitle = stringResource(id = R.string.settings_off_in_minimal_mode)
     val dimmedTitle = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
@@ -265,6 +277,7 @@ fun GlassCard(
                 checked = settings.glassHeaders || settings.glassContactDetail ||
                     settings.glassCallScreens || settings.glassBottomBar,
                 dimmed = minimal,
+                enabled = !minimal,
                 onCheckedChange = { viewModel.onGlassMasterChanged(it) }
             )
 
@@ -277,6 +290,7 @@ fun GlassCard(
                 searchId = "glass_intensity",
                 titleColor = if (minimal) dimmedTitle else MaterialTheme.colorScheme.onSurface,
                 subtitle = if (minimal) offSubtitle else settings.glassIntensity.label,
+                enabled = !minimal,
                 onClick = { dialogs.showGlassIntensityDialog = true }
             )
 
@@ -289,6 +303,8 @@ fun GlassCard(
                 searchId = "reduce_transparency",
                 subtitle = stringResource(id = R.string.settings_reduce_transparency_desc),
                 checked = settings.reduceTransparency,
+                dimmed = minimal,
+                enabled = !minimal,
                 onCheckedChange = { viewModel.onReduceTransparencyChanged(it) }
             )
 
@@ -302,6 +318,7 @@ fun GlassCard(
                 subtitle = if (minimal) offSubtitle else stringResource(id = R.string.settings_dynamic_highlights_desc),
                 checked = settings.dynamicHighlights,
                 dimmed = minimal,
+                enabled = !minimal,
                 onCheckedChange = { viewModel.onDynamicHighlightsChanged(it) }
             )
 
@@ -313,6 +330,7 @@ fun GlassCard(
                 title = stringResource(id = R.string.settings_glass_studio),
                 titleColor = if (minimal) dimmedTitle else MaterialTheme.colorScheme.onSurface,
                 subtitle = if (minimal) offSubtitle else stringResource(id = R.string.settings_glass_studio_desc),
+                enabled = !minimal,
                 onClick = { dialogs.showGlassStudioPage = true }
             )
         }

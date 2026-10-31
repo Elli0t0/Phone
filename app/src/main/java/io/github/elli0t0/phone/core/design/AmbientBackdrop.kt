@@ -172,6 +172,9 @@ private fun DrawScope.softBlob(c: Color, cx: Float, cy: Float, r: Float, alpha: 
  */
 @Composable
 fun AmbientBackdrop(modifier: Modifier = Modifier) {
+    // Minimal (0.18.10): backgrounds are ignored — the theme
+    // background (black / light grey) shows, nothing is drawn.
+    if (LocalMinimal.current) return
     val settings = LocalAppSettings.current
     if (settings.pureBlackDarkMode) {
         Box(modifier.fillMaxSize().background(Color.Black)) {

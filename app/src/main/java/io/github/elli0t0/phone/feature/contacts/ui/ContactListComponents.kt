@@ -51,10 +51,12 @@ import io.github.elli0t0.phone.core.design.FavoriteCardGradients
 import io.github.elli0t0.phone.core.design.FavoriteHintOrange
 import io.github.elli0t0.phone.core.design.GlassListCard
 import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.LocalMinimal
 import io.github.elli0t0.phone.core.design.SwipeActionRow
 import io.github.elli0t0.phone.core.design.SelectionCheckCircle
 import io.github.elli0t0.phone.core.design.LiquidGlassCard
 import io.github.elli0t0.phone.core.design.LocalSpacing
+import io.github.elli0t0.phone.core.design.minimalPalette
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.bouncyClick
 import io.github.elli0t0.phone.core.design.insetRowPress
@@ -188,7 +190,10 @@ fun ContactGroupCard(
     onSelectionToggle: ((ContactSummary) -> Unit)? = null
 ) {
     val spacing = LocalSpacing.current
-    val insetCard = LocalAppSettings.current.effectiveStyle.card == CardStyle.INSET
+    // Minimal (0.18.10): the card is the flat 28dp minimal card
+    // (GlassListCard branch) with 76dp inset dividers, never inset.
+    val minimal = LocalMinimal.current
+    val insetCard = LocalAppSettings.current.effectiveStyle.card == CardStyle.INSET && !minimal
     GlassListCard(
         modifier = modifier
             .fillMaxWidth()
@@ -225,8 +230,12 @@ fun ContactGroupCard(
                         ),
                         // Divider starts at the text: row padding + avatar + spacer.
                         modifier = Modifier.padding(
-                            start = spacing.medium +
-                                PhoneDimens.contactsRowAvatarSize + spacing.medium
+                            start = if (minimal) {
+                                76.dp
+                            } else {
+                                spacing.medium +
+                                    PhoneDimens.contactsRowAvatarSize + spacing.medium
+                            }
                         )
                     )
                 }
@@ -259,6 +268,7 @@ private fun ContactGroupRow(
     val swipeNumber = contact.primaryNumberPreview
     SwipeActionRow(
         enabled = LocalAppSettings.current.swipeActionsEnabled &&
+            !LocalMinimal.current &&
             onSwipeCall != null && onSwipeMessage != null &&
             !swipeNumber.isNullOrBlank(),
         suppressed = selectionActive,
@@ -461,6 +471,68 @@ fun DuplicatesCard(
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
+    // Minimal (0.18.10): centered card — message, a pill Merge
+    // button below it, and a small round X at the top-right.
+    if (LocalMinimal.current) {
+        val palette = minimalPalette()
+        Box(
+            modifier = modifier
+                .fillMaxWidth()
+                .testTag("duplicates_card"),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(palette.card)
+                    .padding(spacing.medium),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(spacing.small)
+            ) {
+                Text(
+                    text = stringResource(id = R.string.duplicates_card_message, duplicateCount),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center
+                )
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(palette.navSelected)
+                        .clickable { onMergeClick() }
+                        .padding(horizontal = 20.dp, vertical = 8.dp)
+                        .testTag("button_duplicates_card_merge"),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.duplicates_merge),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = palette.text
+                    )
+                }
+            }
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(palette.navSelected)
+                    .clickable { onDismiss() }
+                    .testTag("button_duplicates_card_dismiss"),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_close),
+                    contentDescription = stringResource(id = R.string.cd_dismiss),
+                    tint = palette.secondary,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
+        return
+    }
     // Slim glass row, one line, max ~56dp high: count text, Merge
     // text button, close icon. Dismiss behaviour and tags unchanged.
     Box(
@@ -512,6 +584,56 @@ fun DuplicatesCard(
                     )
                 }
             }
+        }
+    }
+}
+
+/**
+ * Minimal (0.18.10) Groups card: a plain row opening the Groups
+ * screen. It replaces the header's Groups pill in the minimal
+ * Contacts order (after the profile, before the A–Z cards).
+ */
+@Composable
+fun GroupsCard(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val spacing = LocalSpacing.current
+    GlassListCard(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = spacing.small)
+            .clickable { onClick() }
+            .testTag("groups_card")
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = spacing.medium,
+                    vertical = PhoneDimens.contactsRowVerticalPadding
+                ),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_group),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(PhoneDimens.contactsRowAvatarSize)
+            )
+            Spacer(modifier = Modifier.width(spacing.medium))
+            Text(
+                text = stringResource(id = R.string.groups_title),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
+            )
+            Icon(
+                painter = painterResource(id = R.drawable.ic_chevron_right),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(24.dp)
+            )
         }
     }
 }

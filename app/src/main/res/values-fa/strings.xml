@@ -18,7 +18,7 @@
     <string name="settings_dialpad_tones_desc">صدای محلی آرام دکمه‌ها هنگام تماس</string>
     <string name="settings_cat_keypad">صفحه‌کلید</string>
     <string name="settings_minimal_mode">حالت مینیمال</string>
-    <string name="settings_minimal_mode_desc">شیشه، پویانمایی‌ها و پس‌زمینه‌ها خاموش می‌شوند. تنظیمات شما حفظ می‌شود و با خاموش کردن آن بازمی‌گردد.</string>
+    <string name="settings_minimal_mode_desc">ظاهر پیش‌فرض گوشی</string>
     <string name="settings_off_in_minimal_mode">در حالت مینیمال خاموش است</string>
     <string name="settings_confirm_call">تأیید پیش از تماس</string>
     <string name="settings_confirm_call_desc">پیش از برقراری تماس، برگه‌ی «تماس با X؟» را نشان بده</string>
