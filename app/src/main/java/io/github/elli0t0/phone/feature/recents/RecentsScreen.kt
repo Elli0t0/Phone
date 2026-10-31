@@ -44,7 +44,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DropdownMenu
+import io.github.elli0t0.phone.core.design.GlassDropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -338,7 +338,7 @@ fun RecentsScreen(
                 selectedGroups.size == displayedGroupIds.size
             setSelectionBar(
                 SelectionBarState(
-                    title = context.getString(R.string.selection_selected, selection.ids.size),
+                    title = selection.ids.size.toString(),
                     allSelected = allSelected,
                     onClose = { viewModel.clearSelection() },
                     onToggleSelectAll = {
@@ -349,7 +349,10 @@ fun RecentsScreen(
                         }
                     },
                     actions = {
-                        IconButton(onClick = { shareSelectedCalls() }) {
+                        IconButton(
+                            onClick = { shareSelectedCalls() },
+                            modifier = Modifier.size(40.dp)
+                        ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_share),
                                 contentDescription = stringResource(id = R.string.action_share),
@@ -364,7 +367,8 @@ fun RecentsScreen(
                                             group.calls.map { it.id }
                                         }
                                     )
-                                }
+                                },
+                                modifier = Modifier.size(40.dp)
                             ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.ic_delete),
@@ -375,14 +379,17 @@ fun RecentsScreen(
                         }
                         Box {
                             var moreExpanded by remember { mutableStateOf(false) }
-                            IconButton(onClick = { moreExpanded = true }) {
+                            IconButton(
+                                onClick = { moreExpanded = true },
+                                modifier = Modifier.size(40.dp)
+                            ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.ic_more_vert),
                                     contentDescription = stringResource(id = R.string.action_more),
                                     tint = MaterialTheme.colorScheme.onSurface
                                 )
                             }
-                            DropdownMenu(
+                            GlassDropdownMenu(
                                 expanded = moreExpanded,
                                 onDismissRequest = { moreExpanded = false }
                             ) {
@@ -506,23 +513,10 @@ fun RecentsScreen(
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        DropdownMenu(
+                        GlassDropdownMenu(
                             expanded = filterMenuExpanded,
                             onDismissRequest = { filterMenuExpanded = false },
-                            modifier = Modifier
-                                .background(
-                                    color = MaterialTheme.colorScheme.surface,
-                                    shape = RoundedCornerShape(PhoneDimens.recentsFilterPopupCornerRadius)
-                                )
-                                .liquidGlass(
-                                    shape = RoundedCornerShape(PhoneDimens.recentsFilterPopupCornerRadius),
-                                    floating = true
-                                )
-                                .dialogEnter(),
-                            shape = RoundedCornerShape(PhoneDimens.recentsFilterPopupCornerRadius),
-                            containerColor = Color.Transparent,
-                            tonalElevation = 0.dp,
-                            shadowElevation = 0.dp
+                            modifier = Modifier.dialogEnter()
                         ) {
                             val animationOption = LocalAppSettings.current.animationOption
                             CallFilter.entries.forEachIndexed { index, filter ->

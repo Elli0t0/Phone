@@ -6,7 +6,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 
 /**
  * What the bottom bar becomes while a list is selecting: a title
- * ("N selected"), an X to exit, a select-all toggle, and the
+ * (the selection count only, e.g. "3"), an X to exit, a select-all toggle, and the
  * screen's own actions (Share, Delete, More). Screens publish a
  * state through [LocalSetSelectionBarState] when their selection
  * becomes active and clear it on exit; MainActivity swaps the bar

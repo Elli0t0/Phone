@@ -27,7 +27,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.DropdownMenu
+import io.github.elli0t0.phone.core.design.GlassDropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -292,28 +292,10 @@ private fun ContactsContent(
         // both the header's pill actions and the compact bar's plain
         // icon buttons, so the items exist exactly once.
         val contactsMenu: @Composable () -> Unit = {
-            DropdownMenu(
+            GlassDropdownMenu(
                 expanded = menuExpanded,
                 onDismissRequest = { menuExpanded = false },
-                // Glass menu: an opaque surface under the glass
-                // keeps list content from bleeding through;
-                // the liquid-glass modifier adds sheen/rim/shadow.
-                // The Surface itself stays transparent so it does
-                // not double-draw.
-                modifier = Modifier
-                    .background(
-                        color = MaterialTheme.colorScheme.surface,
-                        shape = RoundedCornerShape(PhoneDimens.menuCornerRadius)
-                    )
-                    .liquidGlass(
-                        shape = RoundedCornerShape(PhoneDimens.menuCornerRadius),
-                        floating = true
-                    )
-                    .dialogEnter(),
-                shape = RoundedCornerShape(PhoneDimens.menuCornerRadius),
-                containerColor = Color.Transparent,
-                tonalElevation = 0.dp,
-                shadowElevation = 0.dp
+                modifier = Modifier.dialogEnter()
             ) {
                 DropdownMenuItem(
                     text = { Text(text = stringResource(id = R.string.settings_title)) },

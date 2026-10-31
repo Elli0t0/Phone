@@ -38,7 +38,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
+import io.github.elli0t0.phone.core.design.GlassDropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -76,6 +76,7 @@ import io.github.elli0t0.phone.LocalAppSnackbarHostState
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.core.design.LiquidGlassCard
+import io.github.elli0t0.phone.core.design.isDarkGlassTheme
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
@@ -158,7 +159,7 @@ fun ContactDetailBottomBar(
                         testTag = "btn_detail_overflow",
                         modifier = Modifier.fillMaxWidth()
                     )
-                    DropdownMenu(
+                    GlassDropdownMenu(
                         expanded = showMoreMenu,
                         onDismissRequest = onDismissMoreMenu
                     ) {
@@ -179,16 +180,29 @@ fun ContactDetailBottomBar(
             }
         }
         if (LocalAppSettings.current.glassContactDetail) {
-            LiquidGlassCard(
+            // Near-opaque surface behind the glass card: the card's
+            // live blur samples this flat color, so list text can
+            // no longer show through the bar.
+            Box(
                 modifier = Modifier
                     .fillMaxWidth(PhoneDimens.detailBottomBarWidthFraction)
-                    .height(PhoneDimens.bottomBarHeight),
-                shape = RoundedCornerShape(PhoneDimens.bottomBarCornerPercent),
-                floating = true,
-                premium = true,
-                tilt = tilt
+                    .height(PhoneDimens.bottomBarHeight)
+                    .clip(RoundedCornerShape(PhoneDimens.bottomBarCornerPercent))
+                    .background(
+                        MaterialTheme.colorScheme.surface.copy(
+                            alpha = if (isDarkGlassTheme()) 0.80f else 0.85f
+                        )
+                    )
             ) {
-                barContent()
+                LiquidGlassCard(
+                    modifier = Modifier.fillMaxSize(),
+                    shape = RoundedCornerShape(PhoneDimens.bottomBarCornerPercent),
+                    floating = true,
+                    premium = true,
+                    tilt = tilt
+                ) {
+                    barContent()
+                }
             }
         } else {
             // Flat bar: solid surface with a soft shadow.
@@ -287,7 +301,15 @@ fun lastCallSummary(entry: CallLogEntry): String {
     val timeOrDate = if (android.text.format.DateUtils.isToday(entry.date)) {
         android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date(entry.date))
     } else {
-        android.text.format.DateFormat.getDateFormat(context).format(java.util.Date(entry.date))
+        // Abbreviated month + year (e.g. "Oct 31, 2026"), never
+        // the numeric short date.
+        android.text.format.DateUtils.formatDateTime(
+            context,
+            entry.date,
+            android.text.format.DateUtils.FORMAT_SHOW_DATE or
+                android.text.format.DateUtils.FORMAT_ABBREV_MONTH or
+                android.text.format.DateUtils.FORMAT_SHOW_YEAR
+        )
     }
     return if (durationText != null) {
         "$typeLabel · $durationText · $timeOrDate"

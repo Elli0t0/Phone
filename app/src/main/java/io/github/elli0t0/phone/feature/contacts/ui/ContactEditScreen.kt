@@ -83,6 +83,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.isDarkGlassTheme
 import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
@@ -643,6 +644,13 @@ fun ContactEditScreen(
                 .fillMaxWidth(PhoneDimens.editSavePillWidthFraction)
                 .height(PhoneDimens.editSavePillHeight)
                 .liquidGlass(shape = RoundedCornerShape(50), floating = true)
+                // Near-opaque surface under the glass so form text
+                // never shows through the pill.
+                .background(
+                    MaterialTheme.colorScheme.surface.copy(
+                        alpha = if (isDarkGlassTheme()) 0.80f else 0.85f
+                    )
+                )
                 .padding(horizontal = PhoneDimens.editSavePillInnerPadding)
                 .testTag("edit_save_pill"),
             verticalAlignment = Alignment.CenterVertically

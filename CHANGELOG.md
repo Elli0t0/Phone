@@ -164,6 +164,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.18.5]
+
+- Selection bar shows just the count on one line, with smaller 40dp buttons, and is glass like the bottom bar instead of flat.
+- All menus now use one shared glass menu (near-opaque, menu corner, faint border, soft shadow): Dialpad, Recents (selection and filter), Recordings (sort and row), Contacts (overflow and selection), and the contact detail overflow. Popup surfaces are near-opaque and no longer use the premium shadow.
+- Bottom bars (main, detail, edit pill) are near-opaque (0.80 dark / 0.85 light) so list text no longer shows through; scroll clearance already exceeds bar height + 24dp everywhere, left as-is.
+- Recording note reworded (WAV in Music/Phone or inside Phone with private storage, built-in ADB pairing once over Wi-Fi after every reboot).
+- Contact detail/history dates use the abbreviated month + year form instead of the numeric short date.
+- A grouped Recents row's play button now plays only the latest call's recording; if the latest call has none, it opens the group's expanded list instead of playing an older call.
+
 ## [0.18.4]
 
 - Swipe row reveal fixed: the colored background no longer collapses to a thin strip in lists, and swipe is suppressed while selecting.

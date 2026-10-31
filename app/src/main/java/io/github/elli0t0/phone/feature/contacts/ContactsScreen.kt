@@ -9,9 +9,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
+import io.github.elli0t0.phone.core.design.GlassDropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -226,7 +227,7 @@ fun ContactsScreen(
                 selectedContacts.size == allVisibleIds.size
             setSelectionBar(
                 SelectionBarState(
-                    title = context.getString(R.string.selection_selected, selection.ids.size),
+                    title = selection.ids.size.toString(),
                     allSelected = allSelected,
                     onClose = { listViewModel.clearSelection() },
                     onToggleSelectAll = {
@@ -243,7 +244,8 @@ fun ContactsScreen(
                                     context,
                                     selectedContacts.map { it.lookupKey }
                                 )
-                            }
+                            },
+                            modifier = Modifier.size(40.dp)
                         ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_share),
@@ -251,7 +253,10 @@ fun ContactsScreen(
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
-                        IconButton(onClick = { showDeleteConfirm = true }) {
+                        IconButton(
+                            onClick = { showDeleteConfirm = true },
+                            modifier = Modifier.size(40.dp)
+                        ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_delete),
                                 contentDescription = stringResource(id = R.string.action_delete),
@@ -260,14 +265,17 @@ fun ContactsScreen(
                         }
                         Box {
                             var moreExpanded by remember { mutableStateOf(false) }
-                            IconButton(onClick = { moreExpanded = true }) {
+                            IconButton(
+                                onClick = { moreExpanded = true },
+                                modifier = Modifier.size(40.dp)
+                            ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.ic_more_vert),
                                     contentDescription = stringResource(id = R.string.action_more),
                                     tint = MaterialTheme.colorScheme.onSurface
                                 )
                             }
-                            DropdownMenu(
+                            GlassDropdownMenu(
                                 expanded = moreExpanded,
                                 onDismissRequest = { moreExpanded = false }
                             ) {

@@ -152,7 +152,7 @@
     <string name="recordings_delete_title">حذف ضبط؟</string>
     <string name="recordings_delete_message">این فایل از گوشی حذف می‌شود.</string>
     <string name="recordings_unknown">ناشناس</string>
-    <string name="recording_note">فقط ضبط دستی. به جفت کردن ADB داخلی نیاز دارد. فایل‌ها با فرمت WAV در پوشه‌ی Music/Phone ذخیره می‌شوند، یا با روشن بودن ذخیره خصوصی، فقط داخل Phone.</string>
+    <string name="recording_note">فایل‌ها با فرمت WAV در Music/Phone ذخیره می‌شوند، یا فقط داخل Phone با روشن بودن ذخیره‌ی خصوصی. به جفت‌سازی ADB داخلی نیاز دارد (یک‌بار از طریق Wi-Fi پس از هر راه‌اندازی مجدد).</string>
     <string name="recording_dialog_title">ضبط به راه‌اندازی نیاز دارد</string>
     <string name="call_action_record">ضبط</string>
     <string name="recording_backend_adb">ADB داخلی</string>

@@ -27,7 +27,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenu
+import io.github.elli0t0.phone.core.design.GlassDropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -152,7 +152,7 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, modifier: Modifier = Modifier) 
                                     tint = MaterialTheme.colorScheme.onBackground
                                 )
                             }
-                            DropdownMenu(expanded = sortMenu, onDismissRequest = { sortMenu = false }) {
+                            GlassDropdownMenu(expanded = sortMenu, onDismissRequest = { sortMenu = false }) {
                                 RecordingSort.entries.forEach { s ->
                                     DropdownMenuItem(
                                         text = { Text(stringResource(s.labelRes())) },
@@ -437,7 +437,7 @@ private fun RecordingListItem(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                GlassDropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                     DropdownMenuItem(text = { Text(stringResource(R.string.action_call)) }, onClick = { menu = false; onCall() })
                     DropdownMenuItem(text = { Text(stringResource(R.string.recording_share)) }, onClick = { menu = false; onShare() })
                     DropdownMenuItem(text = { Text(stringResource(R.string.recordings_edit)) }, onClick = { menu = false; onEdit() })

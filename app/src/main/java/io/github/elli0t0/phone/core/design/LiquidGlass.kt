@@ -968,6 +968,9 @@ fun LiquidGlassChip(
  * Liquid-glass popup surface: a larger glass container for dialogs,
  * menus, and bottom sheets. Popups float above content, so [floating]
  * defaults to true and the shadow is drawn outside the shape.
+ * Popups are separate windows with no Haze backdrop, so the surface
+ * is near-opaque (0.94) under the glass and never premium: the
+ * premium shadow double-draws the popup's own shape.
  * Content lays out in a Column.
  */
 @Composable
@@ -977,11 +980,15 @@ fun LiquidGlassPopupSurface(
     tint: Color = Color.Unspecified,
     forceDarkGlass: Boolean = false,
     floating: Boolean = true,
-    premium: Boolean = true,
+    premium: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Column(
-        modifier = modifier.liquidGlass(shape, tint, false, forceDarkGlass, floating, premium = premium),
+        modifier = modifier
+            .liquidGlass(shape, tint, false, forceDarkGlass, floating, premium = premium)
+            .background(
+                MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.94f)
+            ),
         content = {
             CompositionLocalProvider(
                 LocalContentColor provides MaterialTheme.colorScheme.onSurface

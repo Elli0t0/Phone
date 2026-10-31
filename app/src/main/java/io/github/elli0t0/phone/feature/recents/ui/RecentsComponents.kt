@@ -358,18 +358,27 @@ fun CallLogRow(
                 }
 
                 // Recording playback, when this group has matched
-                // recordings: the latest one plays from here, with a
-                // badge when the group holds several. Per-call buttons
-                // live in the expanded breakdown below.
+                // recordings: the button plays the LATEST call's
+                // recording only. If the latest call itself has
+                // none, the button opens the expanded breakdown
+                // instead of silently playing an older call.
+                // Per-call buttons live in the expanded breakdown.
                 val groupRecordings = group.calls.mapNotNull { recordingByCallId[it.id] }
-                val latestRecording = groupRecordings.firstOrNull()
-                if (latestRecording != null) {
+                val latestCallRecording =
+                    group.calls.firstOrNull()?.let { recordingByCallId[it.id] }
+                if (groupRecordings.isNotEmpty()) {
                     Spacer(modifier = Modifier.width(spacing.small))
                     RecordingPlayButton(
-                        isPlaying = latestRecording.id == playingRecordingId,
+                        isPlaying = latestCallRecording?.id == playingRecordingId,
                         size = 36.dp,
                         badgeCount = groupRecordings.size,
-                        onClick = { onRecordingPlayClick(latestRecording) }
+                        onClick = {
+                            if (latestCallRecording != null) {
+                                onRecordingPlayClick(latestCallRecording)
+                            } else if (!isExpanded) {
+                                onRowClick()
+                            }
+                        }
                     )
                 }
 

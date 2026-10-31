@@ -543,7 +543,7 @@
     <string name="recordings_delete_title">Delete recording?</string>
     <string name="recordings_delete_message">This file will be removed from your phone.</string>
     <string name="recordings_unknown">Unknown</string>
-    <string name="recording_note">Manual recording only. Needs built-in ADB pairing. Files are saved as WAV in Music/Phone, or inside Phone only with private storage on.</string>
+    <string name="recording_note">Files are saved as WAV in Music/Phone, or inside Phone only with private storage on. Needs built-in ADB pairing (Wi-Fi once after every reboot).</string>
     <string name="recording_dialog_title">Recording needs setup</string>
     <string name="call_action_record">Record</string>
     <string name="recording_backend_adb">Built-in ADB</string>

@@ -29,7 +29,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.DropdownMenu
+import io.github.elli0t0.phone.core.design.GlassDropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -255,25 +255,10 @@ fun DialpadScreen(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                DropdownMenu(
+                GlassDropdownMenu(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false },
-                    // Standard anchored menu, same glass treatment as
-                    // the Contacts/Recents overflow menus.
-                    modifier = Modifier
-                        .background(
-                            color = MaterialTheme.colorScheme.surface,
-                            shape = RoundedCornerShape(PhoneDimens.menuCornerRadius)
-                        )
-                        .liquidGlass(
-                            shape = RoundedCornerShape(PhoneDimens.menuCornerRadius),
-                            floating = true
-                        )
-                        .dialogEnter(),
-                    shape = RoundedCornerShape(PhoneDimens.menuCornerRadius),
-                    containerColor = Color.Transparent,
-                    tonalElevation = 0.dp,
-                    shadowElevation = 0.dp
+                    modifier = Modifier.dialogEnter()
                 ) {
                     DropdownMenuItem(
                         text = { Text(text = stringResource(id = R.string.settings_title)) },
