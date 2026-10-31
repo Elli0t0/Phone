@@ -333,7 +333,9 @@ enum class Backdrop(val label: String, val strength: Float) {
  * accent blobs) is the historical look and the default, so existing
  * users see no change; the other entries reuse the call-background
  * gradients, PLAIN is the bare theme background, PHOTO is a
- * user-chosen image from filesDir.
+ * user-chosen image from filesDir. MESH, NIGHT_SKY, WAVES, NEON,
+ * MATERIAL_YOU and GRAIN are custom Canvas scenes (see
+ * AmbientBackdrop); they carry no call-background gradient.
  */
 enum class AppBackground(val label: String, val gradient: CallBackground?) {
     AURORA("Aurora blobs", null),
@@ -345,6 +347,12 @@ enum class AppBackground(val label: String, val gradient: CallBackground?) {
     ROSE("Rose", CallBackground.ROSE),
     MIDNIGHT("Midnight", CallBackground.MIDNIGHT),
     AMBER("Amber", CallBackground.AMBER),
+    MESH("Mesh", null),
+    NIGHT_SKY("Night sky", null),
+    WAVES("Liquid waves", null),
+    NEON("Neon glow", null),
+    MATERIAL_YOU("Material You", null),
+    GRAIN("Grain", null),
     PLAIN("Plain", null),
     PHOTO("Photo", null)
 }

@@ -36,19 +36,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.design.BackdropContent
 import io.github.elli0t0.phone.core.design.LocalSpacing
-import io.github.elli0t0.phone.core.design.callBackgroundBrush
 import io.github.elli0t0.phone.core.design.saveAppBackgroundPhoto
 import io.github.elli0t0.phone.data.settings.model.AppBackground
 import io.github.elli0t0.phone.data.settings.model.AppSettings
@@ -61,8 +56,10 @@ import kotlinx.coroutines.withContext
 /**
  * App background picker: the same page pattern as CallBackgroundScreen
  * (Scaffold + InnerTopBar + LazyColumn). AURORA is the default look;
- * gradients reuse the call-background brushes; PLAIN is the bare theme
- * background; PHOTO uses a user-chosen image with a darkness veil.
+ * each swatch renders its real scene live (BackdropContent), so
+ * animated backgrounds drift, twinkle, and pulse in the picker too;
+ * PLAIN is the bare theme background; PHOTO uses a user-chosen
+ * image with a darkness veil.
  * The Backdrop row and dialog stay as they are: intensity (Off /
  * Subtle / Vivid) is still set there.
  */
@@ -126,8 +123,6 @@ fun AppBackgroundScreen(
                             AppBackgroundSwatch(
                                 bg = bg,
                                 selected = settings.appBackground == bg,
-                                accentColor = settings.accentColor,
-                                photoVersion = settings.appBackgroundPhotoVersion,
                                 photoExists = photoExists,
                                 onClick = {
                                     when {
@@ -178,12 +173,9 @@ fun AppBackgroundScreen(
 private fun AppBackgroundSwatch(
     bg: AppBackground,
     selected: Boolean,
-    accentColor: Long,
-    photoVersion: Long,
     photoExists: Boolean,
     onClick: () -> Unit
 ) {
-    val context = LocalContext.current
     val swatchShape = RoundedCornerShape(20.dp)
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -204,14 +196,6 @@ private fun AppBackgroundSwatch(
             contentAlignment = Alignment.Center
         ) {
             when (bg) {
-                AppBackground.AURORA -> {
-                    val accent = Color(accentColor)
-                    Box(
-                        Modifier.fillMaxSize().background(
-                            Brush.radialGradient(listOf(accent, accent.copy(alpha = 0.45f)))
-                        )
-                    )
-                }
                 AppBackground.PLAIN -> {
                     Box(
                         Modifier.fillMaxSize()
@@ -221,13 +205,7 @@ private fun AppBackgroundSwatch(
                 }
                 AppBackground.PHOTO -> {
                     if (photoExists) {
-                        AsyncImage(
-                            model = ImageRequest.Builder(context)
-                                .data(File(context.filesDir, "app_background.jpg"))
-                                .memoryCacheKey("app_bg_$photoVersion").build(),
-                            contentDescription = null, contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
+                        BackdropContent(bg, Modifier.fillMaxSize())
                     } else {
                         Icon(
                             painterResource(R.drawable.ic_add), contentDescription = null,
@@ -235,12 +213,10 @@ private fun AppBackgroundSwatch(
                         )
                     }
                 }
-                else -> {
-                    Box(
-                        Modifier.fillMaxSize()
-                            .background(callBackgroundBrush(bg.gradient!!, accentColor))
-                    )
-                }
+                // Every other entry renders its real scene live:
+                // gradients, blobs, mesh, sky, waves, neon, palette,
+                // and grain all preview exactly as they paint.
+                else -> BackdropContent(bg, Modifier.fillMaxSize())
             }
             if (selected) {
                 Box(
