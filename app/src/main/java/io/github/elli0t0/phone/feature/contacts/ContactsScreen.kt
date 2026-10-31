@@ -21,6 +21,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.Composable
@@ -128,6 +129,13 @@ fun ContactsScreen(
     // App-level snackbar host (MainActivity): one host above the
     // floating bar for every screen, no per-screen host under the bar.
     val snackbarHostState = LocalAppSnackbarHostState.current
+
+    // The merged snackbar (and any other) must not outlive this
+    // screen: dismiss it when the user leaves the Contacts tab, so
+    // a stuck snackbar never greets them again on return.
+    DisposableEffect(Unit) {
+        onDispose { snackbarHostState.currentSnackbarData?.dismiss() }
+    }
     val coroutineScope = rememberCoroutineScope()
 
     // A create request (keypad / Recents) opens
@@ -405,10 +413,16 @@ fun ContactsScreen(
             val result = if (uiState.showMergeUndo) {
                 snackbarHostState.showSnackbar(
                     message = message,
-                    actionLabel = context.getString(R.string.action_undo)
+                    actionLabel = context.getString(R.string.action_undo),
+                    withDismissAction = true,
+                    duration = SnackbarDuration.Long
                 )
             } else {
-                snackbarHostState.showSnackbar(message = message)
+                snackbarHostState.showSnackbar(
+                    message = message,
+                    withDismissAction = true,
+                    duration = SnackbarDuration.Long
+                )
             }
             if (result == SnackbarResult.ActionPerformed) {
                 listViewModel.undoMerge()

@@ -24,9 +24,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.design.LocalMinimal
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
+import io.github.elli0t0.phone.data.settings.model.QuickCallStyle
 import androidx.compose.foundation.layout.ColumnScope
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 
@@ -36,9 +38,12 @@ fun ColumnScope.DialpadSuggestionsArea(
     searchVisible: Boolean,
     onSearchVisibilityChange: (Boolean) -> Unit,
     animationOption: AnimationOption,
+    quickCallEnabled: Boolean,
+    quickCallStyle: QuickCallStyle,
     onSearchRowClick: (ContactSummary) -> Unit,
     onSearchRowCallClick: (ContactSummary) -> Unit,
     onSuggestionSelect: (ContactSummary) -> Unit,
+    onRedial: (QuickRedialEntry) -> Unit,
     onCreateContactAction: () -> Unit,
     onAddToExistingContactAction: () -> Unit,
     onMessageAction: () -> Unit
@@ -65,10 +70,13 @@ fun ColumnScope.DialpadSuggestionsArea(
         uiState.matchingContacts.isNotEmpty()
     val showNoMatchActions = uiState.rawNumber.isNotEmpty() &&
         !showSearchRows && !showChips
-    // Empty keypad: this area stays empty (0.19.3) — the Quick call
-    // strip below the number display replaces the old favorites
-    // strip and recent chips, so the number display sits higher.
+    // Empty keypad: PILLS shows nothing here (the pill row below
+    // the number display owns it). CLASSIC restores the pre-strip
+    // look exactly via the untouched QuickRedialChips: the "Recent"
+    // label + up to 3 text chips at the top. The old favorites row
+    // is not restored — the spec names the Recent chips only.
     // T9 chips pin to the top too; search rows fill the area.
+    val isEmptyState = uiState.rawNumber.isEmpty() && !showSearchRows && !showChips
     // T9 Matching contacts list above the keypad
     Box(
         modifier = Modifier
@@ -107,6 +115,21 @@ fun ColumnScope.DialpadSuggestionsArea(
             modifier = Modifier.fillMaxWidth(),
             contactCounts = uiState.matchingContactCounts
         )
+    } else if (isEmptyState) {
+        // CLASSIC: the pre-strip Recent chips, gated exactly as
+        // the original was (non-empty, not Minimal) plus the
+        // feature switch and the style. At most 3, as before.
+        if (quickCallStyle == QuickCallStyle.CLASSIC && quickCallEnabled &&
+            uiState.quickRedial.isNotEmpty() && !LocalMinimal.current
+        ) {
+            QuickRedialChips(
+                entries = uiState.quickRedial,
+                onRedial = { entry ->
+                    onRedial(entry)
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     }
     }
     // No-match actions animate in/out below the list area

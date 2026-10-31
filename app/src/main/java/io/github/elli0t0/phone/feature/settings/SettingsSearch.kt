@@ -358,6 +358,7 @@ val allSettingEntries: List<SettingEntry> = listOf(
     SettingEntry("dialpad_tones", R.string.settings_dialpad_tones, R.string.settings_cat_keypad, SettingsPage.KEYPAD, anchor = "dialpad_tones"),
     SettingEntry("quick_call", R.string.settings_quick_call, R.string.settings_cat_keypad, SettingsPage.KEYPAD, anchor = "quick_call"),
     SettingEntry("quick_call_source", R.string.settings_quick_call_source, R.string.settings_cat_keypad, SettingsPage.KEYPAD, anchor = "quick_call_source"),
+    SettingEntry("quick_call_style", R.string.settings_quick_call_style, R.string.settings_cat_keypad, SettingsPage.KEYPAD, anchor = "quick_call_style"),
     SettingEntry("quick_call_count", R.string.settings_quick_call_count, R.string.settings_cat_keypad, SettingsPage.KEYPAD, anchor = "quick_call_count"),
     SettingEntry("quick_call_reset_hidden", R.string.settings_quick_call_reset_hidden, R.string.settings_cat_keypad, SettingsPage.KEYPAD, anchor = "quick_call_reset_hidden"),
     SettingEntry("speed_dial", R.string.settings_speed_dial, R.string.settings_cat_keypad, SettingsPage.KEYPAD, anchor = "speed_dial"),

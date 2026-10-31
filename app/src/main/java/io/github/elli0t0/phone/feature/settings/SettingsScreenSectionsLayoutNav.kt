@@ -31,6 +31,7 @@ import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.QuickCallSource
+import io.github.elli0t0.phone.data.settings.model.QuickCallStyle
 import io.github.elli0t0.phone.data.settings.model.BottomBarChoice
 import io.github.elli0t0.phone.data.settings.model.bottomBarChoice
 import androidx.compose.runtime.Composable
@@ -185,6 +186,7 @@ fun KeypadCard(
     spacing: Spacing
 ) {
     var showQuickCallSourceDialog by remember { mutableStateOf(false) }
+    var showQuickCallStyleDialog by remember { mutableStateOf(false) }
     Card(
         shape = settingsListCardShape(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -253,6 +255,18 @@ fun KeypadCard(
                 subtitle = settings.quickCallSource.label,
                 enabled = settings.quickCallEnabled,
                 onClick = { showQuickCallSourceDialog = true }
+            )
+
+            Spacer(modifier = Modifier.height(spacing.small))
+            SettingsListDivider()
+            Spacer(modifier = Modifier.height(spacing.small))
+
+            SettingsRow(
+                title = stringResource(id = R.string.settings_quick_call_style),
+                searchId = "quick_call_style",
+                subtitle = settings.quickCallStyle.label,
+                enabled = settings.quickCallEnabled,
+                onClick = { showQuickCallStyleDialog = true }
             )
 
             Spacer(modifier = Modifier.height(spacing.small))
@@ -340,6 +354,18 @@ fun KeypadCard(
                 showQuickCallSourceDialog = false
             },
             onDismiss = { showQuickCallSourceDialog = false }
+        )
+    }
+    if (showQuickCallStyleDialog) {
+        SettingsChoiceDialog(
+            title = stringResource(id = R.string.settings_quick_call_style),
+            options = QuickCallStyle.entries.map { it.label to it },
+            selected = settings.quickCallStyle,
+            onSelect = {
+                viewModel.onQuickCallStyleChanged(it)
+                showQuickCallStyleDialog = false
+            },
+            onDismiss = { showQuickCallStyleDialog = false }
         )
     }
 }

@@ -22,6 +22,7 @@ import io.github.elli0t0.phone.data.settings.model.AppBackground
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.MaterialYouTint
 import io.github.elli0t0.phone.data.settings.model.QuickCallSource
+import io.github.elli0t0.phone.data.settings.model.QuickCallStyle
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
 import io.github.elli0t0.phone.data.settings.model.Backdrop
 import io.github.elli0t0.phone.data.settings.model.DropletStretch
@@ -256,6 +257,12 @@ class SettingsViewModel(
     fun onQuickCallCountChanged(count: Int) {
         viewModelScope.launch {
             settingsRepository.setQuickCallCount(count)
+        }
+    }
+
+    fun onQuickCallStyleChanged(style: QuickCallStyle) {
+        viewModelScope.launch {
+            settingsRepository.setQuickCallStyle(style)
         }
     }
 

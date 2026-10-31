@@ -62,6 +62,7 @@ import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalMinimal
 import io.github.elli0t0.phone.core.design.minimalPalette
 import io.github.elli0t0.phone.data.settings.model.KeypadStyle
+import io.github.elli0t0.phone.data.settings.model.QuickCallStyle
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.dialogEnter
 import io.github.elli0t0.phone.core.design.liquidGlass
@@ -127,6 +128,7 @@ fun DialpadScreen(
     val speedDial = LocalAppSettings.current.speedDial
     val speedDialEnabled = LocalAppSettings.current.speedDialEnabled
     val quickCallEnabled = LocalAppSettings.current.quickCallEnabled
+    val quickCallStyle = LocalAppSettings.current.quickCallStyle
     val quickCallHidden = LocalAppSettings.current.quickCallHidden
     val coroutineScope = rememberCoroutineScope()
 
@@ -420,6 +422,8 @@ fun DialpadScreen(
             searchVisible = searchVisible,
             onSearchVisibilityChange = { searchVisible = it },
             animationOption = animationOption,
+            quickCallEnabled = quickCallEnabled,
+            quickCallStyle = quickCallStyle,
             onSearchRowClick = { contact ->
                 lightHaptic()
                 viewModel.onContactSelected(contact)
@@ -436,6 +440,10 @@ fun DialpadScreen(
             onSuggestionSelect = {
                 lightHaptic()
                 viewModel.onContactSelected(it)
+            },
+            onRedial = { entry ->
+                lightHaptic()
+                dialNumber(entry.number)
             },
             onCreateContactAction = {
                 lightHaptic()
@@ -474,13 +482,15 @@ fun DialpadScreen(
             onStopBackspaceRepeat = viewModel::stopBackspaceRepeat,
             caption = numberCaption
         )
-        // Quick call strip (0.19.3): just above the keys, under the
-        // number display. Hidden while typing (the suggestion chips
-        // take over), while a name search is active, in Minimal mode
-        // (the Minimal keypad stays pixel-identical), and when the
-        // setting is off — the keys below simply reflow, with no gap.
-        if (!minimal && quickCallEnabled && uiState.rawNumber.isEmpty() &&
-            !(searchVisible && uiState.nameSearchQuery.isNotBlank()) &&
+        // Quick call pills (0.19.6): directly above the keys, 12dp
+        // above the first key row. Hidden while typing (the
+        // suggestion chips take over), while a name search is open,
+        // in Minimal mode (the Minimal keypad stays pixel-identical),
+        // when the setting is off, and when the style is CLASSIC
+        // (the Recent chips in the top area replace the pills).
+        // The keys below simply reflow, with no gap.
+        if (!minimal && quickCallEnabled && quickCallStyle == QuickCallStyle.PILLS &&
+            uiState.rawNumber.isEmpty() && !searchVisible &&
             uiState.quickCall.isNotEmpty()
         ) {
             QuickCallStrip(
@@ -510,7 +520,7 @@ fun DialpadScreen(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = spacing.small)
+                    .padding(top = spacing.small, bottom = 12.dp)
             )
         }
         DialpadKeypadGrid(

@@ -30,6 +30,7 @@ import io.github.elli0t0.phone.data.settings.model.AppBackground
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.MaterialYouTint
 import io.github.elli0t0.phone.data.settings.model.QuickCallSource
+import io.github.elli0t0.phone.data.settings.model.QuickCallStyle
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
 import io.github.elli0t0.phone.data.settings.model.AutoRecordMode
 import io.github.elli0t0.phone.data.settings.model.Backdrop
@@ -156,6 +157,7 @@ interface SettingsRepository {
     suspend fun setQuickCallEnabled(enabled: Boolean)
     suspend fun setQuickCallSource(source: QuickCallSource)
     suspend fun setQuickCallCount(count: Int)
+    suspend fun setQuickCallStyle(style: QuickCallStyle)
     suspend fun setQuickCallHidden(hidden: Set<String>)
     suspend fun setBlockedPrefixes(prefixes: Set<String>)
     suspend fun setShowAdvancedSettings(show: Boolean)
@@ -271,6 +273,7 @@ class DataStoreSettingsRepository(
         val QUICK_CALL_ENABLED = booleanPreferencesKey("quick_call_enabled")
         val QUICK_CALL_SOURCE = stringPreferencesKey("quick_call_source")
         val QUICK_CALL_COUNT = intPreferencesKey("quick_call_count")
+        val QUICK_CALL_STYLE = stringPreferencesKey("quick_call_style")
         val QUICK_CALL_HIDDEN = stringPreferencesKey("quick_call_hidden")
         val BLOCKED_PREFIXES = stringPreferencesKey("blocked_prefixes")
         val SHOW_ADVANCED_SETTINGS = booleanPreferencesKey("show_advanced_settings")
@@ -513,6 +516,10 @@ class DataStoreSettingsRepository(
             runCatching { QuickCallSource.valueOf(it) }.getOrNull()
         } ?: QuickCallSource.BOTH
         val quickCallCount = (prefs[Keys.QUICK_CALL_COUNT] ?: 5).coerceIn(3, 8)
+        // Style falls back to PILLS on unknown names, like source.
+        val quickCallStyle = prefs[Keys.QUICK_CALL_STYLE]?.let {
+            runCatching { QuickCallStyle.valueOf(it) }.getOrNull()
+        } ?: QuickCallStyle.PILLS
         val quickCallHidden = (prefs[Keys.QUICK_CALL_HIDDEN] ?: "")
             .split(";")
             .map { it.trim() }
@@ -622,6 +629,7 @@ class DataStoreSettingsRepository(
             quickCallEnabled = prefs[Keys.QUICK_CALL_ENABLED] ?: true,
             quickCallSource = quickCallSource,
             quickCallCount = quickCallCount,
+            quickCallStyle = quickCallStyle,
             quickCallHidden = quickCallHidden,
             blockedPrefixes = blockedPrefixes,
             showAdvancedSettings = showAdvancedSettings,
@@ -1232,6 +1240,12 @@ class DataStoreSettingsRepository(
     override suspend fun setQuickCallCount(count: Int) {
         dataStore.edit { prefs ->
             prefs[Keys.QUICK_CALL_COUNT] = count.coerceIn(3, 8)
+        }
+    }
+
+    override suspend fun setQuickCallStyle(style: QuickCallStyle) {
+        dataStore.edit { prefs ->
+            prefs[Keys.QUICK_CALL_STYLE] = style.name
         }
     }
 

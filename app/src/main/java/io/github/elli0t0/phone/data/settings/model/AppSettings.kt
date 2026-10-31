@@ -50,6 +50,13 @@ enum class QuickCallSource(val label: String) {
     BOTH("Both")
 }
 
+// Quick call strip look (0.19.6): PILLS is the pill row above
+// the keys; CLASSIC restores the pre-strip Recent chips.
+enum class QuickCallStyle(val label: String) {
+    PILLS("Pills"),
+    CLASSIC("Classic")
+}
+
 enum class SwitchStyle(val label: String) {
     DEFAULT("Default"),
     GREEN("Green")
@@ -624,6 +631,9 @@ data class AppSettings(
     val quickCallEnabled: Boolean = true,
     val quickCallSource: QuickCallSource = QuickCallSource.BOTH,
     val quickCallCount: Int = 5,
+    // Strip look (0.19.6): pills above the keys, or the pre-strip
+    // Recent chips in the top area.
+    val quickCallStyle: QuickCallStyle = QuickCallStyle.PILLS,
     // Lookup keys removed from the strip via its long-press menu.
     val quickCallHidden: Set<String> = emptySet(),
     // App-side blocked prefixes: numbers starting with one of these

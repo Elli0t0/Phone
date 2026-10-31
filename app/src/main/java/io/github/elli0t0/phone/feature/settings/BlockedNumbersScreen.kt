@@ -23,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -277,7 +278,8 @@ fun BlockedNumbersScreen(
                                                 message = context.getString(
                                                     R.string.blocked_numbers_unblocked
                                                 ),
-                                                actionLabel = context.getString(R.string.action_undo)
+                                                actionLabel = context.getString(R.string.action_undo),
+                                                duration = SnackbarDuration.Long
                                             )
                                             if (result == SnackbarResult.ActionPerformed) {
                                                 viewModel.blockNumber(entry.number, entry.isPrefix)

@@ -495,6 +495,7 @@
     <string name="settings_quick_call">Quick call</string>
     <string name="settings_quick_call_desc">One-tap favorites and recents above the keys</string>
     <string name="settings_quick_call_source">Quick call source</string>
+    <string name="settings_quick_call_style">Quick call style</string>
     <string name="settings_quick_call_count">Quick call count</string>
     <string name="settings_quick_call_reset_hidden">Reset hidden</string>
     <string name="settings_quick_call_hidden_none">Nothing hidden</string>
