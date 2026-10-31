@@ -164,6 +164,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.18.2]
+
+- Edit Contact no longer clips long numbers in the phone field, the details History list and the edit form's Cancel/Save pill no longer overlap the bottom bar, Recents says "No calls today" at zero and uses singular/plural correctly, recording rows show the formatted number, and Contacts headers match the Recents alignment.
+- The dialed number now shrinks as you type more digits, down to a smaller floor, and never wraps or clips.
+- Keypad styles, picked in Settings → Layout & navigation → Keypad style with a live try-it grid: Glass (the current look), Classic (the previous design), Minimal (no circles, thin digits, ripple only), and Squircle (rounded-square tonal tiles).
+- Six new app backgrounds, each previewed live in the picker: Mesh, Night sky, Liquid waves, Neon glow, Material You, and Grain. Animated backgrounds now also pause on battery saver and reduced transparency.
+- Recordings search now finds numbers written differently (spaces, country code, trunk zero).
+- Edit Contact gains Notes, Birthday (with a date picker), Address, and a Label for each phone number (Mobile, Home, Work, Other, Custom). All save to the system contacts and show on the details screen only when filled.
+
 ## [0.18.1]
 
 - Recording fixes: the saved playback speed now applies when a recording starts, skipping guards against an unknown duration, changing search or filter clears the selection, deleting a selection only removes recordings still visible, and old test recordings are cleaned up on schedule even when retention is off.
