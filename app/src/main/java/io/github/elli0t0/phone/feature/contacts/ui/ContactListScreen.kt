@@ -471,6 +471,10 @@ private fun ContactsContent(
         } else if (uiState.filteredContacts.isEmpty() && uiState.searchQuery.isNotEmpty()) {
             SearchEmptyState(query = uiState.searchQuery)
         } else {
+        // Hoisted: LazyListScope is not a @Composable scope, so the
+        // minimal flag is read here, in the composable body, and the
+        // list items below use the plain Boolean.
+        val minimal = LocalMinimal.current
         LazyColumn(
             state = listState,
             modifier = Modifier
@@ -490,7 +494,6 @@ private fun ContactsContent(
             var revealIndex = 0
             // Minimal (0.18.10): the duplicates card comes FIRST,
             // above the header; otherwise the header comes first.
-            val minimal = LocalMinimal.current
             val showDuplicatesCard = uiState.showDuplicatesCard &&
                 uiState.searchQuery.isEmpty()
             if (minimal && showDuplicatesCard) {

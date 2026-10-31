@@ -217,6 +217,9 @@ fun RecentsScreen(
     var addNumber by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
     var searchVisible by remember { mutableStateOf(uiState.searchQuery.isNotEmpty()) }
     var filterMenuExpanded by remember { mutableStateOf(false) }
+    // Hoisted: the LazyColumn items and the filter button's onClick
+    // are not @Composable scopes, so they use this plain Boolean.
+    val minimal = LocalMinimal.current
     // Minimal: the filter icon opens this sheet instead of the
     // dropdown menu, and instead of the filter chips row.
     var showFilterSheet by remember { mutableStateOf(false) }
@@ -532,7 +535,7 @@ fun RecentsScreen(
                     Box {
                         androidx.compose.material3.IconButton(
                             onClick = {
-                                if (LocalMinimal.current) {
+                                if (minimal) {
                                     showFilterSheet = true
                                 } else {
                                     filterMenuExpanded = true
@@ -859,7 +862,7 @@ fun RecentsScreen(
                         // entry). Scrolls away with the header.
                         // Minimal: no chips — filtering opens from the
                         // filter icon in a bottom sheet instead.
-                        if (!LocalMinimal.current) {
+                        if (!minimal) {
                         item(key = "recents_filter_chips") {
                             Row(
                                 modifier = Modifier
