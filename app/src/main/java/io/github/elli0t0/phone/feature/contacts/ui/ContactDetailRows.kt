@@ -127,7 +127,6 @@ fun DetailSectionCard(
     }
 }
 
-@Composable
 /**
  * Birthday display: a stored ISO date ("yyyy-MM-dd") renders in the
  * user's locale; anything else (e.g. a legacy "--MM-dd" yearly date)
@@ -143,6 +142,7 @@ internal fun formatBirthday(iso: String): String {
     }
 }
 
+@Composable
 fun PhoneRowItem(
     phone: ContactPhone,
     onCall: () -> Unit,
