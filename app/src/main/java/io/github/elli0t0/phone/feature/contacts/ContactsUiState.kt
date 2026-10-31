@@ -17,5 +17,8 @@ data class ContactsUiState(
     val showDuplicates: Boolean = false,
     val isFindingDuplicates: Boolean = false,
     val pendingMergeGroup: DuplicateGroup? = null,
-    val isMerging: Boolean = false
+    val isMerging: Boolean = false,
+    val allDuplicatesMerged: Boolean = false,
+    val showMergeUndo: Boolean = false,
+    val mergedGroupCount: Int = 0
 )

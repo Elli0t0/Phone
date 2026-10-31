@@ -496,7 +496,12 @@ data class AppSettings(
     val showAdvancedSettings: Boolean = false,
     // Dismissed once, the duplicates banner moves into the Contacts
     // overflow menu; the favorites hint hides for good.
+    // The banner hash replaces the boolean: the banner shows again
+    // only when the duplicate set changes. The boolean stays as the
+    // migration source — a true value stores the current set's hash
+    // on the first scan, so nothing resets.
     val duplicatesDismissed: Boolean = false,
+    val duplicatesDismissedHash: String? = null,
     val favoritesHintDismissed: Boolean = false
 ) {
     /**

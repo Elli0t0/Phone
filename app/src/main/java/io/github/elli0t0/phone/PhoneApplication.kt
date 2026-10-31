@@ -63,7 +63,11 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
     }
 
     override val contactsRepository: ContactsRepository by lazy {
-        AndroidContactsRepository(context.contentResolver)
+        AndroidContactsRepository(
+            context.contentResolver,
+            favoritesDao = database.favoritesDao(),
+            contactSimDao = database.contactSimDao()
+        )
     }
 
     override val callLogRepository: CallLogRepository by lazy {

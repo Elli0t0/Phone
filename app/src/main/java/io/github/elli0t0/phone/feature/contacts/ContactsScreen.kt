@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -92,7 +93,8 @@ fun ContactsScreen(
         factory = ContactsViewModel.provideFactory(
             repository,
             app.container.favoritesRepository,
-            app.container.settingsRepository
+            app.container.settingsRepository,
+            app.applicationScope
         )
     )
     val uiState by listViewModel.uiState.collectAsStateWithLifecycle()
@@ -162,6 +164,28 @@ fun ContactsScreen(
         }
     }
 
+    // Merged snackbar with Undo: the action unlinks the merged
+    // groups again; dismissing it (or its timeout) keeps the merge.
+    val showMergeUndo = uiState.showMergeUndo
+    LaunchedEffect(showMergeUndo) {
+        if (showMergeUndo) {
+            val message = if (uiState.mergedGroupCount > 1) {
+                context.getString(R.string.snackbar_contacts_merged_all, uiState.mergedGroupCount)
+            } else {
+                context.getString(R.string.snackbar_contacts_merged)
+            }
+            val result = snackbarHostState.showSnackbar(
+                message = message,
+                actionLabel = context.getString(R.string.action_undo)
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                listViewModel.undoMerge()
+            } else {
+                listViewModel.clearMergeUndo()
+            }
+        }
+    }
+
     // Transparent when the ambient backdrop is live so it shows
     // through the gaps, exactly like Recents (the list screen itself
     // is already transparent; this outer Scaffold was the opaque
@@ -218,7 +242,8 @@ fun ContactsScreen(
                         onBackFromDuplicates = listViewModel::hideDuplicates,
                         onMergeRequest = listViewModel::requestMerge,
                         onDismissMerge = listViewModel::dismissMergeDialog,
-                        onConfirmMerge = { keepId -> listViewModel.confirmMerge(keepId) }
+                        onConfirmMerge = { keepId -> listViewModel.confirmMerge(keepId) },
+                        onConfirmMergeAll = listViewModel::confirmMergeAll
                     )
                 }
 

@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -52,9 +53,8 @@ import io.github.elli0t0.phone.navigation.InnerTopBar
 
 /**
  * Lists duplicate contacts (same normalized number or same name). Merging a
- * group keeps the first contact, moves the others' numbers and emails into it,
- * and deletes the merged contacts — only after the user confirms in the dialog.
- * Nothing is deleted without confirmation.
+ * group links the contacts (nothing is deleted) and keeps the chosen one
+ * primary — only after the user confirms in the dialog.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,6 +64,7 @@ fun DuplicatesScreen(
     onMergeRequest: (DuplicateGroup) -> Unit,
     onDismissMerge: () -> Unit,
     onConfirmMerge: (Long) -> Unit,
+    onMergeAll: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
@@ -88,6 +89,65 @@ fun DuplicatesScreen(
                 modifier = Modifier.padding(top = spacing.small, bottom = spacing.medium)
             )
 
+            var showMergeAllDialog by remember { mutableStateOf(false) }
+            if (uiState.duplicateGroups.isNotEmpty()) {
+                FilledTonalButton(
+                    onClick = { showMergeAllDialog = true },
+                    enabled = !uiState.isMerging,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = spacing.medium)
+                        .testTag("button_merge_all")
+                ) {
+                    Text(
+                        text = stringResource(
+                            id = R.string.duplicates_merge_all,
+                            uiState.duplicateGroups.size
+                        )
+                    )
+                }
+            }
+            if (showMergeAllDialog) {
+                AlertDialog(
+                    onDismissRequest = { if (!uiState.isMerging) showMergeAllDialog = false },
+                    shape = RoundedCornerShape(PhoneDimens.dialogCornerRadius),
+                    title = {
+                        Text(
+                            text = stringResource(id = R.string.duplicates_merge_all_title),
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                    },
+                    text = {
+                        Text(
+                            text = stringResource(
+                                id = R.string.duplicates_merge_all_message,
+                                uiState.duplicateGroups.size
+                            ),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                showMergeAllDialog = false
+                                onMergeAll()
+                            },
+                            enabled = !uiState.isMerging
+                        ) {
+                            Text(text = stringResource(id = R.string.duplicates_merge_all_confirm))
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = { showMergeAllDialog = false },
+                            enabled = !uiState.isMerging
+                        ) {
+                            Text(text = stringResource(id = R.string.action_cancel))
+                        }
+                    }
+                )
+            }
+
             when {
                 uiState.isFindingDuplicates -> {
                     Box(
@@ -103,14 +163,22 @@ fun DuplicatesScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = stringResource(id = R.string.duplicates_none),
+                            text = stringResource(
+                                id = if (uiState.allDuplicatesMerged) {
+                                    R.string.duplicates_all_merged
+                                } else {
+                                    R.string.duplicates_none
+                                }
+                            ),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
                 else -> {
+                    val listState = rememberLazyListState()
                     LazyColumn(
+                        state = listState,
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(spacing.medium),
                         // Clearance above the overlaid bottom bar:
@@ -127,7 +195,8 @@ fun DuplicatesScreen(
                         ) { group ->
                             DuplicateGroupItem(
                                 group = group,
-                                onMergeClick = { onMergeRequest(group) }
+                                onMergeClick = { onMergeRequest(group) },
+                                modifier = Modifier.animateItem()
                             )
                         }
                     }
@@ -224,12 +293,13 @@ fun DuplicatesScreen(
 @Composable
 private fun DuplicateGroupItem(
     group: DuplicateGroup,
-    onMergeClick: () -> Unit
+    onMergeClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {

@@ -312,8 +312,13 @@
     <string name="contacts_my_profile">پروفایل من</string>
     <string name="cd_dismiss">رد کردن</string>
     <string name="duplicates_merge_title">مخاطبان ادغام شوند؟</string>
-    <string name="duplicates_merge_message">%1$s حفظ شود؟ %2$s حذف خواهد شد و شماره تلفن‌ها و ایمیل‌های آن به %1$s منتقل می‌شود.</string>
+    <string name="duplicates_merge_message">%1$s حفظ شود؟ %2$s به %1$s پیوند می‌خورد و همه شماره‌ها، ایمیل‌ها و جزئیات حفظ می‌شود.</string>
     <string name="duplicates_merge_confirm">ادغام</string>
+    <string name="duplicates_merge_all">ادغام همه (%1$d)</string>
+    <string name="duplicates_merge_all_title">همه موارد تکراری ادغام شوند؟</string>
+    <string name="duplicates_merge_all_message">همه %1$d گروه تکراری ادغام شوند؟ در هر گروه، اولین مخاطب حفظ می‌شود.</string>
+    <string name="duplicates_merge_all_confirm">ادغام همه</string>
+    <string name="duplicates_all_merged">همه موارد تکراری ادغام شدند</string>
     <string name="duplicates_choose_keep">انتخاب کنید کدام مخاطب حفظ شود</string>
     <string name="settings_call_waiting">انتظار تماس</string>
     <string name="settings_call_display">نمایش تماس ورودی</string>
@@ -385,6 +390,7 @@
     <string name="snackbar_contact_updated">مخاطب با موفقیت به‌روزرسانی شد</string>
     <string name="snackbar_contact_deleted">مخاطب حذف شد</string>
     <string name="snackbar_contacts_merged">مخاطبان ادغام شدند</string>
+    <string name="snackbar_contacts_merged_all">%1$d گروه تکراری ادغام شد</string>
     <string name="snackbar_contact_error">خطایی رخ داد. لطفاً دوباره تلاش کنید.</string>
     <string name="cd_call_button">دکمه تماس</string>
     <string name="cd_backspace_button">دکمه پس‌بر</string>

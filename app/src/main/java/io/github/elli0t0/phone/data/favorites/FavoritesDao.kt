@@ -19,6 +19,9 @@ interface FavoritesDao {
     @Query("DELETE FROM favorites WHERE contactLookupKey = :lookupKey")
     suspend fun deleteFavoriteByLookupKey(lookupKey: String)
 
+    @Query("UPDATE favorites SET contactLookupKey = :newKey WHERE contactLookupKey = :oldKey")
+    suspend fun rekeyLookupKey(oldKey: String, newKey: String)
+
     @Query("SELECT EXISTS(SELECT 1 FROM favorites WHERE contactLookupKey = :lookupKey)")
     fun isFavoriteFlow(lookupKey: String): Flow<Boolean>
 

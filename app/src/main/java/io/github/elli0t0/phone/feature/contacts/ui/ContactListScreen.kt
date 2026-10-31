@@ -99,6 +99,7 @@ fun ContactListScreen(
     onMergeRequest: (DuplicateGroup) -> Unit,
     onDismissMerge: () -> Unit,
     onConfirmMerge: (Long) -> Unit,
+    onConfirmMergeAll: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
@@ -116,6 +117,7 @@ fun ContactListScreen(
                 onMergeRequest = onMergeRequest,
                 onDismissMerge = onDismissMerge,
                 onConfirmMerge = onConfirmMerge,
+                onMergeAll = onConfirmMergeAll,
                 modifier = Modifier.padding(innerPadding)
             )
             return@Scaffold
@@ -193,10 +195,11 @@ private fun ContactsContent(
     onGroupsClick: () -> Unit
 ) {
     val spacing = LocalSpacing.current
-    // Hoisted: the banner/hint conditions sit at LazyListScope
-    // level (not a @Composable scope), so these settings reads
-    // must happen here in the function body, not in the conditions.
-    val duplicatesDismissed = LocalAppSettings.current.duplicatesDismissed
+    // Hoisted: the hint condition sits at LazyListScope level (not a
+    // @Composable scope), so this settings read must happen here in
+    // the function body, not in the condition. The duplicates banner
+    // needs no local read anymore: uiState.showDuplicatesCard already
+    // encodes the dismissed-set hash comparison.
     val favoritesHintDismissed = LocalAppSettings.current.favoritesHintDismissed
     var searchVisible by remember { mutableStateOf(uiState.searchQuery.isNotEmpty()) }
     var menuExpanded by remember { mutableStateOf(false) }
@@ -322,9 +325,9 @@ private fun ContactsContent(
                 )
                 // Dismissed once, the banner's action moves here:
                 // shown while duplicates exist and the banner is
-                // gone (dismissed this session or persisted).
+                // gone (dismissed set, or the list screen is filtered).
                 if (uiState.duplicateGroups.isNotEmpty() &&
-                    (duplicatesDismissed || !uiState.showDuplicatesCard)
+                    !uiState.showDuplicatesCard
                 ) {
                     DropdownMenuItem(
                         text = { Text(text = stringResource(id = R.string.duplicates_merge_menu)) },
@@ -484,8 +487,7 @@ private fun ContactsContent(
                     bottomContent = topBarPills
                 )
             }
-            if (uiState.showDuplicatesCard && uiState.searchQuery.isEmpty() &&
-                !duplicatesDismissed
+            if (uiState.showDuplicatesCard && uiState.searchQuery.isEmpty()
             ) {
                 item(key = "duplicates_card") {
                     DuplicatesCard(

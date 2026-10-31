@@ -2,6 +2,7 @@ package io.github.elli0t0.phone.data.contacts
 
 import android.content.ContentResolver
 import android.provider.ContactsContract.CommonDataKinds.Event
+import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import android.provider.ContactsContract.Contacts
 import android.provider.ContactsContract.Data
 import android.provider.ContactsContract.RawContacts
@@ -53,6 +54,22 @@ internal fun findBirthdayEventRowId(contentResolver: ContentResolver, contactId:
             Event.CONTENT_ITEM_TYPE,
             Event.TYPE_BIRTHDAY.toString()
         ),
+        null
+    )
+    cursor?.use {
+        if (it.moveToFirst()) {
+            return it.getLong(it.getColumnIndexOrThrow(Data._ID))
+        }
+    }
+    return null
+}
+
+internal fun findNameRowIdForRawContact(contentResolver: ContentResolver, rawContactId: Long): Long? {
+    val cursor = contentResolver.query(
+        Data.CONTENT_URI,
+        arrayOf(Data._ID),
+        "${Data.RAW_CONTACT_ID} = ? AND ${Data.MIMETYPE} = ?",
+        arrayOf(rawContactId.toString(), StructuredName.CONTENT_ITEM_TYPE),
         null
     )
     cursor?.use {

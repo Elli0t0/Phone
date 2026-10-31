@@ -61,8 +61,13 @@
     <string name="contacts_my_profile">My profile</string>
     <string name="cd_dismiss">Dismiss</string>
     <string name="duplicates_merge_title">Merge contacts?</string>
-    <string name="duplicates_merge_message">Keep %1$s? %2$s will be deleted, and their phone numbers and emails will be moved into %1$s.</string>
+    <string name="duplicates_merge_message">Keep %1$s? %2$s will be linked into %1$s, keeping all numbers, emails and details.</string>
     <string name="duplicates_merge_confirm">Merge</string>
+    <string name="duplicates_merge_all">Merge all (%1$d)</string>
+    <string name="duplicates_merge_all_title">Merge all duplicates?</string>
+    <string name="duplicates_merge_all_message">Merge all %1$d duplicate groups? The first contact in each group is kept.</string>
+    <string name="duplicates_merge_all_confirm">Merge all</string>
+    <string name="duplicates_all_merged">All duplicates merged</string>
     <string name="duplicates_choose_keep">Choose which contact to keep</string>
     <string name="settings_call_waiting">Call waiting</string>
     <string name="settings_call_display">Incoming call display</string>
@@ -147,6 +152,7 @@
     <string name="snackbar_contact_updated">Contact updated successfully</string>
     <string name="snackbar_contact_deleted">Contact deleted</string>
     <string name="snackbar_contacts_merged">Contacts merged</string>
+    <string name="snackbar_contacts_merged_all">Merged %1$d duplicate groups</string>
     <string name="snackbar_contact_error">An error occurred. Please try again.</string>
 
     <!-- Dialpad / Calling -->

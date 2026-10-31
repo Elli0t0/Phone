@@ -23,13 +23,14 @@ import android.provider.ContactsContract.Contacts
 import android.provider.ContactsContract.Data
 import android.provider.ContactsContract.Groups
 import android.provider.ContactsContract.RawContacts
-import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
 import io.github.elli0t0.phone.data.contacts.model.ContactDetail
-import io.github.elli0t0.phone.data.contacts.model.ContactEmail
 import io.github.elli0t0.phone.data.contacts.model.ContactGroup
 import io.github.elli0t0.phone.data.contacts.model.ContactInput
-import io.github.elli0t0.phone.data.contacts.model.ContactPhone
+import io.github.elli0t0.phone.data.contacts.model.ContactMergeOutcome
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
+import io.github.elli0t0.phone.data.contacts.util.ContactMergeUtil
+import io.github.elli0t0.phone.data.favorites.ContactSimDao
+import io.github.elli0t0.phone.data.favorites.FavoritesDao
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
@@ -43,7 +44,12 @@ import kotlinx.coroutines.withContext
 
 class AndroidContactsRepository(
     private val contentResolver: ContentResolver,
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
+    // Optional: when the container wires them, a merge re-keys the
+    // lookupKey-keyed Room rows (favorites, per-contact SIM) to the
+    // merged aggregate's new key. Tests construct without them.
+    private val favoritesDao: FavoritesDao? = null,
+    private val contactSimDao: ContactSimDao? = null
 ) : ContactsRepository {
 
     // One shared, cached contacts flow: the list is kept in memory in this
@@ -663,56 +669,210 @@ class AndroidContactsRepository(
         map
     }
 
-    override suspend fun mergeContacts(keepContactId: Long, mergeContactIds: List<Long>): Result<Unit> =
+    override suspend fun mergeContacts(keepContactId: Long, mergeContactIds: List<Long>): Result<ContactMergeOutcome> =
         withContext(Dispatchers.IO) {
             // try/catch, not runCatching: updateContact/deleteContact are suspend
             // functions and cannot be called inside runCatching's non-suspend block.
             try {
-                val keptDetail = queryContactDetail(contentResolver, keepContactId)
-                    ?: error("Kept contact not found")
-                val mergedPhones = keptDetail.phones.toMutableList()
-                val mergedEmails = keptDetail.emails.toMutableList()
                 val targets = mergeContactIds.filter { it != keepContactId }.distinct()
-
-                for (targetId in targets) {
-                    val detail = queryContactDetail(contentResolver, targetId) ?: continue
-                    for (phone in detail.phones) {
-                        if (mergedPhones.none { PhoneNumberMatcher.matches(it.number, phone.number) }) {
-                            mergedPhones.add(
-                                ContactPhone(id = 0L, number = phone.number, type = phone.type, label = phone.label)
-                            )
-                        }
-                    }
-                    for (email in detail.emails) {
-                        if (mergedEmails.none { it.address.equals(email.address, ignoreCase = true) }) {
-                            mergedEmails.add(
-                                ContactEmail(id = 0L, address = email.address, type = email.type, label = email.label)
-                            )
-                        }
-                    }
-                }
-
-                // Update first (no data loss), then delete the merged contacts.
-                updateContact(
-                    keepContactId,
-                    keptDetail,
-                    ContactInput(
-                        displayName = keptDetail.displayName,
-                        phones = mergedPhones,
-                        emails = mergedEmails,
-                        organization = keptDetail.organization
+                if (targets.isEmpty()) {
+                    return@withContext Result.success(
+                        ContactMergeOutcome(keepRawId = -1L, targetRawIds = emptyList(), linked = true)
                     )
-                ).getOrThrow()
+                }
+                val keepRawId = queryRawContactIds(keepContactId).firstOrNull()
+                    ?: error("Kept contact has no raw contact")
+                val targetRawIds = targets.flatMap { queryRawContactIds(it) }
+                if (targetRawIds.isEmpty()) error("Merged contacts have no raw contacts")
+                // Old keys, captured before linking changes the aggregate key.
+                val oldKeys = buildList {
+                    queryContactLookupKey(keepContactId)?.let { add(it) }
+                    targets.forEach { queryContactLookupKey(it)?.let { key -> add(key) } }
+                }.distinct()
+                try {
+                    applyAggregationExceptions(
+                        keepRawId,
+                        targetRawIds,
+                        ContactsContract.AggregationExceptions.TYPE_KEEP_TOGETHER
+                    )
+                } catch (e: Exception) {
+                    // Read-only accounts reject aggregation exceptions:
+                    // fall back to copying every field into the kept
+                    // contact, then deleting the others. Not undoable.
+                    mergeByCopy(keepContactId, targets)
+                    return@withContext Result.success(
+                        ContactMergeOutcome(keepRawId, targetRawIds, linked = false)
+                    )
+                }
+                // The kept contact's name wins: mark its own name row
+                // primary (best effort — the merged aggregate keeps its
+                // own display name otherwise).
+                try {
+                    val nameRowId = findNameRowIdForRawContact(contentResolver, keepRawId)
+                    if (nameRowId != null) {
+                        val values = ContentValues().apply {
+                            put(StructuredName.IS_PRIMARY, 1)
+                            put(StructuredName.IS_SUPER_PRIMARY, 1)
+                        }
+                        contentResolver.update(
+                            Data.CONTENT_URI,
+                            values,
+                            "${Data._ID} = ?",
+                            arrayOf(nameRowId.toString())
+                        )
+                    }
+                } catch (_: Exception) {
+                }
+                // Linking changes the aggregate lookupKey: re-key the
+                // Room rows that point at the old keys (best effort).
+                try {
+                    val newKey = queryContactIdFromRawContact(contentResolver, keepRawId)
+                        ?.let { queryContactLookupKey(it) }
+                    if (!newKey.isNullOrBlank()) {
+                        for (oldKey in oldKeys) {
+                            if (oldKey != newKey) rekeyLookupKey(oldKey, newKey)
+                        }
+                    }
+                } catch (_: Exception) {
+                }
+                Result.success(ContactMergeOutcome(keepRawId, targetRawIds, linked = true))
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
 
-                for (targetId in targets) {
-                    val detail = queryContactDetail(contentResolver, targetId) ?: continue
-                    deleteContact(targetId, detail.lookupKey).getOrThrow()
+    override suspend fun unlinkContacts(outcome: ContactMergeOutcome): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            try {
+                if (!outcome.linked || outcome.targetRawIds.isEmpty()) {
+                    return@withContext Result.success(Unit)
+                }
+                val mergedKey = queryContactIdFromRawContact(contentResolver, outcome.keepRawId)
+                    ?.let { queryContactLookupKey(it) }
+                applyAggregationExceptions(
+                    outcome.keepRawId,
+                    outcome.targetRawIds,
+                    ContactsContract.AggregationExceptions.TYPE_KEEP_SEPARATE
+                )
+                // Best effort: the kept contact's key may change again
+                // once the aggregates split.
+                try {
+                    val currentKey = queryContactIdFromRawContact(contentResolver, outcome.keepRawId)
+                        ?.let { queryContactLookupKey(it) }
+                    if (!mergedKey.isNullOrBlank() && !currentKey.isNullOrBlank() && mergedKey != currentKey) {
+                        rekeyLookupKey(mergedKey, currentKey)
+                    }
+                } catch (_: Exception) {
                 }
                 Result.success(Unit)
             } catch (e: Exception) {
                 Result.failure(e)
             }
         }
+
+    private fun queryRawContactIds(contactId: Long): List<Long> {
+        val ids = mutableListOf<Long>()
+        contentResolver.query(
+            RawContacts.CONTENT_URI,
+            arrayOf(RawContacts._ID),
+            "${RawContacts.CONTACT_ID} = ? AND ${RawContacts.DELETED} = 0",
+            arrayOf(contactId.toString()),
+            "${RawContacts._ID} ASC"
+        )?.use { cursor ->
+            while (cursor.moveToNext()) ids.add(cursor.getLong(0))
+        }
+        return ids
+    }
+
+    private fun queryContactLookupKey(contactId: Long): String? {
+        contentResolver.query(
+            ContentUris.withAppendedId(Contacts.CONTENT_URI, contactId),
+            arrayOf(Contacts.LOOKUP_KEY),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+            if (cursor.moveToFirst() && !cursor.isNull(0)) return cursor.getString(0)
+        }
+        return null
+    }
+
+    private fun applyAggregationExceptions(keepRawId: Long, targetRawIds: List<Long>, type: Int) {
+        val pairs = ContactMergeUtil.aggregationPairs(keepRawId, targetRawIds)
+        if (pairs.isEmpty()) return
+        val ops = ArrayList<ContentProviderOperation>()
+        for ((raw1, raw2) in pairs) {
+            ops.add(
+                ContentProviderOperation.newUpdate(ContactsContract.AggregationExceptions.CONTENT_URI)
+                    .withValue(ContactsContract.AggregationExceptions.TYPE, type)
+                    .withValue(ContactsContract.AggregationExceptions.RAW_CONTACT_ID1, raw1)
+                    .withValue(ContactsContract.AggregationExceptions.RAW_CONTACT_ID2, raw2)
+                    .build()
+            )
+        }
+        contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
+    }
+
+    private suspend fun rekeyLookupKey(oldKey: String, newKey: String) {
+        favoritesDao?.let { dao ->
+            if (dao.isFavorite(newKey)) {
+                dao.deleteFavoriteByLookupKey(oldKey)
+            } else {
+                dao.rekeyLookupKey(oldKey, newKey)
+            }
+        }
+        contactSimDao?.let { dao ->
+            if (dao.getSimId(newKey) != null) {
+                dao.deleteByLookupKey(oldKey)
+            } else {
+                dao.rekeyLookupKey(oldKey, newKey)
+            }
+        }
+    }
+
+    /**
+     * Read-only fallback: copy every field (phones, emails, organization,
+     * notes, birthday, address, photo, ringtone — kept contact wins on
+     * each) into the kept contact, then delete the others.
+     */
+    private suspend fun mergeByCopy(keepContactId: Long, targets: List<Long>) {
+        val keptDetail = queryContactDetail(contentResolver, keepContactId)
+            ?: error("Kept contact not found")
+        val targetDetails = targets.mapNotNull { queryContactDetail(contentResolver, it) }
+        updateContact(
+            keepContactId,
+            keptDetail,
+            ContactMergeUtil.mergedFallbackInput(keptDetail, targetDetails)
+        ).getOrThrow()
+        if (keptDetail.photoUri.isNullOrBlank()) {
+            for (detail in targetDetails) {
+                val bytes = queryPhotoBytes(detail.id) ?: continue
+                saveContactPhoto(keepContactId, bytes).getOrThrow()
+                break
+            }
+        }
+        if (keptDetail.customRingtone.isNullOrBlank()) {
+            val ringtone = targetDetails.firstNotNullOfOrNull { it.customRingtone }
+            if (ringtone != null) updateContactRingtone(keepContactId, ringtone).getOrThrow()
+        }
+        for (targetId in targets) {
+            val detail = queryContactDetail(contentResolver, targetId) ?: continue
+            deleteContact(targetId, detail.lookupKey).getOrThrow()
+        }
+    }
+
+    private fun queryPhotoBytes(contactId: Long): ByteArray? {
+        contentResolver.query(
+            Data.CONTENT_URI,
+            arrayOf(Photo.PHOTO),
+            "${Data.CONTACT_ID} = ? AND ${Data.MIMETYPE} = ?",
+            arrayOf(contactId.toString(), Photo.CONTENT_ITEM_TYPE),
+            null
+        )?.use { cursor ->
+            if (cursor.moveToFirst() && !cursor.isNull(0)) return cursor.getBlob(0)
+        }
+        return null
+    }
 
     override suspend fun saveContactPhoto(contactId: Long, photoBytes: ByteArray): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {

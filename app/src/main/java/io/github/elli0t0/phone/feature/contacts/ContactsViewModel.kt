@@ -5,9 +5,11 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.data.contacts.ContactsRepository
+import io.github.elli0t0.phone.data.contacts.model.ContactMergeOutcome
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 import io.github.elli0t0.phone.data.contacts.model.DuplicateGroup
 import io.github.elli0t0.phone.data.contacts.util.ContactGroupingUtil
+import io.github.elli0t0.phone.data.contacts.util.ContactMergeUtil
 import io.github.elli0t0.phone.data.contacts.util.ContactSearchMatcher
 import io.github.elli0t0.phone.data.contacts.util.DuplicateContactFinder
 import io.github.elli0t0.phone.data.favorites.FavoritesRepository
@@ -17,6 +19,7 @@ import io.github.elli0t0.phone.data.settings.model.ContactNameFormat
 import io.github.elli0t0.phone.data.settings.model.ContactSortOrder
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -36,6 +39,10 @@ class ContactsViewModel(
     private val favoritesRepository: FavoritesRepository? = null,
     private val settingsRepository: SettingsRepository? = null,
     coroutineScope: kotlinx.coroutines.CoroutineScope? = null,
+    // Application scope for merges: leaving the duplicates screen
+    // must not cancel a merge (the list VM is activity-scoped, but
+    // its viewModelScope still ends with the activity).
+    applicationScope: kotlinx.coroutines.CoroutineScope? = null,
     // Injectable so tests can run the transform on the test scheduler;
     // production uses Default.
     private val transformDispatcher: CoroutineDispatcher = Dispatchers.Default
@@ -49,7 +56,19 @@ class ContactsViewModel(
     private val _pendingMergeGroup = MutableStateFlow<DuplicateGroup?>(null)
     private val _isMerging = MutableStateFlow(false)
     private val _profileContact = MutableStateFlow<ContactSummary?>(null)
-    private val _duplicatesCardDismissed = MutableStateFlow(false)
+    private val _allDuplicatesMerged = MutableStateFlow(false)
+    private val _lastMergeBatch = MutableStateFlow<MergeBatch?>(null)
+
+    /** One finished merge batch: what can be undone, and how many groups merged. */
+    data class MergeBatch(
+        val linkedOutcomes: List<ContactMergeOutcome>,
+        val mergedCount: Int
+    )
+
+    // Merges ignore provider reloads they caused themselves for ~500 ms,
+    // so a stale reload cannot re-add the just-merged group.
+    @Volatile
+    private var ignoreRescanUntilMs = 0L
 
     // Raw contacts (before name-format display changes) for duplicate detection.
     // Written by the uiState transform (now on Default) and read by
@@ -62,6 +81,8 @@ class ContactsViewModel(
     } catch (_: Exception) {
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined)
     }
+
+    private val mergeScope = applicationScope ?: activeScope
 
     private val favoritesFlow = favoritesRepository?.getFavoritesFlow(
         contactsRepository.getContactsFlow()
@@ -84,7 +105,9 @@ class ContactsViewModel(
             try {
                 val contacts = contactsRepository.getContactsFlow().first()
                 val numbers = contactsRepository.getAllContactNumbers()
-                _duplicateGroups.value = DuplicateContactFinder.findDuplicates(contacts, numbers)
+                val groups = DuplicateContactFinder.findDuplicates(contacts, numbers)
+                _duplicateGroups.value = groups
+                migrateDismissedHash(groups)
             } catch (_: Exception) {
             }
         }
@@ -97,7 +120,8 @@ class ContactsViewModel(
         val filteredContacts: List<ContactSummary>,
         val groupedContacts: Map<String, List<ContactSummary>>,
         val favorites: List<ContactSummary>,
-        val query: String
+        val query: String,
+        val duplicatesDismissedHash: String?
     )
 
     private data class ContactsUiExtras(
@@ -142,7 +166,8 @@ class ContactsViewModel(
             filteredContacts = filtered,
             groupedContacts = ContactGroupingUtil.groupContacts(filtered),
             favorites = favorites,
-            query = query
+            query = query,
+            duplicatesDismissedHash = settings.duplicatesDismissedHash
         )
     }
     // Name formatting + search filter + grouping run on
@@ -160,13 +185,25 @@ class ContactsViewModel(
         ContactsUiExtras(duplicateGroups, showDuplicates, isFindingDuplicates, pendingMergeGroup, isMerging)
     }
 
+    private data class MergeUiState(
+        val allDuplicatesMerged: Boolean,
+        val mergeBatch: MergeBatch?
+    )
+
+    private val mergeUiFlow = combine(
+        _allDuplicatesMerged,
+        _lastMergeBatch
+    ) { allDuplicatesMerged, mergeBatch ->
+        MergeUiState(allDuplicatesMerged, mergeBatch)
+    }
+
     val uiState: StateFlow<ContactsUiState> = combine(
         contactsListFlow,
         contactsUiExtrasFlow,
+        mergeUiFlow,
         _profileContact,
-        _duplicatesCardDismissed,
         _userMessageRes
-    ) { list, extras, profileContact, duplicatesCardDismissed, messageRes ->
+    ) { list, extras, mergeUi, profileContact, messageRes ->
         ContactsUiState(
             searchQuery = list.query,
             allContacts = list.formattedContacts,
@@ -178,10 +215,16 @@ class ContactsViewModel(
             duplicateGroups = extras.duplicateGroups,
             showDuplicates = extras.showDuplicates,
             profileContact = profileContact,
-            showDuplicatesCard = extras.duplicateGroups.isNotEmpty() && !duplicatesCardDismissed,
+            // The banner shows only while the current duplicate set
+            // differs from the set the user dismissed.
+            showDuplicatesCard = extras.duplicateGroups.isNotEmpty() &&
+                ContactMergeUtil.duplicateSetHash(extras.duplicateGroups) != list.duplicatesDismissedHash,
             isFindingDuplicates = extras.isFindingDuplicates,
             pendingMergeGroup = extras.pendingMergeGroup,
-            isMerging = extras.isMerging
+            isMerging = extras.isMerging,
+            allDuplicatesMerged = mergeUi.allDuplicatesMerged,
+            showMergeUndo = mergeUi.mergeBatch != null && mergeUi.mergeBatch.linkedOutcomes.isNotEmpty(),
+            mergedGroupCount = mergeUi.mergeBatch?.mergedCount ?: 0
         )
     }
     .stateIn(
@@ -212,7 +255,9 @@ class ContactsViewModel(
             _showDuplicates.value = true
             try {
                 val numbers = contactsRepository.getAllContactNumbers()
-                _duplicateGroups.value = DuplicateContactFinder.findDuplicates(latestContacts, numbers)
+                val groups = DuplicateContactFinder.findDuplicates(latestContacts, numbers)
+                _duplicateGroups.value = groups
+                migrateDismissedHash(groups)
             } catch (_: Exception) {
                 _showDuplicates.value = false
                 _userMessageRes.value = R.string.snackbar_contact_error
@@ -222,9 +267,26 @@ class ContactsViewModel(
         }
     }
 
+    /**
+     * Migration for the old boolean banner dismissal: a true value
+     * stores the current set's hash on the first scan, so the banner
+     * stays gone for that set and nothing resets.
+     */
+    private suspend fun migrateDismissedHash(groups: List<DuplicateGroup>) {
+        val repo = settingsRepository ?: return
+        try {
+            val settings = settingsFlow.first()
+            if (settings.duplicatesDismissed && settings.duplicatesDismissedHash == null) {
+                repo.setDuplicatesDismissedHash(ContactMergeUtil.duplicateSetHash(groups))
+            }
+        } catch (_: Exception) {
+        }
+    }
+
     fun hideDuplicates() {
         _showDuplicates.value = false
         _pendingMergeGroup.value = null
+        _allDuplicatesMerged.value = false
     }
 
     fun showDuplicates() {
@@ -232,11 +294,15 @@ class ContactsViewModel(
     }
 
     fun dismissDuplicatesCard() {
-        _duplicatesCardDismissed.value = true
-        // Persisted: after a restart the banner stays gone and its
-        // action moves into the Contacts overflow menu instead.
+        // Persisted hash of the current set: the banner stays gone
+        // for this set across restarts and reappears only when the
+        // set itself changes.
         settingsRepository?.let { repo ->
-            activeScope.launch { repo.setDuplicatesDismissed(true) }
+            mergeScope.launch {
+                repo.setDuplicatesDismissedHash(
+                    ContactMergeUtil.duplicateSetHash(_duplicateGroups.value)
+                )
+            }
         }
     }
 
@@ -256,8 +322,9 @@ class ContactsViewModel(
 
     /**
      * Merges the pending group only after the user confirmed it in the dialog.
-     * Keeps the contact the user chose, moves the others' numbers and emails
-     * into it, then deletes the merged contacts.
+     * Linking keeps every field; the screen stays open on the remaining
+     * groups, and closes only after the last group shows the
+     * "all duplicates merged" state briefly.
      */
     fun confirmMerge(keepContactId: Long) {
         val group = _pendingMergeGroup.value ?: return
@@ -265,18 +332,19 @@ class ContactsViewModel(
             _pendingMergeGroup.value = null
             return
         }
-        activeScope.launch {
+        mergeScope.launch {
             _isMerging.value = true
             try {
                 val keep = group.contacts.firstOrNull { it.id == keepContactId }
                     ?: group.contacts.first()
                 val mergeIds = group.contacts.filter { it.id != keep.id }.map { it.id }
-                val result = contactsRepository.mergeContacts(keep.id, mergeIds)
-                if (result.isSuccess) {
+                val outcome = contactsRepository.mergeContacts(keep.id, mergeIds).getOrNull()
+                if (outcome != null) {
                     _pendingMergeGroup.value = null
-                    _showDuplicates.value = false
-                    _duplicateGroups.value = emptyList()
-                    _userMessageRes.value = R.string.snackbar_contacts_merged
+                    removeMergedGroup(group)
+                    onMergeSuccess(listOf(outcome), mergedCount = 1)
+                    ignoreRescanUntilMs = System.currentTimeMillis() + 500
+                    rescanAfterMerge()
                 } else {
                     _pendingMergeGroup.value = null
                     _userMessageRes.value = R.string.snackbar_contact_error
@@ -290,15 +358,132 @@ class ContactsViewModel(
         }
     }
 
+    /**
+     * Merges every group, keeping each group's first contact. No
+     * per-group keep choice: the dialog confirms the group count only.
+     */
+    fun confirmMergeAll() {
+        val groups = _duplicateGroups.value
+        if (groups.isEmpty()) return
+        mergeScope.launch {
+            _isMerging.value = true
+            try {
+                val linkedOutcomes = mutableListOf<ContactMergeOutcome>()
+                var mergedCount = 0
+                for (group in groups) {
+                    val keep = group.contacts.first()
+                    val mergeIds = group.contacts.drop(1).map { it.id }
+                    val outcome = contactsRepository.mergeContacts(keep.id, mergeIds).getOrNull()
+                    if (outcome != null) {
+                        mergedCount++
+                        removeMergedGroup(group)
+                        if (outcome.linked) linkedOutcomes.add(outcome)
+                    }
+                }
+                if (mergedCount == 0) {
+                    _userMessageRes.value = R.string.snackbar_contact_error
+                } else {
+                    onMergeSuccess(linkedOutcomes, mergedCount)
+                    ignoreRescanUntilMs = System.currentTimeMillis() + 500
+                    rescanAfterMerge()
+                }
+            } catch (_: Exception) {
+                _userMessageRes.value = R.string.snackbar_contact_error
+            } finally {
+                _isMerging.value = false
+            }
+        }
+    }
+
+    fun undoMerge() {
+        val batch = _lastMergeBatch.value ?: return
+        _lastMergeBatch.value = null
+        mergeScope.launch {
+            for (outcome in batch.linkedOutcomes) {
+                contactsRepository.unlinkContacts(outcome)
+            }
+            ignoreRescanUntilMs = System.currentTimeMillis() + 500
+            rescanAfterMerge()
+        }
+    }
+
+    fun clearMergeUndo() {
+        _lastMergeBatch.value = null
+    }
+
+    /**
+     * Linked merges surface as a snackbar with Undo; a fallback-only
+     * batch cannot be undone, so it gets the plain merged message.
+     */
+    private fun onMergeSuccess(linkedOutcomes: List<ContactMergeOutcome>, mergedCount: Int) {
+        if (linkedOutcomes.isNotEmpty()) {
+            _lastMergeBatch.value = MergeBatch(linkedOutcomes, mergedCount)
+        } else {
+            _userMessageRes.value = R.string.snackbar_contacts_merged
+        }
+    }
+
+    /** Removes only the merged group (matched by its contact id set). */
+    private fun removeMergedGroup(group: DuplicateGroup) {
+        val ids = group.contacts.map { it.id }.toSet()
+        val remaining = _duplicateGroups.value.filter {
+            it.contacts.map { contact -> contact.id }.toSet() != ids
+        }
+        _duplicateGroups.value = remaining
+        if (remaining.isEmpty()) {
+            _allDuplicatesMerged.value = true
+            mergeScope.launch {
+                delay(2000)
+                _allDuplicatesMerged.value = false
+                if (_duplicateGroups.value.isEmpty()) {
+                    _showDuplicates.value = false
+                }
+            }
+        }
+    }
+
+    /**
+     * Silent rescan after a merge or undo: only genuinely new groups
+     * are added, never replacing the list. It waits out the ignore
+     * window first, so the provider reload our own merge caused
+     * cannot re-add the just-merged group, and a group is only added
+     * when every contact in it is still a separate live contact.
+     */
+    private suspend fun rescanAfterMerge() {
+        val waitMs = ignoreRescanUntilMs - System.currentTimeMillis()
+        if (waitMs > 0) delay(waitMs)
+        try {
+            val numbers = contactsRepository.getAllContactNumbers()
+            val fresh = DuplicateContactFinder.findDuplicates(latestContacts, numbers)
+            val known = _duplicateGroups.value
+                .map { it.contacts.map { contact -> contact.id }.toSet() }.toSet()
+            val liveIds = latestContacts.map { it.id }.toSet()
+            val added = fresh.filter { group ->
+                val ids = group.contacts.map { it.id }.toSet()
+                ids !in known && group.contacts.all { it.id in liveIds }
+            }
+            if (added.isNotEmpty()) {
+                _duplicateGroups.value = _duplicateGroups.value + added
+            }
+        } catch (_: Exception) {
+        }
+    }
+
     companion object {
         fun provideFactory(
             repository: ContactsRepository,
             favoritesRepository: FavoritesRepository? = null,
-            settingsRepository: SettingsRepository? = null
+            settingsRepository: SettingsRepository? = null,
+            applicationScope: kotlinx.coroutines.CoroutineScope? = null
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return ContactsViewModel(repository, favoritesRepository, settingsRepository) as T
+                return ContactsViewModel(
+                    repository,
+                    favoritesRepository,
+                    settingsRepository,
+                    applicationScope = applicationScope
+                ) as T
             }
         }
     }

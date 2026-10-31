@@ -20,4 +20,7 @@ interface ContactSimDao {
 
     @Query("DELETE FROM contact_sims WHERE contactLookupKey = :lookupKey")
     suspend fun deleteByLookupKey(lookupKey: String)
+
+    @Query("UPDATE contact_sims SET contactLookupKey = :newKey WHERE contactLookupKey = :oldKey")
+    suspend fun rekeyLookupKey(oldKey: String, newKey: String)
 }

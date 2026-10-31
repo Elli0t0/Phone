@@ -60,6 +60,7 @@ import io.github.elli0t0.phone.core.design.scrollEdgeFade
 import io.github.elli0t0.phone.data.contacts.model.ContactDetail
 import io.github.elli0t0.phone.data.contacts.model.ContactPhone
 import io.github.elli0t0.phone.feature.contacts.ContactDetailUiState
+import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
 import io.github.elli0t0.phone.core.common.bidiWrap
 
 /**
@@ -117,6 +118,20 @@ fun ContactDetailContent(
                 }
                 return Offset.Zero
             }
+        }
+    }
+
+    // Linked contacts show every raw contact's rows, so identical
+    // numbers/emails repeat: dedupe for display only. Edit still
+    // works on the full row list.
+    val displayPhones = remember(contact.phones) {
+        contact.phones.filterIndexed { index, phone ->
+            contact.phones.take(index).none { PhoneNumberMatcher.matches(it.number, phone.number) }
+        }
+    }
+    val displayEmails = remember(contact.emails) {
+        contact.emails.filterIndexed { index, email ->
+            contact.emails.take(index).none { it.address.equals(email.address, ignoreCase = true) }
         }
     }
 Column(
@@ -250,9 +265,9 @@ DetailGlassCard(
 
 Spacer(modifier = Modifier.height(spacing.large))
 // Phone Numbers Section
-if (contact.phones.isNotEmpty()) {
+if (displayPhones.isNotEmpty()) {
     DetailSectionCard(title = stringResource(id = R.string.contact_details_phones)) {
-        contact.phones.forEachIndexed { index, phone ->
+        displayPhones.forEachIndexed { index, phone ->
             PhoneRowItem(
                 phone = phone,
                 onCall = { onCall(phone.number) },
@@ -263,7 +278,7 @@ if (contact.phones.isNotEmpty()) {
                     context.startActivity(smsIntent)
                 }
             )
-            if (index < contact.phones.lastIndex) {
+            if (index < displayPhones.lastIndex) {
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.outlineVariant.copy(
                         alpha = PhoneDimens.recentsDividerAlpha
@@ -282,9 +297,9 @@ if (contact.phones.isNotEmpty()) {
 }
 
 // Email Addresses Section
-if (contact.emails.isNotEmpty()) {
+if (displayEmails.isNotEmpty()) {
     DetailSectionCard(title = stringResource(id = R.string.contact_details_emails)) {
-        contact.emails.forEachIndexed { index, email ->
+        displayEmails.forEachIndexed { index, email ->
             EmailRowItem(
                 email = email,
                 onEmail = {
@@ -294,7 +309,7 @@ if (contact.emails.isNotEmpty()) {
                     context.startActivity(emailIntent)
                 }
             )
-            if (index < contact.emails.lastIndex) {
+            if (index < displayEmails.lastIndex) {
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.outlineVariant.copy(
                         alpha = PhoneDimens.recentsDividerAlpha

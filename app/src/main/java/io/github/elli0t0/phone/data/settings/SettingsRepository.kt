@@ -147,6 +147,7 @@ interface SettingsRepository {
     suspend fun setBlockedPrefixes(prefixes: Set<String>)
     suspend fun setShowAdvancedSettings(show: Boolean)
     suspend fun setDuplicatesDismissed(dismissed: Boolean)
+    suspend fun setDuplicatesDismissedHash(hash: String)
     suspend fun setFavoritesHintDismissed(dismissed: Boolean)
     suspend fun resetToDefaults()
 
@@ -251,6 +252,7 @@ class DataStoreSettingsRepository(
         val BLOCKED_PREFIXES = stringPreferencesKey("blocked_prefixes")
         val SHOW_ADVANCED_SETTINGS = booleanPreferencesKey("show_advanced_settings")
         val DUPLICATES_DISMISSED = booleanPreferencesKey("duplicates_dismissed")
+        val DUPLICATES_DISMISSED_HASH = stringPreferencesKey("duplicates_dismissed_hash")
         val FAVORITES_HINT_DISMISSED = booleanPreferencesKey("favorites_hint_dismissed")
     }
 
@@ -461,6 +463,7 @@ class DataStoreSettingsRepository(
             .toSet()
         val showAdvancedSettings = prefs[Keys.SHOW_ADVANCED_SETTINGS] ?: false
         val duplicatesDismissed = prefs[Keys.DUPLICATES_DISMISSED] ?: false
+        val duplicatesDismissedHash = prefs[Keys.DUPLICATES_DISMISSED_HASH]
         val favoritesHintDismissed = prefs[Keys.FAVORITES_HINT_DISMISSED] ?: false
 
         AppSettings(
@@ -547,6 +550,7 @@ class DataStoreSettingsRepository(
             blockedPrefixes = blockedPrefixes,
             showAdvancedSettings = showAdvancedSettings,
             duplicatesDismissed = duplicatesDismissed,
+            duplicatesDismissedHash = duplicatesDismissedHash,
             favoritesHintDismissed = favoritesHintDismissed
         )
     }
@@ -1109,6 +1113,12 @@ class DataStoreSettingsRepository(
     override suspend fun setDuplicatesDismissed(dismissed: Boolean) {
         dataStore.edit { prefs ->
             prefs[Keys.DUPLICATES_DISMISSED] = dismissed
+        }
+    }
+
+    override suspend fun setDuplicatesDismissedHash(hash: String) {
+        dataStore.edit { prefs ->
+            prefs[Keys.DUPLICATES_DISMISSED_HASH] = hash
         }
     }
 

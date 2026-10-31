@@ -63,13 +63,25 @@ interface ContactsRepository {
     suspend fun getAllContactNumbers(): Map<Long, List<String>> = emptyMap()
 
     /**
-     * Merges [mergeContactIds] into [keepContactId]: phone numbers and emails
-     * missing from the kept contact are moved into it, then the merged contacts
-     * are deleted. The kept contact's name, photo, ringtone, and organization
-     * are unchanged. Call only after the user confirmed the merge.
+     * Merges [mergeContactIds] into [keepContactId] by linking their raw
+     * contacts (AggregationExceptions TYPE_KEEP_TOGETHER in one batch):
+     * nothing is deleted, so notes, birthday, address, photo, and
+     * ringtone all survive, and the kept contact's name is marked
+     * primary. Only when linking is rejected (read-only accounts) does
+     * it fall back to copying every field into the kept contact and
+     * deleting the others; that path reports linked = false because
+     * it cannot be undone. Call only after the user confirmed the merge.
      */
-    suspend fun mergeContacts(keepContactId: Long, mergeContactIds: List<Long>): Result<Unit> =
+    suspend fun mergeContacts(keepContactId: Long, mergeContactIds: List<Long>): Result<ContactMergeOutcome> =
         Result.failure(UnsupportedOperationException("Merging contacts is not supported"))
+
+    /**
+     * Reverses a linked merge: the same AggregationExceptions batch
+     * with TYPE_KEEP_SEPARATE. Only meaningful for outcomes with
+     * linked = true.
+     */
+    suspend fun unlinkContacts(outcome: ContactMergeOutcome): Result<Unit> =
+        Result.failure(UnsupportedOperationException("Unmerging contacts is not supported"))
 
     /**
      * Updates or inserts only the photo row for a contact in ContactsContract.Data.
