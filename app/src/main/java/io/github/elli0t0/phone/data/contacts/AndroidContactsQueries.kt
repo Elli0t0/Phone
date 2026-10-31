@@ -5,9 +5,12 @@ import android.content.ContentUris
 import android.database.Cursor
 import android.net.Uri
 import android.provider.ContactsContract.CommonDataKinds.Email
+import android.provider.ContactsContract.CommonDataKinds.Event
+import android.provider.ContactsContract.CommonDataKinds.Note
 import android.provider.ContactsContract.CommonDataKinds.Organization
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
+import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import android.provider.ContactsContract.Contacts
 import android.provider.ContactsContract.Data
 import io.github.elli0t0.phone.data.contacts.model.ContactDetail
@@ -109,6 +112,9 @@ internal fun queryContactDetail(contentResolver: ContentResolver, contactId: Lon
         var photoUri: String? = null
         var organization: String? = null
         var customRingtone: String? = null
+        var notes: String? = null
+        var birthday: String? = null
+        var address: String? = null
         val phones = mutableListOf<ContactPhone>()
         val emails = mutableListOf<ContactEmail>()
 
@@ -123,7 +129,11 @@ internal fun queryContactDetail(contentResolver: ContentResolver, contactId: Lon
             Email.ADDRESS,
             Email.TYPE,
             Email.LABEL,
-            Organization.COMPANY
+            Organization.COMPANY,
+            Note.NOTE,
+            Event.START_DATE,
+            Event.TYPE,
+            StructuredPostal.FORMATTED_ADDRESS
         )
 
         val cursor = contentResolver.query(
@@ -146,6 +156,10 @@ internal fun queryContactDetail(contentResolver: ContentResolver, contactId: Lon
             val emailTypeIdx = it.getColumnIndex(Email.TYPE)
             val emailLabelIdx = it.getColumnIndex(Email.LABEL)
             val companyIdx = it.getColumnIndex(Organization.COMPANY)
+            val noteIdx = it.getColumnIndex(Note.NOTE)
+            val eventDateIdx = it.getColumnIndex(Event.START_DATE)
+            val eventTypeIdx = it.getColumnIndex(Event.TYPE)
+            val postalAddrIdx = it.getColumnIndex(StructuredPostal.FORMATTED_ADDRESS)
 
             while (it.moveToNext()) {
                 val dataId = it.getLong(dataIdIdx)
@@ -178,6 +192,27 @@ internal fun queryContactDetail(contentResolver: ContentResolver, contactId: Lon
                     Organization.CONTENT_ITEM_TYPE -> {
                         val company = it.getString(companyIdx)
                         if (!company.isNullOrBlank()) organization = company
+                    }
+                    Note.CONTENT_ITEM_TYPE -> {
+                        // First note wins; later note rows are left
+                        // untouched (never dropped by an edit).
+                        if (notes == null) {
+                            it.getString(noteIdx)?.takeIf { it.isNotBlank() }?.let { notes = it }
+                        }
+                    }
+                    Event.CONTENT_ITEM_TYPE -> {
+                        // Only the birthday event; anniversaries and
+                        // other events are not this field.
+                        if (birthday == null && it.getInt(eventTypeIdx) == Event.TYPE_BIRTHDAY) {
+                            it.getString(eventDateIdx)?.takeIf { it.isNotBlank() }?.let { birthday = it }
+                        }
+                    }
+                    StructuredPostal.CONTENT_ITEM_TYPE -> {
+                        // First postal row wins; other addresses are
+                        // left untouched (never dropped by an edit).
+                        if (address == null) {
+                            it.getString(postalAddrIdx)?.takeIf { it.isNotBlank() }?.let { address = it }
+                        }
                     }
                 }
             }
@@ -213,7 +248,10 @@ internal fun queryContactDetail(contentResolver: ContentResolver, contactId: Lon
             phones = phones,
             emails = emails,
             organization = organization,
-            customRingtone = customRingtone
+            customRingtone = customRingtone,
+            notes = notes,
+            birthday = birthday,
+            address = address
         )
     } catch (_: Exception) {
         null

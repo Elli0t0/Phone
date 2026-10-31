@@ -11,11 +11,14 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.ContactsContract
 import android.provider.ContactsContract.CommonDataKinds.Email
+import android.provider.ContactsContract.CommonDataKinds.Event
 import android.provider.ContactsContract.CommonDataKinds.GroupMembership
+import android.provider.ContactsContract.CommonDataKinds.Note
 import android.provider.ContactsContract.CommonDataKinds.Organization
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.Photo
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
+import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import android.provider.ContactsContract.Contacts
 import android.provider.ContactsContract.Data
 import android.provider.ContactsContract.Groups
@@ -132,6 +135,12 @@ class AndroidContactsRepository(
                             .withValue(Data.MIMETYPE, Phone.CONTENT_ITEM_TYPE)
                             .withValue(Phone.NUMBER, cleanNum)
                             .withValue(Phone.TYPE, phone.type)
+                            .withValue(
+                                Phone.LABEL,
+                                phone.label?.trim()?.takeIf {
+                                    phone.type == Phone.TYPE_CUSTOM && it.isNotBlank()
+                                }
+                            )
                             .build()
                     )
                 }
@@ -159,6 +168,41 @@ class AndroidContactsRepository(
                         .withValueBackReference(Data.RAW_CONTACT_ID, 0)
                         .withValue(Data.MIMETYPE, Organization.CONTENT_ITEM_TYPE)
                         .withValue(Organization.COMPANY, org)
+                        .build()
+                )
+            }
+
+            // 6. Notes
+            input.notes?.trim()?.takeIf { it.isNotBlank() }?.let { note ->
+                ops.add(
+                    ContentProviderOperation.newInsert(Data.CONTENT_URI)
+                        .withValueBackReference(Data.RAW_CONTACT_ID, 0)
+                        .withValue(Data.MIMETYPE, Note.CONTENT_ITEM_TYPE)
+                        .withValue(Note.NOTE, note)
+                        .build()
+                )
+            }
+
+            // 7. Birthday
+            input.birthday?.trim()?.takeIf { it.isNotBlank() }?.let { date ->
+                ops.add(
+                    ContentProviderOperation.newInsert(Data.CONTENT_URI)
+                        .withValueBackReference(Data.RAW_CONTACT_ID, 0)
+                        .withValue(Data.MIMETYPE, Event.CONTENT_ITEM_TYPE)
+                        .withValue(Event.TYPE, Event.TYPE_BIRTHDAY)
+                        .withValue(Event.START_DATE, date)
+                        .build()
+                )
+            }
+
+            // 8. Address (formatted only; no type picker, so Other)
+            input.address?.trim()?.takeIf { it.isNotBlank() }?.let { addr ->
+                ops.add(
+                    ContentProviderOperation.newInsert(Data.CONTENT_URI)
+                        .withValueBackReference(Data.RAW_CONTACT_ID, 0)
+                        .withValue(Data.MIMETYPE, StructuredPostal.CONTENT_ITEM_TYPE)
+                        .withValue(StructuredPostal.TYPE, StructuredPostal.TYPE_OTHER)
+                        .withValue(StructuredPostal.FORMATTED_ADDRESS, addr)
                         .build()
                 )
             }
@@ -221,14 +265,20 @@ class AndroidContactsRepository(
             // Update modified phones and insert new phones
             updatedPhonesWithIds.forEach { phone ->
                 val cleanNumber = phone.number.trim()
+                val cleanLabel = phone.label?.trim()?.takeIf {
+                    phone.type == Phone.TYPE_CUSTOM && it.isNotBlank()
+                }
                 if (phone.id > 0) {
                     val orig = original.phones.find { it.id == phone.id }
-                    if (orig == null || orig.number.trim() != cleanNumber || orig.type != phone.type) {
+                    if (orig == null || orig.number.trim() != cleanNumber || orig.type != phone.type ||
+                        orig.label?.trim().orEmpty() != cleanLabel.orEmpty()
+                    ) {
                         ops.add(
                             ContentProviderOperation.newUpdate(Data.CONTENT_URI)
                                 .withSelection("${Data._ID} = ?", arrayOf(phone.id.toString()))
                                 .withValue(Phone.NUMBER, cleanNumber)
                                 .withValue(Phone.TYPE, phone.type)
+                                .withValue(Phone.LABEL, cleanLabel)
                                 .build()
                         )
                     }
@@ -239,6 +289,7 @@ class AndroidContactsRepository(
                             .withValue(Data.MIMETYPE, Phone.CONTENT_ITEM_TYPE)
                             .withValue(Phone.NUMBER, cleanNumber)
                             .withValue(Phone.TYPE, phone.type)
+                            .withValue(Phone.LABEL, cleanLabel)
                             .build()
                     )
                 }
@@ -309,6 +360,98 @@ class AndroidContactsRepository(
                         .withValue(Data.RAW_CONTACT_ID, rawContactId)
                         .withValue(Data.MIMETYPE, Organization.CONTENT_ITEM_TYPE)
                         .withValue(Organization.COMPANY, cleanOrg)
+                        .build()
+                )
+            }
+
+            // 5. Notes: first note row only; further note rows are
+            // never touched (unedited data is never dropped).
+            val existingNoteRowId = findDataRowId(contentResolver, contactId, Note.CONTENT_ITEM_TYPE)
+            val cleanNotes = updated.notes?.trim().orEmpty()
+            val originalNotes = original.notes?.trim().orEmpty()
+            if (existingNoteRowId != null) {
+                if (cleanNotes.isBlank()) {
+                    ops.add(
+                        ContentProviderOperation.newDelete(Data.CONTENT_URI)
+                            .withSelection("${Data._ID} = ?", arrayOf(existingNoteRowId.toString()))
+                            .build()
+                    )
+                } else if (cleanNotes != originalNotes) {
+                    ops.add(
+                        ContentProviderOperation.newUpdate(Data.CONTENT_URI)
+                            .withSelection("${Data._ID} = ?", arrayOf(existingNoteRowId.toString()))
+                            .withValue(Note.NOTE, cleanNotes)
+                            .build()
+                    )
+                }
+            } else if (cleanNotes.isNotBlank()) {
+                ops.add(
+                    ContentProviderOperation.newInsert(Data.CONTENT_URI)
+                        .withValue(Data.RAW_CONTACT_ID, rawContactId)
+                        .withValue(Data.MIMETYPE, Note.CONTENT_ITEM_TYPE)
+                        .withValue(Note.NOTE, cleanNotes)
+                        .build()
+                )
+            }
+
+            // 6. Birthday: the birthday event row only; other event
+            // rows (anniversaries) are never touched.
+            val existingBirthdayRowId = findBirthdayEventRowId(contentResolver, contactId)
+            val cleanBirthday = updated.birthday?.trim().orEmpty()
+            val originalBirthday = original.birthday?.trim().orEmpty()
+            if (existingBirthdayRowId != null) {
+                if (cleanBirthday.isBlank()) {
+                    ops.add(
+                        ContentProviderOperation.newDelete(Data.CONTENT_URI)
+                            .withSelection("${Data._ID} = ?", arrayOf(existingBirthdayRowId.toString()))
+                            .build()
+                    )
+                } else if (cleanBirthday != originalBirthday) {
+                    ops.add(
+                        ContentProviderOperation.newUpdate(Data.CONTENT_URI)
+                            .withSelection("${Data._ID} = ?", arrayOf(existingBirthdayRowId.toString()))
+                            .withValue(Event.START_DATE, cleanBirthday)
+                            .build()
+                    )
+                }
+            } else if (cleanBirthday.isNotBlank()) {
+                ops.add(
+                    ContentProviderOperation.newInsert(Data.CONTENT_URI)
+                        .withValue(Data.RAW_CONTACT_ID, rawContactId)
+                        .withValue(Data.MIMETYPE, Event.CONTENT_ITEM_TYPE)
+                        .withValue(Event.TYPE, Event.TYPE_BIRTHDAY)
+                        .withValue(Event.START_DATE, cleanBirthday)
+                        .build()
+                )
+            }
+
+            // 7. Address: first postal row only; further postal rows
+            // are never touched.
+            val existingPostalRowId = findDataRowId(contentResolver, contactId, StructuredPostal.CONTENT_ITEM_TYPE)
+            val cleanAddress = updated.address?.trim().orEmpty()
+            val originalAddress = original.address?.trim().orEmpty()
+            if (existingPostalRowId != null) {
+                if (cleanAddress.isBlank()) {
+                    ops.add(
+                        ContentProviderOperation.newDelete(Data.CONTENT_URI)
+                            .withSelection("${Data._ID} = ?", arrayOf(existingPostalRowId.toString()))
+                            .build()
+                    )
+                } else if (cleanAddress != originalAddress) {
+                    ops.add(
+                        ContentProviderOperation.newUpdate(Data.CONTENT_URI)
+                            .withSelection("${Data._ID} = ?", arrayOf(existingPostalRowId.toString()))
+                            .withValue(StructuredPostal.FORMATTED_ADDRESS, cleanAddress)
+                            .build()
+                    )
+                }
+            } else if (cleanAddress.isNotBlank()) {
+                ops.add(
+                    ContentProviderOperation.newInsert(Data.CONTENT_URI)
+                        .withValue(Data.RAW_CONTACT_ID, rawContactId)
+                        .withValue(Data.MIMETYPE, StructuredPostal.CONTENT_ITEM_TYPE)
+                        .withValue(StructuredPostal.TYPE, StructuredPostal.TYPE_OTHER)
+                        .withValue(StructuredPostal.FORMATTED_ADDRESS, cleanAddress)
                         .build()
                 )
             }

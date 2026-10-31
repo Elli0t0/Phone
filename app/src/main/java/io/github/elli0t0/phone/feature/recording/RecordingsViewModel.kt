@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
 import io.github.elli0t0.phone.core.recording.RecordingCleanup
 import io.github.elli0t0.phone.data.recordings.RecordingEntity
 import io.github.elli0t0.phone.data.recordings.RecordingStats
@@ -96,7 +97,10 @@ class RecordingsViewModel(
                     (it.displayName ?: "").contains(needle, ignoreCase = true) ||
                     (it.title ?: "").contains(needle, ignoreCase = true) ||
                     (it.note ?: "").contains(needle, ignoreCase = true) ||
-                    it.number.contains(needle)
+                    // Number search ignores spaces, + and formatting:
+                    // "13 3322" matches +981333223782 (same matcher
+                    // as Recents and contact search).
+                    PhoneNumberMatcher.matchesQuery(it.number, needle)
             }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 

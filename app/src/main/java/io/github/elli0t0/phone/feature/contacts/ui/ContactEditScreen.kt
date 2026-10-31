@@ -6,6 +6,9 @@ import android.net.Uri
 import android.os.Build
 import android.provider.ContactsContract
 import android.provider.Settings
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -38,10 +41,13 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -94,6 +100,10 @@ fun ContactEditScreen(
     onOrganizationChanged: (String) -> Unit,
     onPhoneNumberChanged: (Int, String) -> Unit,
     onPhoneTypeChanged: (Int, Int) -> Unit,
+    onPhoneLabelChanged: (Int, String) -> Unit,
+    onNotesChanged: (String) -> Unit,
+    onBirthdayChanged: (String) -> Unit,
+    onAddressChanged: (String) -> Unit,
     onAddPhone: () -> Unit,
     onRemovePhone: (Int) -> Unit,
     onEmailAddressChanged: (Int, String) -> Unit,
@@ -374,6 +384,7 @@ fun ContactEditScreen(
                             phone = phone,
                             onNumberChange = { onPhoneNumberChanged(index, it) },
                             onTypeChange = { onPhoneTypeChanged(index, it) },
+                            onLabelChange = { onPhoneLabelChanged(index, it) },
                             onRemove = { onRemovePhone(index) },
                             canRemove = uiState.phones.size > 1 || phone.number.isNotEmpty(),
                             index = index
@@ -417,6 +428,131 @@ fun ContactEditScreen(
                     TextButton(onClick = onAddEmail, modifier = Modifier.testTag("btn_add_email")) {
                         Text(text = stringResource(id = R.string.contact_add_email))
                     }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(spacing.medium))
+
+            // More Card: notes, birthday, address — all optional,
+            // saved to the system provider only when filled.
+            var showBirthdayPicker by remember { mutableStateOf(false) }
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.large,
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(modifier = Modifier.padding(spacing.medium)) {
+                    Text(
+                        text = stringResource(id = R.string.contact_edit_more),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = spacing.small)
+                    )
+
+                    TextField(
+                        value = uiState.notes,
+                        onValueChange = onNotesChanged,
+                        label = { Text(text = stringResource(id = R.string.contact_field_notes)) },
+                        minLines = 3,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("input_contact_notes")
+                    )
+
+                    Spacer(modifier = Modifier.height(spacing.small))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showBirthdayPicker = true }
+                            .testTag("input_contact_birthday")
+                            .padding(vertical = spacing.small),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(id = R.string.contact_field_birthday),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = if (uiState.birthday.isNotBlank()) {
+                                    formatBirthday(uiState.birthday)
+                                } else {
+                                    stringResource(id = R.string.contact_birthday_not_set)
+                                },
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                        if (uiState.birthday.isNotBlank()) {
+                            TextButton(onClick = { onBirthdayChanged("") }) {
+                                Text(text = stringResource(id = R.string.contact_birthday_clear))
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(spacing.small))
+
+                    TextField(
+                        value = uiState.address,
+                        onValueChange = onAddressChanged,
+                        label = { Text(text = stringResource(id = R.string.contact_field_address)) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("input_contact_address")
+                    )
+                }
+            }
+
+            if (showBirthdayPicker) {
+                val initialMillis = try {
+                    LocalDate.parse(uiState.birthday)
+                        .atStartOfDay(ZoneOffset.UTC)
+                        .toInstant()
+                        .toEpochMilli()
+                } catch (e: Exception) {
+                    null
+                }
+                val datePickerState = rememberDatePickerState(
+                    initialSelectedDateMillis = initialMillis
+                )
+                DatePickerDialog(
+                    onDismissRequest = { showBirthdayPicker = false },
+                    confirmButton = {
+                        Row {
+                            if (uiState.birthday.isNotBlank()) {
+                                TextButton(
+                                    onClick = {
+                                        onBirthdayChanged("")
+                                        showBirthdayPicker = false
+                                    }
+                                ) {
+                                    Text(text = stringResource(id = R.string.contact_birthday_clear))
+                                }
+                            }
+                            TextButton(
+                                onClick = {
+                                    datePickerState.selectedDateMillis?.let { millis ->
+                                        val picked = LocalDate.ofInstant(
+                                            Instant.ofEpochMilli(millis),
+                                            ZoneOffset.UTC
+                                        )
+                                        onBirthdayChanged(picked.toString())
+                                    }
+                                    showBirthdayPicker = false
+                                }
+                            ) {
+                                Text(text = stringResource(id = R.string.action_ok))
+                            }
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showBirthdayPicker = false }) {
+                            Text(text = stringResource(id = R.string.action_cancel))
+                        }
+                    }
+                ) {
+                    DatePicker(state = datePickerState)
                 }
             }
 
@@ -560,6 +696,7 @@ private fun PhoneInputField(
     phone: ContactPhone,
     onNumberChange: (String) -> Unit,
     onTypeChange: (Int) -> Unit,
+    onLabelChange: (String) -> Unit,
     onRemove: () -> Unit,
     canRemove: Boolean,
     index: Int
@@ -569,14 +706,16 @@ private fun PhoneInputField(
         ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE to stringResource(id = R.string.type_phone_mobile),
         ContactsContract.CommonDataKinds.Phone.TYPE_HOME to stringResource(id = R.string.type_phone_home),
         ContactsContract.CommonDataKinds.Phone.TYPE_WORK to stringResource(id = R.string.type_phone_work),
-        ContactsContract.CommonDataKinds.Phone.TYPE_OTHER to stringResource(id = R.string.type_phone_other)
+        ContactsContract.CommonDataKinds.Phone.TYPE_OTHER to stringResource(id = R.string.type_phone_other),
+        ContactsContract.CommonDataKinds.Phone.TYPE_CUSTOM to stringResource(id = R.string.type_phone_custom)
     )
     val selectedLabel = types.firstOrNull { it.first == phone.type }?.second ?: stringResource(id = R.string.type_phone_mobile)
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
         TextField(
             value = phone.number,
             onValueChange = onNumberChange,
@@ -642,6 +781,20 @@ private fun PhoneInputField(
                     )
                 }
             }
+        }
+    }
+
+        if (phone.type == ContactsContract.CommonDataKinds.Phone.TYPE_CUSTOM) {
+            Spacer(modifier = Modifier.height(PhoneDimens.editFieldGap))
+            TextField(
+                value = phone.label.orEmpty(),
+                onValueChange = onLabelChange,
+                label = { Text(stringResource(id = R.string.contact_field_phone_label)) },
+                shape = MaterialTheme.shapes.medium,
+                colors = EditFieldColors(),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().testTag("input_phone_label_$index")
+            )
         }
     }
 }

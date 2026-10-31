@@ -43,6 +43,11 @@ class PhoneNumberMatcherTest {
         assertTrue(PhoneNumberMatcher.matchesQuery("+989123456789", "912345", "IR"))
         assertTrue(PhoneNumberMatcher.matchesQuery("+989123456789", "3456789", "IR"))
         assertTrue(PhoneNumberMatcher.matchesQuery("+98 (912) 345-6789", "0912", "US"))
+        // Recordings search: spaced partial queries match the stored
+        // number regardless of spaces, + and formatting.
+        assertTrue(PhoneNumberMatcher.matchesQuery("+981333223782", "13 3322", "IR"))
+        assertTrue(PhoneNumberMatcher.matchesQuery("+981333223782", "+98 13 3322 3782", "IR"))
+        assertFalse(PhoneNumberMatcher.matchesQuery("+981333223782", "13 9999", "IR"))
         assertFalse(PhoneNumberMatcher.matchesQuery("+989123456789", "999999", "IR"))
         assertFalse(PhoneNumberMatcher.matchesQuery("+989123456789", "", "IR"))
         assertFalse(PhoneNumberMatcher.matchesQuery("+989123456789", "abc", "IR"))

@@ -287,6 +287,9 @@
     <string name="cd_contact_avatar">تصویر مخاطب</string>
     <string name="contact_details_phones">شماره تلفن‌ها</string>
     <string name="contact_details_emails">نشانی‌های ایمیل</string>
+    <string name="contact_details_notes">یادداشت</string>
+    <string name="contact_details_birthday">تولد</string>
+    <string name="contact_details_address">نشانی</string>
     <string name="contact_action_edit">ویرایش</string>
     <string name="contact_action_delete">حذف</string>
     <string name="contact_delete_dialog_title">مخاطب حذف شود؟</string>
@@ -359,6 +362,13 @@
     <string name="contact_field_organization">شرکت / سازمان</string>
     <string name="contact_field_phone">تلفن</string>
     <string name="contact_field_email">ایمیل</string>
+    <string name="contact_field_notes">یادداشت</string>
+    <string name="contact_field_birthday">تولد</string>
+    <string name="contact_field_address">نشانی</string>
+    <string name="contact_field_phone_label">برچسب</string>
+    <string name="contact_edit_more">بیشتر</string>
+    <string name="contact_birthday_not_set">تنظیم نشده</string>
+    <string name="contact_birthday_clear">پاک کردن</string>
     <string name="contact_add_phone">+ افزودن تلفن</string>
     <string name="contact_add_email">+ افزودن ایمیل</string>
     <string name="contact_remove_field">حذف</string>
@@ -367,6 +377,7 @@
     <string name="type_phone_home">خانه</string>
     <string name="type_phone_work">محل کار</string>
     <string name="type_phone_other">سایر</string>
+    <string name="type_phone_custom">سفارشی</string>
     <string name="type_email_home">خانه</string>
     <string name="type_email_work">محل کار</string>
     <string name="type_email_other">سایر</string>

@@ -1,5 +1,6 @@
 package io.github.elli0t0.phone
 
+import android.provider.ContactsContract.CommonDataKinds.Phone
 import io.github.elli0t0.phone.data.contacts.ContactsRepository
 import io.github.elli0t0.phone.data.contacts.model.ContactDetail
 import io.github.elli0t0.phone.data.contacts.model.ContactInput
@@ -84,5 +85,43 @@ class ContactEditSaveTest {
 
         assertEquals(7L, savedId)
         assertEquals(numbers, repo.savedUpdate?.phones?.map { it.number })
+    }
+
+    @Test
+    fun editSaveKeepsExtraFieldsAndCustomLabel() = runTest {
+        val original = ContactDetail(
+            id = 9L,
+            lookupKey = "key2",
+            displayName = "Extra",
+            phones = listOf(
+                ContactPhone(number = "09123456789", type = Phone.TYPE_CUSTOM, label = "Direct")
+            ),
+            notes = "Met at conf",
+            birthday = "1990-05-04",
+            address = "Tehran, Valiasr St"
+        )
+        val repo = FakeContactsRepository()
+        val viewModel = ContactEditViewModel(repo, initialContact = original)
+
+        // The extra fields load verbatim into the edit state.
+        assertEquals("Met at conf", viewModel.uiState.value.notes)
+        assertEquals("1990-05-04", viewModel.uiState.value.birthday)
+        assertEquals("Tehran, Valiasr St", viewModel.uiState.value.address)
+        assertEquals("Direct", viewModel.uiState.value.phones.first().label)
+
+        var savedId = -1L
+        viewModel.saveContact { savedId = it }
+
+        assertEquals(9L, savedId)
+        val saved = repo.savedUpdate
+        assertEquals("Met at conf", saved?.notes)
+        assertEquals("1990-05-04", saved?.birthday)
+        assertEquals("Tehran, Valiasr St", saved?.address)
+        assertEquals("Direct", saved?.phones?.first()?.label)
+
+        // Switching away from Custom drops the label so a stale
+        // label is never saved under a stock type.
+        viewModel.onPhoneTypeChanged(0, Phone.TYPE_MOBILE)
+        assertEquals(null, viewModel.uiState.value.phones.first().label)
     }
 }

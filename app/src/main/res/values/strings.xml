@@ -33,6 +33,9 @@
     <!-- Contact Details -->
     <string name="contact_details_phones">Phone Numbers</string>
     <string name="contact_details_emails">Email Addresses</string>
+    <string name="contact_details_notes">Notes</string>
+    <string name="contact_details_birthday">Birthday</string>
+    <string name="contact_details_address">Address</string>
     <string name="contact_action_edit">Edit</string>
     <string name="contact_action_delete">Delete</string>
     <string name="contact_delete_dialog_title">Delete Contact?</string>
@@ -116,6 +119,13 @@
     <string name="contact_field_organization">Company / Organization</string>
     <string name="contact_field_phone">Phone</string>
     <string name="contact_field_email">Email</string>
+    <string name="contact_field_notes">Notes</string>
+    <string name="contact_field_birthday">Birthday</string>
+    <string name="contact_field_address">Address</string>
+    <string name="contact_field_phone_label">Label</string>
+    <string name="contact_edit_more">More</string>
+    <string name="contact_birthday_not_set">Not set</string>
+    <string name="contact_birthday_clear">Clear</string>
     <string name="contact_add_phone">+ Add Phone</string>
     <string name="contact_add_email">+ Add Email</string>
     <string name="contact_remove_field">Remove</string>
@@ -126,6 +136,7 @@
     <string name="type_phone_home">Home</string>
     <string name="type_phone_work">Work</string>
     <string name="type_phone_other">Other</string>
+    <string name="type_phone_custom">Custom</string>
 
     <string name="type_email_home">Home</string>
     <string name="type_email_work">Work</string>

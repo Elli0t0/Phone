@@ -32,6 +32,9 @@ class ContactEditViewModel(
                 lookupKey = initialContact.lookupKey,
                 displayName = initialContact.displayName,
                 organization = initialContact.organization.orEmpty(),
+                notes = initialContact.notes.orEmpty(),
+                birthday = initialContact.birthday.orEmpty(),
+                address = initialContact.address.orEmpty(),
                 // Add-to-existing: the number arrives as a NEW phone row
                 // (default Mobile type) appended after the contact's own
                 // rows; existing rows are never replaced.
@@ -69,6 +72,18 @@ class ContactEditViewModel(
         _uiState.update { it.copy(organization = org) }
     }
 
+    fun onNotesChanged(notes: String) {
+        _uiState.update { it.copy(notes = notes) }
+    }
+
+    fun onBirthdayChanged(birthday: String) {
+        _uiState.update { it.copy(birthday = birthday) }
+    }
+
+    fun onAddressChanged(address: String) {
+        _uiState.update { it.copy(address = address) }
+    }
+
     fun onPhoneNumberChanged(index: Int, number: String) {
         _uiState.update { state ->
             val updated = state.phones.toMutableList()
@@ -83,7 +98,28 @@ class ContactEditViewModel(
         _uiState.update { state ->
             val updated = state.phones.toMutableList()
             if (index in updated.indices) {
-                updated[index] = updated[index].copy(type = type)
+                // A custom label only means something for Custom;
+                // switching away drops it so a stale label is never
+                // saved under a stock type.
+                val old = updated[index]
+                updated[index] = old.copy(
+                    type = type,
+                    label = if (type == android.provider.ContactsContract.CommonDataKinds.Phone.TYPE_CUSTOM) {
+                        old.label
+                    } else {
+                        null
+                    }
+                )
+            }
+            state.copy(phones = updated)
+        }
+    }
+
+    fun onPhoneLabelChanged(index: Int, label: String) {
+        _uiState.update { state ->
+            val updated = state.phones.toMutableList()
+            if (index in updated.indices) {
+                updated[index] = updated[index].copy(label = label)
             }
             state.copy(phones = updated)
         }
@@ -200,7 +236,10 @@ class ContactEditViewModel(
                 displayName = trimmedName,
                 phones = validPhones.map { it.copy(number = it.number.trim()) },
                 emails = state.emails.filter { it.address.trim().isNotBlank() }.map { it.copy(address = it.address.trim()) },
-                organization = state.organization.trim().takeIf { it.isNotBlank() }
+                organization = state.organization.trim().takeIf { it.isNotBlank() },
+                notes = state.notes.trim().takeIf { it.isNotBlank() },
+                birthday = state.birthday.trim().takeIf { it.isNotBlank() },
+                address = state.address.trim().takeIf { it.isNotBlank() }
             )
 
             if (state.isNewContact) {

@@ -312,6 +312,42 @@ if (contact.emails.isNotEmpty()) {
     Spacer(modifier = Modifier.height(spacing.medium))
 }
 
+// Notes Section (only when filled)
+if (!contact.notes.isNullOrBlank()) {
+    DetailSectionCard(title = stringResource(id = R.string.contact_details_notes)) {
+        Text(
+            text = contact.notes,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+    Spacer(modifier = Modifier.height(spacing.medium))
+}
+
+// Birthday Section (only when filled)
+if (!contact.birthday.isNullOrBlank()) {
+    DetailSectionCard(title = stringResource(id = R.string.contact_details_birthday)) {
+        Text(
+            text = formatBirthday(contact.birthday),
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+    Spacer(modifier = Modifier.height(spacing.medium))
+}
+
+// Address Section (only when filled)
+if (!contact.address.isNullOrBlank()) {
+    DetailSectionCard(title = stringResource(id = R.string.contact_details_address)) {
+        Text(
+            text = contact.address,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+    Spacer(modifier = Modifier.height(spacing.medium))
+}
+
 // Ringtone Section
 DetailSectionCard(title = stringResource(id = R.string.contact_details_ringtone)) {
     RingtoneRowItem(

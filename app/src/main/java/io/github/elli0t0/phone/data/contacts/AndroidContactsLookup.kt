@@ -1,6 +1,7 @@
 package io.github.elli0t0.phone.data.contacts
 
 import android.content.ContentResolver
+import android.provider.ContactsContract.CommonDataKinds.Event
 import android.provider.ContactsContract.Contacts
 import android.provider.ContactsContract.Data
 import android.provider.ContactsContract.RawContacts
@@ -27,6 +28,31 @@ internal fun findDataRowId(contentResolver: ContentResolver, contactId: Long, mi
         arrayOf(Data._ID),
         "${Data.CONTACT_ID} = ? AND ${Data.MIMETYPE} = ?",
         arrayOf(contactId.toString(), mimeType),
+        null
+    )
+    cursor?.use {
+        if (it.moveToFirst()) {
+            return it.getLong(it.getColumnIndexOrThrow(Data._ID))
+        }
+    }
+    return null
+}
+
+/**
+ * The birthday event row specifically: other Event rows (e.g.
+ * anniversaries) share the Event mime type, so a plain
+ * [findDataRowId] could return the wrong row.
+ */
+internal fun findBirthdayEventRowId(contentResolver: ContentResolver, contactId: Long): Long? {
+    val cursor = contentResolver.query(
+        Data.CONTENT_URI,
+        arrayOf(Data._ID),
+        "${Data.CONTACT_ID} = ? AND ${Data.MIMETYPE} = ? AND ${Event.TYPE} = ?",
+        arrayOf(
+            contactId.toString(),
+            Event.CONTENT_ITEM_TYPE,
+            Event.TYPE_BIRTHDAY.toString()
+        ),
         null
     )
     cursor?.use {

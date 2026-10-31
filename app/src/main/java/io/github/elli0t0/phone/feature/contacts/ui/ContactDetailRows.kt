@@ -90,7 +90,11 @@ import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import io.github.elli0t0.phone.data.calllog.model.CallType
 import io.github.elli0t0.phone.data.favorites.ContactSimRepository
 import io.github.elli0t0.phone.feature.call.ui.DualSimPickerDialog
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.launch
 import io.github.elli0t0.phone.data.contacts.model.ContactDetail
 import io.github.elli0t0.phone.data.contacts.model.ContactEmail
@@ -124,6 +128,21 @@ fun DetailSectionCard(
 }
 
 @Composable
+/**
+ * Birthday display: a stored ISO date ("yyyy-MM-dd") renders in the
+ * user's locale; anything else (e.g. a legacy "--MM-dd" yearly date)
+ * is shown verbatim instead of crashing or blanking.
+ */
+internal fun formatBirthday(iso: String): String {
+    return try {
+        DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+            .withLocale(Locale.getDefault())
+            .format(LocalDate.parse(iso))
+    } catch (e: Exception) {
+        iso
+    }
+}
+
 fun PhoneRowItem(
     phone: ContactPhone,
     onCall: () -> Unit,
@@ -134,6 +153,11 @@ fun PhoneRowItem(
         ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE -> stringResource(id = R.string.type_phone_mobile)
         ContactsContract.CommonDataKinds.Phone.TYPE_HOME -> stringResource(id = R.string.type_phone_home)
         ContactsContract.CommonDataKinds.Phone.TYPE_WORK -> stringResource(id = R.string.type_phone_work)
+        // A custom phone shows its own label; without one it falls
+        // back to the generic Custom label.
+        ContactsContract.CommonDataKinds.Phone.TYPE_CUSTOM ->
+            phone.label?.takeIf { it.isNotBlank() }
+                ?: stringResource(id = R.string.type_phone_custom)
         else -> stringResource(id = R.string.type_phone_other)
     }
 

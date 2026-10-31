@@ -8,6 +8,12 @@ data class ContactDetail(
     val phones: List<ContactPhone> = emptyList(),
     val emails: List<ContactEmail> = emptyList(),
     val organization: String? = null,
-    val customRingtone: String? = null
+    val customRingtone: String? = null,
+    /** Free-form note (Note.NOTE), shown only when filled. */
+    val notes: String? = null,
+    /** Birthday as stored (Event START_DATE, ISO "yyyy-MM-dd"), shown only when filled. */
+    val birthday: String? = null,
+    /** Postal address (StructuredPostal FORMATTED_ADDRESS), shown only when filled. */
+    val address: String? = null
 )
 
