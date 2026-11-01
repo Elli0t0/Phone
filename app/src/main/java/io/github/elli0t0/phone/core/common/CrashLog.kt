@@ -2,6 +2,7 @@ package io.github.elli0t0.phone.core.common
 
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter
@@ -24,8 +25,9 @@ object CrashLog {
                 File(appContext.filesDir, FILE_NAME).writeText(
                     buildReport(thread.name, throwable)
                 )
-            } catch (_: Exception) {
+            } catch (e: Exception) {
                 // Never mask the original crash.
+                Log.w("Phone", "CrashLog.install", e)
             }
             defaultHandler?.uncaughtException(thread, throwable)
         }
@@ -44,8 +46,9 @@ object CrashLog {
     fun clear(context: Context) {
         try {
             File(context.filesDir, FILE_NAME).delete()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             // Best effort only.
+            Log.w("Phone", "CrashLog.clear", e)
         }
     }
 

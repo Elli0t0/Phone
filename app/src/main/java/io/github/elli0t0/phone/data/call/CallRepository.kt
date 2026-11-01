@@ -12,6 +12,7 @@ import android.telecom.Call
 import android.telecom.CallAudioState
 import android.telecom.VideoProfile
 import android.telephony.SmsManager
+import android.util.Log
 import android.widget.Toast
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -257,8 +258,9 @@ object CallRepository {
                 if (--remaining == 0) {
                     try {
                         appContext.unregisterReceiver(this)
-                    } catch (_: Exception) {
+                    } catch (e: Exception) {
                         // Already unregistered on the send-failure path.
+                        Log.w("Phone", "CallRepository.onReceive", e)
                     }
                     val text = if (!failed) {
                         appContext.getString(R.string.quick_reply_sent, name)
@@ -288,8 +290,9 @@ object CallRepository {
         } catch (e: Exception) {
             try {
                 appContext.unregisterReceiver(receiver)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
                 // Never registered or already unregistered.
+                Log.w("Phone", "CallRepository.onReceive", e)
             }
             Toast.makeText(appContext, R.string.quick_reply_failed, Toast.LENGTH_SHORT).show()
             PhoneNavLog.log("CallRepository quick reply SMS failed: ${e.message}")

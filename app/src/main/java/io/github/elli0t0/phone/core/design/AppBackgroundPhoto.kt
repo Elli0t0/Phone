@@ -15,11 +15,12 @@ import kotlin.math.max
 fun saveAppBackgroundPhoto(context: Context, uri: Uri): Boolean = runCatching {
     val resolver = context.contentResolver
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-    resolver.openInputStream(uri)!!.use { BitmapFactory.decodeStream(it, null, bounds) }
+    resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
     var sample = 1
     while (max(bounds.outWidth, bounds.outHeight) / sample > 1600) sample *= 2
     val opts = BitmapFactory.Options().apply { inSampleSize = sample }
-    val bmp = resolver.openInputStream(uri)!!.use { BitmapFactory.decodeStream(it, null, opts) }!!
+    val bmp = resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, opts) }
+        ?: return@runCatching false
     File(context.filesDir, "app_background.jpg").outputStream().use { bmp.compress(Bitmap.CompressFormat.JPEG, 85, it) }
     true
 }.getOrDefault(false)

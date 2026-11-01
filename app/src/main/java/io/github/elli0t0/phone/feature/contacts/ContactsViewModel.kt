@@ -1,5 +1,6 @@
 package io.github.elli0t0.phone.feature.contacts
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -126,7 +127,8 @@ class ContactsViewModel(
             try {
                 refreshDuplicates()
                 migrateDismissedHash(_duplicateGroups.value)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.w("Phone", "ContactsViewModel.init", e)
             }
         }
     }
@@ -412,7 +414,8 @@ class ContactsViewModel(
             if (settings.duplicatesDismissed && settings.duplicatesDismissedHash == null) {
                 repo.setDuplicatesDismissedHash(ContactMergeUtil.duplicateSetHash(groups))
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w("Phone", "ContactsViewModel.migrateDismissedHash", e)
         }
     }
 

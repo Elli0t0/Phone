@@ -23,6 +23,7 @@ import android.provider.ContactsContract.Contacts
 import android.provider.ContactsContract.Data
 import android.provider.ContactsContract.Groups
 import android.provider.ContactsContract.RawContacts
+import android.util.Log
 import io.github.elli0t0.phone.data.contacts.model.ContactDetail
 import io.github.elli0t0.phone.data.contacts.model.ContactGroup
 import io.github.elli0t0.phone.data.contacts.model.ContactInput
@@ -82,7 +83,7 @@ class AndroidContactsRepository(
         awaitClose {
             try {
                 contentResolver.unregisterContentObserver(observer)
-            } catch (_: Exception) {}
+            } catch (e: Exception) { Log.w("Phone", "AndroidContactsRepository.onChange", e) }
         }
     }.flowOn(Dispatchers.IO)
         .stateIn(scope, SharingStarted.Lazily, emptyList())
@@ -110,7 +111,7 @@ class AndroidContactsRepository(
         awaitClose {
             try {
                 contentResolver.unregisterContentObserver(observer)
-            } catch (_: Exception) {}
+            } catch (e: Exception) { Log.w("Phone", "AndroidContactsRepository.onChange", e) }
         }
     }.flowOn(Dispatchers.IO)
 
@@ -711,8 +712,9 @@ class AndroidContactsRepository(
                     }
                 }
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             // Return what was collected (possibly empty) instead of failing the scan.
+            Log.w("Phone", "AndroidContactsRepository.getAllContactNumbers", e)
         }
         map
     }
@@ -790,7 +792,8 @@ class AndroidContactsRepository(
                             arrayOf(nameRowId.toString())
                         )
                     }
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    Log.w("Phone", "AndroidContactsRepository.mergeContacts", e)
                 }
                 // Linking changes the aggregate lookupKey: re-key the
                 // Room rows that point at the old keys (best effort).
@@ -802,7 +805,8 @@ class AndroidContactsRepository(
                             if (oldKey != newKey) rekeyLookupKey(oldKey, newKey)
                         }
                     }
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    Log.w("Phone", "AndroidContactsRepository.mergeContacts", e)
                 }
                 Result.success(ContactMergeOutcome(keepRawId, targetRawIds, linked = true))
             } catch (e: Exception) {
@@ -831,7 +835,8 @@ class AndroidContactsRepository(
                     if (!mergedKey.isNullOrBlank() && !currentKey.isNullOrBlank() && mergedKey != currentKey) {
                         rekeyLookupKey(mergedKey, currentKey)
                     }
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    Log.w("Phone", "AndroidContactsRepository.unlinkContacts", e)
                 }
                 Result.success(Unit)
             } catch (e: Exception) {

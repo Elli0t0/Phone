@@ -5,6 +5,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.ParcelFileDescriptor
 import android.provider.Settings
+import android.util.Log
 import com.flyfishxu.kadb.Kadb
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.recording.BackendStatus
@@ -316,12 +317,13 @@ class AdbRecordingBackend(
                         _captureLevel.value = chunkLevel
                     }
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
                 // Socket closed by stopCapture, or the helper died:
                 // bytes so far are still a valid recording.
             } finally {
                 capturePeak = peak
                 captureFirstSecondPeak = firstPeakSample / 32768f
+                Log.w("Phone", "AdbRecordingBackend.startCapture", e)
             }
         }
         Unit

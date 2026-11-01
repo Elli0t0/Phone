@@ -296,7 +296,8 @@ fun BackupCard(
             val ok = withContext(Dispatchers.IO) {
                 runCatching {
                     val json = viewModel.exportSettings()
-                    context.contentResolver.openOutputStream(uri, "wt")!!.use {
+                    (context.contentResolver.openOutputStream(uri, "wt")
+                        ?: throw IllegalStateException("Cannot open document for export")).use {
                         it.write(json.toByteArray(Charsets.UTF_8))
                     }
                 }.isSuccess
@@ -314,7 +315,8 @@ fun BackupCard(
         if (uri != null) scope.launch {
             val count = withContext(Dispatchers.IO) {
                 runCatching {
-                    val json = context.contentResolver.openInputStream(uri)!!.use {
+                    val json = (context.contentResolver.openInputStream(uri)
+                        ?: throw IllegalStateException("Cannot open document for import")).use {
                         it.readBytes().toString(Charsets.UTF_8)
                     }
                     viewModel.importSettings(json)

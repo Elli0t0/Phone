@@ -10,5 +10,9 @@ import java.io.File
  * missing file is a no-op for the caller, which still drops the row.
  */
 fun deleteFile(resolver: ContentResolver, uri: Uri) = runCatching {
-    if (uri.scheme == "file") File(uri.path!!).delete() else resolver.delete(uri, null, null)
+    if (uri.scheme == "file") {
+        uri.path?.let { File(it).delete() }
+    } else {
+        resolver.delete(uri, null, null)
+    }
 }

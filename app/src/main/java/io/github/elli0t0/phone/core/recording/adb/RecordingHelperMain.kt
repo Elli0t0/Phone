@@ -4,6 +4,7 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.os.Build
+import android.util.Log
 import io.github.elli0t0.phone.core.recording.WavWriter
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
@@ -138,7 +139,8 @@ private class RecordingHelperServer(
                         // while the writer thread is blocked in a read.
                         try {
                             input.read()
-                        } catch (_: Exception) {
+                        } catch (e: Exception) {
+                            Log.w("Phone", "RecordingHelperMain.handle", e)
                         }
                         stopCaptureInternal()
                         runCatching { socket.close() }

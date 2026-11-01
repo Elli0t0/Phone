@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import android.telecom.TelecomManager
 import android.telephony.PhoneNumberUtils
+import android.util.Log
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import androidx.core.content.ContextCompat
 
@@ -52,8 +53,9 @@ object CallManager {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
                 context.startActivity(dialIntent)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
                 // ActivityNotFound or restricted device
+                Log.w("Phone", "CallManager.placeCall", e)
             }
             return
         }
@@ -75,8 +77,9 @@ object CallManager {
                     return
                 } catch (_: SecurityException) {
                     // Fallback to ACTION_CALL intent
-                } catch (_: Exception) {
+                } catch (e: Exception) {
                     // Fallback to ACTION_CALL intent
+                    Log.w("Phone", "CallManager.placeCall", e)
                 }
             }
 
@@ -87,8 +90,9 @@ object CallManager {
                 }
                 context.startActivity(callIntent)
                 return
-            } catch (_: Exception) {
+            } catch (e: Exception) {
                 // If ACTION_CALL fails, fallback to ACTION_DIAL
+                Log.w("Phone", "CallManager.placeCall", e)
             }
         }
 
@@ -98,8 +102,9 @@ object CallManager {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context.startActivity(dialIntent)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             // ActivityNotFound or restricted device
+            Log.w("Phone", "CallManager.placeCall", e)
         }
     }
 }

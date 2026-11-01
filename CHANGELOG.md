@@ -164,6 +164,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.20.0]
+
+- Every empty `catch (_: Exception)` in the app (18 sites) now logs instead of swallowing silently: `catch (e: Exception) { Log.w("Phone", "<where>", e) }`. Behavior is unchanged — the exception is still swallowed, only now visible in logcat. The sites: CrashLog install/clear, ADB capture loop, helper read loop, call placement fallbacks, SMS unregister paths, contacts observer cleanup, duplicate scan, merge/unlink helpers, and the duplicates init/migration. Catches that return a fallback value (null, emptyList, false) were already non-empty and are untouched, as are the SecurityException/Throwable catches.
+- Reviewed all 17 `!!` usages: 12 are provably safe and kept (guarded by an immediately preceding null check or isFailure: recording controller results, post-dial remaining, call-screen titles, dialpad truncation, recording settings states, and the glass haze state behind the blurAvailable gate). The 5 risky ones now use safe calls with the same fallback the old code reached via its runCatching: photo-background save returns false when the stream won't open or the image won't decode, recording file delete skips a pathless file URI, and settings backup export/import report failure instead of crashing when the picked document won't open. No logic changed for valid inputs.
+
 ## [0.19.10]
 
 - Fixed the quick-call pill name text being nearly invisible: the pill Text now carries an explicit onSurface color instead of inheriting whatever content color surrounds it. Audited the dialpad package (key labels, suggestion rows, search rows, redial chips, no-match chips, favorites strip, number display, header icons, call button) and the app's other custom-background spots (avatar initials, floating pill, selection bar, recording badge, header action icons): every other Text/Icon either already has an explicit color or sits inside a Material component or glass container that provides its content color, so no further changes were needed.
