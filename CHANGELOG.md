@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.19.7]
+
+- Fixed the bulk-delete dialog flashing "Delete 0 contacts?". The dialog recomputed its list from the live selection, and the ViewModel clears the selection on Delete, so the still-open dialog briefly showed 0 before the snackbar closed it. The selection-bar Delete button now snapshots the selected contacts first, the dialog reads that frozen list for its title count, up to 3 names, and "and N more", and it never renders when the snapshot is empty. Delete now also closes the dialog immediately on confirm; the delete-report snackbar and its LaunchedEffect are unchanged, and the progress indicator stays in place (it no longer shows in practice, since the dialog closes first).
+
 ## [0.19.6]
 
 - Fixed the merge snackbar that never disappeared. Material3 showSnackbar() defaults to Indefinite when an actionLabel is set, so "Contacts merged / Undo" stayed until the app was killed. Both merged-snackbar calls now pass an explicit Long duration with a dismiss action (Undo variant keeps its action); a DisposableEffect dismisses the current snackbar when the user leaves the Contacts tab, so it can't greet them again on return. Audited every other showSnackbar() with an actionLabel: Recents delete-with-Undo already passed Long; Blocked numbers unblock-with-Undo now passes Long too. The remaining actionLabel hits are a custom in-call UI, not Material3 snackbars, and are untouched. The duplicates banner already derives live from the refreshed groups (isNotEmpty + hash vs dismissed hash) on every merge path — single, all, multi-select, undo — so it hides when no groups remain; no banner change was needed.

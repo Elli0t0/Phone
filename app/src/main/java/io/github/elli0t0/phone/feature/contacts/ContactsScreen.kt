@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.elli0t0.phone.LocalAppSnackbarHostState
+import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalAppSettings
@@ -195,6 +196,11 @@ fun ContactsScreen(
     // Bulk-delete report: "Deleted X" or "Deleted X, failed Y".
     // Declared before the effect: the effect closes the dialog.
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    // Bulk-delete snapshot (0.19.7): the dialog reads this frozen
+    // list, not the live selection — the ViewModel clears the
+    // selection on Delete, which used to recompute the open dialog
+    // to "Delete 0 contacts?" before the snackbar closed it.
+    var deleteSnapshot by remember { mutableStateOf<List<ContactSummary>>(emptyList()) }
     val deleteReport = uiState.deleteReport
     LaunchedEffect(deleteReport) {
         if (deleteReport != null) {
@@ -262,7 +268,10 @@ fun ContactsScreen(
                             )
                         }
                         IconButton(
-                            onClick = { showDeleteConfirm = true },
+                            onClick = {
+                                deleteSnapshot = uiState.allContacts.filter { it.id in selection.ids }
+                                showDeleteConfirm = true
+                            },
                             modifier = Modifier.size(40.dp)
                         ) {
                             Icon(
@@ -331,8 +340,10 @@ fun ContactsScreen(
 
     // Bulk-delete confirmation: names (up to 3 + "and N more"),
     // progress while deleting, dismiss blocked until it finishes.
-    if (showDeleteConfirm) {
-        val selectedContacts = uiState.allContacts.filter { it.id in selection.ids }
+    // Reads the snapshot taken when the dialog opened, never the
+    // live selection (see deleteSnapshot above).
+    if (showDeleteConfirm && deleteSnapshot.isNotEmpty()) {
+        val selectedContacts = deleteSnapshot
         val names = selectedContacts.take(3).map { it.displayName }
         val extraCount = selectedContacts.size - names.size
         AlertDialog(
@@ -373,7 +384,15 @@ fun ContactsScreen(
             confirmButton = {
                 TextButton(
                     enabled = !uiState.isDeleting,
-                    onClick = { listViewModel.deleteSelectedContacts() }
+                    onClick = {
+                        listViewModel.deleteSelectedContacts()
+                        // Close at once: the report snackbar stays as
+                        // is, and the dialog must not linger long
+                        // enough to recompute over the cleared
+                        // selection. The deleteReport effect below
+                        // still clears the flag as well.
+                        showDeleteConfirm = false
+                    }
                 ) {
                     Text(
                         stringResource(id = R.string.action_delete),
