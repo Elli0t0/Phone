@@ -320,10 +320,10 @@ class AdbRecordingBackend(
             } catch (e: Exception) {
                 // Socket closed by stopCapture, or the helper died:
                 // bytes so far are still a valid recording.
+                Log.w("Phone", "AdbRecordingBackend.startCapture", e)
             } finally {
                 capturePeak = peak
                 captureFirstSecondPeak = firstPeakSample / 32768f
-                Log.w("Phone", "AdbRecordingBackend.startCapture", e)
             }
         }
         Unit
