@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.19.9]
+
+- Fixed the duplicates banner showing old groups after a merge. The provider can be slow to apply a link, so the first rescan re-emitted the merged group and the banner came back. The ViewModel now tracks merged contact ids for the session: every merge path (single, all, multi-select) records its group's ids, the rescan filters out any group whose ids are all already merged, and post-merge rescans retry up to 3 times with growing delays until no stale group remains. The banner count already reads from the same groups state as the duplicates screen, so it follows the filtered list with no separate change. The selection is also pruned against each fresh snapshot, so merged-away contacts never stay selected. Undo stays correct: it removes its linked groups' ids from the tracked set before rescanning, so restored groups come back instead of being filtered as ghosts.
+
 ## [0.19.8]
 
 - Lens bar blur raised from 2.5dp to 4.5dp (BAR_BLUR_DP). Nothing else changed: the 0.20 tint, the blur-free droplet, and Minimal mode are untouched.

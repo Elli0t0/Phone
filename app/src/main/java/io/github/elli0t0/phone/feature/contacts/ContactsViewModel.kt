@@ -54,6 +54,13 @@ class ContactsViewModel(
     private val _searchQuery = MutableStateFlow("")
     private val _userMessageRes = MutableStateFlow<Int?>(null)
     private val _duplicateGroups = MutableStateFlow<List<DuplicateGroup>>(emptyList())
+    // Contact ids merged this session (0.19.9): a provider slow to
+    // apply a link re-emits the old group on the next scan, and the
+    // banner then shows groups that are already gone. The refresh
+    // filter below drops those ghosts, and the retry re-scans
+    // until they disappear. Undo removes its own ids, so restored
+    // groups come back.
+    private val mergedIds = mutableSetOf<Long>()
     private val _showDuplicates = MutableStateFlow(false)
     private val _isFindingDuplicates = MutableStateFlow(false)
     private val _pendingMergeGroup = MutableStateFlow<DuplicateGroup?>(null)
@@ -66,7 +73,11 @@ class ContactsViewModel(
     data class MergeBatch(
         val linkedOutcomes: List<ContactMergeOutcome>,
         val mergedCount: Int,
-        val totalCount: Int
+        val totalCount: Int,
+        // Contact ids of the groups whose merge linked (0.19.9):
+        // undo removes exactly these from mergedIds, so the
+        // restored groups are not filtered as ghosts.
+        val linkedContactIds: List<Long>
     )
 
     /** Multi-select state, kept in one flow so the uiState combine stays at 5 inputs. */
@@ -340,9 +351,15 @@ class ContactsViewModel(
                 val outcome = contactsRepository.mergeContacts(keep.id, targets).getOrNull()
                 if (outcome != null) {
                     clearSelection()
-                    onMergeSuccess(listOf(outcome), mergedCount = 1, totalCount = 1)
+                    mergedIds.addAll(selected.map { it.id })
+                    onMergeSuccess(
+                        listOf(outcome),
+                        mergedCount = 1,
+                        totalCount = 1,
+                        linkedContactIds = if (outcome.linked) selected.map { it.id } else emptyList()
+                    )
                     delay(600)
-                    refreshDuplicates()
+                    refreshDuplicatesWithRetry()
                 } else {
                     _userMessageRes.value = R.string.snackbar_contacts_merge_failed
                 }
@@ -458,9 +475,15 @@ class ContactsViewModel(
                 if (outcome != null) {
                     _pendingMergeGroup.value = null
                     removeMergedGroup(group)
-                    onMergeSuccess(listOf(outcome), mergedCount = 1, totalCount = 1)
+                    mergedIds.addAll(group.contacts.map { it.id })
+                    onMergeSuccess(
+                        listOf(outcome),
+                        mergedCount = 1,
+                        totalCount = 1,
+                        linkedContactIds = if (outcome.linked) group.contacts.map { it.id } else emptyList()
+                    )
                     delay(600)
-                    refreshDuplicates()
+                    refreshDuplicatesWithRetry()
                 } else {
                     _pendingMergeGroup.value = null
                     _userMessageRes.value = R.string.snackbar_contacts_merge_failed
@@ -487,6 +510,7 @@ class ContactsViewModel(
             _isMerging.value = true
             try {
                 val linkedOutcomes = mutableListOf<ContactMergeOutcome>()
+                val linkedContactIds = mutableListOf<Long>()
                 var mergedCount = 0
                 for (group in groups) {
                     val keep = group.contacts.first()
@@ -495,15 +519,24 @@ class ContactsViewModel(
                     if (outcome != null) {
                         mergedCount++
                         removeMergedGroup(group)
-                        if (outcome.linked) linkedOutcomes.add(outcome)
+                        mergedIds.addAll(group.contacts.map { it.id })
+                        if (outcome.linked) {
+                            linkedOutcomes.add(outcome)
+                            linkedContactIds.addAll(group.contacts.map { it.id })
+                        }
                     }
                 }
                 if (mergedCount == 0) {
                     _userMessageRes.value = R.string.snackbar_contacts_merge_failed
                 } else {
-                    onMergeSuccess(linkedOutcomes, mergedCount, totalCount = groups.size)
+                    onMergeSuccess(
+                        linkedOutcomes,
+                        mergedCount,
+                        totalCount = groups.size,
+                        linkedContactIds = linkedContactIds
+                    )
                     delay(600)
-                    refreshDuplicates()
+                    refreshDuplicatesWithRetry()
                 }
             } catch (_: Exception) {
                 _userMessageRes.value = R.string.snackbar_contact_error
@@ -517,6 +550,10 @@ class ContactsViewModel(
         val batch = _lastMergeBatch.value ?: return
         _lastMergeBatch.value = null
         mergeScope.launch {
+            // Un-track the unlinked groups first, so the refresh
+            // filter below does not drop the restored groups as
+            // ghosts. Copy-only groups stay tracked: they are gone.
+            mergedIds.removeAll(batch.linkedContactIds)
             for (outcome in batch.linkedOutcomes) {
                 contactsRepository.unlinkContacts(outcome)
             }
@@ -538,9 +575,10 @@ class ContactsViewModel(
     private fun onMergeSuccess(
         linkedOutcomes: List<ContactMergeOutcome>,
         mergedCount: Int,
-        totalCount: Int
+        totalCount: Int,
+        linkedContactIds: List<Long>
     ) {
-        _lastMergeBatch.value = MergeBatch(linkedOutcomes, mergedCount, totalCount)
+        _lastMergeBatch.value = MergeBatch(linkedOutcomes, mergedCount, totalCount, linkedContactIds)
     }
 
     /** Removes only the merged group (matched by its contact id set). */
@@ -567,11 +605,38 @@ class ContactsViewModel(
      * list outright: groups that really merged vanish, groups that
      * failed stay. The cached flow is never used here — its last
      * emission may still predate a merge the provider applied.
+     * Ghost groups are filtered: any group whose ids are all in
+     * mergedIds is a re-emission of a merge, not a new duplicate
+     * set. The selection is pruned against the same snapshot, so
+     * merged-away contacts never stay selected.
      */
     private suspend fun refreshDuplicates() {
         val contacts = contactsRepository.getContactsSnapshot()
         val numbers = contactsRepository.getAllContactNumbers()
         _duplicateGroups.value = DuplicateContactFinder.findDuplicates(contacts, numbers)
+            .filterNot { group -> group.contacts.all { it.id in mergedIds } }
+        val latestIds = contacts.map { it.id }.toSet()
+        _selectionUi.update { ui ->
+            ui.copy(selection = ui.selection.copy(ids = ui.selection.ids.intersect(latestIds)))
+        }
+    }
+
+    /**
+     * Post-merge rescan with retries (0.19.9): the provider may
+     * need a moment to apply a link, and the first scan can still
+     * show the old group. A group counts as stale when all but one
+     * of its ids were merged this session; rescan with growing
+     * delays until no stale group remains (3 attempts max).
+     */
+    private suspend fun refreshDuplicatesWithRetry() {
+        repeat(3) { attempt ->
+            refreshDuplicates()
+            val stale = _duplicateGroups.value.any { g ->
+                g.contacts.map { it.id }.toSet().let { ids -> ids.size > 1 && mergedIds.containsAll(ids.drop(1)) }
+            }
+            if (!stale) return
+            delay(400L * (attempt + 1))
+        }
     }
 
     companion object {
