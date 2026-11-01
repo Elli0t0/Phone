@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.19.8]
+
+- Lens bar blur raised from 2.5dp to 4.5dp (BAR_BLUR_DP). Nothing else changed: the 0.20 tint, the blur-free droplet, and Minimal mode are untouched.
+
 ## [0.19.7]
 
 - Fixed the bulk-delete dialog flashing "Delete 0 contacts?". The dialog recomputed its list from the live selection, and the ViewModel clears the selection on Delete, so the still-open dialog briefly showed 0 before the snackbar closed it. The selection-bar Delete button now snapshots the selected contacts first, the dialog reads that frozen list for its title count, up to 3 names, and "and N more", and it never renders when the snapshot is empty. Delete now also closes the dialog immediately on confirm; the delete-report snackbar and its LaunchedEffect are unchanged, and the progress indicator stays in place (it no longer shows in practice, since the dialog closes first).

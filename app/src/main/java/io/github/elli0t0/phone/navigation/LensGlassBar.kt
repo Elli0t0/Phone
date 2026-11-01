@@ -26,7 +26,7 @@ import kotlin.math.min
 
 // Bar blur radius in dp (0.19.5): one place to tune how much the
 // page shows through the lens bar. The droplet stays blur-free.
-private const val BAR_BLUR_DP = 2.5f
+private const val BAR_BLUR_DP = 4.5f
 
 /**
  * Real lens-glass surfaces for the bottom bar, via the Backdrop
