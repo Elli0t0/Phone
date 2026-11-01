@@ -173,6 +173,7 @@ private fun QuickCallPill(
         Text(
             text = bidiWrap(firstName),
             style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.widthIn(max = 96.dp)

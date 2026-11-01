@@ -257,8 +257,9 @@ fun FloatingActionsPill(
  * > 0 gate left the content colliding with the clock while the
  * header collapsed with index still 0 — and its alpha ramps with
  * the first item's scroll offset over 24dp (index > 0 is full).
- * The gradient is solid background at 0.96 down to the status bar
- * bottom, then fades to transparent over 14dp.
+ * The gradient runs background at 0.45 at the top, 0.20 at the
+ * status-bar bottom, then fades to transparent over the last 8dp,
+ * so scrolling content stays readable without reading as a band.
  */
 @Composable
 fun StatusBarGradientScrim(
@@ -273,7 +274,7 @@ fun StatusBarGradientScrim(
     }
     if (!visible) return
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val h = statusBarTop + 14.dp
+    val h = statusBarTop + 8.dp
     val bg = MaterialTheme.colorScheme.background
     Box(
         modifier = modifier
@@ -290,8 +291,8 @@ fun StatusBarGradientScrim(
             }
             .background(
                 Brush.verticalGradient(
-                    0f to bg.copy(alpha = 0.96f),
-                    (statusBarTop / h) to bg.copy(alpha = 0.96f),
+                    0f to bg.copy(alpha = 0.45f),
+                    (statusBarTop / h) to bg.copy(alpha = 0.20f),
                     1f to Color.Transparent
                 )
             )

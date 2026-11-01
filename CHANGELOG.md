@@ -164,6 +164,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.19.10]
+
+- Fixed the quick-call pill name text being nearly invisible: the pill Text now carries an explicit onSurface color instead of inheriting whatever content color surrounds it. Audited the dialpad package (key labels, suggestion rows, search rows, redial chips, no-match chips, favorites strip, number display, header icons, call button) and the app's other custom-background spots (avatar initials, floating pill, selection bar, recording badge, header action icons): every other Text/Icon either already has an explicit color or sits inside a Material component or glass container that provides its content color, so no further changes were needed.
+- Softened the status-bar scrim that read as a black band over Contacts and Recents: height is now the status bar plus 8dp (was 14dp), and the gradient runs 0.45 at the top, 0.20 at the status-bar bottom, then transparent (was solid 0.96). The scroll-driven alpha ramp and the visibility gate are unchanged, and both pages still use this one function, so the band stays identical on both. No other scrim, band, or background was added.
+
 ## [0.19.9]
 
 - Fixed the duplicates banner showing old groups after a merge. The provider can be slow to apply a link, so the first rescan re-emitted the merged group and the banner came back. The ViewModel now tracks merged contact ids for the session: every merge path (single, all, multi-select) records its group's ids, the rescan filters out any group whose ids are all already merged, and post-merge rescans retry up to 3 times with growing delays until no stale group remains. The banner count already reads from the same groups state as the duplicates screen, so it follows the filtered list with no separate change. The selection is also pruned against each fresh snapshot, so merged-away contacts never stay selected. Undo stays correct: it removes its linked groups' ids from the tracked set before rescanning, so restored groups come back instead of being filtered as ghosts.
