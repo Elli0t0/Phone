@@ -2,8 +2,8 @@ package io.github.elli0t0.phone.core.telecom
 
 import android.os.Build
 import android.telecom.Call
-import android.telecom.CallResponse
 import android.telecom.CallScreeningService
+import android.telecom.CallScreeningService.CallResponse
 import android.telecom.TelecomManager
 import android.util.Log
 import io.github.elli0t0.phone.PhoneApplication
@@ -11,6 +11,7 @@ import io.github.elli0t0.phone.data.spam.SpamDecider
 import io.github.elli0t0.phone.data.spam.SpamDecision
 import io.github.elli0t0.phone.data.spam.SpamMatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -87,7 +88,7 @@ class PhoneCallScreeningService : CallScreeningService() {
             }
             val app = application as? PhoneApplication ?: return SpamDecision.ALLOW
             val current = runCatching {
-                kotlinx.coroutines.flow.first(app.container.settingsRepository.settingsFlow)
+                app.container.settingsRepository.settingsFlow.first()
             }.getOrNull() ?: return SpamDecision.ALLOW
             val number = details.handle?.schemeSpecificPart.orEmpty()
             val spamRepository = app.container.spamRepository
