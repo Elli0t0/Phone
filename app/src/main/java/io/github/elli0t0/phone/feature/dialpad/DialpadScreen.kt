@@ -30,9 +30,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import io.github.elli0t0.phone.core.design.GlassDropdownMenu
+import io.github.elli0t0.phone.core.design.GlassMenuItem
 import io.github.elli0t0.phone.core.design.ConfirmCallSheet
 import io.github.elli0t0.phone.core.design.PendingCall
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -390,8 +390,8 @@ fun DialpadScreen(
                     onDismissRequest = { menuExpanded = false },
                     modifier = Modifier.dialogEnter()
                 ) {
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(id = R.string.settings_title)) },
+                    GlassMenuItem(
+                        text = stringResource(id = R.string.settings_title),
                         onClick = { menuExpanded = false; onNavigateToSettings() },
                         modifier = Modifier.testTag("settings_button")
                     )

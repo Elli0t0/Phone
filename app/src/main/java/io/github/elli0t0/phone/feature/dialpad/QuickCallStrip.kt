@@ -18,7 +18,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.bidiWrap
 import io.github.elli0t0.phone.core.design.GlassDropdownMenu
+import io.github.elli0t0.phone.core.design.GlassMenuItem
 import io.github.elli0t0.phone.feature.contacts.ui.ContactAvatar
 
 /**
@@ -115,22 +115,22 @@ fun QuickCallStrip(
                     expanded = menuEntry == entry,
                     onDismissRequest = { menuEntry = null }
                 ) {
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(id = R.string.action_message)) },
+                    GlassMenuItem(
+                        text = stringResource(id = R.string.action_message),
                         onClick = {
                             menuEntry = null
                             onMessage(entry)
                         }
                     )
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(id = R.string.quick_call_open_contact)) },
+                    GlassMenuItem(
+                        text = stringResource(id = R.string.quick_call_open_contact),
                         onClick = {
                             menuEntry = null
                             onOpenContact(entry)
                         }
                     )
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(id = R.string.quick_call_remove)) },
+                    GlassMenuItem(
+                        text = stringResource(id = R.string.quick_call_remove),
                         onClick = {
                             menuEntry = null
                             onRemove(entry)

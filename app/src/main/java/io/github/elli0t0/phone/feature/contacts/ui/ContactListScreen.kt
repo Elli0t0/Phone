@@ -28,9 +28,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import io.github.elli0t0.phone.core.design.GlassDropdownMenu
+import io.github.elli0t0.phone.core.design.GlassMenuItem
 import io.github.elli0t0.phone.core.design.ConfirmCallSheet
 import io.github.elli0t0.phone.core.design.PendingCall
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -328,16 +328,16 @@ private fun ContactsContent(
                 onDismissRequest = { menuExpanded = false },
                 modifier = Modifier.dialogEnter()
             ) {
-                DropdownMenuItem(
-                    text = { Text(text = stringResource(id = R.string.settings_title)) },
+                GlassMenuItem(
+                    text = stringResource(id = R.string.settings_title),
                     onClick = { menuExpanded = false; onNavigateToSettings() },
                     modifier = Modifier.testTag("button_settings")
                 )
-                DropdownMenuItem(
-                    text = { Text(text = stringResource(id = R.string.duplicates_find)) },
+                GlassMenuItem(
+                    text = stringResource(id = R.string.duplicates_find),
                     onClick = { menuExpanded = false; onFindDuplicates() },
-                    enabled = !uiState.isFindingDuplicates,
-                    modifier = Modifier.testTag("button_find_duplicates")
+                    modifier = Modifier.testTag("button_find_duplicates"),
+                    enabled = !uiState.isFindingDuplicates
                 )
                 // Dismissed once, the banner's action moves here:
                 // shown while duplicates exist and the banner is
@@ -345,8 +345,8 @@ private fun ContactsContent(
                 if (uiState.duplicateGroups.isNotEmpty() &&
                     !uiState.showDuplicatesCard
                 ) {
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(id = R.string.duplicates_merge_menu)) },
+                    GlassMenuItem(
+                        text = stringResource(id = R.string.duplicates_merge_menu),
                         onClick = { menuExpanded = false; onShowDuplicates() },
                         modifier = Modifier.testTag("button_merge_duplicates")
                     )

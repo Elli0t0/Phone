@@ -45,9 +45,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import io.github.elli0t0.phone.core.design.GlassDropdownMenu
+import io.github.elli0t0.phone.core.design.GlassMenuItem
 import io.github.elli0t0.phone.core.design.ConfirmCallSheet
 import io.github.elli0t0.phone.core.design.PendingCall
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -413,14 +413,14 @@ fun RecentsScreen(
                                 onDismissRequest = { moreExpanded = false }
                             ) {
                                 if (selectedGroups.size == 1) {
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(id = R.string.action_copy_number)) },
+                                    GlassMenuItem(
+                                        text = stringResource(id = R.string.action_copy_number),
                                         onClick = { copySelectedNumbers(); moreExpanded = false }
                                     )
                                     val single = selectedGroups.first()
                                     if (single.primaryCall.contactId != null) {
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(id = R.string.action_open_contact)) },
+                                        GlassMenuItem(
+                                            text = stringResource(id = R.string.action_open_contact),
                                             onClick = {
                                                 single.primaryCall.contactId?.let { id ->
                                                     onNavigateToContactDetail(id)
@@ -429,8 +429,8 @@ fun RecentsScreen(
                                             }
                                         )
                                     } else {
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(id = R.string.action_add_contact)) },
+                                        GlassMenuItem(
+                                            text = stringResource(id = R.string.action_add_contact),
                                             onClick = {
                                                 addNumber = single.number
                                                 moreExpanded = false
@@ -438,8 +438,8 @@ fun RecentsScreen(
                                         )
                                     }
                                 } else {
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(id = R.string.action_copy_numbers)) },
+                                    GlassMenuItem(
+                                        text = stringResource(id = R.string.action_copy_numbers),
                                         onClick = { copySelectedNumbers(); moreExpanded = false }
                                     )
                                 }
@@ -561,8 +561,10 @@ fun RecentsScreen(
                                     enter = Motion.popupItemEnter(animationOption, index),
                                     exit = fadeOut()
                                 ) {
-                                    DropdownMenuItem(
-                                        text = { Text(text = stringResource(id = filter.titleRes)) },
+                                    GlassMenuItem(
+                                        text = stringResource(id = filter.titleRes),
+                                        onClick = { filterMenuExpanded = false; viewModel.onFilterSelected(filter) },
+                                        modifier = Modifier.testTag("filter_menu_${filter.name.lowercase()}"),
                                         leadingIcon = if (filter == uiState.selectedFilter) {
                                             {
                                                 Icon(
@@ -573,9 +575,7 @@ fun RecentsScreen(
                                             }
                                         } else {
                                             null
-                                        },
-                                        onClick = { filterMenuExpanded = false; viewModel.onFilterSelected(filter) },
-                                        modifier = Modifier.testTag("filter_menu_${filter.name.lowercase()}")
+                                        }
                                     )
                                 }
                             }
@@ -585,8 +585,10 @@ fun RecentsScreen(
                                 enter = Motion.popupItemEnter(animationOption, CallFilter.entries.size),
                                 exit = fadeOut()
                             ) {
-                                DropdownMenuItem(
-                                    text = { Text(text = stringResource(id = R.string.recents_pick_date)) },
+                                GlassMenuItem(
+                                    text = stringResource(id = R.string.recents_pick_date),
+                                    onClick = { filterMenuExpanded = false; showDatePicker = true },
+                                    modifier = Modifier.testTag("filter_menu_date"),
                                     leadingIcon = if (uiState.selectedDate != null) {
                                         {
                                             Icon(
@@ -597,9 +599,7 @@ fun RecentsScreen(
                                         }
                                     } else {
                                         null
-                                    },
-                                    onClick = { filterMenuExpanded = false; showDatePicker = true },
-                                    modifier = Modifier.testTag("filter_menu_date")
+                                    }
                                 )
                             }
                         }

@@ -39,7 +39,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import io.github.elli0t0.phone.core.design.GlassDropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import io.github.elli0t0.phone.core.design.GlassMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -163,17 +163,18 @@ fun ContactDetailBottomBar(
                         expanded = showMoreMenu,
                         onDismissRequest = onDismissMoreMenu
                     ) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(id = R.string.action_change_photo)) },
+                        GlassMenuItem(
+                            text = stringResource(id = R.string.action_change_photo),
                             onClick = onChangePhoto
                         )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(id = R.string.contact_details_ringtone)) },
+                        GlassMenuItem(
+                            text = stringResource(id = R.string.contact_details_ringtone),
                             onClick = onRingtoneClick
                         )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(id = R.string.contact_action_delete), color = MaterialTheme.colorScheme.error) },
-                            onClick = onDeleteClick
+                        GlassMenuItem(
+                            text = stringResource(id = R.string.contact_action_delete),
+                            onClick = onDeleteClick,
+                            color = MaterialTheme.colorScheme.error
                         )
                     }
                 }

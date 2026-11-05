@@ -2,16 +2,20 @@ package io.github.elli0t0.phone.core.design
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 /**
- * The one menu used everywhere: a near-opaque surface (menus are
+ * The one menu used everywhere: a fully opaque surface (menus are
  * separate windows with no Haze backdrop, so a translucent fill
  * would let list content bleed through), the shared menu corner,
  * a faint white border, and a soft shadow. No liquid-glass
@@ -28,12 +32,38 @@ fun GlassDropdownMenu(
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
-        modifier = modifier,
-        shape = RoundedCornerShape(PhoneDimens.menuCornerRadius),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f),
+        modifier = modifier.widthIn(min = 180.dp),
+        shape = RoundedCornerShape(PhoneDimens.menuPopupCornerRadius),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 1f),
         tonalElevation = 0.dp,
         shadowElevation = 8.dp,
         border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
         content = content
     )
 }
+
+/**
+ * The one menu item used inside [GlassDropdownMenu]: roomy padding
+ * so the text never sits against the popup curve. The optional
+ * [color] keeps the red delete rows red, and [leadingIcon] /
+ * [trailingIcon] keep the check marks in the Recents filter and
+ * the Recordings sort menu.
+ */
+@Composable
+fun GlassMenuItem(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    color: Color = Color.Unspecified,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null
+) = DropdownMenuItem(
+    text = { Text(text, color = color) },
+    onClick = onClick,
+    enabled = enabled,
+    leadingIcon = leadingIcon,
+    trailingIcon = trailingIcon,
+    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+    modifier = modifier
+)

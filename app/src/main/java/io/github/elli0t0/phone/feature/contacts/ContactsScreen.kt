@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import io.github.elli0t0.phone.core.design.GlassDropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import io.github.elli0t0.phone.core.design.GlassMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -296,15 +296,15 @@ fun ContactsScreen(
                                 expanded = moreExpanded,
                                 onDismissRequest = { moreExpanded = false }
                             ) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(id = R.string.action_add_to_favorites)) },
+                                GlassMenuItem(
+                                    text = stringResource(id = R.string.action_add_to_favorites),
                                     onClick = {
                                         listViewModel.addSelectedToFavorites()
                                         moreExpanded = false
                                     }
                                 )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(id = R.string.action_copy_numbers)) },
+                                GlassMenuItem(
+                                    text = stringResource(id = R.string.action_copy_numbers),
                                     onClick = {
                                         val numbers = selectedContacts
                                             .mapNotNull { it.primaryNumberPreview }
@@ -319,8 +319,8 @@ fun ContactsScreen(
                                     }
                                 )
                                 if (selectedContacts.size >= 2) {
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(id = R.string.action_merge_selected)) },
+                                    GlassMenuItem(
+                                        text = stringResource(id = R.string.action_merge_selected),
                                         onClick = {
                                             listViewModel.mergeSelectedContacts()
                                             moreExpanded = false

@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.20.1]
+
+- Settings popup on the keypad (and every other overflow menu) no longer looks cramped: the popup corner is 20dp (new PhoneDimens.menuPopupCornerRadius; menuCornerRadius stays 28dp for its other users), the container is fully opaque so list content can't show through, and the popup is at least 180dp wide. All 26 menu items in the 10 GlassDropdownMenu call sites now use the new shared GlassMenuItem with 20dp horizontal / 12dp vertical padding. Test tags are unchanged. GlassMenuItem also carries optional color (keeps the red delete rows red) and leading/trailing icon slots (keeps the check marks in the Recents filter and the Recordings sort menu). The two ExposedDropdownMenu items in ContactEditScreen are untouched — they are not glass menus.
+
 ## [0.20.0]
 
 - Every empty `catch (_: Exception)` in the app (18 sites) now logs instead of swallowing silently: `catch (e: Exception) { Log.w("Phone", "<where>", e) }`. Behavior is unchanged — the exception is still swallowed, only now visible in logcat. The sites: CrashLog install/clear, ADB capture loop, helper read loop, call placement fallbacks, SMS unregister paths, contacts observer cleanup, duplicate scan, merge/unlink helpers, and the duplicates init/migration. Catches that return a fallback value (null, emptyList, false) were already non-empty and are untouched, as are the SecurityException/Throwable catches.

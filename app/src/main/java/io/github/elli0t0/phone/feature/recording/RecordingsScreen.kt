@@ -28,7 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import io.github.elli0t0.phone.core.design.GlassDropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import io.github.elli0t0.phone.core.design.GlassMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -154,8 +154,8 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, modifier: Modifier = Modifier) 
                             }
                             GlassDropdownMenu(expanded = sortMenu, onDismissRequest = { sortMenu = false }) {
                                 RecordingSort.entries.forEach { s ->
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(s.labelRes())) },
+                                    GlassMenuItem(
+                                        text = stringResource(s.labelRes()),
                                         onClick = { vm.setSort(s); sortMenu = false },
                                         trailingIcon = if (sort == s) {
                                             { Icon(painterResource(R.drawable.ic_check), contentDescription = null) }
@@ -438,12 +438,22 @@ private fun RecordingListItem(
                     )
                 }
                 GlassDropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                    DropdownMenuItem(text = { Text(stringResource(R.string.action_call)) }, onClick = { menu = false; onCall() })
-                    DropdownMenuItem(text = { Text(stringResource(R.string.recording_share)) }, onClick = { menu = false; onShare() })
-                    DropdownMenuItem(text = { Text(stringResource(R.string.recordings_edit)) }, onClick = { menu = false; onEdit() })
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.recording_delete), color = MaterialTheme.colorScheme.error) },
-                        onClick = { menu = false; onDelete() }
+                    GlassMenuItem(
+                        text = stringResource(R.string.action_call),
+                        onClick = { menu = false; onCall() }
+                    )
+                    GlassMenuItem(
+                        text = stringResource(R.string.recording_share),
+                        onClick = { menu = false; onShare() }
+                    )
+                    GlassMenuItem(
+                        text = stringResource(R.string.recordings_edit),
+                        onClick = { menu = false; onEdit() }
+                    )
+                    GlassMenuItem(
+                        text = stringResource(R.string.recording_delete),
+                        onClick = { menu = false; onDelete() },
+                        color = MaterialTheme.colorScheme.error
                     )
                 }
             }

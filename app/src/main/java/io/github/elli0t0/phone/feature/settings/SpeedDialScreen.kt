@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.GlassDropdownMenu
+import io.github.elli0t0.phone.core.design.GlassMenuItem
 import io.github.elli0t0.phone.core.design.Spacing
 import io.github.elli0t0.phone.core.design.dialogEnter
 import io.github.elli0t0.phone.data.contacts.ContactsRepository
@@ -212,16 +212,16 @@ fun SpeedDialScreen(
                             onDismissRequest = { menuDigit = null },
                             modifier = Modifier.dialogEnter()
                         ) {
-                            DropdownMenuItem(
-                                text = { Text(text = stringResource(id = R.string.speed_dial_change)) },
+                            GlassMenuItem(
+                                text = stringResource(id = R.string.speed_dial_change),
                                 onClick = {
                                     menuDigit = null
                                     pickerDigit = digit
                                 }
                             )
                             if (!number.isNullOrBlank()) {
-                                DropdownMenuItem(
-                                    text = { Text(text = stringResource(id = R.string.speed_dial_remove)) },
+                                GlassMenuItem(
+                                    text = stringResource(id = R.string.speed_dial_remove),
                                     onClick = {
                                         menuDigit = null
                                         viewModel.onSpeedDialEntryRemoved(digit)

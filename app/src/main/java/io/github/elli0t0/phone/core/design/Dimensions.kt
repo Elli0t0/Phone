@@ -56,6 +56,9 @@ object PhoneDimens {
     val glassBlurContainerAlpha = 0.30f
     // Overflow-menu (glass) popup surface.
     val menuCornerRadius = 28.dp
+    // Popup corner for GlassDropdownMenu: 20dp leaves room for the
+    // item padding, so text never sits against the curve.
+    val menuPopupCornerRadius = 20.dp
     val menuElevation = 16.dp
     // Collapsing page header (Recents, Contacts): expanded header is
     // a fraction of the screen (Compact 16%, Standard 30%, Large
