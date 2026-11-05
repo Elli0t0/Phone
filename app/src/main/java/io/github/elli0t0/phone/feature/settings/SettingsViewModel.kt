@@ -206,6 +206,24 @@ class SettingsViewModel(
         }
     }
 
+    fun onSpamBlockKnownChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setSpamBlockKnown(enabled)
+        }
+    }
+
+    fun onSpamBlockHiddenChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setSpamBlockHidden(enabled)
+        }
+    }
+
+    fun onSpamSilenceUnknownChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setSpamSilenceUnknown(enabled)
+        }
+    }
+
     fun onVibrateOnAnswerChanged(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setVibrateOnAnswer(enabled)

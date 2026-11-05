@@ -46,6 +46,7 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import io.github.elli0t0.phone.core.design.GlassDropdownMenu
 import io.github.elli0t0.phone.core.design.GlassMenuItem
+import io.github.elli0t0.phone.data.spam.SpamMatcher
 import io.github.elli0t0.phone.core.design.ConfirmCallSheet
 import io.github.elli0t0.phone.core.design.PendingCall
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -161,6 +162,9 @@ fun RecentsScreen(
     )
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    // Spam list (in-memory cache): badges recompose when it changes.
+    val spamNumbers by app.container.spamRepository.spamNumbers
+        .collectAsStateWithLifecycle()
     // Recordings matched to call rows, for the per-row playback
     // icon. Matched once per uiState/recordings change, not per row.
     val recordings by app.container.recordingsRepository.recordings
@@ -437,6 +441,19 @@ fun RecentsScreen(
                                             }
                                         )
                                     }
+                                    GlassMenuItem(
+                                        text = stringResource(id = R.string.spam_report),
+                                        onClick = {
+                                            moreExpanded = false
+                                            recentsScope.launch {
+                                                app.container.spamRepository
+                                                    .reportSpam(single.number)
+                                                snackbarHostState.showSnackbar(
+                                                    context.getString(R.string.spam_reported)
+                                                )
+                                            }
+                                        }
+                                    )
                                 } else {
                                     GlassMenuItem(
                                         text = stringResource(id = R.string.action_copy_numbers),
@@ -976,6 +993,7 @@ fun RecentsScreen(
                                             onAddContactClick = {
                                                 addNumber = group.number
                                             },
+                                            isSpam = SpamMatcher.isSpam(spamNumbers, group.number),
                                             showSim = simAccounts.size > 1,
                                             showDivider = false,
                                             recordingByCallId = recordingByCallId,

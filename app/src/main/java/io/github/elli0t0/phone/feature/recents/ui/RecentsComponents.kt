@@ -154,6 +154,7 @@ fun CallLogRow(
     recordingByCallId: Map<Long, RecordingEntity> = emptyMap(),
     playingRecordingId: Long? = null,
     onRecordingPlayClick: (RecordingEntity) -> Unit = {},
+    isSpam: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
@@ -339,6 +340,23 @@ fun CallLogRow(
                                     text = "(${group.count})",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        if (isSpam) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
+                                        RoundedCornerShape(50)
+                                    )
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(id = R.string.spam_badge),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.error
                                 )
                             }
                         }

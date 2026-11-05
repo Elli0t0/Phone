@@ -640,6 +640,15 @@ data class AppSettings(
     // are rejected on arrival (the platform provider only matches
     // exact numbers, so prefixes live here, not there).
     val blockedPrefixes: Set<String> = emptySet(),
+    // Spam protection (0.20.3, offline only): block numbers on the
+    // user-reported spam list, block hidden/private numbers, and
+    // silence unknown callers (rings silently, still in Recents).
+    // spamBlockedCount is the lifetime counter of calls the
+    // screening service (or the InCallService fallback) rejected.
+    val spamBlockKnown: Boolean = true,
+    val spamBlockHidden: Boolean = false,
+    val spamSilenceUnknown: Boolean = false,
+    val spamBlockedCount: Long = 0L,
     // Restructured Settings (0.16.9): the main page shows eight
     // section rows; advanced rows hide unless this is on.
     // Kept for backup compatibility (0.18.6 removed the switch and

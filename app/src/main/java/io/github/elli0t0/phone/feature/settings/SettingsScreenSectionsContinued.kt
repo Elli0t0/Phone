@@ -102,6 +102,15 @@ fun CallsCard(
                 onClick = { dialogs.showBlockedNumbers = true }
             )
 
+            Spacer(modifier = Modifier.height(spacing.small))
+            SettingsListDivider()
+            Spacer(modifier = Modifier.height(spacing.small))
+
+            SettingsRow(
+                title = stringResource(id = R.string.spam_title),
+                onClick = { dialogs.showSpamPage = true }
+            )
+
             if (showSupplementaryRow) {
                 Spacer(modifier = Modifier.height(spacing.small))
                 SettingsListDivider()

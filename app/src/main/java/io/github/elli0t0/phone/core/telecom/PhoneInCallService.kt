@@ -104,8 +104,19 @@ class PhoneInCallService : InCallService() {
                         prefixDigits.isNotEmpty() && digits.startsWith(prefixDigits)
                     }
                     if (blocked && call.state == Call.STATE_RINGING) {
-                        Log.d(TAG, "Rejecting call matching blocked prefix")
-                        call.disconnect()
+                        // reject (not disconnect) so the call logs as
+                        // rejected; count it like a screening rejection.
+                        runCatching { call.reject(false, null) }
+                            .onFailure { e ->
+                                Log.e(TAG, "reject blocked-prefix call failed", e)
+                            }
+                        PhoneNavLog.log("in-call prefix-block reject number=$digits")
+                        serviceScope.launch {
+                            runCatching {
+                                (application as? PhoneApplication)?.container
+                                    ?.spamRepository?.incrementBlockedCount()
+                            }
+                        }
                     }
                 }
             }
@@ -141,6 +152,7 @@ class PhoneInCallService : InCallService() {
             updateProximityWakeLock()
         } catch (e: Exception) {
             Log.e(TAG, "onCallAdded failed", e)
+            PhoneNavLog.log("onCallAdded failed: ${e::class.simpleName} ${e.message}")
         }
     }
 

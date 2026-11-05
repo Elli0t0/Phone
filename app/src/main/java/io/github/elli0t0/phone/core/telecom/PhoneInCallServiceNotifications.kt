@@ -114,6 +114,7 @@ internal fun PhoneInCallService.startForegroundForCall(call: Call) {
         publishForeground(foregroundId, notification)
     } catch (e: Exception) {
         Log.e(PhoneInCallService.TAG, "startForegroundForCall failed", e)
+        PhoneNavLog.log("startForegroundForCall failed: ${e::class.simpleName} ${e.message}")
     }
 }
 

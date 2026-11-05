@@ -106,6 +106,18 @@
                 <action android:name="android.telecom.InCallService" />
             </intent-filter>
         </service>
+        <!-- Offline call screening: the system binds this when the
+             app is the default dialer or holds ROLE_CALL_SCREENING.
+             No server, no uploads; decisions use the on-device spam
+             list, blocked prefixes, and the contacts exemption. -->
+        <service
+            android:name=".core.telecom.PhoneCallScreeningService"
+            android:permission="android.permission.BIND_SCREENING_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.telecom.CallScreeningService" />
+            </intent-filter>
+        </service>
         <receiver
             android:name=".core.telecom.CallActionReceiver"
             android:exported="false">

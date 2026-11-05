@@ -94,6 +94,7 @@ class SettingsDialogState {
     var showDefaultSimDialog by mutableStateOf(false)
     var showQuickDeclineDialog by mutableStateOf(false)
     var showBlockedNumbers by mutableStateOf(false)
+    var showSpamPage by mutableStateOf(false)
     var showExcludedNumbers by mutableStateOf(false)
     var showAboutDialog by mutableStateOf(false)
     var showDebugLogDialog by mutableStateOf(false)

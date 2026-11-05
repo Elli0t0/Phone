@@ -160,6 +160,10 @@ interface SettingsRepository {
     suspend fun setQuickCallStyle(style: QuickCallStyle)
     suspend fun setQuickCallHidden(hidden: Set<String>)
     suspend fun setBlockedPrefixes(prefixes: Set<String>)
+    suspend fun setSpamBlockKnown(enabled: Boolean)
+    suspend fun setSpamBlockHidden(enabled: Boolean)
+    suspend fun setSpamSilenceUnknown(enabled: Boolean)
+    suspend fun setSpamBlockedCount(count: Long)
     suspend fun setShowAdvancedSettings(show: Boolean)
     suspend fun setMinimalMode(enabled: Boolean)
     suspend fun setDuplicatesDismissed(dismissed: Boolean)
@@ -276,6 +280,10 @@ class DataStoreSettingsRepository(
         val QUICK_CALL_STYLE = stringPreferencesKey("quick_call_style")
         val QUICK_CALL_HIDDEN = stringPreferencesKey("quick_call_hidden")
         val BLOCKED_PREFIXES = stringPreferencesKey("blocked_prefixes")
+        val SPAM_BLOCK_KNOWN = booleanPreferencesKey("spam_block_known")
+        val SPAM_BLOCK_HIDDEN = booleanPreferencesKey("spam_block_hidden")
+        val SPAM_SILENCE_UNKNOWN = booleanPreferencesKey("spam_silence_unknown")
+        val SPAM_BLOCKED_COUNT = longPreferencesKey("spam_blocked_count")
         val SHOW_ADVANCED_SETTINGS = booleanPreferencesKey("show_advanced_settings")
         val MINIMAL_MODE = booleanPreferencesKey("minimal_mode")
         val CONFIRM_BEFORE_CALL = booleanPreferencesKey("confirm_before_call")
@@ -530,6 +538,10 @@ class DataStoreSettingsRepository(
             .map { it.trim() }
             .filter { it.isNotEmpty() }
             .toSet()
+        val spamBlockKnown = prefs[Keys.SPAM_BLOCK_KNOWN] ?: true
+        val spamBlockHidden = prefs[Keys.SPAM_BLOCK_HIDDEN] ?: false
+        val spamSilenceUnknown = prefs[Keys.SPAM_SILENCE_UNKNOWN] ?: false
+        val spamBlockedCount = prefs[Keys.SPAM_BLOCKED_COUNT] ?: 0L
         val showAdvancedSettings = prefs[Keys.SHOW_ADVANCED_SETTINGS] ?: false
         val minimalMode = prefs[Keys.MINIMAL_MODE] ?: false
         val confirmBeforeCall = prefs[Keys.CONFIRM_BEFORE_CALL] ?: false
@@ -632,6 +644,10 @@ class DataStoreSettingsRepository(
             quickCallStyle = quickCallStyle,
             quickCallHidden = quickCallHidden,
             blockedPrefixes = blockedPrefixes,
+            spamBlockKnown = spamBlockKnown,
+            spamBlockHidden = spamBlockHidden,
+            spamSilenceUnknown = spamSilenceUnknown,
+            spamBlockedCount = spamBlockedCount,
             showAdvancedSettings = showAdvancedSettings,
             minimalMode = minimalMode,
             duplicatesDismissed = duplicatesDismissed,
@@ -1264,6 +1280,30 @@ class DataStoreSettingsRepository(
                 .map { it.trim() }
                 .filter { it.isNotEmpty() }
                 .joinToString(";")
+        }
+    }
+
+    override suspend fun setSpamBlockKnown(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.SPAM_BLOCK_KNOWN] = enabled
+        }
+    }
+
+    override suspend fun setSpamBlockHidden(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.SPAM_BLOCK_HIDDEN] = enabled
+        }
+    }
+
+    override suspend fun setSpamSilenceUnknown(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[Keys.SPAM_SILENCE_UNKNOWN] = enabled
+        }
+    }
+
+    override suspend fun setSpamBlockedCount(count: Long) {
+        dataStore.edit { prefs ->
+            prefs[Keys.SPAM_BLOCKED_COUNT] = count
         }
     }
 

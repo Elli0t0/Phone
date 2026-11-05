@@ -164,6 +164,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.20.3]
+
+- Spam protection, offline only (no server, no uploads): Room table spam_numbers + SpamRepository with an in-memory cache loaded at app start, so lookups are instant. Numbers are stored normalized, so +98 / 0098 / 0-trunk spellings of one number are a single row.
+- New PhoneCallScreeningService (BIND_SCREENING_SERVICE, API 29+): screens incoming calls only, never contacts (PhoneLookup exemption), then the spam list, then the existing blocked prefixes (same logic as the InCallService fallback), then the hidden-number setting. Blocked calls are rejected with no notification and still appear in Recents (the platform logs them as rejected). "Silence unknown callers" rings silently instead of rejecting. Decisions run against the cache with a 2.5 s timeout; any exception or timeout answers ALLOW, so screening can never eat a real call. If the system does not bind it as the default dialer, Settings > Spam protection can request RoleManager.ROLE_CALL_SCREENING.
+- Settings > Spam protection screen: toggles for block known spam / block hidden numbers / silence unknown callers, a lifetime blocked-call counter, the screening-role request, and the reported-numbers list with remove + undo.
+- "Report as spam" in the Recents selection overflow (single selection) and in the contact detail overflow menu; a red "Spam" badge on Recents rows and "Suspected spam" under the name on the incoming call screen for listed numbers.
+- Tests: SpamMatcherTest covers normalization variants, the contacts exemption (via the pure SpamDecider), prefix matching, and unknown/hidden handling.
+- Double-check fixes: prefix blocking in PhoneInCallService now uses call.reject(false, null) so the call logs as rejected (was disconnect), and counts the rejection; onCallAdded and startForegroundForCall failures now also write a PhoneNavLog line instead of failing silently.
+- TODO (later, optional): a daily download of a community spam JSON list from GitHub into rows with source LIST, opt-in only, never replacing user-reported rows. No network sync exists today.
+
 ## [0.20.2]
 
 - Quick Call pills moved to the top of the keypad: the PILLS strip now renders in DialpadSuggestionsArea's empty state, in the same slot as the CLASSIC Recent chips, so typing swaps it with the T9 suggestion chips without any layout jump. The block above the keys is gone. The strip is still hidden while typing, while a name search is open, and in Minimal mode, and the call/message/open-contact/remove actions are unchanged (same confirm, SENDTO, and hide code, now passed in as lambdas). Doc comments updated to say the strip is at the top.

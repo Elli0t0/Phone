@@ -379,7 +379,9 @@ class CallActivity : ComponentActivity() {
                                             },
                                             dim = settings.callBackgroundDim,
                                             showNumber = settings.showNumberOnCallScreen,
-                                            answerStyle = settings.answerStyle
+                                            answerStyle = settings.answerStyle,
+                                            isSpam = app?.container?.spamRepository
+                                                ?.isSpam(currentModel.number) ?: false
                                         )
                                     } else {
                                         OngoingCallScreen(

@@ -69,7 +69,8 @@ enum class SettingsPage {
     RECORDING,
     ANSWER_STYLE,
     APP_BACKGROUND,
-    SPEED_DIAL
+    SPEED_DIAL,
+    SPAM
 }
 
 fun openSettingsPage(dialogs: SettingsDialogState, page: SettingsPage) {
@@ -92,6 +93,7 @@ fun openSettingsPage(dialogs: SettingsDialogState, page: SettingsPage) {
         SettingsPage.ANSWER_STYLE -> dialogs.showAnswerStylePage = true
         SettingsPage.APP_BACKGROUND -> dialogs.showAppBackgroundPage = true
         SettingsPage.SPEED_DIAL -> dialogs.showSpeedDialPage = true
+        SettingsPage.SPAM -> dialogs.showSpamPage = true
     }
 }
 
@@ -114,6 +116,7 @@ fun settingsPageIconRes(page: SettingsPage): Int = when (page) {
     SettingsPage.ABOUT -> R.drawable.ic_info
     SettingsPage.RECORDING -> R.drawable.ic_record
     SettingsPage.SPEED_DIAL -> R.drawable.ic_dialpad
+    SettingsPage.SPAM -> R.drawable.ic_block
 }
 
 /**
@@ -309,6 +312,7 @@ val allSettingEntries: List<SettingEntry> = listOf(
     SettingEntry("nav_layout_nav", R.string.settings_cat_layout_nav, R.string.settings_cat_layout_nav, SettingsPage.LAYOUT_NAV, anchor = "nav_layout_nav"),
     SettingEntry("nav_keypad", R.string.settings_cat_keypad, R.string.settings_cat_keypad, SettingsPage.KEYPAD, anchor = "nav_keypad"),
     SettingEntry("nav_calls", R.string.settings_cat_calls, R.string.settings_cat_calls, SettingsPage.CALLS, anchor = "nav_calls"),
+    SettingEntry("nav_spam", R.string.spam_title, R.string.settings_cat_calls, SettingsPage.SPAM),
     SettingEntry("nav_contacts", R.string.settings_cat_contacts, R.string.settings_cat_contacts, SettingsPage.CONTACTS, anchor = "nav_contacts"),
     SettingEntry("nav_recording", R.string.settings_call_recording, R.string.settings_call_recording, SettingsPage.RECORDING, anchor = "nav_recording"),
     SettingEntry("nav_privacy", R.string.settings_cat_privacy, R.string.settings_cat_privacy, SettingsPage.PRIVACY, anchor = "nav_privacy"),

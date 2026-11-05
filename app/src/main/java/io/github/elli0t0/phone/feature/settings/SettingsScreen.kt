@@ -738,6 +738,7 @@ fun SettingsScreen(
     BackHandler(enabled = dialogs.showSpeedDialPage) { dialogs.showSpeedDialPage = false }
     BackHandler(enabled = dialogs.showGlassStudioPage) { dialogs.showGlassStudioPage = false }
     BackHandler(enabled = dialogs.showBlockedNumbers) { dialogs.showBlockedNumbers = false }
+    BackHandler(enabled = dialogs.showSpamPage) { dialogs.showSpamPage = false }
     BackHandler(enabled = dialogs.showRecordingPage) { dialogs.showRecordingPage = false }
     BackHandler(enabled = dialogs.showExcludedNumbers) { dialogs.showExcludedNumbers = false }
 
@@ -804,6 +805,14 @@ fun SettingsScreen(
 
     if (dialogs.showBlockedNumbers) {
         BlockedNumbersScreen(onNavigateBack = { dialogs.showBlockedNumbers = false })
+    }
+
+    if (dialogs.showSpamPage) {
+        SpamProtectionScreen(
+            settings = settings,
+            settingsViewModel = viewModel,
+            onNavigateBack = { dialogs.showSpamPage = false }
+        )
     }
 
     if (dialogs.showRecordingPage) {

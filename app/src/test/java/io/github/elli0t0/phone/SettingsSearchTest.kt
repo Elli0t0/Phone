@@ -117,7 +117,7 @@ class SettingsSearchTest {
                 dialogs.showGlassStudioPage || dialogs.showCallBackgroundPage ||
                 dialogs.showBlockedNumbers || dialogs.showRecordingPage ||
                 dialogs.showAnswerStylePage || dialogs.showAppBackgroundPage ||
-                dialogs.showSpeedDialPage
+                dialogs.showSpeedDialPage || dialogs.showSpamPage
             assertTrue("no flag opens for $page", opened)
         }
     }

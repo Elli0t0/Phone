@@ -28,6 +28,7 @@ import io.github.elli0t0.phone.core.recording.RecordingController
 import io.github.elli0t0.phone.core.recording.adb.AdbRecordingBackend
 import io.github.elli0t0.phone.data.recordings.DefaultRecordingsRepository
 import io.github.elli0t0.phone.data.recordings.RecordingsRepository
+import io.github.elli0t0.phone.data.spam.SpamRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -47,6 +48,7 @@ interface AppContainer {
     val settingsRepository: SettingsRepository
     val setupRepository: SetupRepository
     val recordingsRepository: RecordingsRepository
+    val spamRepository: SpamRepository
     val recordingController: RecordingController
     val dialRequests: MutableSharedFlow<DialRequest>
     /**
@@ -92,6 +94,10 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
 
     override val setupRepository: SetupRepository by lazy {
         DataStoreSetupRepository(context.applicationContext.setupDataStore)
+    }
+
+    override val spamRepository: SpamRepository by lazy {
+        SpamRepository(database.spamDao(), settingsRepository)
     }
 
     override val recordingsRepository: RecordingsRepository by lazy {
@@ -165,6 +171,11 @@ class PhoneApplication : Application() {
             runCatching {
                 RecordingCleanup(container.settingsRepository, container.recordingsRepository).runIfDue()
             }
+        }
+        // Spam cache: loaded once so the call screening service and
+        // the Recents/incoming badges can answer from memory.
+        applicationScope.launch {
+            runCatching { container.spamRepository.preload() }
         }
     }
 }

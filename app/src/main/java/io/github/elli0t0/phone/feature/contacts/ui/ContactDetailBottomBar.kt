@@ -113,6 +113,7 @@ fun ContactDetailBottomBar(
     onChangePhoto: () -> Unit,
     onRingtoneClick: () -> Unit,
     onDeleteClick: () -> Unit,
+    onReportSpam: () -> Unit = {},
     modifier: Modifier = Modifier,
     tilt: State<Offset>? = null
 ) {
@@ -170,6 +171,10 @@ fun ContactDetailBottomBar(
                         GlassMenuItem(
                             text = stringResource(id = R.string.contact_details_ringtone),
                             onClick = onRingtoneClick
+                        )
+                        GlassMenuItem(
+                            text = stringResource(id = R.string.spam_report),
+                            onClick = onReportSpam
                         )
                         GlassMenuItem(
                             text = stringResource(id = R.string.contact_action_delete),

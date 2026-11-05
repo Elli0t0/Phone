@@ -101,6 +101,7 @@ fun IncomingCallScreen(
     // Black scrim over the background (0 = none). Number under the name.
     dim: Float = 0f,
     showNumber: Boolean = true,
+    isSpam: Boolean = false,
     answerStyle: AnswerStyle = AnswerStyle.CLASSIC,
     modifier: Modifier = Modifier
 ) {
@@ -250,6 +251,15 @@ fun IncomingCallScreen(
                     style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Content),
                     color = Color.White.copy(alpha = 0.8f),
                     textAlign = TextAlign.Center
+                )
+            }
+            if (isSpam) {
+                Text(
+                    text = stringResource(id = R.string.spam_suspected),
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = spacing.extraSmall)
                 )
             }
         }

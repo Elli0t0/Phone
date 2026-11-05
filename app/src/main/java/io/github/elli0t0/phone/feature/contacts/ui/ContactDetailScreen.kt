@@ -48,6 +48,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import io.github.elli0t0.phone.LocalAppSnackbarHostState
+import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.core.design.ConfirmCallSheet
@@ -349,6 +350,19 @@ fun ContactDetailScreen(
                     onDeleteClick = {
                         showMoreMenu = false
                         onDeleteRequest()
+                    },
+                    onReportSpam = {
+                        showMoreMenu = false
+                        val number = uiState.contact?.phones?.firstOrNull()?.number.orEmpty()
+                        if (number.isNotBlank()) {
+                            coroutineScope.launch {
+                                (context.applicationContext as PhoneApplication)
+                                    .container.spamRepository.reportSpam(number)
+                                snackbarHostState.showSnackbar(
+                                    context.getString(R.string.spam_reported)
+                                )
+                            }
+                        }
                     },
                     tilt = tilt
                 )

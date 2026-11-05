@@ -10,16 +10,19 @@ import io.github.elli0t0.phone.data.favorites.model.ContactSimEntity
 import io.github.elli0t0.phone.data.favorites.model.FavoriteContactEntity
 import io.github.elli0t0.phone.data.recordings.RecordingEntity
 import io.github.elli0t0.phone.data.recordings.RecordingsDao
+import io.github.elli0t0.phone.data.spam.SpamDao
+import io.github.elli0t0.phone.data.spam.SpamNumberEntity
 
 @Database(
-    entities = [FavoriteContactEntity::class, ContactSimEntity::class, RecordingEntity::class],
-    version = 5,
+    entities = [FavoriteContactEntity::class, ContactSimEntity::class, RecordingEntity::class, SpamNumberEntity::class],
+    version = 6,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun favoritesDao(): FavoritesDao
     abstract fun contactSimDao(): ContactSimDao
     abstract fun recordingsDao(): RecordingsDao
+    abstract fun spamDao(): SpamDao
 
     companion object {
         val MIGRATION_1_2: Migration = object : Migration(1, 2) {
@@ -54,6 +57,17 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_5_6: Migration = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `spam_numbers` " +
+                        "(`numberNormalized` TEXT NOT NULL PRIMARY KEY, " +
+                        "`reason` TEXT NOT NULL, `source` TEXT NOT NULL, " +
+                        "`reportCount` INTEGER NOT NULL, `addedAt` INTEGER NOT NULL)"
+                )
+            }
+        }
+
         val MIGRATION_4_5: Migration = object : Migration(4, 5) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
@@ -78,7 +92,7 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "phone_database"
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build()
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).build()
                 INSTANCE = instance
                 instance
             }
