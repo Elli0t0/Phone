@@ -62,7 +62,6 @@ import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalMinimal
 import io.github.elli0t0.phone.core.design.minimalPalette
 import io.github.elli0t0.phone.data.settings.model.KeypadStyle
-import io.github.elli0t0.phone.data.settings.model.QuickCallStyle
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.dialogEnter
 import io.github.elli0t0.phone.core.design.liquidGlass
@@ -424,6 +423,30 @@ fun DialpadScreen(
             animationOption = animationOption,
             quickCallEnabled = quickCallEnabled,
             quickCallStyle = quickCallStyle,
+            quickCall = uiState.quickCall,
+            onQuickCall = { entry ->
+                lightHaptic()
+                callWithConfirm(entry.number, entry.contact.lookupKey, entry.contact.displayName)
+            },
+            onQuickMessage = { entry ->
+                lightHaptic()
+                context.startActivity(
+                    Intent(
+                        Intent.ACTION_SENDTO,
+                        Uri.parse("smsto:${Uri.encode(entry.number)}")
+                    )
+                )
+            },
+            onQuickOpenContact = { entry ->
+                onOpenContact(entry.contact.id)
+            },
+            onQuickRemove = { entry ->
+                coroutineScope.launch {
+                    app.container.settingsRepository.setQuickCallHidden(
+                        quickCallHidden + entry.contact.lookupKey
+                    )
+                }
+            },
             onSearchRowClick = { contact ->
                 lightHaptic()
                 viewModel.onContactSelected(contact)
@@ -482,47 +505,6 @@ fun DialpadScreen(
             onStopBackspaceRepeat = viewModel::stopBackspaceRepeat,
             caption = numberCaption
         )
-        // Quick call pills (0.19.6): directly above the keys, 12dp
-        // above the first key row. Hidden while typing (the
-        // suggestion chips take over), while a name search is open,
-        // in Minimal mode (the Minimal keypad stays pixel-identical),
-        // when the setting is off, and when the style is CLASSIC
-        // (the Recent chips in the top area replace the pills).
-        // The keys below simply reflow, with no gap.
-        if (!minimal && quickCallEnabled && quickCallStyle == QuickCallStyle.PILLS &&
-            uiState.rawNumber.isEmpty() && !searchVisible &&
-            uiState.quickCall.isNotEmpty()
-        ) {
-            QuickCallStrip(
-                entries = uiState.quickCall,
-                onCall = { entry ->
-                    lightHaptic()
-                    callWithConfirm(entry.number, entry.contact.lookupKey, entry.contact.displayName)
-                },
-                onMessage = { entry ->
-                    lightHaptic()
-                    context.startActivity(
-                        Intent(
-                            Intent.ACTION_SENDTO,
-                            Uri.parse("smsto:${Uri.encode(entry.number)}")
-                        )
-                    )
-                },
-                onOpenContact = { entry ->
-                    onOpenContact(entry.contact.id)
-                },
-                onRemove = { entry ->
-                    coroutineScope.launch {
-                        app.container.settingsRepository.setQuickCallHidden(
-                            quickCallHidden + entry.contact.lookupKey
-                        )
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = spacing.small, bottom = 12.dp)
-            )
-        }
         DialpadKeypadGrid(
             // No tick here: KeypadKey ticks on press-down.
             // Minimal (0.18.10): the MINIMAL style is forced,

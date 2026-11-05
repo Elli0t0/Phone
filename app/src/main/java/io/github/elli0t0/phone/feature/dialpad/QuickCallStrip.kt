@@ -46,7 +46,8 @@ import io.github.elli0t0.phone.feature.contacts.ui.ContactAvatar
 
 /**
  * Quick call strip (0.19.6 pills): one-tap calling for favorites
- * and recents, as a row of pills directly above the keys. Each pill
+ * and recents, as a row of pills at the top of the keypad, in the
+ * same slot as the classic chips. Each pill
  * is 44dp tall with a 32dp avatar and the first name (max 96dp).
  * The row scrolls horizontally with a 12dp fade at the scrollable
  * edges. Tap calls; long-press opens a small glass menu (Message,

@@ -40,6 +40,11 @@ fun ColumnScope.DialpadSuggestionsArea(
     animationOption: AnimationOption,
     quickCallEnabled: Boolean,
     quickCallStyle: QuickCallStyle,
+    quickCall: List<QuickCallEntry>,
+    onQuickCall: (QuickCallEntry) -> Unit,
+    onQuickMessage: (QuickCallEntry) -> Unit,
+    onQuickOpenContact: (QuickCallEntry) -> Unit,
+    onQuickRemove: (QuickCallEntry) -> Unit,
     onSearchRowClick: (ContactSummary) -> Unit,
     onSearchRowCallClick: (ContactSummary) -> Unit,
     onSuggestionSelect: (ContactSummary) -> Unit,
@@ -70,12 +75,14 @@ fun ColumnScope.DialpadSuggestionsArea(
         uiState.matchingContacts.isNotEmpty()
     val showNoMatchActions = uiState.rawNumber.isNotEmpty() &&
         !showSearchRows && !showChips
-    // Empty keypad: PILLS shows nothing here (the pill row below
-    // the number display owns it). CLASSIC restores the pre-strip
-    // look exactly via the untouched QuickRedialChips: the "Recent"
-    // label + up to 3 text chips at the top. The old favorites row
-    // is not restored — the spec names the Recent chips only.
-    // T9 chips pin to the top too; search rows fill the area.
+    // Empty keypad: PILLS shows the pill strip here, at the top,
+    // in the same slot as the CLASSIC chips, so typing swaps it
+    // with the T9 suggestion chips without any layout jump.
+    // CLASSIC restores the pre-strip look exactly via the untouched
+    // QuickRedialChips: the "Recent" label + up to 3 text chips at
+    // the top. The old favorites row is not restored — the spec
+    // names the Recent chips only. T9 chips pin to the top too;
+    // search rows fill the area.
     val isEmptyState = uiState.rawNumber.isEmpty() && !showSearchRows && !showChips
     // T9 Matching contacts list above the keypad
     Box(
@@ -127,6 +134,19 @@ fun ColumnScope.DialpadSuggestionsArea(
                 onRedial = { entry ->
                     onRedial(entry)
                 },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        // PILLS: the same top slot. Hidden while typing (the empty
+        // state already requires an empty number), while a name
+        // search is open, and in Minimal mode, as before.
+        if (quickCallStyle == QuickCallStyle.PILLS && quickCallEnabled &&
+            quickCall.isNotEmpty() && !searchVisible && !LocalMinimal.current
+        ) {
+            QuickCallStrip(
+                entries = quickCall,
+                onCall = onQuickCall, onMessage = onQuickMessage,
+                onOpenContact = onQuickOpenContact, onRemove = onQuickRemove,
                 modifier = Modifier.fillMaxWidth()
             )
         }

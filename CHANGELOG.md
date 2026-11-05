@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.20.2]
+
+- Quick Call pills moved to the top of the keypad: the PILLS strip now renders in DialpadSuggestionsArea's empty state, in the same slot as the CLASSIC Recent chips, so typing swaps it with the T9 suggestion chips without any layout jump. The block above the keys is gone. The strip is still hidden while typing, while a name search is open, and in Minimal mode, and the call/message/open-contact/remove actions are unchanged (same confirm, SENDTO, and hide code, now passed in as lambdas). Doc comments updated to say the strip is at the top.
+
 ## [0.20.1]
 
 - Settings popup on the keypad (and every other overflow menu) no longer looks cramped: the popup corner is 20dp (new PhoneDimens.menuPopupCornerRadius; menuCornerRadius stays 28dp for its other users), the container is fully opaque so list content can't show through, and the popup is at least 180dp wide. All 26 menu items in the 10 GlassDropdownMenu call sites now use the new shared GlassMenuItem with 20dp horizontal / 12dp vertical padding. Test tags are unchanged. GlassMenuItem also carries optional color (keeps the red delete rows red) and leading/trailing icon slots (keeps the check marks in the Recents filter and the Recordings sort menu). The two ExposedDropdownMenu items in ContactEditScreen are untouched — they are not glass menus.
