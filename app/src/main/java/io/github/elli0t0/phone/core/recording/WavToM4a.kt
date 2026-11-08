@@ -190,7 +190,14 @@ object WavToM4a {
                         drain(endOfStream = false)
                         continue
                     }
-                    val inBuffer = codec.getInputBuffer(inIndex) ?: continue
+                    val inBuffer = codec.getInputBuffer(inIndex)
+                    if (inBuffer == null) {
+                        // A dequeued buffer must go back, empty, or
+                        // the codec runs out of input buffers and
+                        // this loop spins forever with no progress.
+                        codec.queueInputBuffer(inIndex, 0, 0, 0, 0)
+                        continue
+                    }
                     val len = minOf(want - offset, inBuffer.remaining())
                     inBuffer.put(pcm, offset, len)
                     val frames = framesTotal + len / frameBytes

@@ -318,6 +318,81 @@ fun RecordingSettingsScreen(
                 }
             }
 
+            // Recording format gets its own card, right under Open
+            // recordings: it was buried at the bottom of the
+            // auto-delete card and easy to miss.
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = stringResource(id = R.string.recording_format_title),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Column(
+                            modifier = Modifier.fillMaxWidth()
+                                .clickable { showFormatDialog = true }
+                        ) {
+                            Text(
+                                text = if (recordingFormat == RecordingFormat.M4A) {
+                                    stringResource(id = R.string.recording_format_m4a)
+                                } else {
+                                    stringResource(id = R.string.recording_format_wav)
+                                },
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = stringResource(id = R.string.recording_format_summary),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        // One-time bulk conversion of old WAVs, with
+                        // progress. Each WAV is deleted only after its
+                        // .m4a is done; failures keep the WAV.
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Column(
+                            modifier = Modifier.fillMaxWidth()
+                                .clickable(
+                                    enabled = convertOldProgress?.running != true
+                                ) { viewModel.convertOldRecordings() }
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.convert_old_title),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = when (val progress = convertOldProgress) {
+                                    null -> stringResource(id = R.string.convert_old_summary)
+                                    else -> if (progress.running) {
+                                        stringResource(
+                                            id = R.string.convert_old_progress,
+                                            progress.done, progress.total
+                                        )
+                                    } else if (progress.total == 0) {
+                                        stringResource(id = R.string.convert_old_none)
+                                    } else {
+                                        stringResource(
+                                            id = R.string.convert_old_done,
+                                            progress.converted
+                                        )
+                                    }
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+
             item {
                 Card(
                     colors = CardDefaults.cardColors(
@@ -377,65 +452,6 @@ fun RecordingSettingsScreen(
                                 } else {
                                     SwitchDefaults.colors()
                                 }
-                            )
-                        }
-                        // Recording format: new recordings are encoded
-                        // to M4A after capture, or kept as WAV. The row
-                        // opens the same choice dialog as retention.
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Column(
-                            modifier = Modifier.fillMaxWidth()
-                                .clickable { showFormatDialog = true }
-                        ) {
-                            Text(
-                                text = stringResource(id = R.string.recording_format_title),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = if (recordingFormat == RecordingFormat.M4A) {
-                                    stringResource(id = R.string.recording_format_m4a)
-                                } else {
-                                    stringResource(id = R.string.recording_format_wav)
-                                },
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        // One-time bulk conversion of old WAVs, with
-                        // progress. Each WAV is deleted only after its
-                        // .m4a is done; failures keep the WAV.
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Column(
-                            modifier = Modifier.fillMaxWidth()
-                                .clickable(
-                                    enabled = convertOldProgress?.running != true
-                                ) { viewModel.convertOldRecordings() }
-                        ) {
-                            Text(
-                                text = stringResource(id = R.string.convert_old_title),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = when (val progress = convertOldProgress) {
-                                    null -> stringResource(id = R.string.convert_old_summary)
-                                    else -> if (progress.running) {
-                                        stringResource(
-                                            id = R.string.convert_old_progress,
-                                            progress.done, progress.total
-                                        )
-                                    } else if (progress.total == 0) {
-                                        stringResource(id = R.string.convert_old_none)
-                                    } else {
-                                        stringResource(
-                                            id = R.string.convert_old_done,
-                                            progress.converted
-                                        )
-                                    }
-                                },
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }

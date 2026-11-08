@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 enum class RecordingDateFilter {
     ALL, TODAY, WEEK, MONTH;
@@ -313,12 +314,16 @@ class RecordingsViewModel(
 
     // A WAV-only recording is converted first (in the background),
     // so what leaves the phone is the playable .m4a. On conversion
-    // failure the original WAV is shared instead.
+    // failure the original WAV is shared instead. The conversion is
+    // bounded: a stuck encoder must never swallow the share — after
+    // 30 s the original file is shared as-is.
     private suspend fun ensureShareable(entity: RecordingEntity): RecordingEntity {
         if (!RecordingConverter.isWav(appContext, entity)) return entity
-        val converted = runCatching {
-            RecordingConverter.convertEntityToM4a(appContext, repo, entity)
-        }.getOrDefault(false)
+        val converted = withTimeoutOrNull(CONVERT_TIMEOUT_MS) {
+            runCatching {
+                RecordingConverter.convertEntityToM4a(appContext, repo, entity)
+            }.getOrDefault(false)
+        } == true
         if (!converted) return entity
         return repo.recordings.first().firstOrNull { it.id == entity.id } ?: entity
     }
@@ -327,16 +332,22 @@ class RecordingsViewModel(
         viewModelScope.launch {
             // The MIME check queries the display name, so it runs
             // on IO with the conversion, never on the main thread.
-            val (toShare, mime) = withContext(Dispatchers.IO) {
-                val e = ensureShareable(entity)
-                e to RecordingConverter.mimeTypeFor(appContext, e)
-            }
+            // Whatever fails above, the chooser still opens with
+            // the original recording: share never silently dies.
+            val toShare = runCatching {
+                withContext(Dispatchers.IO) { ensureShareable(entity) }
+            }.getOrDefault(entity)
+            val mime = runCatching {
+                withContext(Dispatchers.IO) {
+                    RecordingConverter.mimeTypeFor(appContext, toShare)
+                }
+            }.getOrDefault("audio/x-wav")
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = mime
                 putExtra(Intent.EXTRA_STREAM, shareUriFor(toShare, context))
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            context.startActivity(Intent.createChooser(intent, null))
+            runCatching { context.startActivity(Intent.createChooser(intent, null)) }
         }
     }
 
@@ -344,17 +355,19 @@ class RecordingsViewModel(
         viewModelScope.launch {
             val ids = _selectedIds.value
             if (ids.isEmpty()) return@launch
-            val (entities, mime) = withContext(Dispatchers.IO) {
-                val selected = repo.recordings.first().filter { it.id in ids }
-                val out = ArrayList<RecordingEntity>(selected.size)
-                for (e in selected) out += ensureShareable(e)
-                val mime = when {
-                    out.all { RecordingConverter.isM4a(appContext, it) } -> "audio/mp4"
-                    out.all { RecordingConverter.isWav(appContext, it) } -> "audio/x-wav"
-                    else -> "audio/*"
+            val (entities, mime) = runCatching {
+                withContext(Dispatchers.IO) {
+                    val selected = repo.recordings.first().filter { it.id in ids }
+                    val out = ArrayList<RecordingEntity>(selected.size)
+                    for (e in selected) out += ensureShareable(e)
+                    val mime = when {
+                        out.all { RecordingConverter.isM4a(appContext, it) } -> "audio/mp4"
+                        out.all { RecordingConverter.isWav(appContext, it) } -> "audio/x-wav"
+                        else -> "audio/*"
+                    }
+                    out to mime
                 }
-                out to mime
-            }
+            }.getOrNull() ?: return@launch
             if (entities.isEmpty()) return@launch
             val intent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
                 type = mime
@@ -364,7 +377,7 @@ class RecordingsViewModel(
                 )
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            context.startActivity(Intent.createChooser(intent, null))
+            runCatching { context.startActivity(Intent.createChooser(intent, null)) }
             _selectedIds.value = emptySet()
         }
     }
@@ -375,6 +388,10 @@ class RecordingsViewModel(
     }
 
     companion object {
+        /** Share-time conversion must never outlive this: after it,
+         * the original file is shared instead of nothing. */
+        private const val CONVERT_TIMEOUT_MS = 30_000L
+
         fun provideFactory(
             repository: RecordingsRepository,
             settingsRepository: SettingsRepository,

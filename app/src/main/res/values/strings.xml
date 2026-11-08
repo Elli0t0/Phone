@@ -624,6 +624,7 @@
     <string name="recordings_private_title">Save recordings privately</string>
     <string name="recordings_private_summary">Off: saved to Music/Phone, visible to other apps. On: saved inside Phone only. Existing recordings are not moved.</string>
     <string name="recording_format_title">Recording format</string>
+    <string name="recording_format_summary">New recordings are encoded to M4A after capture, so they can be played inline when shared. WAV keeps the original file.</string>
     <string name="recording_format_m4a">M4A (default)</string>
     <string name="recording_format_wav">WAV (keep original)</string>
     <string name="convert_old_title">Convert old recordings to M4A</string>

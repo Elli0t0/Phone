@@ -164,6 +164,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.20.6]
+
+- "Recording format" and "Convert old recordings to M4A" now have their own card right under "Open recordings" on the Call recording page — they were buried at the bottom of the auto-delete card and easy to miss.
+- Share can no longer die silently: a stuck encoder no longer blocks the share sheet (share-time conversion is capped at 30 s, then the original file is shared), and any failure in the share path falls back to sharing the original recording instead of showing nothing. Also fixed a real encoder hang: a dequeued input buffer whose getInputBuffer returned null was dropped instead of returned, which could starve the codec of input buffers.
+
 ## [0.20.5]
 
 - Fixed the 0.20.4 M4A conversion never running: the format check read the extension off the stored uri, but a MediaStore recording is content://media/external/audio/media/&lt;id&gt; with no extension at all, so every default recording looked like "not WAV" and was skipped. The check now resolves the real display name (file name for file://, MediaStore DISPLAY_NAME otherwise) on Dispatchers.IO. This also fixes "Convert old recordings" reporting nothing to convert and share never converting a WAV first.

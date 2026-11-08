@@ -210,6 +210,7 @@
     <string name="recordings_private_title">ذخیره ضبط‌ها به‌صورت خصوصی</string>
     <string name="recordings_private_summary">خاموش: در Music/Phone ذخیره می‌شود و برای برنامه‌های دیگر قابل مشاهده است. روشن: فقط داخل Phone ذخیره می‌شود. ضبط‌های موجود جابه‌جا نمی‌شوند.</string>
     <string name="recording_format_title">قالب ضبط</string>
+    <string name="recording_format_summary">ضبط‌های جدید پس از ضبط به M4A تبدیل می‌شوند تا هنگام اشتراک‌گذاری مستقیم پخش شوند. WAV فایل اصلی را نگه می‌دارد.</string>
     <string name="recording_format_m4a">M4A (پیش‌فرض)</string>
     <string name="recording_format_wav">WAV (حفظ فایل اصلی)</string>
     <string name="convert_old_title">تبدیل ضبط‌های قدیمی به M4A</string>
