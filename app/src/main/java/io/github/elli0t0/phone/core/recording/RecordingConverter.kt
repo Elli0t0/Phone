@@ -29,14 +29,34 @@ import java.io.File
  */
 object RecordingConverter {
 
-    fun isWav(entity: RecordingEntity): Boolean =
-        entity.uri.endsWith(".wav", ignoreCase = true)
+    // The stored uri is NOT the file name: a MediaStore recording
+    // is content://media/external/audio/media/<id>, with no
+    // extension at all. The format lives in the display name, so
+    // every check below resolves it (file name for file://, the
+    // MediaStore DISPLAY_NAME otherwise). Callers run these on
+    // Dispatchers.IO; a resolver query must never run on the main
+    // thread.
+    fun fileName(resolver: ContentResolver, uri: Uri): String? =
+        if (uri.scheme == "file") {
+            uri.path?.substringAfterLast('/')
+        } else {
+            displayName(resolver, uri)
+        }
 
-    fun isM4a(entity: RecordingEntity): Boolean =
-        entity.uri.endsWith(".m4a", ignoreCase = true)
+    fun isWav(context: Context, entity: RecordingEntity): Boolean {
+        val uri = Uri.parse(entity.uri)
+        return fileName(context.contentResolver, uri)
+            ?.endsWith(".wav", ignoreCase = true) == true
+    }
 
-    fun mimeTypeFor(entity: RecordingEntity): String =
-        if (isM4a(entity)) "audio/mp4" else "audio/x-wav"
+    fun isM4a(context: Context, entity: RecordingEntity): Boolean {
+        val uri = Uri.parse(entity.uri)
+        return fileName(context.contentResolver, uri)
+            ?.endsWith(".m4a", ignoreCase = true) == true
+    }
+
+    fun mimeTypeFor(context: Context, entity: RecordingEntity): String =
+        if (isM4a(context, entity)) "audio/mp4" else "audio/x-wav"
 
     /** Converts [entity]'s WAV to M4A, updates the row, deletes the WAV. True on success. */
     suspend fun convertEntityToM4a(
@@ -44,7 +64,7 @@ object RecordingConverter {
         repo: RecordingsRepository,
         entity: RecordingEntity
     ): Boolean {
-        if (!isWav(entity)) return false
+        if (!isWav(context, entity)) return false
         val resolver = context.contentResolver
         val wavUri = Uri.parse(entity.uri)
         return try {

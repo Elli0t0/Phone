@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.20.5]
+
+- Fixed the 0.20.4 M4A conversion never running: the format check read the extension off the stored uri, but a MediaStore recording is content://media/external/audio/media/&lt;id&gt; with no extension at all, so every default recording looked like "not WAV" and was skipped. The check now resolves the real display name (file name for file://, MediaStore DISPLAY_NAME otherwise) on Dispatchers.IO. This also fixes "Convert old recordings" reporting nothing to convert and share never converting a WAV first.
+
 ## [0.20.4]
 
 - Recordings are now encoded to M4A (AAC-LC) automatically after capture finishes: MediaCodec + MediaMuxer, 64 kbps mono / 96 kbps stereo, same base filename with a .m4a extension. The WAV is deleted only after the .m4a exists with a duration > 0; on any encode failure the WAV is kept and the recording is not lost.

@@ -315,7 +315,7 @@ class RecordingsViewModel(
     // so what leaves the phone is the playable .m4a. On conversion
     // failure the original WAV is shared instead.
     private suspend fun ensureShareable(entity: RecordingEntity): RecordingEntity {
-        if (!RecordingConverter.isWav(entity)) return entity
+        if (!RecordingConverter.isWav(appContext, entity)) return entity
         val converted = runCatching {
             RecordingConverter.convertEntityToM4a(appContext, repo, entity)
         }.getOrDefault(false)
@@ -325,9 +325,14 @@ class RecordingsViewModel(
 
     fun share(entity: RecordingEntity, context: Context) {
         viewModelScope.launch {
-            val toShare = withContext(Dispatchers.IO) { ensureShareable(entity) }
+            // The MIME check queries the display name, so it runs
+            // on IO with the conversion, never on the main thread.
+            val (toShare, mime) = withContext(Dispatchers.IO) {
+                val e = ensureShareable(entity)
+                e to RecordingConverter.mimeTypeFor(appContext, e)
+            }
             val intent = Intent(Intent.ACTION_SEND).apply {
-                type = RecordingConverter.mimeTypeFor(toShare)
+                type = mime
                 putExtra(Intent.EXTRA_STREAM, shareUriFor(toShare, context))
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
             }
@@ -339,18 +344,18 @@ class RecordingsViewModel(
         viewModelScope.launch {
             val ids = _selectedIds.value
             if (ids.isEmpty()) return@launch
-            val entities = withContext(Dispatchers.IO) {
+            val (entities, mime) = withContext(Dispatchers.IO) {
                 val selected = repo.recordings.first().filter { it.id in ids }
                 val out = ArrayList<RecordingEntity>(selected.size)
                 for (e in selected) out += ensureShareable(e)
-                out
+                val mime = when {
+                    out.all { RecordingConverter.isM4a(appContext, it) } -> "audio/mp4"
+                    out.all { RecordingConverter.isWav(appContext, it) } -> "audio/x-wav"
+                    else -> "audio/*"
+                }
+                out to mime
             }
             if (entities.isEmpty()) return@launch
-            val mime = when {
-                entities.all { RecordingConverter.isM4a(it) } -> "audio/mp4"
-                entities.all { RecordingConverter.isWav(it) } -> "audio/x-wav"
-                else -> "audio/*"
-            }
             val intent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
                 type = mime
                 putParcelableArrayListExtra(

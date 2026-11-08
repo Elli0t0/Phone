@@ -100,7 +100,7 @@ class RecordingSettingsViewModel(
         if (_convertOldProgress.value?.running == true) return
         viewModelScope.launch(Dispatchers.IO) {
             val wavs = recordingsRepository.recordings.first()
-                .filter { !it.isTest && RecordingConverter.isWav(it) }
+                .filter { !it.isTest && RecordingConverter.isWav(appContext, it) }
             _convertOldProgress.value = ConvertOldProgress(0, wavs.size, true, 0)
             var converted = 0
             for ((index, entity) in wavs.withIndex()) {
