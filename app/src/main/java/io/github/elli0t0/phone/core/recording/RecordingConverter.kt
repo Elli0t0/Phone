@@ -14,6 +14,11 @@ import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Converts one stored WAV recording to M4A (AAC) and swaps the
@@ -31,6 +36,21 @@ import kotlinx.coroutines.CompletableDeferred
  * main thread.
  */
 object RecordingConverter {
+
+    // Short reason for the last failed conversion, shown in
+    // Settings under "Convert old recordings" so a failure can be
+    // read on the phone without logcat. Cleared at the start of
+    // each new bulk run.
+    private val _lastError = MutableStateFlow<String?>(null)
+    val lastError: StateFlow<String?> = _lastError.asStateFlow()
+
+    fun recordError(reason: String) {
+        _lastError.value = reason
+    }
+
+    fun clearError() {
+        _lastError.value = null
+    }
 
     // The stored uri is NOT the file name: a MediaStore recording
     // is content://media/external/audio/media/<id>, with no
@@ -106,11 +126,16 @@ object RecordingConverter {
     ): Boolean {
         val resolver = context.contentResolver
         val wavUri = Uri.parse(entity.uri)
+        // The caller's liveness: a share timeout or a cancelled
+        // bulk run stops the encode at the next PCM chunk instead
+        // of finishing it in the background.
+        val job = currentCoroutineContext()[Job]
+        val alive = { job?.isActive != false }
         return try {
             if (wavUri.scheme == "file") {
-                convertPrivateFile(context, repo, entity, wavUri)
+                convertPrivateFile(context, repo, entity, wavUri, alive)
             } else {
-                convertMediaStoreEntry(resolver, repo, entity, wavUri)
+                convertMediaStoreEntry(resolver, repo, entity, wavUri, alive)
             }
         } catch (_: Exception) {
             false
@@ -121,12 +146,19 @@ object RecordingConverter {
         context: Context,
         repo: RecordingsRepository,
         entity: RecordingEntity,
-        wavUri: Uri
+        wavUri: Uri,
+        isActive: () -> Boolean
     ): Boolean {
-        val wavFile = wavUri.path?.let { File(it) } ?: return false
-        if (!wavFile.exists()) return false
+        val wavFile = wavUri.path?.let { File(it) } ?: run {
+            recordError("File: WAV not found")
+            return false
+        }
+        if (!wavFile.exists()) {
+            recordError("File: WAV not found")
+            return false
+        }
         val outFile = File(wavFile.parentFile, wavFile.nameWithoutExtension + ".m4a")
-        val durationMs = WavToM4a.convertFile(wavFile, outFile) ?: return false
+        val durationMs = WavToM4a.convertFile(wavFile, outFile, isActive) ?: return false
         if (durationMs <= 0) {
             runCatching { outFile.delete() }
             return false
@@ -140,9 +172,13 @@ object RecordingConverter {
         resolver: ContentResolver,
         repo: RecordingsRepository,
         entity: RecordingEntity,
-        wavUri: Uri
+        wavUri: Uri,
+        isActive: () -> Boolean
     ): Boolean {
-        val input = resolver.openInputStream(wavUri) ?: return false
+        val input = resolver.openInputStream(wavUri) ?: run {
+            recordError("MediaStore: cannot open WAV")
+            return false
+        }
         val baseName = displayName(resolver, wavUri) ?: "Phone_${entity.startedAt}.wav"
         val outName = baseName.removeSuffix(".wav").removeSuffix(".WAV") + ".m4a"
         val values = ContentValues().apply {
@@ -156,23 +192,27 @@ object RecordingConverter {
         )
         if (outUri == null) {
             runCatching { input.close() }
+            recordError("MediaStore: cannot create M4A entry")
             return false
         }
         var durationMs: Long? = null
         try {
-            val pfd = resolver.openFileDescriptor(outUri, "w")
+            // MediaMuxer(FileDescriptor) needs a read+write fd.
+            val pfd = resolver.openFileDescriptor(outUri, "rw")
             if (pfd == null) {
                 runCatching { resolver.delete(outUri, null, null) }
+                recordError("MediaStore: openFileDescriptor returned null")
                 return false
             }
             pfd.use {
                 val muxer = MediaMuxer(
                     it.fileDescriptor, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4
                 )
-                durationMs = WavToM4a.encode(input, muxer)
+                durationMs = WavToM4a.encode(input, muxer, isActive)
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             runCatching { resolver.delete(outUri, null, null) }
+            recordError("Muxer: ${e.message ?: e.javaClass.simpleName}")
             return false
         } finally {
             runCatching { input.close() }

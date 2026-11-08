@@ -32,6 +32,7 @@ import io.github.elli0t0.phone.data.spam.SpamRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 
@@ -176,6 +177,13 @@ class PhoneApplication : Application() {
         // the Recents/incoming badges can answer from memory.
         applicationScope.launch {
             runCatching { container.spamRepository.preload() }
+        }
+        // Leftover WAVs from before M4A: convert silently once per
+        // process, after the UI is up, on the controller's IO scope
+        // (never on the main thread, never while recording).
+        applicationScope.launch {
+            delay(5_000)
+            runCatching { container.recordingController.convertLeftoverWavs() }
         }
     }
 }

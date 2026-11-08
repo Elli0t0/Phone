@@ -4,6 +4,7 @@ import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
 import android.media.MediaMuxer
+import android.os.SystemClock
 import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
@@ -113,8 +114,15 @@ object WavToM4a {
      * (and the codec) in all cases. Returns the encoded duration in
      * ms, or null when nothing was encoded or any step failed.
      */
-    fun encode(input: InputStream, muxer: MediaMuxer): Long? {
-        val info = parseHeader(input) ?: return null
+    fun encode(
+        input: InputStream,
+        muxer: MediaMuxer,
+        isActive: () -> Boolean = { true }
+    ): Long? {
+        val info = parseHeader(input) ?: run {
+            RecordingConverter.recordError("Header: not 16-bit PCM")
+            return null
+        }
         val channels = info.channels
         val sampleRate = info.sampleRate
         val frameBytes = 2 * channels
@@ -138,11 +146,16 @@ object WavToM4a {
             codec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
             codec.start()
             val bufferInfo = MediaCodec.BufferInfo()
+            // Drain everything currently available: a 0 timeout
+            // while feeding (output must never stall the feed
+            // loop ~10 ms per frame), a longer timeout plus a
+            // deadline only at end of stream.
             fun drain(endOfStream: Boolean): Boolean {
-                var eosSeen = false
-                var guard = 0
-                while (guard++ < 1000 && !eosSeen) {
-                    val outIndex = codec!!.dequeueOutputBuffer(bufferInfo, 10_000)
+                val deadline = SystemClock.elapsedRealtime() + 10_000
+                while (true) {
+                    val outIndex = codec!!.dequeueOutputBuffer(
+                        bufferInfo, if (endOfStream) 10_000 else 0
+                    )
                     when {
                         outIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED -> {
                             if (!muxerStarted) {
@@ -153,6 +166,7 @@ object WavToM4a {
                         }
                         outIndex == MediaCodec.INFO_TRY_AGAIN_LATER -> {
                             if (!endOfStream) return false
+                            if (SystemClock.elapsedRealtime() > deadline) return false
                         }
                         outIndex >= 0 -> {
                             val outBuffer = codec.getOutputBuffer(outIndex)
@@ -163,13 +177,11 @@ object WavToM4a {
                             }
                             codec.releaseOutputBuffer(outIndex, false)
                             if ((bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                                eosSeen = true
+                                return true
                             }
                         }
                     }
-                    if (!endOfStream) return eosSeen
                 }
-                return eosSeen
             }
 
             // Feed frame-aligned chunks; every queued chunk carries
@@ -178,6 +190,10 @@ object WavToM4a {
             val pcm = ByteArray(readSize)
             var bytesLeft = info.dataSize
             while (bytesLeft > 0) {
+                // Cancellable: the caller (share timeout, leaving
+                // the page) stops the encode at the next chunk
+                // instead of finishing it in the background.
+                if (!isActive()) return null
                 val want = minOf(readSize.toLong(), bytesLeft).toInt()
                 if (!readExact(input, pcm, want)) return null
                 bytesLeft -= want
@@ -216,10 +232,17 @@ object WavToM4a {
                     eosIndex, 0, 0, ptsUs, MediaCodec.BUFFER_FLAG_END_OF_STREAM
                 )
             }
-            if (!drain(endOfStream = true)) return null
-            if (!muxerStarted || framesTotal == 0L) return null
+            if (!drain(endOfStream = true)) {
+                RecordingConverter.recordError("Encode: timed out")
+                return null
+            }
+            if (!muxerStarted || framesTotal == 0L) {
+                RecordingConverter.recordError("Encode: no frames")
+                return null
+            }
             return framesTotal * 1000L / sampleRate
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            RecordingConverter.recordError("Muxer: ${e.message ?: e.javaClass.simpleName}")
             return null
         } finally {
             runCatching { codec?.stop() }
@@ -233,14 +256,22 @@ object WavToM4a {
      * File-to-file conversion. Returns the duration in ms, or null
      * on failure, in which case the partial output is deleted.
      */
-    fun convertFile(wav: File, out: File): Long? {
-        if (!wav.exists()) return null
+    fun convertFile(
+        wav: File,
+        out: File,
+        isActive: () -> Boolean = { true }
+    ): Long? {
+        if (!wav.exists()) {
+            RecordingConverter.recordError("File: WAV not found")
+            return null
+        }
         val duration = try {
             FileInputStream(wav).use { input ->
                 val muxer = MediaMuxer(out.path, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
-                encode(input, muxer)
+                encode(input, muxer, isActive)
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            RecordingConverter.recordError("Muxer: ${e.message ?: e.javaClass.simpleName}")
             null
         }
         if (duration == null || duration <= 0 || !out.exists() || out.length() <= 0) {

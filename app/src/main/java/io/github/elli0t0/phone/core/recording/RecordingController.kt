@@ -131,6 +131,34 @@ class RecordingController(
     private val _convertOldProgress = MutableStateFlow<ConvertOldProgress?>(null)
     val convertOldProgress: StateFlow<ConvertOldProgress?> = _convertOldProgress.asStateFlow()
 
+    /** Set once the leftover run has started in this process. */
+    @Volatile
+    private var leftoverRunStarted = false
+
+    /**
+     * Converts WAV leftovers (from before M4A) silently, once per
+     * process: only when the format is M4A, only when non-test
+     * WAV rows exist, never while a call is being recorded. Runs
+     * the same bulk logic on this controller's IO scope.
+     */
+    fun convertLeftoverWavs() {
+        if (leftoverRunStarted) return
+        if (state.value != RecordingSession.Idle) return
+        leftoverRunStarted = true
+        scope.launch {
+            val format = runCatching {
+                settingsRepository.settingsFlow.first().recordingFormat
+            }.getOrNull()
+            if (format != RecordingFormat.M4A) return@launch
+            val hasWav = runCatching {
+                recordingsRepository.recordings.first()
+                    .any { !it.isTest && RecordingConverter.isWav(context, it) }
+            }.getOrDefault(false)
+            if (!hasWav) return@launch
+            convertOldRecordings()
+        }
+    }
+
     /**
      * Converts every stored non-test WAV to M4A. Runs on this
      * controller's IO scope — not on a screen's ViewModel scope —
@@ -142,6 +170,7 @@ class RecordingController(
     fun convertOldRecordings() {
         if (_convertOldProgress.value?.running == true) return
         scope.launch {
+            RecordingConverter.clearError()
             val wavs = recordingsRepository.recordings.first()
                 .filter { !it.isTest && RecordingConverter.isWav(context, it) }
             _convertOldProgress.value = ConvertOldProgress(0, wavs.size, true, 0, 0)

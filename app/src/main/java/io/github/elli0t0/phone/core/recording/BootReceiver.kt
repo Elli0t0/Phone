@@ -18,6 +18,7 @@ class BootReceiver : BroadcastReceiver() {
         val app = context.applicationContext as? PhoneApplication ?: return
         app.applicationScope.launch {
             runCatching { app.container.recordingController.checkReadyAfterBoot() }
+            runCatching { app.container.recordingController.convertLeftoverWavs() }
         }
     }
 }

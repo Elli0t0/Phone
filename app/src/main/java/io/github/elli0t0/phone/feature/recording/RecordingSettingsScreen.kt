@@ -154,6 +154,7 @@ fun RecordingSettingsScreen(
     val recordingsPrivate by viewModel.recordingsPrivate.collectAsStateWithLifecycle()
     val recordingFormat by viewModel.recordingFormat.collectAsStateWithLifecycle()
     val convertOldProgress by viewModel.convertOldProgress.collectAsStateWithLifecycle()
+    val convertLastError by viewModel.convertLastError.collectAsStateWithLifecycle()
     var showFormatDialog by remember { mutableStateOf(false) }
     val offlinePortActive by viewModel.offlinePortActive.collectAsStateWithLifecycle()
     val keyAccepted by viewModel.keyAccepted.collectAsStateWithLifecycle()
@@ -388,6 +389,17 @@ fun RecordingSettingsScreen(
                                             id = R.string.convert_old_done,
                                             progress.converted
                                         )
+                                    }
+                                }.let { base ->
+                                    // The last failure reason, readable
+                                    // on the phone without logcat.
+                                    val lastError = convertLastError
+                                    if (convertOldProgress?.running == false && lastError != null) {
+                                        "$base\n" + stringResource(
+                                            id = R.string.convert_old_last_error, lastError
+                                        )
+                                    } else {
+                                        base
                                     }
                                 },
                                 style = MaterialTheme.typography.bodySmall,

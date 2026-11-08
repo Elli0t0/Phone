@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import io.github.elli0t0.phone.core.design.GlassDropdownMenu
 import io.github.elli0t0.phone.core.design.GlassMenuItem
 import androidx.compose.material3.FilterChip
@@ -93,6 +94,7 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, modifier: Modifier = Modifier) 
     val query by vm.searchQuery.collectAsStateWithLifecycle()
     val filter by vm.dateFilter.collectAsStateWithLifecycle()
     val sort by vm.sort.collectAsStateWithLifecycle()
+    val preparingShare by vm.preparingShare.collectAsStateWithLifecycle()
     val playingId by vm.playingId.collectAsStateWithLifecycle()
     val positionMs by vm.positionMs.collectAsStateWithLifecycle()
     val speed by vm.speed.collectAsStateWithLifecycle()
@@ -118,7 +120,8 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, modifier: Modifier = Modifier) 
         containerColor = Color.Transparent,
         contentColor = MaterialTheme.colorScheme.onBackground
     ) { inner ->
-        Column(Modifier.fillMaxSize().padding(bottom = inner.calculateBottomPadding())) {
+        Box(Modifier.fillMaxSize().padding(bottom = inner.calculateBottomPadding())) {
+        Column(Modifier.fillMaxSize()) {
             InnerTopBar(
                 onBack = onNavigateBack,
                 title = if (selecting) {
@@ -272,6 +275,22 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, modifier: Modifier = Modifier) 
                     }
                 }
             }
+        }
+        if (preparingShare) {
+            Box(
+                Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator()
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = stringResource(R.string.share_preparing),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        }
         }
     }
     deleteTarget?.let { t ->

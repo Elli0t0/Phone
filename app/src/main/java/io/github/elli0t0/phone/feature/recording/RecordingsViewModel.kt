@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.media.MediaPlayer
 import android.net.Uri
+import android.widget.Toast
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -312,11 +313,17 @@ class RecordingsViewModel(
         }
     }
 
+    // True while a share-time conversion is running: the list
+    // shows a small "Preparing…" state until the chooser opens.
+    private val _preparingShare = MutableStateFlow(false)
+    val preparingShare: StateFlow<Boolean> = _preparingShare.asStateFlow()
+
     // A WAV-only recording is converted first (in the background),
     // so what leaves the phone is the playable .m4a. On conversion
     // failure the original WAV is shared instead. The conversion is
-    // bounded: a stuck encoder must never swallow the share — after
-    // 30 s the original file is shared as-is.
+    // bounded: after 20 s it truly cancels (the encoder checks the
+    // coroutine's liveness per chunk) and the original file is
+    // shared as-is.
     private suspend fun ensureShareable(entity: RecordingEntity): RecordingEntity {
         if (!RecordingConverter.isWav(appContext, entity)) return entity
         val converted = withTimeoutOrNull(CONVERT_TIMEOUT_MS) {
@@ -328,26 +335,65 @@ class RecordingsViewModel(
         return repo.recordings.first().firstOrNull { it.id == entity.id } ?: entity
     }
 
+    private fun launchShareIntent(entity: RecordingEntity, mime: String, context: Context) {
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = mime
+            putExtra(Intent.EXTRA_STREAM, shareUriFor(entity, context))
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        runCatching { context.startActivity(Intent.createChooser(intent, null)) }
+    }
+
+    private fun launchShareMultiple(
+        entities: List<RecordingEntity>,
+        mime: String,
+        context: Context
+    ) {
+        val intent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+            type = mime
+            putParcelableArrayListExtra(
+                Intent.EXTRA_STREAM,
+                ArrayList(entities.map { shareUriFor(it, context) })
+            )
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        runCatching { context.startActivity(Intent.createChooser(intent, null)) }
+        _selectedIds.value = emptySet()
+    }
+
+    private fun showConvertFailedToast() {
+        val reason = RecordingConverter.lastError.value
+        val base = appContext.getString(R.string.share_convert_failed)
+        val text = if (reason.isNullOrBlank()) base else "$base: $reason"
+        Toast.makeText(appContext, text, Toast.LENGTH_SHORT).show()
+    }
+
     fun share(entity: RecordingEntity, context: Context) {
         viewModelScope.launch {
-            // The MIME check queries the display name, so it runs
-            // on IO with the conversion, never on the main thread.
+            // Already M4A: the chooser opens immediately, no
+            // conversion path, no extra work. The display-name
+            // check queries the resolver, so it runs on IO.
+            val isM4a = runCatching {
+                withContext(Dispatchers.IO) { RecordingConverter.isM4a(appContext, entity) }
+            }.getOrDefault(false)
+            if (isM4a) {
+                launchShareIntent(entity, "audio/mp4", context)
+                return@launch
+            }
+            _preparingShare.value = true
+            val result = runCatching {
+                withContext(Dispatchers.IO) {
+                    val e = ensureShareable(entity)
+                    val m = RecordingConverter.mimeTypeFor(appContext, e)
+                    Triple(e, m, !RecordingConverter.isWav(appContext, e))
+                }
+            }.getOrNull()
+            _preparingShare.value = false
             // Whatever fails above, the chooser still opens with
             // the original recording: share never silently dies.
-            val toShare = runCatching {
-                withContext(Dispatchers.IO) { ensureShareable(entity) }
-            }.getOrDefault(entity)
-            val mime = runCatching {
-                withContext(Dispatchers.IO) {
-                    RecordingConverter.mimeTypeFor(appContext, toShare)
-                }
-            }.getOrDefault("audio/x-wav")
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = mime
-                putExtra(Intent.EXTRA_STREAM, shareUriFor(toShare, context))
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            runCatching { context.startActivity(Intent.createChooser(intent, null)) }
+            val (toShare, mime, converted) = result ?: Triple(entity, "audio/x-wav", false)
+            if (!converted) showConvertFailedToast()
+            launchShareIntent(toShare, mime, context)
         }
     }
 
@@ -355,30 +401,45 @@ class RecordingsViewModel(
         viewModelScope.launch {
             val ids = _selectedIds.value
             if (ids.isEmpty()) return@launch
-            val (entities, mime) = runCatching {
+            val selected = runCatching {
                 withContext(Dispatchers.IO) {
-                    val selected = repo.recordings.first().filter { it.id in ids }
+                    repo.recordings.first().filter { it.id in ids }
+                }
+            }.getOrNull() ?: return@launch
+            if (selected.isEmpty()) return@launch
+            // Already all M4A: the chooser opens immediately.
+            val allM4a = runCatching {
+                withContext(Dispatchers.IO) {
+                    selected.all { RecordingConverter.isM4a(appContext, it) }
+                }
+            }.getOrDefault(false)
+            if (allM4a) {
+                launchShareMultiple(selected, "audio/mp4", context)
+                return@launch
+            }
+            _preparingShare.value = true
+            val prepared = runCatching {
+                withContext(Dispatchers.IO) {
                     val out = ArrayList<RecordingEntity>(selected.size)
-                    for (e in selected) out += ensureShareable(e)
+                    var convertedAll = true
+                    for (e in selected) {
+                        val shared = ensureShareable(e)
+                        if (RecordingConverter.isWav(appContext, shared)) convertedAll = false
+                        out += shared
+                    }
                     val mime = when {
                         out.all { RecordingConverter.isM4a(appContext, it) } -> "audio/mp4"
                         out.all { RecordingConverter.isWav(appContext, it) } -> "audio/x-wav"
                         else -> "audio/*"
                     }
-                    out to mime
+                    Triple(out, mime, convertedAll)
                 }
-            }.getOrNull() ?: return@launch
+            }.getOrNull()
+            _preparingShare.value = false
+            val (entities, mime, convertedAll) = prepared ?: return@launch
             if (entities.isEmpty()) return@launch
-            val intent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
-                type = mime
-                putParcelableArrayListExtra(
-                    Intent.EXTRA_STREAM,
-                    ArrayList(entities.map { shareUriFor(it, context) })
-                )
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            runCatching { context.startActivity(Intent.createChooser(intent, null)) }
-            _selectedIds.value = emptySet()
+            if (!convertedAll) showConvertFailedToast()
+            launchShareMultiple(entities, mime, context)
         }
     }
 
@@ -390,7 +451,7 @@ class RecordingsViewModel(
     companion object {
         /** Share-time conversion must never outlive this: after it,
          * the original file is shared instead of nothing. */
-        private const val CONVERT_TIMEOUT_MS = 30_000L
+        private const val CONVERT_TIMEOUT_MS = 20_000L
 
         fun provideFactory(
             repository: RecordingsRepository,

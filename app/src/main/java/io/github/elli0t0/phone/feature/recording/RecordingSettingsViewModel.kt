@@ -16,6 +16,7 @@ import io.github.elli0t0.phone.core.recording.BackendStatus
 import io.github.elli0t0.phone.core.recording.PairResult
 import io.github.elli0t0.phone.core.recording.RecordingCleanup
 import io.github.elli0t0.phone.core.recording.RecordingController
+import io.github.elli0t0.phone.core.recording.RecordingConverter
 import io.github.elli0t0.phone.core.recording.RecordingSession
 import io.github.elli0t0.phone.core.recording.adb.openWirelessDebugging
 import io.github.elli0t0.phone.core.recording.adb.postPairNotification
@@ -94,6 +95,9 @@ class RecordingSettingsViewModel(
     // controller's, so reopening settings shows the running run.
     val convertOldProgress: StateFlow<RecordingController.ConvertOldProgress?> =
         controller.convertOldProgress
+
+    /** Short reason for the last failed conversion, if any. */
+    val convertLastError: StateFlow<String?> = RecordingConverter.lastError
 
     fun convertOldRecordings() {
         controller.convertOldRecordings()

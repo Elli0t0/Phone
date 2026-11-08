@@ -164,6 +164,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.20.8]
+
+- WAV→M4A conversion is no longer throttled: the encoder drained only one output buffer per 10 ms wait, so a 10-minute call took minutes to convert — it now drains everything available and finishes in seconds.
+- Share is instant for M4A recordings (chooser opens immediately); a leftover WAV shows a small "Preparing…" state while it converts, then shares the M4A. If conversion fails or takes over 20 s, it truly cancels and shares the original WAV with a toast saying why.
+- Leftover WAVs now convert themselves: once per app start (after the UI is up) and after boot, if the format is M4A, the bulk conversion runs silently in the background — never on the main thread, never while recording.
+- Conversion failures no longer fail silently: the last error reason is shown under "Convert old recordings" in Settings, so it can be read on the phone without logcat. (Also fixed: the MediaStore path opened its output file write-only; MediaMuxer needs read+write.)
+
 ## [0.20.7]
 
 - "Convert old recordings" no longer stops halfway: it ran on the settings screen's ViewModel scope, so leaving the page cancelled it and left half the library WAV — which is also why share was slow afterwards (every WAV share re-encoded the whole file on the spot). It now runs on the controller's app-wide IO scope, survives leaving settings, and the progress (including how many failed) is still there when you come back.
