@@ -631,6 +631,7 @@
     <string name="convert_old_summary">Convert existing WAV recordings to M4A in the background.</string>
     <string name="convert_old_progress">Converting… %1$d / %2$d</string>
     <string name="convert_old_done">Converted %1$d recordings</string>
+    <string name="convert_old_done_partial">Converted %1$d of %2$d (%3$d failed — those stay WAV)</string>
     <string name="convert_old_none">No WAV recordings to convert</string>
     <string name="recordings_auto_delete_confirm">%1$d recordings older than %2$d days will be deleted now. Starred ones are kept.</string>
     <string name="recordings_retention_never">Never</string>

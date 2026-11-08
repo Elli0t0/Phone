@@ -378,6 +378,11 @@ fun RecordingSettingsScreen(
                                         )
                                     } else if (progress.total == 0) {
                                         stringResource(id = R.string.convert_old_none)
+                                    } else if (progress.failed > 0) {
+                                        stringResource(
+                                            id = R.string.convert_old_done_partial,
+                                            progress.converted, progress.total, progress.failed
+                                        )
                                     } else {
                                         stringResource(
                                             id = R.string.convert_old_done,

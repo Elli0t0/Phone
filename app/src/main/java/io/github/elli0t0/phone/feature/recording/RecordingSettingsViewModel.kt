@@ -16,7 +16,6 @@ import io.github.elli0t0.phone.core.recording.BackendStatus
 import io.github.elli0t0.phone.core.recording.PairResult
 import io.github.elli0t0.phone.core.recording.RecordingCleanup
 import io.github.elli0t0.phone.core.recording.RecordingController
-import io.github.elli0t0.phone.core.recording.RecordingConverter
 import io.github.elli0t0.phone.core.recording.RecordingSession
 import io.github.elli0t0.phone.core.recording.adb.openWirelessDebugging
 import io.github.elli0t0.phone.core.recording.adb.postPairNotification
@@ -89,33 +88,15 @@ class RecordingSettingsViewModel(
         .map { it.recordingFormat }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecordingFormat.M4A)
 
-    /** One-time bulk conversion progress; null before the first run. */
-    data class ConvertOldProgress(val done: Int, val total: Int, val running: Boolean, val converted: Int)
+    // Bulk conversion lives on the controller's app-wide IO scope,
+    // not this ViewModel's: leaving the settings page used to cancel
+    // it halfway and leave half the library WAV. Progress is the
+    // controller's, so reopening settings shows the running run.
+    val convertOldProgress: StateFlow<RecordingController.ConvertOldProgress?> =
+        controller.convertOldProgress
 
-    private val _convertOldProgress = MutableStateFlow<ConvertOldProgress?>(null)
-    val convertOldProgress: StateFlow<ConvertOldProgress?> = _convertOldProgress.asStateFlow()
-
-    /** Converts every stored non-test WAV to M4A in the background. */
     fun convertOldRecordings() {
-        if (_convertOldProgress.value?.running == true) return
-        viewModelScope.launch(Dispatchers.IO) {
-            val wavs = recordingsRepository.recordings.first()
-                .filter { !it.isTest && RecordingConverter.isWav(appContext, it) }
-            _convertOldProgress.value = ConvertOldProgress(0, wavs.size, true, 0)
-            var converted = 0
-            for ((index, entity) in wavs.withIndex()) {
-                if (RecordingConverter.convertEntityToM4a(
-                        appContext, recordingsRepository, entity
-                    )
-                ) {
-                    converted++
-                }
-                _convertOldProgress.value =
-                    ConvertOldProgress(index + 1, wavs.size, true, converted)
-            }
-            _convertOldProgress.value =
-                ConvertOldProgress(wavs.size, wavs.size, false, converted)
-        }
+        controller.convertOldRecordings()
     }
 
     private val _retentionConfirm = MutableStateFlow<RetentionConfirm?>(null)

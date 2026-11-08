@@ -11,6 +11,9 @@ import android.provider.OpenableColumns
 import io.github.elli0t0.phone.data.recordings.RecordingEntity
 import io.github.elli0t0.phone.data.recordings.RecordingsRepository
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 
 /**
  * Converts one stored WAV recording to M4A (AAC) and swaps the
@@ -58,6 +61,14 @@ object RecordingConverter {
     fun mimeTypeFor(context: Context, entity: RecordingEntity): String =
         if (isM4a(context, entity)) "audio/mp4" else "audio/x-wav"
 
+    // One conversion per recording at a time: auto-convert after a
+    // call, the bulk "convert old" run, and share can all ask for
+    // the same WAV at once. The second caller waits for the first
+    // instead of encoding the same file twice (twice the wait, and
+    // the loser can delete the WAV under the winner). The deferred
+    // is completed even on failure, so waiters never hang.
+    private val inFlight = ConcurrentHashMap<Long, CompletableDeferred<Boolean>>()
+
     /** Converts [entity]'s WAV to M4A, updates the row, deletes the WAV. True on success. */
     suspend fun convertEntityToM4a(
         context: Context,
@@ -65,6 +76,34 @@ object RecordingConverter {
         entity: RecordingEntity
     ): Boolean {
         if (!isWav(context, entity)) return false
+        inFlight[entity.id]?.let { return it.await() }
+        val deferred = CompletableDeferred<Boolean>()
+        val existing = inFlight.putIfAbsent(entity.id, deferred)
+        if (existing != null) return existing.await()
+        var result = false
+        try {
+            result = try {
+                doConvert(context, repo, entity)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                false
+            }
+            return result
+        } finally {
+            // Always complete, even when the owner is cancelled
+            // (screen gone mid-share): a waiter must never hang on
+            // a deferred whose owner is gone.
+            if (!deferred.isCompleted) deferred.complete(result)
+            inFlight.remove(entity.id, deferred)
+        }
+    }
+
+    private suspend fun doConvert(
+        context: Context,
+        repo: RecordingsRepository,
+        entity: RecordingEntity
+    ): Boolean {
         val resolver = context.contentResolver
         val wavUri = Uri.parse(entity.uri)
         return try {

@@ -119,6 +119,51 @@ class RecordingController(
     private val _pairResult = MutableStateFlow<PairResult?>(null)
     val pairResult: StateFlow<PairResult?> = _pairResult.asStateFlow()
 
+    /** One-time bulk conversion progress; null before the first run. */
+    data class ConvertOldProgress(
+        val done: Int,
+        val total: Int,
+        val running: Boolean,
+        val converted: Int,
+        val failed: Int
+    )
+
+    private val _convertOldProgress = MutableStateFlow<ConvertOldProgress?>(null)
+    val convertOldProgress: StateFlow<ConvertOldProgress?> = _convertOldProgress.asStateFlow()
+
+    /**
+     * Converts every stored non-test WAV to M4A. Runs on this
+     * controller's IO scope — not on a screen's ViewModel scope —
+     * so leaving the settings page mid-run no longer cancels it
+     * halfway and leaves half the library WAV. Progress survives
+     * the screen: reopening settings shows the running or finished
+     * run.
+     */
+    fun convertOldRecordings() {
+        if (_convertOldProgress.value?.running == true) return
+        scope.launch {
+            val wavs = recordingsRepository.recordings.first()
+                .filter { !it.isTest && RecordingConverter.isWav(context, it) }
+            _convertOldProgress.value = ConvertOldProgress(0, wavs.size, true, 0, 0)
+            var converted = 0
+            var failed = 0
+            for ((index, entity) in wavs.withIndex()) {
+                if (RecordingConverter.convertEntityToM4a(
+                        context, recordingsRepository, entity
+                    )
+                ) {
+                    converted++
+                } else {
+                    failed++
+                }
+                _convertOldProgress.value =
+                    ConvertOldProgress(index + 1, wavs.size, true, converted, failed)
+            }
+            _convertOldProgress.value =
+                ConvertOldProgress(wavs.size, wavs.size, false, converted, failed)
+        }
+    }
+
     fun publishPairResult(result: PairResult) {
         _pairResult.value = result
     }

@@ -164,6 +164,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.20.7]
+
+- "Convert old recordings" no longer stops halfway: it ran on the settings screen's ViewModel scope, so leaving the page cancelled it and left half the library WAV — which is also why share was slow afterwards (every WAV share re-encoded the whole file on the spot). It now runs on the controller's app-wide IO scope, survives leaving settings, and the progress (including how many failed) is still there when you come back.
+- One conversion per recording at a time: auto-convert, bulk convert, and share no longer encode the same WAV twice in parallel — the second caller waits for the first instead.
+- Share is fast again once the library is M4A (no conversion at share time); a leftover WAV still converts first, capped at 30 s, then shares the original.
+
 ## [0.20.6]
 
 - "Recording format" and "Convert old recordings to M4A" now have their own card right under "Open recordings" on the Call recording page — they were buried at the bottom of the auto-delete card and easy to miss.

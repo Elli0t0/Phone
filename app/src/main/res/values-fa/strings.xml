@@ -217,6 +217,7 @@
     <string name="convert_old_summary">تبدیل ضبط‌های WAV موجود به M4A در پس‌زمینه.</string>
     <string name="convert_old_progress">در حال تبدیل… %1$d / %2$d</string>
     <string name="convert_old_done">%1$d ضبط تبدیل شد</string>
+    <string name="convert_old_done_partial">%1$d از %2$d تبدیل شد (%3$d ناموفق — آن‌ها WAV می‌مانند)</string>
     <string name="convert_old_none">ضبط WAVای برای تبدیل وجود ندارد</string>
     <string name="recordings_auto_delete_confirm">%1$d ضبط قدیمی‌تر از %2$d روز همین حالا حذف می‌شود. ضبط‌های ستاره‌دار نگه داشته می‌شوند.</string>
     <string name="recordings_retention_never">هرگز</string>
