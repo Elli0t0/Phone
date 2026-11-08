@@ -164,6 +164,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.20.4]
+
+- Recordings are now encoded to M4A (AAC-LC) automatically after capture finishes: MediaCodec + MediaMuxer, 64 kbps mono / 96 kbps stereo, same base filename with a .m4a extension. The WAV is deleted only after the .m4a exists with a duration > 0; on any encode failure the WAV is kept and the recording is not lost.
+- Share uses the .m4a with MIME audio/mp4 through FileProvider (single share and the new multi-select share in the Recordings selection bar). If only a WAV exists, it is converted first, then shared.
+- Settings > Call recording: "Recording format" (M4A default / WAV keep original) and a one-time "Convert old recordings to M4A" action that converts existing WAV recordings in the background with progress. Old WAV files keep working everywhere: playback, Recents icon + tap-to-play, search, silent-under-2s auto-delete, auto-cleanup, private storage, and backup/restore are URI-based and format-independent.
+
 ## [0.20.3]
 
 - Spam protection, offline only (no server, no uploads): Room table spam_numbers + SpamRepository with an in-memory cache loaded at app start, so lookups are instant. Numbers are stored normalized, so +98 / 0098 / 0-trunk spellings of one number are a single row.

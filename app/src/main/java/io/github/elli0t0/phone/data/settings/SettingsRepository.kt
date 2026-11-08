@@ -34,6 +34,7 @@ import io.github.elli0t0.phone.data.settings.model.QuickCallStyle
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
 import io.github.elli0t0.phone.data.settings.model.AutoRecordMode
 import io.github.elli0t0.phone.data.settings.model.Backdrop
+import io.github.elli0t0.phone.data.settings.model.RecordingFormat
 import io.github.elli0t0.phone.data.settings.model.RecordingSort
 import io.github.elli0t0.phone.data.settings.model.DropletStretch
 import io.github.elli0t0.phone.data.settings.model.EdgeLight
@@ -144,6 +145,7 @@ interface SettingsRepository {
     suspend fun setLastCleanupAt(time: Long) {}
     suspend fun setRecordingsPrivate(private: Boolean)
     suspend fun setRecordingsSort(sort: RecordingSort)
+    suspend fun setRecordingFormat(format: RecordingFormat)
     suspend fun setAdbHelperPort(port: Int?)
     suspend fun setAdbHelperToken(token: String?)
     suspend fun setShowNumberOnCallScreen(show: Boolean)
@@ -266,6 +268,7 @@ class DataStoreSettingsRepository(
         val LAST_CLEANUP_AT = longPreferencesKey("last_cleanup_at")
         val RECORDINGS_PRIVATE = booleanPreferencesKey("recordings_private")
         val RECORDINGS_SORT = stringPreferencesKey("recordings_sort")
+        val RECORDING_FORMAT = stringPreferencesKey("recording_format")
         val ADB_HELPER_PORT = intPreferencesKey("adb_helper_port")
         val ADB_HELPER_TOKEN = stringPreferencesKey("adb_helper_token")
         val SHOW_NUMBER_ON_CALL_SCREEN = booleanPreferencesKey("show_number_on_call_screen")
@@ -493,6 +496,8 @@ class DataStoreSettingsRepository(
         val recordingsPrivate = prefs[Keys.RECORDINGS_PRIVATE] ?: false
         val recordingsSort = prefs[Keys.RECORDINGS_SORT]
             ?.let { runCatching { RecordingSort.valueOf(it) }.getOrNull() } ?: RecordingSort.NEWEST
+        val recordingFormat = prefs[Keys.RECORDING_FORMAT]
+            ?.let { runCatching { RecordingFormat.valueOf(it) }.getOrNull() } ?: RecordingFormat.M4A
 
         val adbHelperPort = prefs[Keys.ADB_HELPER_PORT]?.takeIf { it in 20000..60000 }
         val adbHelperToken = prefs[Keys.ADB_HELPER_TOKEN]?.takeIf { it.isNotBlank() }
@@ -628,6 +633,7 @@ class DataStoreSettingsRepository(
             recordingRetentionDays = recordingRetentionDays,
             recordingsPrivate = recordingsPrivate,
             recordingsSort = recordingsSort,
+            recordingFormat = recordingFormat,
             adbHelperPort = adbHelperPort,
             adbHelperToken = adbHelperToken,
             showNumberOnCallScreen = showNumberOnCallScreen,
@@ -1154,6 +1160,10 @@ class DataStoreSettingsRepository(
 
     override suspend fun setRecordingsSort(sort: RecordingSort) {
         dataStore.edit { prefs -> prefs[Keys.RECORDINGS_SORT] = sort.name }
+    }
+
+    override suspend fun setRecordingFormat(format: RecordingFormat) {
+        dataStore.edit { prefs -> prefs[Keys.RECORDING_FORMAT] = format.name }
     }
 
     override suspend fun setAdbHelperPort(port: Int?) {

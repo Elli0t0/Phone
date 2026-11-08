@@ -623,6 +623,14 @@
     <string name="recordings_auto_delete_summary">Starred recordings are never deleted.</string>
     <string name="recordings_private_title">Save recordings privately</string>
     <string name="recordings_private_summary">Off: saved to Music/Phone, visible to other apps. On: saved inside Phone only. Existing recordings are not moved.</string>
+    <string name="recording_format_title">Recording format</string>
+    <string name="recording_format_m4a">M4A (default)</string>
+    <string name="recording_format_wav">WAV (keep original)</string>
+    <string name="convert_old_title">Convert old recordings to M4A</string>
+    <string name="convert_old_summary">Convert existing WAV recordings to M4A in the background.</string>
+    <string name="convert_old_progress">Converting… %1$d / %2$d</string>
+    <string name="convert_old_done">Converted %1$d recordings</string>
+    <string name="convert_old_none">No WAV recordings to convert</string>
     <string name="recordings_auto_delete_confirm">%1$d recordings older than %2$d days will be deleted now. Starred ones are kept.</string>
     <string name="recordings_retention_never">Never</string>
     <string name="recordings_retention_7_days">7 days</string>

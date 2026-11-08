@@ -483,6 +483,11 @@ enum class AutoRecordMode(val label: String) {
     EXCEPT_LIST("All except selected numbers")
 }
 
+/** Recording format: M4A (AAC) is the default; WAV keeps the original file. */
+enum class RecordingFormat {
+    M4A, WAV
+}
+
 /** Recordings library sort order. */
 enum class RecordingSort(val label: String) {
     NEWEST("Newest"),
@@ -604,6 +609,8 @@ data class AppSettings(
     val recordingRetentionDays: Int = 0,
     val recordingsPrivate: Boolean = false,
     val recordingsSort: RecordingSort = RecordingSort.NEWEST,
+    /** New recordings are encoded to M4A (AAC) after capture; WAV keeps the original. */
+    val recordingFormat: RecordingFormat = RecordingFormat.M4A,
     /** Loopback recorder-helper port/token: an already running helper
      * can be reused after an app restart instead of relaunching. */
     val adbHelperPort: Int? = null,

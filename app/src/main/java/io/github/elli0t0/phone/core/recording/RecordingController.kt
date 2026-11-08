@@ -27,6 +27,7 @@ import io.github.elli0t0.phone.data.recordings.RecordingEntity
 import io.github.elli0t0.phone.data.recordings.RecordingsRepository
 import io.github.elli0t0.phone.data.settings.SettingsRepository
 import io.github.elli0t0.phone.data.settings.model.AutoRecordMode
+import io.github.elli0t0.phone.data.settings.model.RecordingFormat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -494,19 +495,32 @@ class RecordingController(
                 return@onSuccess
             }
             if (!session.isTest) _lastRecordingSilent.value = silent
-            runCatching {
-                recordingsRepository.add(
-                    RecordingEntity(
-                        uri = session.uri.toString(),
-                        number = session.number,
-                        displayName = session.displayName,
-                        startedAt = session.startedAt,
-                        durationMs = result.durationMs,
-                        sizeBytes = result.pcmBytes + WavWriter.HEADER_SIZE,
-                        isTest = session.isTest,
-                        isSilent = silent
-                    )
-                )
+            val entity = RecordingEntity(
+                uri = session.uri.toString(),
+                number = session.number,
+                displayName = session.displayName,
+                startedAt = session.startedAt,
+                durationMs = result.durationMs,
+                sizeBytes = result.pcmBytes + WavWriter.HEADER_SIZE,
+                isTest = session.isTest,
+                isSilent = silent
+            )
+            val addedId = runCatching { recordingsRepository.add(entity) }.getOrNull()
+            // M4A default: encode the finished WAV in the background
+            // (never on the main thread). Test recordings stay WAV.
+            // The WAV is deleted only after a good .m4a exists, so a
+            // failed encode loses nothing.
+            if (addedId != null && !session.isTest) {
+                scope.launch {
+                    runCatching {
+                        val format = settingsRepository.settingsFlow.first().recordingFormat
+                        if (format == RecordingFormat.M4A) {
+                            RecordingConverter.convertEntityToM4a(
+                                context, recordingsRepository, entity.copy(id = addedId)
+                            )
+                        }
+                    }
+                }
             }
             scope.launch {
                 runCatching {

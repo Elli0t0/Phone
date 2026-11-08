@@ -11,6 +11,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
 import io.github.elli0t0.phone.core.recording.RecordingCleanup
+import io.github.elli0t0.phone.core.recording.RecordingConverter
 import io.github.elli0t0.phone.data.recordings.RecordingEntity
 import io.github.elli0t0.phone.data.recordings.RecordingStats
 import io.github.elli0t0.phone.data.recordings.RecordingsRepository
@@ -34,6 +35,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 enum class RecordingDateFilter {
     ALL, TODAY, WEEK, MONTH;
@@ -295,24 +297,71 @@ class RecordingsViewModel(
         }
     }
 
-    fun share(entity: RecordingEntity, context: Context) {
+    // Private recordings are file://: other apps cannot open
+    // them directly, so share through the FileProvider instead.
+    // The grant flag below gives the receiver read access.
+    private fun shareUriFor(entity: RecordingEntity, context: Context): Uri {
         val rawUri = Uri.parse(entity.uri)
-        // Private recordings are file://: other apps cannot open
-        // them directly, so share through the FileProvider instead.
-        // The grant flag below gives the receiver read access.
-        val shareUri = if (rawUri.scheme == "file") {
+        return if (rawUri.scheme == "file") {
             rawUri.path?.let {
                 FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", File(it))
             } ?: rawUri
         } else {
             rawUri
         }
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "audio/x-wav"
-            putExtra(Intent.EXTRA_STREAM, shareUri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+
+    // A WAV-only recording is converted first (in the background),
+    // so what leaves the phone is the playable .m4a. On conversion
+    // failure the original WAV is shared instead.
+    private suspend fun ensureShareable(entity: RecordingEntity): RecordingEntity {
+        if (!RecordingConverter.isWav(entity)) return entity
+        val converted = runCatching {
+            RecordingConverter.convertEntityToM4a(appContext, repo, entity)
+        }.getOrDefault(false)
+        if (!converted) return entity
+        return repo.recordings.first().firstOrNull { it.id == entity.id } ?: entity
+    }
+
+    fun share(entity: RecordingEntity, context: Context) {
+        viewModelScope.launch {
+            val toShare = withContext(Dispatchers.IO) { ensureShareable(entity) }
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = RecordingConverter.mimeTypeFor(toShare)
+                putExtra(Intent.EXTRA_STREAM, shareUriFor(toShare, context))
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(Intent.createChooser(intent, null))
         }
-        context.startActivity(Intent.createChooser(intent, null))
+    }
+
+    fun shareSelected(context: Context) {
+        viewModelScope.launch {
+            val ids = _selectedIds.value
+            if (ids.isEmpty()) return@launch
+            val entities = withContext(Dispatchers.IO) {
+                val selected = repo.recordings.first().filter { it.id in ids }
+                val out = ArrayList<RecordingEntity>(selected.size)
+                for (e in selected) out += ensureShareable(e)
+                out
+            }
+            if (entities.isEmpty()) return@launch
+            val mime = when {
+                entities.all { RecordingConverter.isM4a(it) } -> "audio/mp4"
+                entities.all { RecordingConverter.isWav(it) } -> "audio/x-wav"
+                else -> "audio/*"
+            }
+            val intent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                type = mime
+                putParcelableArrayListExtra(
+                    Intent.EXTRA_STREAM,
+                    ArrayList(entities.map { shareUriFor(it, context) })
+                )
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(Intent.createChooser(intent, null))
+            _selectedIds.value = emptySet()
+        }
     }
 
     override fun onCleared() {

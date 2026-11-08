@@ -69,6 +69,7 @@ import io.github.elli0t0.phone.core.recording.BackendStatus
 import io.github.elli0t0.phone.core.recording.PairResult
 import io.github.elli0t0.phone.core.recording.RecordingSession
 import io.github.elli0t0.phone.data.settings.model.AutoRecordMode
+import io.github.elli0t0.phone.data.settings.model.RecordingFormat
 import io.github.elli0t0.phone.data.settings.model.SwitchStyle
 import io.github.elli0t0.phone.feature.settings.SettingsChoiceDialog
 import io.github.elli0t0.phone.feature.settings.searchHighlight
@@ -151,6 +152,9 @@ fun RecordingSettingsScreen(
     val autoRecordMode by viewModel.autoRecordMode.collectAsStateWithLifecycle()
     val autoRecordExcluded by viewModel.autoRecordExcluded.collectAsStateWithLifecycle()
     val recordingsPrivate by viewModel.recordingsPrivate.collectAsStateWithLifecycle()
+    val recordingFormat by viewModel.recordingFormat.collectAsStateWithLifecycle()
+    val convertOldProgress by viewModel.convertOldProgress.collectAsStateWithLifecycle()
+    var showFormatDialog by remember { mutableStateOf(false) }
     val offlinePortActive by viewModel.offlinePortActive.collectAsStateWithLifecycle()
     val keyAccepted by viewModel.keyAccepted.collectAsStateWithLifecycle()
     val clipboardManager = LocalClipboardManager.current
@@ -373,6 +377,65 @@ fun RecordingSettingsScreen(
                                 } else {
                                     SwitchDefaults.colors()
                                 }
+                            )
+                        }
+                        // Recording format: new recordings are encoded
+                        // to M4A after capture, or kept as WAV. The row
+                        // opens the same choice dialog as retention.
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Column(
+                            modifier = Modifier.fillMaxWidth()
+                                .clickable { showFormatDialog = true }
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.recording_format_title),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = if (recordingFormat == RecordingFormat.M4A) {
+                                    stringResource(id = R.string.recording_format_m4a)
+                                } else {
+                                    stringResource(id = R.string.recording_format_wav)
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        // One-time bulk conversion of old WAVs, with
+                        // progress. Each WAV is deleted only after its
+                        // .m4a is done; failures keep the WAV.
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Column(
+                            modifier = Modifier.fillMaxWidth()
+                                .clickable(
+                                    enabled = convertOldProgress?.running != true
+                                ) { viewModel.convertOldRecordings() }
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.convert_old_title),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = when (val progress = convertOldProgress) {
+                                    null -> stringResource(id = R.string.convert_old_summary)
+                                    else -> if (progress.running) {
+                                        stringResource(
+                                            id = R.string.convert_old_progress,
+                                            progress.done, progress.total
+                                        )
+                                    } else if (progress.total == 0) {
+                                        stringResource(id = R.string.convert_old_none)
+                                    } else {
+                                        stringResource(
+                                            id = R.string.convert_old_done,
+                                            progress.converted
+                                        )
+                                    }
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -748,6 +811,18 @@ fun RecordingSettingsScreen(
             selected = retentionDays,
             onSelect = { viewModel.onRetentionPicked(it); showRetentionDialog = false },
             onDismiss = { showRetentionDialog = false }
+        )
+    }
+    if (showFormatDialog) {
+        SettingsChoiceDialog(
+            title = stringResource(id = R.string.recording_format_title),
+            options = listOf(
+                stringResource(id = R.string.recording_format_m4a) to RecordingFormat.M4A,
+                stringResource(id = R.string.recording_format_wav) to RecordingFormat.WAV
+            ),
+            selected = recordingFormat,
+            onSelect = { viewModel.setRecordingFormat(it); showFormatDialog = false },
+            onDismiss = { showFormatDialog = false }
         )
     }
     retentionConfirm?.let { pending ->

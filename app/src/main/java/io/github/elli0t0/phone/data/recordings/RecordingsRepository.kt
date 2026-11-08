@@ -15,6 +15,8 @@ interface RecordingsRepository {
     val stats: Flow<RecordingStats> get() = flowOf(RecordingStats(0, 0))
     suspend fun setStarred(id: Long, starred: Boolean) {}
     suspend fun setTitleNote(id: Long, title: String?, note: String?) {}
+    /** Points a row at a converted file (WAV → M4A). */
+    suspend fun updateFile(id: Long, uri: String, sizeBytes: Long, durationMs: Long) {}
     suspend fun removeAll(entities: List<RecordingEntity>): Int = 0
     suspend fun countOlderThanUnstarred(cutoff: Long): Int = 0
     suspend fun deleteOlderThan(cutoff: Long, keepStarred: Boolean = true): Int = 0
@@ -51,6 +53,10 @@ class DefaultRecordingsRepository(
 
     override suspend fun setTitleNote(id: Long, title: String?, note: String?) {
         dao.setTitleNote(id, title, note)
+    }
+
+    override suspend fun updateFile(id: Long, uri: String, sizeBytes: Long, durationMs: Long) {
+        dao.updateFile(id, uri, sizeBytes, durationMs)
     }
 
     override suspend fun removeAll(entities: List<RecordingEntity>): Int {

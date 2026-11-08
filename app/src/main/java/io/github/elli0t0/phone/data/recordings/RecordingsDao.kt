@@ -22,6 +22,9 @@ interface RecordingsDao {
     @Query("UPDATE recordings SET title = :title, note = :note WHERE id = :id")
     suspend fun setTitleNote(id: Long, title: String?, note: String?)
 
+    @Query("UPDATE recordings SET uri = :uri, sizeBytes = :sizeBytes, durationMs = :durationMs WHERE id = :id")
+    suspend fun updateFile(id: Long, uri: String, sizeBytes: Long, durationMs: Long)
+
     @Query("SELECT * FROM recordings WHERE startedAt < :cutoff AND starred = 0 AND isTest = 0")
     suspend fun olderThanUnstarred(cutoff: Long): List<RecordingEntity>
 

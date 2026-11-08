@@ -136,6 +136,13 @@ fun RecordingsScreen(onNavigateBack: () -> Unit, modifier: Modifier = Modifier) 
                                 tint = MaterialTheme.colorScheme.onBackground
                             )
                         }
+                        IconButton(onClick = { vm.shareSelected(context) }) {
+                            Icon(
+                                painterResource(R.drawable.ic_share),
+                                contentDescription = stringResource(R.string.recording_share),
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
                         IconButton(onClick = { showBulkDelete = true }) {
                             Icon(
                                 painterResource(R.drawable.ic_delete),

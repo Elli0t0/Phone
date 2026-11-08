@@ -209,6 +209,14 @@
     <string name="recordings_auto_delete_summary">ضبط‌های ستاره‌دار هرگز حذف نمی‌شوند.</string>
     <string name="recordings_private_title">ذخیره ضبط‌ها به‌صورت خصوصی</string>
     <string name="recordings_private_summary">خاموش: در Music/Phone ذخیره می‌شود و برای برنامه‌های دیگر قابل مشاهده است. روشن: فقط داخل Phone ذخیره می‌شود. ضبط‌های موجود جابه‌جا نمی‌شوند.</string>
+    <string name="recording_format_title">قالب ضبط</string>
+    <string name="recording_format_m4a">M4A (پیش‌فرض)</string>
+    <string name="recording_format_wav">WAV (حفظ فایل اصلی)</string>
+    <string name="convert_old_title">تبدیل ضبط‌های قدیمی به M4A</string>
+    <string name="convert_old_summary">تبدیل ضبط‌های WAV موجود به M4A در پس‌زمینه.</string>
+    <string name="convert_old_progress">در حال تبدیل… %1$d / %2$d</string>
+    <string name="convert_old_done">%1$d ضبط تبدیل شد</string>
+    <string name="convert_old_none">ضبط WAVای برای تبدیل وجود ندارد</string>
     <string name="recordings_auto_delete_confirm">%1$d ضبط قدیمی‌تر از %2$d روز همین حالا حذف می‌شود. ضبط‌های ستاره‌دار نگه داشته می‌شوند.</string>
     <string name="recordings_retention_never">هرگز</string>
     <string name="recordings_retention_7_days">۷ روز</string>

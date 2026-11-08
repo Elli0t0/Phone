@@ -16,6 +16,7 @@ import io.github.elli0t0.phone.core.recording.BackendStatus
 import io.github.elli0t0.phone.core.recording.PairResult
 import io.github.elli0t0.phone.core.recording.RecordingCleanup
 import io.github.elli0t0.phone.core.recording.RecordingController
+import io.github.elli0t0.phone.core.recording.RecordingConverter
 import io.github.elli0t0.phone.core.recording.RecordingSession
 import io.github.elli0t0.phone.core.recording.adb.openWirelessDebugging
 import io.github.elli0t0.phone.core.recording.adb.postPairNotification
@@ -23,6 +24,7 @@ import io.github.elli0t0.phone.data.recordings.RecordingStats
 import io.github.elli0t0.phone.data.recordings.RecordingsRepository
 import io.github.elli0t0.phone.data.settings.SettingsRepository
 import io.github.elli0t0.phone.data.settings.model.AutoRecordMode
+import io.github.elli0t0.phone.data.settings.model.RecordingFormat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -82,6 +84,39 @@ class RecordingSettingsViewModel(
     val recordingsPrivate: StateFlow<Boolean> = settingsRepository.settingsFlow
         .map { it.recordingsPrivate }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val recordingFormat: StateFlow<RecordingFormat> = settingsRepository.settingsFlow
+        .map { it.recordingFormat }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecordingFormat.M4A)
+
+    /** One-time bulk conversion progress; null before the first run. */
+    data class ConvertOldProgress(val done: Int, val total: Int, val running: Boolean, val converted: Int)
+
+    private val _convertOldProgress = MutableStateFlow<ConvertOldProgress?>(null)
+    val convertOldProgress: StateFlow<ConvertOldProgress?> = _convertOldProgress.asStateFlow()
+
+    /** Converts every stored non-test WAV to M4A in the background. */
+    fun convertOldRecordings() {
+        if (_convertOldProgress.value?.running == true) return
+        viewModelScope.launch(Dispatchers.IO) {
+            val wavs = recordingsRepository.recordings.first()
+                .filter { !it.isTest && RecordingConverter.isWav(it) }
+            _convertOldProgress.value = ConvertOldProgress(0, wavs.size, true, 0)
+            var converted = 0
+            for ((index, entity) in wavs.withIndex()) {
+                if (RecordingConverter.convertEntityToM4a(
+                        appContext, recordingsRepository, entity
+                    )
+                ) {
+                    converted++
+                }
+                _convertOldProgress.value =
+                    ConvertOldProgress(index + 1, wavs.size, true, converted)
+            }
+            _convertOldProgress.value =
+                ConvertOldProgress(wavs.size, wavs.size, false, converted)
+        }
+    }
 
     private val _retentionConfirm = MutableStateFlow<RetentionConfirm?>(null)
     val retentionConfirm: StateFlow<RetentionConfirm?> = _retentionConfirm.asStateFlow()
@@ -192,6 +227,10 @@ class RecordingSettingsViewModel(
 
     fun setRecordingsPrivate(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.setRecordingsPrivate(enabled) }
+    }
+
+    fun setRecordingFormat(format: RecordingFormat) {
+        viewModelScope.launch { settingsRepository.setRecordingFormat(format) }
     }
 
     fun addExcludedNumber(number: String) {
