@@ -30,18 +30,26 @@ private fun recording(
 )
 
 private class FakeRecordingsDao(
-    private val all: List<RecordingEntity> = emptyList(),
+    all: List<RecordingEntity> = emptyList(),
     private val unstarred: List<RecordingEntity> = emptyList(),
     private val oldTests: List<RecordingEntity> = emptyList(),
     private val events: MutableList<String> = mutableListOf()
 ) : RecordingsDao {
-    override fun getAll(): Flow<List<RecordingEntity>> = flowOf(all)
+    private val rows = all.toMutableList()
+    override fun getAll(): Flow<List<RecordingEntity>> = flowOf(rows)
     override suspend fun insert(entity: RecordingEntity): Long = 0L
     override suspend fun deleteById(id: Long) {
         events.add("row:$id")
     }
     override suspend fun setStarred(id: Long, starred: Boolean) {}
     override suspend fun setTitleNote(id: Long, title: String?, note: String?) {}
+    override suspend fun updateFile(id: Long, uri: String, sizeBytes: Long, durationMs: Long) {
+        val index = rows.indexOfFirst { it.id == id }
+        if (index >= 0) {
+            val old = rows[index]
+            rows[index] = old.copy(uri = uri, sizeBytes = sizeBytes, durationMs = durationMs)
+        }
+    }
     override suspend fun olderThanUnstarred(cutoff: Long): List<RecordingEntity> = unstarred
     override suspend fun oldTests(cutoff: Long): List<RecordingEntity> = oldTests
     override fun stats(): Flow<RecordingStats> = flowOf(RecordingStats(0, 0))
