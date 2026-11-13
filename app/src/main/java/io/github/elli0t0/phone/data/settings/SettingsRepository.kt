@@ -27,7 +27,9 @@ import io.github.elli0t0.phone.data.settings.model.EndCallButtonSize
 import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.data.settings.model.AppBackground
+import io.github.elli0t0.phone.data.settings.model.AppLanguage
 import io.github.elli0t0.phone.data.settings.model.AppSettings
+import io.github.elli0t0.phone.data.settings.model.languageFromPref
 import io.github.elli0t0.phone.data.settings.model.MaterialYouTint
 import io.github.elli0t0.phone.data.settings.model.QuickCallSource
 import io.github.elli0t0.phone.data.settings.model.QuickCallStyle
@@ -146,6 +148,7 @@ interface SettingsRepository {
     suspend fun setRecordingsPrivate(private: Boolean)
     suspend fun setRecordingsSort(sort: RecordingSort)
     suspend fun setRecordingFormat(format: RecordingFormat)
+    suspend fun setLanguage(language: AppLanguage)
     suspend fun setAdbHelperPort(port: Int?)
     suspend fun setAdbHelperToken(token: String?)
     suspend fun setShowNumberOnCallScreen(show: Boolean)
@@ -179,7 +182,8 @@ interface SettingsRepository {
 }
 
 class DataStoreSettingsRepository(
-    private val dataStore: DataStore<Preferences>
+    private val dataStore: DataStore<Preferences>,
+    private val appContext: Context
 ) : SettingsRepository {
 
     private object Keys {
@@ -269,6 +273,7 @@ class DataStoreSettingsRepository(
         val RECORDINGS_PRIVATE = booleanPreferencesKey("recordings_private")
         val RECORDINGS_SORT = stringPreferencesKey("recordings_sort")
         val RECORDING_FORMAT = stringPreferencesKey("recording_format")
+        val LANGUAGE = stringPreferencesKey("language")
         val ADB_HELPER_PORT = intPreferencesKey("adb_helper_port")
         val ADB_HELPER_TOKEN = stringPreferencesKey("adb_helper_token")
         val SHOW_NUMBER_ON_CALL_SCREEN = booleanPreferencesKey("show_number_on_call_screen")
@@ -498,6 +503,7 @@ class DataStoreSettingsRepository(
             ?.let { runCatching { RecordingSort.valueOf(it) }.getOrNull() } ?: RecordingSort.NEWEST
         val recordingFormat = prefs[Keys.RECORDING_FORMAT]
             ?.let { runCatching { RecordingFormat.valueOf(it) }.getOrNull() } ?: RecordingFormat.M4A
+        val language = languageFromPref(prefs[Keys.LANGUAGE])
 
         val adbHelperPort = prefs[Keys.ADB_HELPER_PORT]?.takeIf { it in 20000..60000 }
         val adbHelperToken = prefs[Keys.ADB_HELPER_TOKEN]?.takeIf { it.isNotBlank() }
@@ -634,6 +640,7 @@ class DataStoreSettingsRepository(
             recordingsPrivate = recordingsPrivate,
             recordingsSort = recordingsSort,
             recordingFormat = recordingFormat,
+            language = language,
             adbHelperPort = adbHelperPort,
             adbHelperToken = adbHelperToken,
             showNumberOnCallScreen = showNumberOnCallScreen,
@@ -1166,6 +1173,13 @@ class DataStoreSettingsRepository(
         dataStore.edit { prefs -> prefs[Keys.RECORDING_FORMAT] = format.name }
     }
 
+    override suspend fun setLanguage(language: AppLanguage) {
+        dataStore.edit { prefs -> prefs[Keys.LANGUAGE] = language.name }
+        // The boot cache (read in attachBaseContext) follows the
+        // same write, so the next start uses the new language.
+        saveAppLanguage(appContext, language)
+    }
+
     override suspend fun setAdbHelperPort(port: Int?) {
         dataStore.edit { prefs ->
             if (port == null) {
@@ -1225,6 +1239,11 @@ class DataStoreSettingsRepository(
                     is Set<*> -> prefs[stringSetPreferencesKey(name)] = value.map { it.toString() }.toSet()
                 }
             }
+        }
+        // A restored language must reach the boot cache too, or the
+        // next start would still use the pre-restore language.
+        (values[Keys.LANGUAGE.name] as? String)?.let {
+            saveAppLanguage(appContext, languageFromPref(it))
         }
         return values.size
     }
@@ -1363,5 +1382,8 @@ class DataStoreSettingsRepository(
         dataStore.edit { prefs ->
             prefs.clear()
         }
+        // No stored language: the boot cache falls back to the
+        // device language, like a fresh install.
+        saveAppLanguage(appContext, languageFromPref(null))
     }
 }

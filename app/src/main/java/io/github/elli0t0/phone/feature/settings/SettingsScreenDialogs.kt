@@ -1,4 +1,5 @@
 package io.github.elli0t0.phone.feature.settings
+import android.app.Activity
 import android.os.Build
 import android.provider.Settings
 import androidx.compose.foundation.background
@@ -45,6 +46,8 @@ import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.WrappingRow
 import io.github.elli0t0.phone.data.settings.model.AccentPreset
 import io.github.elli0t0.phone.data.settings.model.AccentChoice
+import io.github.elli0t0.phone.data.settings.model.AppLanguage
+import io.github.elli0t0.phone.data.settings.model.displayName
 import io.github.elli0t0.phone.data.settings.model.accentChoice
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.model.BottomBarSize
@@ -167,6 +170,25 @@ if (dialogs.showThemeDialog) {
         selected = settings.themeMode,
         onSelect = { viewModel.onThemeModeChanged(it); dialogs.showThemeDialog = false },
         onDismiss = { dialogs.showThemeDialog = false }
+    )
+}
+
+if (dialogs.showLanguageDialog) {
+    SettingsChoiceDialog(
+        title = stringResource(id = R.string.settings_language),
+        options = AppLanguage.entries.map { it.displayName() to it },
+        selected = settings.language,
+        onSelect = { lang ->
+            dialogs.showLanguageDialog = false
+            if (lang != settings.language) {
+                // Recreate after the write lands, so the new
+                // activity starts in the picked language.
+                viewModel.onLanguageChanged(lang) {
+                    (context as? Activity)?.recreate()
+                }
+            }
+        },
+        onDismiss = { dialogs.showLanguageDialog = false }
     )
 }
 

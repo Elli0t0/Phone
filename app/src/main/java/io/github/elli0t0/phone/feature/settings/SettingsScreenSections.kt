@@ -42,6 +42,7 @@ import io.github.elli0t0.phone.data.settings.model.AccentChoice
 import io.github.elli0t0.phone.data.settings.model.accentChoice
 import kotlin.math.roundToInt
 import io.github.elli0t0.phone.data.settings.model.AppSettings
+import io.github.elli0t0.phone.data.settings.model.displayName
 import androidx.compose.runtime.Composable
 import io.github.elli0t0.phone.core.design.Spacing
 import android.content.Context
@@ -75,6 +76,17 @@ fun AppearanceCard(
                 subtitle = stringResource(id = R.string.settings_minimal_mode_desc),
                 checked = settings.minimalMode,
                 onCheckedChange = { viewModel.onMinimalModeChanged(it) }
+            )
+
+            Spacer(modifier = Modifier.height(spacing.small))
+            SettingsListDivider()
+            Spacer(modifier = Modifier.height(spacing.small))
+
+            SettingsRow(
+                title = stringResource(id = R.string.settings_language),
+                searchId = "language",
+                subtitle = settings.language.displayName(),
+                onClick = { dialogs.showLanguageDialog = true }
             )
 
             Spacer(modifier = Modifier.height(spacing.small))

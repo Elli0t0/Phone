@@ -19,6 +19,8 @@ import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
 import io.github.elli0t0.phone.core.notifications.CallNotificationChannels
 import io.github.elli0t0.phone.data.settings.DataStoreSettingsRepository
 import io.github.elli0t0.phone.data.settings.DataStoreSetupRepository
+import io.github.elli0t0.phone.data.settings.readAppLanguage
+import io.github.elli0t0.phone.data.settings.withAppLocale
 import io.github.elli0t0.phone.data.settings.SettingsRepository
 import io.github.elli0t0.phone.data.settings.SetupRepository
 import io.github.elli0t0.phone.data.settings.settingsDataStore
@@ -90,7 +92,10 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
     }
 
     override val settingsRepository: SettingsRepository by lazy {
-        DataStoreSettingsRepository(context.applicationContext.settingsDataStore)
+        DataStoreSettingsRepository(
+            context.applicationContext.settingsDataStore,
+            context.applicationContext
+        )
     }
 
     override val setupRepository: SetupRepository by lazy {
@@ -147,6 +152,13 @@ class PhoneApplication : Application() {
      * here instead, so it is never cut off mid-flight.
      */
     val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    // The app language applies before anything reads a string:
+    // the base context is wrapped in the saved locale, so every
+    // resource (and the layout direction) follows the setting.
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(base.withAppLocale(readAppLanguage(base)))
+    }
 
     override fun onCreate() {
         super.onCreate()

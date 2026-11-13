@@ -1,5 +1,7 @@
 package io.github.elli0t0.phone.data.settings.model
 
+import java.util.Locale
+
 enum class AccentPreset(val colorValue: Long, val label: String) {
     ONE_UI_BLUE(0xFF0072DEL, "Blue"),
     EMERALD_GREEN(0xFF00875AL, "Green"),
@@ -488,6 +490,29 @@ enum class RecordingFormat {
     M4A, WAV
 }
 
+/** In-app language: Persian or English. The choice is stored in
+ * DataStore and applied before any string is read (attachBaseContext),
+ * so the whole app — including layout direction — follows it. */
+enum class AppLanguage { FA, EN }
+
+/** The BCP 47 tag for an app language ("fa" or "en"). */
+fun AppLanguage.localeTag(): String = if (this == AppLanguage.FA) "fa" else "en"
+
+/** A language's name in its own language (never translated). */
+fun AppLanguage.displayName(): String = if (this == AppLanguage.FA) "فارسی" else "English"
+
+/** The app language for a stored pref value. No stored value (fresh
+ * install or upgrade) keeps today's behavior: the device language
+ * (fa → FA, anything else → EN). An unknown value falls back the
+ * same way instead of forcing a language. */
+fun languageFromPref(value: String?): AppLanguage {
+    if (value == null) return deviceLanguage()
+    return runCatching { AppLanguage.valueOf(value) }.getOrDefault(deviceLanguage())
+}
+
+private fun deviceLanguage(): AppLanguage =
+    if (Locale.getDefault().language == "fa") AppLanguage.FA else AppLanguage.EN
+
 /** Recordings library sort order. */
 enum class RecordingSort(val label: String) {
     NEWEST("Newest"),
@@ -611,6 +636,8 @@ data class AppSettings(
     val recordingsSort: RecordingSort = RecordingSort.NEWEST,
     /** New recordings are encoded to M4A (AAC) after capture; WAV keeps the original. */
     val recordingFormat: RecordingFormat = RecordingFormat.M4A,
+    /** In-app language (Persian/English); see AppLanguage. */
+    val language: AppLanguage = AppLanguage.FA,
     /** Loopback recorder-helper port/token: an already running helper
      * can be reused after an app restart instead of relaunching. */
     val adbHelperPort: Int? = null,

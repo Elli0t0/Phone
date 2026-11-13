@@ -1,5 +1,6 @@
 package io.github.elli0t0.phone
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -22,6 +23,8 @@ import io.github.elli0t0.phone.core.common.CrashLog
 import io.github.elli0t0.phone.core.design.AmbientBackdrop
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
+import io.github.elli0t0.phone.data.settings.readAppLanguage
+import io.github.elli0t0.phone.data.settings.withAppLocale
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -91,6 +94,13 @@ class MainActivity : ComponentActivity() {
     companion object {
         /** Notification taps pass this to open the Call recording page. */
         const val EXTRA_OPEN_RECORDING = "open_recording_page"
+    }
+
+    // The app language applies before any string is read: the base
+    // context is wrapped in the saved locale, so every resource
+    // (and the layout direction) follows the setting.
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(base.withAppLocale(readAppLanguage(base)))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

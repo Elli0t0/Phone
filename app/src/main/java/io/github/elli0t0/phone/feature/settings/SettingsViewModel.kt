@@ -19,6 +19,7 @@ import io.github.elli0t0.phone.data.settings.model.EndCallButtonSize
 import io.github.elli0t0.phone.data.settings.model.EndCallAlignment
 import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.data.settings.model.AppBackground
+import io.github.elli0t0.phone.data.settings.model.AppLanguage
 import io.github.elli0t0.phone.data.settings.model.AppSettings
 import io.github.elli0t0.phone.data.settings.model.MaterialYouTint
 import io.github.elli0t0.phone.data.settings.model.QuickCallSource
@@ -66,6 +67,18 @@ class SettingsViewModel(
     fun onThemeModeChanged(mode: ThemeMode) {
         viewModelScope.launch {
             settingsRepository.setThemeMode(mode)
+        }
+    }
+
+    /**
+     * Language change: the repository writes DataStore and the boot
+     * cache, then [onApplied] runs (the caller recreates the
+     * activity, so the new locale applies to every screen).
+     */
+    fun onLanguageChanged(lang: AppLanguage, onApplied: () -> Unit = {}) {
+        viewModelScope.launch {
+            settingsRepository.setLanguage(lang)
+            onApplied()
         }
     }
 

@@ -320,6 +320,7 @@ val allSettingEntries: List<SettingEntry> = listOf(
     SettingEntry("main_reset", R.string.settings_reset_button, R.string.settings_cat_about, SettingsPage.ABOUT, anchor = "main_reset"),
     // Appearance page.
     SettingEntry("minimal_mode", R.string.settings_minimal_mode, R.string.settings_cat_appearance, SettingsPage.APPEARANCE, anchor = "minimal_mode"),
+    SettingEntry("language", R.string.settings_language, R.string.settings_cat_appearance, SettingsPage.APPEARANCE, anchor = "language"),
     SettingEntry("app_style", R.string.settings_app_style, R.string.settings_cat_appearance, SettingsPage.APP_STYLE),
     SettingEntry("theme", R.string.settings_theme, R.string.settings_cat_appearance, SettingsPage.APPEARANCE, anchor = "theme"),
     SettingEntry("accent", R.string.settings_accent_color, R.string.settings_cat_appearance, SettingsPage.APPEARANCE, anchor = "accent", keywordsRes = R.string.search_keywords_dynamic_color),

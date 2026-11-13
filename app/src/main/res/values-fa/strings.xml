@@ -577,6 +577,7 @@
     <string name="snackbar_ringtone_updated">آهنگ زنگ به‌روزرسانی شد</string>
     <string name="settings_cat_appearance">ظاهر و نمایش</string>
     <string name="settings_theme">تم</string>
+    <string name="settings_language">زبان</string>
     <string name="settings_dynamic_color">رنگ پویا</string>
     <string name="settings_accent_color">رنگ تأکیدی</string>
     <string name="settings_custom_color">رنگ سفارشی</string>
