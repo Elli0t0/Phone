@@ -32,9 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -64,15 +62,16 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.sign
 
-/**
- * Chromatic aberration on the lens, exactly like the gallery's bar.
- * The old Phone lens bar had it OFF on purpose (green fringe over bright
- * content). If it looks bad on a device, flip this ONE constant to false.
- */
-private const val LIQUID_BAR_CHROMATIC = true
+// Chromatic aberration is the most expensive part of the lens and caused a green fringe in the old bar. Keep OFF.
+private const val LIQUID_BAR_CHROMATIC = false
+// Gallery default is true; set false if scrolling is still not smooth.
+private const val LIQUID_BAR_DEPTH_EFFECT = true
 
 /** Scale applied to the tab content that lives in the (invisible) accent layer. */
 val LocalLiquidTabScale = staticCompositionLocalOf<() -> Float> { { 1f } }
+
+/** Non-null ONLY inside the invisible accent layer: items must draw icon + label with this color. */
+val LocalLiquidTabAccent = staticCompositionLocalOf<Color?> { null }
 
 @Composable
 fun RowScope.LiquidTabItem(
@@ -264,7 +263,7 @@ fun LiquidGlassTabBar(
                         lens(
                             24f.dp.toPx(),
                             24f.dp.toPx(),
-                            depthEffect = true,
+                            depthEffect = LIQUID_BAR_DEPTH_EFFECT,
                             chromaticAberration = LIQUID_BAR_CHROMATIC
                         )
                     },
@@ -290,7 +289,8 @@ fun LiquidGlassTabBar(
         CompositionLocalProvider(
             LocalLiquidTabScale provides {
                 if (motionEnabled) lerp(1f, 1.2f, dampedDragAnimation.pressProgress) else 1f
-            }
+            },
+            LocalLiquidTabAccent provides accentColor
         ) {
             Row(
                 Modifier
@@ -304,15 +304,17 @@ fun LiquidGlassTabBar(
                         backdrop = backdrop,
                         shape = { CircleShape },
                         effects = {
+                            blur(4.5f.dp.toPx() * blurScale)          // same blur as the visible bar, so the droplet interior matches
                             val progress = dampedDragAnimation.pressProgress
-                            vibrancy()
-                            blur(8f.dp.toPx())
-                            lens(
-                                24f.dp.toPx() * progress,
-                                24f.dp.toPx() * progress,
-                                depthEffect = true,
-                                chromaticAberration = LIQUID_BAR_CHROMATIC
-                            )
+                            if (progress > 0.01f) {
+                                vibrancy()
+                                lens(
+                                    24f.dp.toPx() * progress,
+                                    24f.dp.toPx() * progress,
+                                    depthEffect = true,
+                                    chromaticAberration = LIQUID_BAR_CHROMATIC
+                                )
+                            }
                         },
                         highlight = {
                             Highlight.Default.copy(alpha = dampedDragAnimation.pressProgress)
@@ -320,22 +322,7 @@ fun LiquidGlassTabBar(
                         onDrawSurface = { drawRect(containerColor) }
                     )
                     .then(if (motionEnabled) interactiveHighlight.modifier else Modifier)
-                    .padding(horizontal = 4.dp)
-                    // Accent tint for the invisible copy: Compose UI
-                    // 1.7 has no colorFilter on graphicsLayer at all
-                    // (neither the parameter form nor the
-                    // GraphicsLayerScope property — both are 1.8+).
-                    // ColorFilter.tint() is a SrcIn tint, so drawing
-                    // the accent color with SrcIn over the children
-                    // tints exactly the icons/labels and leaves
-                    // transparent pixels untouched — the same pixels
-                    // the layer colorFilter would have tinted. The
-                    // drawBackdrop surface was already drawn by an
-                    // outer modifier, so it is not tinted either.
-                    .drawWithContent {
-                        drawContent()
-                        drawRect(accentColor, blendMode = BlendMode.SrcIn)
-                    },
+                    .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 content = content
             )
@@ -362,7 +349,9 @@ fun LiquidGlassTabBar(
                         shape = { CircleShape },
                         effects = {
                             val progress = dampedDragAnimation.pressProgress
-                            lens(10f.dp.toPx() * progress, 14f.dp.toPx() * progress, true)
+                            if (progress > 0.01f) {
+                                lens(10f.dp.toPx() * progress, 14f.dp.toPx() * progress, true)
+                            }
                         },
                         highlight = {
                             Highlight.Default.copy(alpha = dampedDragAnimation.pressProgress)

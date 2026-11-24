@@ -106,6 +106,7 @@ internal fun LiquidPhoneBottomBar(
         ) {
             Screen.bottomNavItems.forEach { screen ->
                 val isSelected = currentRoute == screen.route
+                val accent = LocalLiquidTabAccent.current
                 LiquidTabItem(
                     onClick = { onNavigate(screen) },
                     modifier = Modifier
@@ -123,7 +124,7 @@ internal fun LiquidPhoneBottomBar(
                         Icon(
                             painter = painterResource(if (sel) screen.iconResSelected else screen.iconRes),
                             contentDescription = stringResource(screen.contentDescriptionRes),
-                            tint = if (sel) selectedContentColor else unselectedContentColor,
+                            tint = accent ?: if (sel) selectedContentColor else unselectedContentColor,
                             modifier = Modifier.size(sizeSpec.iconSize)
                         )
                     }
@@ -146,7 +147,7 @@ internal fun LiquidPhoneBottomBar(
                                 text = stringResource(screen.titleRes),
                                 fontSize = sizeSpec.labelSize,
                                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                color = if (isSelected) selectedContentColor else unselectedContentColor,
+                                color = accent ?: if (isSelected) selectedContentColor else unselectedContentColor,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
