@@ -204,6 +204,22 @@ fun PhoneBottomBar(
         }
     }
 
+    // Lens path (0.20.10): the liquid-glass bar replaces the old lens
+    // bar entirely. The Haze/solid branches below are untouched, and
+    // LensGlassBar.kt stays in place (now unused on this path).
+    if (lensBackdrop != null) {
+        io.github.elli0t0.phone.navigation.liquid.LiquidPhoneBottomBar(
+            currentRoute = currentRoute,
+            onNavigate = { navigateTo(it) },
+            lensBackdrop = lensBackdrop,
+            darkTheme = darkTheme,
+            showLabels = showLabels,
+            shrinkProgress = shrinkProgress,
+            modifier = modifier
+        )
+        return
+    }
+
     // Drag state. dragX is the droplet center in px (physical, from
     // the bar's left edge). Lift is DERIVED state (0.19.5), not an
     // animated value: the old manual lift.animateTo was killed by

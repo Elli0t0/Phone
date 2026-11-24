@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.20.10]
+
+- The lens bottom bar is now the liquid-glass bar: the droplet grows and magnifies the page (and the accent-tinted icons under it) while pressed or dragged, with a finger-following highlight, bar lean, and squash/stretch. Haze and Minimal bars are unchanged.
+
 ## [0.20.9]
 
 - New "Language" setting (Settings > Appearance, right at the top): switch the whole app between فارسی and English, including layout direction. The app restarts in the picked language. Until you pick, it keeps following the device language, as before — so nothing changes for existing installs until you choose.
