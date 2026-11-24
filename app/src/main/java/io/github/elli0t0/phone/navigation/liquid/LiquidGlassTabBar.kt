@@ -189,7 +189,9 @@ fun LiquidGlassTabBar(
             },
             onDragStarted = {},
             onDragStopped = {
-                val targetIndex = targetValue.fastRoundToInt().fastCoerceIn(0, tabsCount - 1)
+                // Int.fastCoerceIn does not exist in Compose UI 1.7
+                // (added later); stdlib coerceIn is identical here.
+                val targetIndex = targetValue.fastRoundToInt().coerceIn(0, tabsCount - 1)
                 currentOnSelected(targetIndex)
                 currentIndex = targetIndex
                 animateToValue(targetIndex.toFloat())
@@ -318,7 +320,10 @@ fun LiquidGlassTabBar(
                     )
                     .then(if (motionEnabled) interactiveHighlight.modifier else Modifier)
                     .padding(horizontal = 4.dp)
-                    .graphicsLayer(colorFilter = ColorFilter.tint(accentColor)),
+                    // The parameter form of graphicsLayer has no
+                    // colorFilter in Compose UI 1.7 (added in 1.8);
+                    // the lambda form sets the same property.
+                    .graphicsLayer { colorFilter = ColorFilter.tint(accentColor) },
                 verticalAlignment = Alignment.CenterVertically,
                 content = content
             )
