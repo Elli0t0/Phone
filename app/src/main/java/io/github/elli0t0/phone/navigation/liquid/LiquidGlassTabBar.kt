@@ -32,9 +32,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
@@ -320,10 +321,21 @@ fun LiquidGlassTabBar(
                     )
                     .then(if (motionEnabled) interactiveHighlight.modifier else Modifier)
                     .padding(horizontal = 4.dp)
-                    // The parameter form of graphicsLayer has no
-                    // colorFilter in Compose UI 1.7 (added in 1.8);
-                    // the lambda form sets the same property.
-                    .graphicsLayer { colorFilter = ColorFilter.tint(accentColor) },
+                    // Accent tint for the invisible copy: Compose UI
+                    // 1.7 has no colorFilter on graphicsLayer at all
+                    // (neither the parameter form nor the
+                    // GraphicsLayerScope property — both are 1.8+).
+                    // ColorFilter.tint() is a SrcIn tint, so drawing
+                    // the accent color with SrcIn over the children
+                    // tints exactly the icons/labels and leaves
+                    // transparent pixels untouched — the same pixels
+                    // the layer colorFilter would have tinted. The
+                    // drawBackdrop surface was already drawn by an
+                    // outer modifier, so it is not tinted either.
+                    .drawWithContent {
+                        drawContent()
+                        drawRect(accentColor, blendMode = BlendMode.SrcIn)
+                    },
                 verticalAlignment = Alignment.CenterVertically,
                 content = content
             )
