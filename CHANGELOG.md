@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.21.1]
+
+- Fixed the cursor jumping while typing in search fields (Contacts, Recents, keypad name search, picker, recordings): the field now owns its text locally as a TextFieldValue, the ViewModel only receives the text, and the field is only reset on an explicit clear.
+
 ## [0.21.0]
 
 - Liquid glass bar: fixed solid-blue droplet, reduced GPU cost (no chromatic aberration, effects only while pressed).

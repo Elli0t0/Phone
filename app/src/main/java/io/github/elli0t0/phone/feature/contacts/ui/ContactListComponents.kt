@@ -33,7 +33,11 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.ripple
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -66,6 +70,7 @@ import io.github.elli0t0.phone.data.settings.model.CardStyle
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 import io.github.elli0t0.phone.core.common.bidiWrap
 import io.github.elli0t0.phone.core.common.textAlignFor
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextDirection
 
 @Composable
@@ -76,6 +81,22 @@ fun ContactSearchBar(
     modifier: Modifier = Modifier,
     placeholderText: String = stringResource(id = R.string.contacts_search_hint)
 ) {
+    // Cursor-jump fix: the field owns its text locally and synchronously
+    // as a TextFieldValue (text + selection). The ViewModel only RECEIVES
+    // the text; it never writes it back while typing — the old String
+    // binding round-tripped through the VM flow (combine + flowOn) and
+    // Compose recreated the text state, resetting the caret after each
+    // character ("0919" -> "9190", "123" -> "132").
+    var field by rememberSaveable(stateSaver = TextFieldValue.Saver) {
+        mutableStateOf(TextFieldValue(query))
+    }
+    // Only an external clear writes back into the field: the X button
+    // below clears the field directly first; this covers clears that
+    // come from elsewhere (search toggle, back navigation, a picked
+    // contact, a cleared recording search) while the bar is shown.
+    if (query.isEmpty() && field.text.isNotEmpty()) {
+        field = TextFieldValue("")
+    }
     Box(
         modifier = modifier.liquidGlass(
             shape = MaterialTheme.shapes.large,
@@ -83,8 +104,11 @@ fun ContactSearchBar(
         )
     ) {
         OutlinedTextField(
-            value = query,
-            onValueChange = onQueryChange,
+            value = field,
+            onValueChange = { new ->
+                field = new // update immediately, keep selection
+                if (new.text != query) onQueryChange(new.text)
+            },
             placeholder = { Text(text = placeholderText) },
             leadingIcon = {
                 Icon(
@@ -94,8 +118,11 @@ fun ContactSearchBar(
                 )
             },
             trailingIcon = {
-                if (query.isNotEmpty()) {
-                    IconButton(onClick = onClear) {
+                if (field.text.isNotEmpty()) {
+                    IconButton(onClick = {
+                        field = TextFieldValue("") // selection = 0 for empty text
+                        onClear()
+                    }) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_close),
                             contentDescription = stringResource(id = R.string.cd_clear_search),
