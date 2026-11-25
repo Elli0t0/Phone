@@ -164,6 +164,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.21.2]
+
+- Minimal (light theme): search results stay visible above the keyboard, the floating bar hides while typing, and lists get 24dp of extra bottom clearance.
+- Minimal: empty search shows a centered "No results" line, and the large title hides while searching.
+- Minimal: the status-bar scrim and the collapsed small title are now solid, so list text never shows under the clock.
+- Keypad: entering the tab clears focus and hides the system keyboard; Contacts and keypad search text stay separate.
+- In-call screens in Minimal light: Mute, Speaker, Keypad, Hold, Record and Bluetooth icons, quick-reply pill texts and the answer slider/liquid labels use a dark tint on the white containers; the REC label is now light red, and call screens force light status-bar icons.
+- Minimal light: Recents date headers use a darker gray.
+- Names with digits (Persian or Latin) are wrapped in isolates, so their order stays stable.
+
 ## [0.21.1]
 
 - Fixed the cursor jumping while typing in search fields (Contacts, Recents, keypad name search, picker, recordings): the field now owns its text locally as a TextFieldValue, the ViewModel only receives the text, and the field is only reset on an explicit clear.

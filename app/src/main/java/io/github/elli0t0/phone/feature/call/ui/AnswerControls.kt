@@ -34,6 +34,7 @@ import io.github.elli0t0.phone.core.design.LiquidGlassChip
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.Motion
+import io.github.elli0t0.phone.core.design.minimalLightSurface
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.WrappingRow
 import io.github.elli0t0.phone.core.design.pressScale
@@ -117,7 +118,13 @@ private fun AnswerQuickReplies(
                 ) {
                     Text(
                         text = message,
-                        color = Color.White,
+                        // Minimal light: the glass chip is a white
+                        // surface, so white text is invisible.
+                        color = if (minimalLightSurface()) {
+                            Color(0xFF1C1C1E)
+                        } else {
+                            Color.White
+                        },
                         modifier = Modifier.padding(
                             horizontal = PhoneDimens.incomingChipHorizontalPadding,
                             vertical = PhoneDimens.incomingChipVerticalPadding

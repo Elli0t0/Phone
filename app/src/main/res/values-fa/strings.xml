@@ -357,6 +357,7 @@
     <string name="contacts_empty_action">افزودن مخاطب</string>
     <string name="contacts_search_empty_title">مخاطبی یافت نشد</string>
     <string name="contacts_search_empty_message">مخاطبی مطابق جستجوی شما وجود ندارد.</string>
+    <string name="search_no_results">نتیجه‌ای یافت نشد</string>
     <string name="contact_unknown">ناشناس</string>
     <string name="cd_add_contact">ایجاد مخاطب جدید</string>
     <string name="cd_search">جستجو</string>

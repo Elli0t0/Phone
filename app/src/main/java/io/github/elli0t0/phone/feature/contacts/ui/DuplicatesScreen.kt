@@ -44,6 +44,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.common.bidiWrapName
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.data.contacts.model.DuplicateGroup
@@ -245,7 +246,7 @@ fun DuplicatesScreen(
                             )
                             Column(modifier = Modifier.padding(start = spacing.small)) {
                                 Text(
-                                    text = contact.displayName,
+                                    text = bidiWrapName(contact.displayName),
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
@@ -324,7 +325,7 @@ private fun DuplicateGroupItem(
                         .padding(vertical = spacing.small)
                 ) {
                     Text(
-                        text = contact.displayName,
+                        text = bidiWrapName(contact.displayName),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface
                     )

@@ -65,6 +65,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.common.bidiWrap
+import io.github.elli0t0.phone.core.common.bidiWrapName
 import io.github.elli0t0.phone.core.design.KeypadKeyLightRim
 import io.github.elli0t0.phone.core.design.LiquidGlassChip
 import io.github.elli0t0.phone.core.design.LiquidGlassSurfaceLight
@@ -435,7 +436,7 @@ private fun DialpadSuggestionRow(
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = bidiWrap(contact.displayName),
+                    text = bidiWrapName(contact.displayName),
                     style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Content),
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
@@ -693,7 +694,7 @@ fun DialpadSearchRow(
             Spacer(modifier = Modifier.size(spacing.medium))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = bidiWrap(contact.displayName),
+                    text = bidiWrapName(contact.displayName),
                     style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Content),
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -847,7 +848,7 @@ fun FavoritesStrip(
                     )
                     Spacer(modifier = Modifier.size(4.dp))
                     Text(
-                        text = bidiWrap(displayName),
+                        text = bidiWrapName(displayName),
                         style = MaterialTheme.typography.labelMedium.copy(
                             textDirection = TextDirection.Content
                         ),

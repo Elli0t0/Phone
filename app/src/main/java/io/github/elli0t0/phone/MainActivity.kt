@@ -26,10 +26,12 @@ import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.readAppLanguage
 import io.github.elli0t0.phone.data.settings.withAppLocale
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
@@ -72,6 +74,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import io.github.elli0t0.phone.core.design.LocalHazeState
+import io.github.elli0t0.phone.core.design.LocalMinimal
 import io.github.elli0t0.phone.core.design.isLensBarActive
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
@@ -255,6 +258,9 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
     var showContactsBar by remember { mutableStateOf(true) }
     val showBottomBar = Screen.bottomNavItems.any { it.route == currentRoute } &&
         (currentRoute != Screen.Contacts.route || showContactsBar)
+    // Minimal: hide the floating bar (and its scrim) while the
+    // keyboard is open, so search results stay visible above it.
+    val hideBarForIme = LocalMinimal.current && WindowInsets.isImeVisible
 
     // Shrink on scroll: post-scroll only, consumed delta only, with a
     // directional accumulator — shrink after ~48dp of downward scroll,
@@ -439,7 +445,7 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
         // then stays at the max alpha under the bar. Plain Box, no
         // clickable, so touches pass through to the list.
         AnimatedVisibility(
-            visible = showBottomBar,
+            visible = showBottomBar && !hideBarForIme,
             enter = fadeIn(tween(
                 durationMillis = Motion.scaledDurationMs(
                     Motion.Durations.Medium,
@@ -477,7 +483,7 @@ fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
         val showSelectionBar = selectionBar != null &&
             Screen.bottomNavItems.any { it.route == currentRoute }
         AnimatedVisibility(
-            visible = showBottomBar && !showSelectionBar,
+            visible = showBottomBar && !showSelectionBar && !hideBarForIme,
             enter = barEnter,
             exit = barExit,
             modifier = Modifier.align(Alignment.BottomCenter)

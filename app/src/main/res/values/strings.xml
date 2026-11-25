@@ -23,6 +23,7 @@
     <string name="contacts_empty_action">Add contact</string>
     <string name="contacts_search_empty_title">No contacts found</string>
     <string name="contacts_search_empty_message">No contacts matching your search query.</string>
+    <string name="search_no_results">No results</string>
     <string name="contact_unknown">Unknown</string>
     <string name="cd_add_contact">Create new contact</string>
     <string name="cd_search">Search</string>

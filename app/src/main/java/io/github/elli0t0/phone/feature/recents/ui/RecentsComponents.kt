@@ -86,6 +86,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import io.github.elli0t0.phone.core.common.bidiWrap
+import io.github.elli0t0.phone.core.common.bidiWrapName
 import androidx.compose.ui.text.style.TextDirection
 
 /**
@@ -319,7 +320,17 @@ fun CallLogRow(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = bidiWrap(group.displayTitle),
+                            // A named caller gets explicit isolates;
+                            // an unknown caller shows the bare number,
+                            // which keeps the heuristic wrap.
+                            text = if (
+                                !group.primaryCall.contactName.isNullOrBlank() ||
+                                !group.primaryCall.cachedName.isNullOrBlank()
+                            ) {
+                                bidiWrapName(group.displayTitle)
+                            } else {
+                                bidiWrap(group.displayTitle)
+                            },
                             style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Content),
                             color = nameColor,
                             textAlign = TextAlign.Start,
@@ -750,6 +761,24 @@ fun RecentsEmptyState(
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
+    // Minimal: a filtered (searching) empty list shows a single
+    // centered "No results" line instead of the big icon + title.
+    if (LocalMinimal.current && isFiltered) {
+        Box(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(spacing.large)
+                .testTag("recents_empty_state"),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = stringResource(id = R.string.search_no_results),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        return
+    }
     Box(
         modifier = modifier
             .fillMaxWidth()

@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.common.bidiWrapName
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneBottomSheet
 import io.github.elli0t0.phone.data.contacts.ContactsRepository
@@ -142,7 +143,7 @@ fun ContactPickerSheet(
                             )
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = contact.displayName,
+                                    text = bidiWrapName(contact.displayName),
                                     style = MaterialTheme.typography.bodyLarge,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis

@@ -29,6 +29,8 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -65,6 +67,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.DisposableEffect
@@ -224,6 +227,9 @@ fun RecentsScreen(
     // Hoisted: the LazyColumn items and the filter button's onClick
     // are not @Composable scopes, so they use this plain Boolean.
     val minimal = LocalMinimal.current
+    // Minimal: while the keyboard is open the list clears the IME
+    // instead of the floating bar (hidden by MainActivity).
+    val imeVisible = WindowInsets.isImeVisible
     // Minimal: the filter icon opens this sheet instead of the
     // dropdown menu, and instead of the filter chips row.
     var showFilterSheet by remember { mutableStateOf(false) }
@@ -847,13 +853,19 @@ fun RecentsScreen(
                         state = listState,
                         modifier = Modifier
                             .fillMaxSize()
+                            .then(if (minimal) Modifier.imePadding() else Modifier)
                             .testTag("recents_call_list"),
                         // Clearance above the overlaid bottom bar:
                         // bar height + nav-bar inset + 16dp gap.
                         contentPadding = PaddingValues(
-                            bottom = PhoneDimens.bottomBarReservedHeight +
-                                WindowInsets.navigationBars.asPaddingValues()
-                                    .calculateBottomPadding()
+                            bottom = if (imeVisible && minimal) {
+                                16.dp
+                            } else {
+                                PhoneDimens.bottomBarReservedHeight +
+                                    WindowInsets.navigationBars.asPaddingValues()
+                                        .calculateBottomPadding() +
+                                    if (minimal) 24.dp else 0.dp
+                            }
                         )
                     ) {
                         // Large header as the first list item: scrolls away naturally.
@@ -955,7 +967,17 @@ fun RecentsScreen(
                                     Text(
                                         text = section.title,
                                         style = MaterialTheme.typography.labelLarge,
-                                        color = MaterialTheme.colorScheme.outline,
+                                        // Minimal light: the outline
+                                        // gray is too faint on the
+                                        // light background.
+                                        color = if (
+                                            minimal &&
+                                            MaterialTheme.colorScheme.background.luminance() > 0.5f
+                                        ) {
+                                            Color(0xFF6B6B70)
+                                        } else {
+                                            MaterialTheme.colorScheme.outline
+                                        },
                                         modifier = Modifier
                                             .animateItem()
                                             .fillMaxWidth()

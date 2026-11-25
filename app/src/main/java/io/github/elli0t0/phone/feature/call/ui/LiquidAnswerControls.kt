@@ -52,6 +52,7 @@ import io.github.elli0t0.phone.core.design.InCallControlBackgroundFlat
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.minimalLightSurface
 import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import kotlin.math.abs
@@ -125,7 +126,9 @@ internal fun LiquidAnswerControls(
         Text(
             text = stringResource(id = R.string.call_action_decline),
             style = MaterialTheme.typography.bodyMedium,
-            color = Color.White,
+            // Minimal light: the glass track is a white surface, so
+            // white text is invisible.
+            color = if (glass && minimalLightSurface()) Color(0xFF1C1C1E) else Color.White,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier
@@ -140,7 +143,9 @@ internal fun LiquidAnswerControls(
         Text(
             text = stringResource(id = R.string.call_action_answer),
             style = MaterialTheme.typography.bodyMedium,
-            color = Color.White,
+            // Minimal light: the glass track is a white surface, so
+            // white text is invisible.
+            color = if (glass && minimalLightSurface()) Color(0xFF1C1C1E) else Color.White,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier

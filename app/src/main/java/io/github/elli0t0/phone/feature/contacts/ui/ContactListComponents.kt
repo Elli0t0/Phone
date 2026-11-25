@@ -69,6 +69,7 @@ import io.github.elli0t0.phone.core.design.rememberLightHaptic
 import io.github.elli0t0.phone.data.settings.model.CardStyle
 import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 import io.github.elli0t0.phone.core.common.bidiWrap
+import io.github.elli0t0.phone.core.common.bidiWrapName
 import io.github.elli0t0.phone.core.common.textAlignFor
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextDirection
@@ -192,7 +193,7 @@ fun ContactRow(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = bidiWrap(displayName),
+                    text = bidiWrapName(displayName),
                     style = MaterialTheme.typography.titleMedium.copy(textDirection = TextDirection.Content),
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = textAlignFor(displayName),
@@ -355,7 +356,7 @@ private fun ContactGroupRow(
         Spacer(modifier = Modifier.width(spacing.medium))
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = bidiWrap(displayName),
+                text = bidiWrapName(displayName),
                 style = MaterialTheme.typography.titleMedium.copy(textDirection = TextDirection.Content),
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -479,7 +480,7 @@ fun ProfileRow(
             Spacer(modifier = Modifier.width(spacing.medium))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = bidiWrap(displayName),
+                    text = bidiWrapName(displayName),
                     style = MaterialTheme.typography.titleMedium.copy(textDirection = TextDirection.Content),
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = textAlignFor(displayName),
@@ -757,6 +758,21 @@ fun SearchEmptyState(
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalSpacing.current
+    // Minimal: a single centered "No results" line instead of the
+    // big title + message.
+    if (LocalMinimal.current) {
+        Box(
+            modifier = modifier.fillMaxSize().padding(spacing.large),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = stringResource(id = R.string.search_no_results),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        return
+    }
     Box(
         modifier = modifier.fillMaxSize().padding(spacing.large),
         contentAlignment = Alignment.Center
@@ -832,7 +848,7 @@ fun FavoriteContactCard(
             )
             Spacer(modifier = Modifier.height(PhoneDimens.contactsFavoriteAvatarNameGap))
             Text(
-                text = bidiWrap(displayName),
+                text = bidiWrapName(displayName),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, textDirection = TextDirection.Content),
                 color = Color.White,
                 maxLines = 1,

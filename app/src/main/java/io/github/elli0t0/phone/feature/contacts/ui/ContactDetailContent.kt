@@ -62,6 +62,7 @@ import io.github.elli0t0.phone.data.contacts.model.ContactPhone
 import io.github.elli0t0.phone.feature.contacts.ContactDetailUiState
 import io.github.elli0t0.phone.core.common.PhoneNumberMatcher
 import io.github.elli0t0.phone.core.common.bidiWrap
+import io.github.elli0t0.phone.core.common.bidiWrapName
 
 /**
  * The scrolling detail content: header card, Call/Message actions,
@@ -170,7 +171,7 @@ DetailGlassCard(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = bidiWrap(displayName),
+                    text = bidiWrapName(displayName),
                     style = MaterialTheme.typography.headlineMedium.copy(
                         fontSize = PhoneDimens.detailHeaderNameSize,
                         fontWeight = FontWeight.Bold,
@@ -192,7 +193,7 @@ DetailGlassCard(
                 if (!contact.organization.isNullOrBlank()) {
                     Spacer(modifier = Modifier.height(spacing.extraSmall))
                     Text(
-                        text = bidiWrap(contact.organization),
+                        text = bidiWrapName(contact.organization),
                         style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Content),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

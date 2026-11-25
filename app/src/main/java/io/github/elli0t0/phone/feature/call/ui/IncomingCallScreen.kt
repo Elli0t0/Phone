@@ -75,6 +75,7 @@ import io.github.elli0t0.phone.core.design.LiquidGlassChip
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.minimalLightSurface
 import io.github.elli0t0.phone.core.design.WrappingRow
 import io.github.elli0t0.phone.core.design.PulseRings
 import io.github.elli0t0.phone.core.design.pressScale
@@ -85,6 +86,7 @@ import io.github.elli0t0.phone.feature.contacts.ui.avatarGradient
 import io.github.elli0t0.phone.data.settings.model.CallBackground
 import kotlin.math.roundToInt
 import io.github.elli0t0.phone.core.common.bidiWrap
+import io.github.elli0t0.phone.core.common.bidiWrapName
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 
@@ -220,7 +222,7 @@ fun IncomingCallScreen(
             Spacer(modifier = Modifier.height(spacing.medium))
 
             Text(
-                text = bidiWrap(titleText),
+                text = if (hasName) bidiWrapName(titleText) else bidiWrap(titleText),
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = if (hasName) PhoneDimens.incomingTitleSize else titleFontSize,
@@ -328,7 +330,13 @@ private fun QuickRepliesSection(
                     ) {
                         Text(
                             text = message,
-                            color = Color.White,
+                            // Minimal light: the glass chip is a white
+                            // surface, so white text is invisible.
+                            color = if (minimalLightSurface()) {
+                                Color(0xFF1C1C1E)
+                            } else {
+                                Color.White
+                            },
                             modifier = Modifier.padding(
                                 horizontal = PhoneDimens.incomingChipHorizontalPadding,
                                 vertical = PhoneDimens.incomingChipVerticalPadding

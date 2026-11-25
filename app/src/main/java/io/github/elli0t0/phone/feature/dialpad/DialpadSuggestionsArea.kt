@@ -11,6 +11,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -23,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalMinimal
 import io.github.elli0t0.phone.core.design.LocalSpacing
@@ -93,11 +95,15 @@ fun ColumnScope.DialpadSuggestionsArea(
         contentAlignment = Alignment.TopCenter
     ) {
     if (showSearchRows) {
-        // Name search: full rows.
+        // Name search: full rows. Minimal: the last row clears the
+        // keypad area with the same 24dp gap as the other lists.
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                .testTag("dialpad_search_results")
+                .testTag("dialpad_search_results"),
+            contentPadding = PaddingValues(
+                bottom = if (LocalMinimal.current) 24.dp else 0.dp
+            )
         ) {
             items(uiState.nameSearchResults, key = { it.id }) { contact ->
                 DialpadSearchRow(

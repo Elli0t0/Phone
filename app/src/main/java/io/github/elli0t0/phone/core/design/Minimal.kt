@@ -58,3 +58,13 @@ object MinimalColors {
 @Composable
 fun minimalPalette(): MinimalPalette =
     MinimalColors.palette(MaterialTheme.colorScheme.background.luminance() <= 0.5f)
+
+/**
+ * True when Minimal mode renders liquidGlass surfaces as a light
+ * (near-white) surface: white icons and text inside those surfaces
+ * are invisible, so call-screen controls and quick-reply chips must
+ * use a dark tint instead.
+ */
+@Composable
+fun minimalLightSurface(): Boolean =
+    LocalMinimal.current && MaterialTheme.colorScheme.surface.luminance() > 0.5f

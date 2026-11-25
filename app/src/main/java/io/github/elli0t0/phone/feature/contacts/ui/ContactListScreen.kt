@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -475,18 +477,27 @@ private fun ContactsContent(
         // minimal flag is read here, in the composable body, and the
         // list items below use the plain Boolean.
         val minimal = LocalMinimal.current
+        // Minimal: while the keyboard is open the list clears the
+        // IME instead of the floating bar (hidden by MainActivity).
+        val imeVisible = WindowInsets.isImeVisible
         LazyColumn(
             state = listState,
             modifier = Modifier
                 .fillMaxSize()
+                .then(if (minimal) Modifier.imePadding() else Modifier)
                 .padding(horizontal = spacing.screenHorizontalPadding)
                 .testTag("contacts_lazy_column"),
             // Clearance above the overlaid bottom bar:
             // bar height + nav-bar inset + 16dp gap.
             contentPadding = PaddingValues(
-                bottom = PhoneDimens.bottomBarReservedHeight +
-                    WindowInsets.navigationBars.asPaddingValues()
-                        .calculateBottomPadding()
+                bottom = if (imeVisible && minimal) {
+                    16.dp
+                } else {
+                    PhoneDimens.bottomBarReservedHeight +
+                        WindowInsets.navigationBars.asPaddingValues()
+                            .calculateBottomPadding() +
+                        if (minimal) 24.dp else 0.dp
+                }
             )
         ) {
             // Reveal index: assigned in list order, so the
@@ -520,16 +531,20 @@ private fun ContactsContent(
             // a second row below it. It reveals with the header.
             // Minimal: the plain icon actions render under the tall
             // centered title instead of the pills.
-            item(key = "contacts_header") {
-                PageHeaderItem(
-                    title = stringResource(id = R.string.tab_contacts),
-                    subtitle = countText,
-                    modifier = Modifier
-                        .animateItem()
-                        .firstLoadReveal(revealIndex++, listRevealed),
-                    bottomContent = topBarPills,
-                    actions = compactContactsActions
-                )
+            // Minimal: the large title hides while searching, so the
+            // results start at the top instead of under the header.
+            if (!minimal || uiState.searchQuery.isEmpty()) {
+                item(key = "contacts_header") {
+                    PageHeaderItem(
+                        title = stringResource(id = R.string.tab_contacts),
+                        subtitle = countText,
+                        modifier = Modifier
+                            .animateItem()
+                            .firstLoadReveal(revealIndex++, listRevealed),
+                        bottomContent = topBarPills,
+                        actions = compactContactsActions
+                    )
+                }
             }
             if (!minimal && showDuplicatesCard) {
                 item(key = "duplicates_card") {

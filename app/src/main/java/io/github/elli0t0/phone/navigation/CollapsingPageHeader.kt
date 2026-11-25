@@ -194,9 +194,12 @@ fun FloatingActionsPill(
     }
     if (!pillVisible) return
     if (LocalMinimal.current && minimalTitle != null) {
+        // Collapsed small title with a solid background: list text
+        // must never show through under the clock.
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.background)
                 .statusBarsPadding()
                 .padding(top = 8.dp),
             contentAlignment = Alignment.Center
@@ -276,6 +279,9 @@ fun StatusBarGradientScrim(
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val h = statusBarTop + 8.dp
     val bg = MaterialTheme.colorScheme.background
+    // Minimal: a solid scrim, not a gradient — list text must not
+    // show through behind the status bar.
+    val minimal = LocalMinimal.current
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -289,12 +295,18 @@ fun StatusBarGradientScrim(
                         listState.firstVisibleItemScrollOffset / 24.dp.toPx()
                     )
             }
-            .background(
-                Brush.verticalGradient(
-                    0f to bg.copy(alpha = 0.45f),
-                    (statusBarTop / h) to bg.copy(alpha = 0.20f),
-                    1f to Color.Transparent
-                )
+            .then(
+                if (minimal) {
+                    Modifier.background(bg)
+                } else {
+                    Modifier.background(
+                        Brush.verticalGradient(
+                            0f to bg.copy(alpha = 0.45f),
+                            (statusBarTop / h) to bg.copy(alpha = 0.20f),
+                            1f to Color.Transparent
+                        )
+                    )
+                }
             )
     )
 }

@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.elli0t0.phone.R
+import io.github.elli0t0.phone.core.common.bidiWrapName
 import io.github.elli0t0.phone.core.design.GlassDropdownMenu
 import io.github.elli0t0.phone.core.design.GlassMenuItem
 import io.github.elli0t0.phone.core.design.Spacing
@@ -186,6 +187,7 @@ fun SpeedDialScreen(
                                 } else {
                                     Text(
                                         text = contact?.displayName?.takeIf { it.isNotBlank() }
+                                            ?.let { bidiWrapName(it) }
                                             ?: number,
                                         style = MaterialTheme.typography.bodyLarge,
                                         maxLines = 1,

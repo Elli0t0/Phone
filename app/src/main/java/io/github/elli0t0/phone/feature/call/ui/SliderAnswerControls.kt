@@ -57,6 +57,7 @@ import io.github.elli0t0.phone.core.design.InCallControlBackgroundFlat
 import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
+import io.github.elli0t0.phone.core.design.minimalLightSurface
 import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
@@ -164,7 +165,13 @@ internal fun SlideToAnswer(
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyLarge,
-                color = Color.White.copy(alpha = 0.9f),
+                // Minimal light: the glass track is a white surface,
+                // so white text is invisible.
+                color = if (glass && minimalLightSurface()) {
+                    Color(0xFF1C1C1E).copy(alpha = 0.9f)
+                } else {
+                    Color.White.copy(alpha = 0.9f)
+                },
                 modifier = Modifier
                     .align(Alignment.Center)
                     .graphicsLayer { alpha = (1f - progress * 1.4f).coerceIn(0f, 1f) }
@@ -251,6 +258,14 @@ internal fun ShimmerLabel(
             )
         },
         style = MaterialTheme.typography.bodyLarge,
-        color = Color.White.copy(alpha = 0.6f)
+        // Minimal light: the glass track is a white surface, so
+        // white text is invisible.
+        color = if (
+            LocalAppSettings.current.glassCallScreens && minimalLightSurface()
+        ) {
+            Color(0xFF1C1C1E).copy(alpha = 0.6f)
+        } else {
+            Color.White.copy(alpha = 0.6f)
+        }
     )
 }

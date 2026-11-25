@@ -12,6 +12,16 @@ import androidx.compose.ui.text.style.TextAlign
 fun bidiWrap(text: String): String = BidiFormatter.getInstance().unicodeWrap(text)
 
 /**
+ * A display name, always wrapped in first-strong isolates. Unlike
+ * [bidiWrap], the order stays stable for an LTR name with digits in
+ * an RTL layout (and the reverse), where the heuristic wrap leaves
+ * it unwrapped and the digits jump to the wrong side. Names only:
+ * numbers keep [bidiWrap], since an isolate around a bare number
+ * can reorder its digit groups.
+ */
+fun bidiWrapName(name: String): String = "\u2068$name\u2069"
+
+/**
  * Alignment for a name: End (right in an LTR layout) when the first
  * strong character is RTL (Persian/Arabic/Hebrew), Start otherwise.
  * TextDirection.Content alone sets the paragraph direction, but the

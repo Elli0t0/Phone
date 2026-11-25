@@ -49,6 +49,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -97,6 +99,16 @@ fun DialpadScreen(
             settingsRepository = app.container.settingsRepository
         )
     )
+
+    // Entering the keypad never shows the system keyboard: the
+    // number display is plain text, and a search field focused on
+    // another tab must not follow the user here.
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    LaunchedEffect(Unit) {
+        focusManager.clearFocus()
+        keyboardController?.hide()
+    }
 
     // External dial request: fill the keypad once, then consume.
     LaunchedEffect(externalNumber) {

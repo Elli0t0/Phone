@@ -72,6 +72,7 @@ import io.github.elli0t0.phone.core.design.LocalAppSettings
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.glassPress
+import io.github.elli0t0.phone.core.design.minimalLightSurface
 import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
@@ -91,6 +92,7 @@ import io.github.elli0t0.phone.data.settings.model.OngoingCallButton
 import io.github.elli0t0.phone.feature.contacts.ui.ContactAvatar
 import io.github.elli0t0.phone.feature.contacts.ui.avatarGradient
 import io.github.elli0t0.phone.core.common.bidiWrap
+import io.github.elli0t0.phone.core.common.bidiWrapName
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 
@@ -287,7 +289,7 @@ fun OngoingCallScreen(
                 )
                 Spacer(modifier = Modifier.height(spacing.medium))
                 Text(
-                    text = bidiWrap(titleText),
+                    text = if (hasName) bidiWrapName(titleText) else bidiWrap(titleText),
                     style = MaterialTheme.typography.headlineLarge.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = PhoneDimens.ongoingTitleSize,
@@ -335,7 +337,7 @@ fun OngoingCallScreen(
                         Text(
                             text = stringResource(id = R.string.recording_rec),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
+                            color = Color(0xFFFF6B6B)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
@@ -629,7 +631,15 @@ private fun InCallControlButton(
             Icon(
                 painter = painterResource(id = iconRes),
                 contentDescription = label,
-                tint = if (isActive) InCallControlActiveContent else Color.White,
+                // Minimal light: the glass container is a white
+                // surface, so a white icon is invisible — dark tint.
+                tint = if (minimalLightSurface()) {
+                    Color(0xFF1C1C1E)
+                } else if (isActive) {
+                    InCallControlActiveContent
+                } else {
+                    Color.White
+                },
                 modifier = Modifier.size(PhoneDimens.ongoingControlIconSize * controlScale)
             )
         }

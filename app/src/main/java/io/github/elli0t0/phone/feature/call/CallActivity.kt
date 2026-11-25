@@ -41,6 +41,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,10 +52,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
@@ -165,6 +168,16 @@ class CallActivity : ComponentActivity() {
             }
 
             PhoneTheme(appSettings = settings) {
+                // The call screens have a dark background: force light
+                // status-bar icons here, restore the previous value
+                // when this activity leaves.
+                val callView = LocalView.current
+                DisposableEffect(Unit) {
+                    val controller = WindowCompat.getInsetsController(window, callView)
+                    val wasLight = controller.isAppearanceLightStatusBars
+                    controller.isAppearanceLightStatusBars = false
+                    onDispose { controller.isAppearanceLightStatusBars = wasLight }
+                }
                 val ongoingCall by CallRepository.ongoingCallModel.collectAsStateWithLifecycle()
                 val dtmfDigits by CallRepository.typedDtmfDigits.collectAsStateWithLifecycle()
                 val postDialRemaining by CallRepository.postDialRemaining.collectAsStateWithLifecycle()
