@@ -27,8 +27,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -64,7 +62,6 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.elli0t0.phone.R
-import io.github.elli0t0.phone.core.common.bidiWrap
 import io.github.elli0t0.phone.core.common.bidiWrapName
 import io.github.elli0t0.phone.core.design.KeypadKeyLightRim
 import io.github.elli0t0.phone.core.design.LiquidGlassChip
@@ -662,67 +659,6 @@ private fun NoMatchChipContent(
         )
     }
 }
-@Composable
-fun DialpadSearchRow(
-    contact: ContactSummary,
-    onClick: () -> Unit,
-    onCallClick: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
-) {
-    val spacing = LocalSpacing.current
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = spacing.extraSmall)
-            .clickable(onClick = onClick)
-            .testTag("search_contact_${contact.id}"),
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = spacing.medium, vertical = spacing.small),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_person),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.size(spacing.medium))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = bidiWrapName(contact.displayName),
-                    style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Content),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                if (!contact.primaryNumberPreview.isNullOrBlank()) {
-                    Text(
-                        text = bidiWrap(contact.primaryNumberPreview),
-                        style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            if (onCallClick != null && !contact.primaryNumberPreview.isNullOrBlank()) {
-                androidx.compose.material3.IconButton(
-                    onClick = onCallClick,
-                    modifier = Modifier.testTag("search_contact_call_${contact.id}")
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_phone),
-                        contentDescription = stringResource(id = R.string.cd_call_button),
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-        }
-    }
-}
-
 /**
  * Empty-keypad quick redial: up to 3 chips with the last recent
  * numbers (name when known, else the formatted number). One tap

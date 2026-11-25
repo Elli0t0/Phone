@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
@@ -49,6 +50,9 @@ class RecentsViewModel(
 
     private val _selectedFilter = MutableStateFlow(CallFilter.ALL)
     private val _searchQuery = MutableStateFlow("")
+    // Immediate query for the search bar: uiState.searchQuery lags
+    // (combine + flowOn), so the bar must read this directly.
+    val searchQueryNow: StateFlow<String> = _searchQuery.asStateFlow()
     private val _selectedDate = MutableStateFlow<LocalDate?>(null)
     private val _expandedCallId = MutableStateFlow<Long?>(null)
     // Rows swiped (or menu-deleted) but not yet confirmed: hidden

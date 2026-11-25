@@ -164,6 +164,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.21.3]
+
+- Fixed the first typed character disappearing after clearing a search: the search bar now only resets on a real external clear, never on a stale empty echo, and Contacts/Recents read the ViewModel's immediate query instead of the lagging one.
+- Removed the search button from the keypad: the top-right corner shows only the menu. T9 suggestion chips, no-match actions, quick call strip and redial chips work exactly as before.
+
 ## [0.21.2]
 
 - Minimal (light theme): search results stay visible above the keyboard, the floating bar hides while typing, and lists get 24dp of extra bottom clearance.

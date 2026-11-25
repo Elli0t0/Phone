@@ -166,6 +166,8 @@ fun RecentsScreen(
     )
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    // Immediate query for the search bar (see RecentsViewModel).
+    val searchQueryNow by viewModel.searchQueryNow.collectAsStateWithLifecycle()
     // Spam list (in-memory cache): badges recompose when it changes.
     val spamNumbers by app.container.spamRepository.spamNumbers
         .collectAsStateWithLifecycle()
@@ -776,7 +778,7 @@ fun RecentsScreen(
             // (the header, which self-insets, is hidden while searching).
             if (searchVisible) {
                 ContactSearchBar(
-                    query = uiState.searchQuery,
+                    query = searchQueryNow,
                     onQueryChange = viewModel::onSearchQueryChanged,
                     onClear = {
                         viewModel.onSearchQueryChanged("")

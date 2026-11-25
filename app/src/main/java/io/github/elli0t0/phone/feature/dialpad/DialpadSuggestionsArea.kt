@@ -11,20 +11,15 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.unit.dp
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalMinimal
 import io.github.elli0t0.phone.core.design.LocalSpacing
@@ -37,8 +32,6 @@ import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 @Composable
 fun ColumnScope.DialpadSuggestionsArea(
     uiState: DialpadUiState,
-    searchVisible: Boolean,
-    onSearchVisibilityChange: (Boolean) -> Unit,
     animationOption: AnimationOption,
     quickCallEnabled: Boolean,
     quickCallStyle: QuickCallStyle,
@@ -47,8 +40,6 @@ fun ColumnScope.DialpadSuggestionsArea(
     onQuickMessage: (QuickCallEntry) -> Unit,
     onQuickOpenContact: (QuickCallEntry) -> Unit,
     onQuickRemove: (QuickCallEntry) -> Unit,
-    onSearchRowClick: (ContactSummary) -> Unit,
-    onSearchRowCallClick: (ContactSummary) -> Unit,
     onSuggestionSelect: (ContactSummary) -> Unit,
     onRedial: (QuickRedialEntry) -> Unit,
     onCreateContactAction: () -> Unit,
@@ -71,21 +62,16 @@ fun ColumnScope.DialpadSuggestionsArea(
             modifier = Modifier.fillMaxWidth()
         )
     }
-    val showSearchRows = searchVisible && uiState.nameSearchQuery.isNotBlank() &&
-        uiState.nameSearchResults.isNotEmpty()
-    val showChips = (!searchVisible || uiState.nameSearchQuery.isBlank()) &&
-        uiState.matchingContacts.isNotEmpty()
-    val showNoMatchActions = uiState.rawNumber.isNotEmpty() &&
-        !showSearchRows && !showChips
+    val showChips = uiState.matchingContacts.isNotEmpty()
+    val showNoMatchActions = uiState.rawNumber.isNotEmpty() && !showChips
     // Empty keypad: PILLS shows the pill strip here, at the top,
     // in the same slot as the CLASSIC chips, so typing swaps it
     // with the T9 suggestion chips without any layout jump.
     // CLASSIC restores the pre-strip look exactly via the untouched
     // QuickRedialChips: the "Recent" label + up to 3 text chips at
     // the top. The old favorites row is not restored — the spec
-    // names the Recent chips only. T9 chips pin to the top too;
-    // search rows fill the area.
-    val isEmptyState = uiState.rawNumber.isEmpty() && !showSearchRows && !showChips
+    // names the Recent chips only. T9 chips pin to the top too.
+    val isEmptyState = uiState.rawNumber.isEmpty() && !showChips
     // T9 Matching contacts list above the keypad
     Box(
         modifier = Modifier
@@ -94,30 +80,7 @@ fun ColumnScope.DialpadSuggestionsArea(
             .padding(top = spacing.small),
         contentAlignment = Alignment.TopCenter
     ) {
-    if (showSearchRows) {
-        // Name search: full rows. Minimal: the last row clears the
-        // keypad area with the same 24dp gap as the other lists.
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag("dialpad_search_results"),
-            contentPadding = PaddingValues(
-                bottom = if (LocalMinimal.current) 24.dp else 0.dp
-            )
-        ) {
-            items(uiState.nameSearchResults, key = { it.id }) { contact ->
-                DialpadSearchRow(
-                    contact = contact,
-                    onClick = {
-                        onSearchRowClick(contact)
-                    },
-                    onCallClick = {
-                        onSearchRowCallClick(contact)
-                    }
-                )
-            }
-        }
-    } else if (showChips) {
+    if (showChips) {
         // T9: suggestion chips above the keypad; tap selects.
         DialpadSuggestionChips(
             contacts = uiState.matchingContacts,
@@ -144,10 +107,10 @@ fun ColumnScope.DialpadSuggestionsArea(
             )
         }
         // PILLS: the same top slot. Hidden while typing (the empty
-        // state already requires an empty number), while a name
-        // search is open, and in Minimal mode, as before.
+        // state already requires an empty number) and in Minimal
+        // mode, as before.
         if (quickCallStyle == QuickCallStyle.PILLS && quickCallEnabled &&
-            quickCall.isNotEmpty() && !searchVisible && !LocalMinimal.current
+            quickCall.isNotEmpty() && !LocalMinimal.current
         ) {
             QuickCallStrip(
                 entries = quickCall,

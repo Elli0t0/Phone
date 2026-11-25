@@ -33,6 +33,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.ripple
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -95,8 +96,17 @@ fun ContactSearchBar(
     // below clears the field directly first; this covers clears that
     // come from elsewhere (search toggle, back navigation, a picked
     // contact, a cleared recording search) while the bar is shown.
-    if (query.isEmpty() && field.text.isNotEmpty()) {
-        field = TextFieldValue("")
+    // Guarded one-shot sync: the VM query lags the typed text (combine
+    // + flowOn), so a stale empty echo right after the first character
+    // must never wipe the field. Only a real external clear — the VM
+    // query went empty while the field still shows exactly what the VM
+    // had before — resets it.
+    var lastSeenQuery by remember { mutableStateOf(query) }
+    LaunchedEffect(query) {
+        if (query.isEmpty() && lastSeenQuery.isNotEmpty() && field.text == lastSeenQuery) {
+            field = TextFieldValue("")
+        }
+        lastSeenQuery = query
     }
     Box(
         modifier = modifier.liquidGlass(

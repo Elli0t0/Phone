@@ -73,7 +73,6 @@ import io.github.elli0t0.phone.core.common.PhoneNumberFormatter
 import io.github.elli0t0.phone.core.telecom.CallManager
 import io.github.elli0t0.phone.data.settings.model.AppBackground
 import io.github.elli0t0.phone.data.settings.model.ThemeMode
-import io.github.elli0t0.phone.feature.contacts.ui.ContactSearchBar
 import io.github.elli0t0.phone.feature.setup.SetupWarningCard
 import kotlinx.coroutines.launch
 
@@ -146,7 +145,6 @@ fun DialpadScreen(
     val simAccounts = remember(context) { io.github.elli0t0.phone.core.telecom.TelecomHelper.getCallCapablePhoneAccounts(context) }
     var simPickerTargetNumber by remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
     var pendingConfirmCall by remember { androidx.compose.runtime.mutableStateOf<PendingCall?>(null) }
-    var searchVisible by remember { androidx.compose.runtime.mutableStateOf(false) }
     var menuExpanded by remember { androidx.compose.runtime.mutableStateOf(false) }
     // Speed dial assign/replace (0.19.3): the digit awaiting a
     // contact pick, and the digit whose assignment a typed number
@@ -366,25 +364,12 @@ fun DialpadScreen(
             .testTag("dialpad_screen"),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Top-right actions: search + menu, like Recents and Contacts
+        // Top-right actions: menu only.
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(
-                onClick = {
-                    if (searchVisible) viewModel.onNameSearchQueryChanged("")
-                    searchVisible = !searchVisible
-                },
-                modifier = Modifier.testTag("button_search_dialpad")
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_search),
-                    contentDescription = stringResource(id = R.string.cd_search),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
             Box {
                 IconButton(
                     onClick = { menuExpanded = true },
@@ -409,20 +394,6 @@ fun DialpadScreen(
                 }
             }
         }
-        if (searchVisible) {
-            ContactSearchBar(
-                query = uiState.nameSearchQuery,
-                onQueryChange = viewModel::onNameSearchQueryChanged,
-                onClear = {
-                    viewModel.onNameSearchQueryChanged("")
-                    searchVisible = false
-                },
-                placeholderText = stringResource(id = R.string.contacts_search_hint),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = spacing.small)
-            )
-        }
         SetupWarningCard(
             modifier = Modifier
                 .fillMaxWidth()
@@ -430,8 +401,6 @@ fun DialpadScreen(
         )
         DialpadSuggestionsArea(
             uiState = uiState,
-            searchVisible = searchVisible,
-            onSearchVisibilityChange = { searchVisible = it },
             animationOption = animationOption,
             quickCallEnabled = quickCallEnabled,
             quickCallStyle = quickCallStyle,
@@ -457,19 +426,6 @@ fun DialpadScreen(
                     app.container.settingsRepository.setQuickCallHidden(
                         quickCallHidden + entry.contact.lookupKey
                     )
-                }
-            },
-            onSearchRowClick = { contact ->
-                lightHaptic()
-                viewModel.onContactSelected(contact)
-                viewModel.onNameSearchQueryChanged("")
-                searchVisible = false
-            },
-            onSearchRowCallClick = { contact ->
-                lightHaptic()
-                val num = contact.primaryNumberPreview ?: ""
-                if (num.isNotBlank()) {
-                    dialNumber(num, contact.lookupKey)
                 }
             },
             onSuggestionSelect = {

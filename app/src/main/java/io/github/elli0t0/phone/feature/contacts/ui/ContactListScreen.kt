@@ -89,6 +89,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun ContactListScreen(
     uiState: ContactsUiState,
+    searchQueryNow: String = "",
     permissionState: ContactsPermissionState,
     onSearchQueryChanged: (String) -> Unit,
     onClearSearch: () -> Unit,
@@ -149,6 +150,7 @@ fun ContactListScreen(
                 is ContactsPermissionStatus.Granted -> {
                     ContactsContent(
                         uiState = uiState,
+                        searchQueryNow = searchQueryNow,
                         onSearchQueryChanged = onSearchQueryChanged,
                         onClearSearch = onClearSearch,
                         onNavigateToSettings = onNavigateToSettings,
@@ -191,6 +193,7 @@ fun ContactListScreen(
 @Composable
 private fun ContactsContent(
     uiState: ContactsUiState,
+    searchQueryNow: String = "",
     onSearchQueryChanged: (String) -> Unit,
     onClearSearch: () -> Unit,
     onNavigateToSettings: () -> Unit,
@@ -457,7 +460,7 @@ private fun ContactsContent(
 
         if (searchVisible) {
             ContactSearchBar(
-                query = uiState.searchQuery,
+                query = searchQueryNow,
                 onQueryChange = onSearchQueryChanged,
                 onClear = { onClearSearch(); searchVisible = false },
                 modifier = Modifier

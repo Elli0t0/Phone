@@ -120,6 +120,8 @@ fun ContactsScreen(
         )
     )
     val uiState by listViewModel.uiState.collectAsStateWithLifecycle()
+    // Immediate query for the search bar (see ContactsViewModel).
+    val searchQueryNow by listViewModel.searchQueryNow.collectAsStateWithLifecycle()
     val permissionState = rememberContactsPermissionState()
 
     var currentDestination by remember { mutableStateOf<ContactsNavDestination>(ContactsNavDestination.List) }
@@ -482,6 +484,7 @@ fun ContactsScreen(
                 is ContactsNavDestination.List -> {
                     ContactListScreen(
                         uiState = uiState,
+                        searchQueryNow = searchQueryNow,
                         permissionState = permissionState,
                         onSearchQueryChanged = listViewModel::onSearchQueryChanged,
                         onClearSearch = listViewModel::clearSearchQuery,

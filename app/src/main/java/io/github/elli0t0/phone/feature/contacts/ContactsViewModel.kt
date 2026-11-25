@@ -25,6 +25,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
@@ -53,6 +54,9 @@ class ContactsViewModel(
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
+    // Immediate query for the search bar: uiState.searchQuery lags
+    // (combine + flowOn), so the bar must read this directly.
+    val searchQueryNow: StateFlow<String> = _searchQuery.asStateFlow()
     private val _userMessageRes = MutableStateFlow<Int?>(null)
     private val _duplicateGroups = MutableStateFlow<List<DuplicateGroup>>(emptyList())
     // Contact ids merged this session (0.19.9): a provider slow to
