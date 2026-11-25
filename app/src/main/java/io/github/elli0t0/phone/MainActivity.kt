@@ -26,6 +26,7 @@ import io.github.elli0t0.phone.data.settings.model.AnimationOption
 import io.github.elli0t0.phone.data.settings.readAppLanguage
 import io.github.elli0t0.phone.data.settings.withAppLocale
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -202,6 +203,7 @@ val LocalAppSnackbarHostState = staticCompositionLocalOf<SnackbarHostState> {
     error("LocalAppSnackbarHostState not provided")
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PhoneApp(appSettings: AppSettings, setupCompleted: Boolean = true) {
     val context = LocalContext.current
