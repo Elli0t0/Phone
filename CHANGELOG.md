@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.3.1] - 2026-11-26
+
+- Minimal: the Contacts header and collapsed title now sit at the same height as Recents (the status-bar inset was applied twice).
+
 ## [0.3.0] - 2026-11-26
 
 - Versioning restarted at 0.3.0 (0.3.0-0.3.10, then 0.4.0-0.4.10, ...; versionCode offset keeps updates installable). Minimal: slide-to-answer bar is now a translucent light pill with white text in both light and dark theme.

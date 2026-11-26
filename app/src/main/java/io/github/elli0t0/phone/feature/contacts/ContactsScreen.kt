@@ -5,6 +5,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -32,8 +33,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -45,6 +49,7 @@ import io.github.elli0t0.phone.data.contacts.model.ContactSummary
 import io.github.elli0t0.phone.PhoneApplication
 import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.LocalMinimal
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.PhoneBottomSheet
 import io.github.elli0t0.phone.core.permissions.rememberContactsPermissionState
@@ -91,6 +96,29 @@ private fun destinationDepth(destination: ContactsNavDestination): Int = when (d
     is ContactsNavDestination.Edit -> 3
 }
 
+/**
+ * Cancels the outer Scaffold's top inset for the contact list
+ * (Minimal only): the list header self-insets with
+ * statusBarsPadding, so the outer top inset would count twice.
+ * The child is measured taller by [topPx] and placed [topPx]
+ * higher, so the list bottom does not clip and the layout's own
+ * size is unchanged — the AnimatedContent transition to the
+ * detail screen does not jump.
+ */
+private fun Modifier.cancelTopInset(topPx: Int): Modifier = this.layout { measurable, constraints ->
+    if (topPx <= 0 || constraints.maxHeight == Constraints.Infinity) {
+        val placeable = measurable.measure(constraints)
+        layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+    } else {
+        val placeable = measurable.measure(
+            constraints.copy(maxHeight = constraints.maxHeight + topPx)
+        )
+        layout(constraints.maxWidth, constraints.maxHeight) {
+            placeable.place(0, -topPx)
+        }
+    }
+}
+
 @Composable
 fun ContactsScreen(
     modifier: Modifier = Modifier,
@@ -123,6 +151,8 @@ fun ContactsScreen(
     // Immediate query for the search bar (see ContactsViewModel).
     val searchQueryNow by listViewModel.searchQueryNow.collectAsStateWithLifecycle()
     val permissionState = rememberContactsPermissionState()
+
+    val minimal = LocalMinimal.current
 
     var currentDestination by remember { mutableStateOf<ContactsNavDestination>(ContactsNavDestination.List) }
     // Classic opens the editor as a destination; Clean as a sheet
@@ -471,6 +501,14 @@ fun ContactsScreen(
             MaterialTheme.colorScheme.background
         }
     ) { paddingValues ->
+        // Minimal list only: the header self-insets with
+        // statusBarsPadding, so the outer top inset would count
+        // twice. It is cancelled inside the List branch (below) —
+        // the Box padding itself must not change per destination,
+        // or the AnimatedContent transition would jump.
+        val topPx = with(LocalDensity.current) {
+            paddingValues.calculateTopPadding().roundToPx()
+        }
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
             AnimatedContent(
                 targetState = currentDestination,
@@ -483,6 +521,7 @@ fun ContactsScreen(
                 when (dest) {
                 is ContactsNavDestination.List -> {
                     ContactListScreen(
+                        modifier = if (minimal) Modifier.cancelTopInset(topPx) else Modifier,
                         uiState = uiState,
                         searchQueryNow = searchQueryNow,
                         permissionState = permissionState,
