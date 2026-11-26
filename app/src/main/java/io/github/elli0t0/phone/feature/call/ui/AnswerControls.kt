@@ -4,8 +4,11 @@ import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
@@ -13,8 +16,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -22,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -32,6 +38,7 @@ import io.github.elli0t0.phone.R
 import io.github.elli0t0.phone.core.design.InCallControlBackgroundFlat
 import io.github.elli0t0.phone.core.design.LiquidGlassChip
 import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.LocalMinimal
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.Motion
 import io.github.elli0t0.phone.core.design.minimalLightSurface
@@ -101,6 +108,7 @@ private fun AnswerQuickReplies(
     messages: List<String>,
     onReply: (String) -> Unit
 ) {
+    val minimal = LocalMinimal.current
     val glass = LocalAppSettings.current.glassCallScreens
     WrappingRow(
         horizontalSpacing = PhoneDimens.incomingChipSpacing,
@@ -109,7 +117,34 @@ private fun AnswerQuickReplies(
         modifier = Modifier.fillMaxWidth()
     ) {
         messages.forEachIndexed { index, message ->
-            if (glass) {
+            when {
+                minimal -> {
+                    // Minimal: a translucent light pill — the glass
+                    // chip would be a flat black surface here.
+                    val chipSource = remember { MutableInteractionSource() }
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50))
+                            .background(Color.White.copy(alpha = 0.18f))
+                            .pressScale(chipSource)
+                            .clickable(interactionSource = chipSource, indication = null) {
+                                onReply(message)
+                            }
+                            .testTag("answer_quick_reply_$index"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = message,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = Color.White,
+                            modifier = Modifier.padding(
+                                horizontal = PhoneDimens.incomingChipHorizontalPadding,
+                                vertical = PhoneDimens.incomingChipVerticalPadding
+                            )
+                        )
+                    }
+                }
+                glass -> {
                 LiquidGlassChip(
                     selected = false,
                     onClick = { onReply(message) },
@@ -131,7 +166,8 @@ private fun AnswerQuickReplies(
                         )
                     )
                 }
-            } else {
+                }
+                else -> {
                 val chipSource = remember { MutableInteractionSource() }
                 AssistChip(
                     onClick = { onReply(message) },
@@ -145,6 +181,7 @@ private fun AnswerQuickReplies(
                         .pressScale(chipSource)
                         .testTag("answer_quick_reply_$index")
                 )
+                }
             }
         }
     }

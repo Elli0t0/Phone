@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.3.0] - 2026-11-26
+
+- Versioning restarted at 0.3.0 (0.3.0-0.3.10, then 0.4.0-0.4.10, ...; versionCode offset keeps updates installable). Minimal: slide-to-answer bar is now a translucent light pill with white text in both light and dark theme.
+
 ## [0.21.5]
 
 - Minimal incoming calls: "Reply with message" chips are now translucent light pills with white text instead of solid black. Glass and normal modes are unchanged.

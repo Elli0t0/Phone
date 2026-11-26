@@ -4,9 +4,13 @@ An open-source Android dialer and contacts application with a clean, modern visu
 
 ## Project Status
 
-**Version**: `0.1.18`
+**Version**: `0.3.0`
 
 See [CHANGELOG.md](CHANGELOG.md) for version history.
+
+## Versioning
+
+Versions run `0.3.0`–`0.3.10`, then `0.4.0`–`0.4.10`, and so on (patch 0–10, then the minor goes up and the patch resets to 0). The `versionCode` is `10000 + major * 100000 + minor * 100 + patch` (so `0.3.0` → `10300`), which stays above every code from the old scheme and keeps increasing with the new one.
 
 ## Features
 
@@ -64,7 +68,7 @@ gradle testDebugUnitTest
 gradle assembleDebug
 ```
 The output APK will be generated at:
-`app/build/outputs/apk/debug/Phone-0.1.18-debug.apk`
+`app/build/outputs/apk/debug/Phone-0.3.0-debug.apk`
 
 ### Build Release APK
 To build a release-signed APK locally, set the 4 signing environment variables:
@@ -77,7 +81,7 @@ export PHONE_KEY_PASSWORD="your-key-password"
 gradle assembleRelease
 ```
 The output APK will be generated at:
-`app/build/outputs/apk/release/Phone-0.1.18-release.apk`
+`app/build/outputs/apk/release/Phone-0.3.0-release.apk`
 
 *Note*: If the signing environment variables are omitted, Gradle produces an unsigned release build. Release builds are minified with R8; the mapping file is at `app/build/outputs/mapping/release/mapping.txt`.
 

@@ -55,6 +55,7 @@ import io.github.elli0t0.phone.core.design.CallAnswerGreen
 import io.github.elli0t0.phone.core.design.CallDeclineRed
 import io.github.elli0t0.phone.core.design.InCallControlBackgroundFlat
 import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.LocalMinimal
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.minimalLightSurface
@@ -124,6 +125,7 @@ internal fun SlideToAnswer(
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
     val option = LocalAppSettings.current.animationOption
+    val minimal = LocalMinimal.current
     val glass = LocalAppSettings.current.glassCallScreens
     val knob = PhoneDimens.sliderKnobSize
     val pad = PhoneDimens.sliderTrackPadding
@@ -138,10 +140,10 @@ internal fun SlideToAnswer(
             .height(PhoneDimens.sliderTrackHeight)
             .onSizeChanged { trackW = it.width }
             .then(
-                if (glass) {
-                    Modifier.liquidGlass(CircleShape, forceDarkGlass = true)
-                } else {
-                    Modifier.background(InCallControlBackgroundFlat, CircleShape)
+                when {
+                    minimal -> Modifier.background(Color.White.copy(alpha = 0.18f), CircleShape)
+                    glass -> Modifier.liquidGlass(CircleShape, forceDarkGlass = true)
+                    else -> Modifier.background(InCallControlBackgroundFlat, CircleShape)
                 }
             )
             .padding(pad)
@@ -165,9 +167,12 @@ internal fun SlideToAnswer(
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyLarge,
-                // Minimal light: the glass track is a white surface,
-                // so white text is invisible.
-                color = if (glass && minimalLightSurface()) {
+                // Minimal: the track is translucent light in both
+                // themes, so the label is always white. Glass keeps
+                // the dark tint on a light surface.
+                color = if (minimal) {
+                    Color.White.copy(alpha = 0.9f)
+                } else if (glass && minimalLightSurface()) {
                     Color(0xFF1C1C1E).copy(alpha = 0.9f)
                 } else {
                     Color.White.copy(alpha = 0.9f)
@@ -258,11 +263,12 @@ internal fun ShimmerLabel(
             )
         },
         style = MaterialTheme.typography.bodyLarge,
-        // Minimal light: the glass track is a white surface, so
-        // white text is invisible.
-        color = if (
-            LocalAppSettings.current.glassCallScreens && minimalLightSurface()
-        ) {
+        // Minimal: the track is translucent light in both themes,
+        // so the label is always white. Glass keeps the dark tint
+        // on a light surface.
+        color = if (LocalMinimal.current) {
+            Color.White.copy(alpha = 0.6f)
+        } else if (LocalAppSettings.current.glassCallScreens && minimalLightSurface()) {
             Color(0xFF1C1C1E).copy(alpha = 0.6f)
         } else {
             Color.White.copy(alpha = 0.6f)

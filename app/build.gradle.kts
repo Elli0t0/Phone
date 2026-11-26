@@ -5,10 +5,12 @@ plugins {
 }
 
 val versionMajor = (project.findProperty("VERSION_MAJOR") as? String)?.toInt() ?: 0
-val versionMinor = (project.findProperty("VERSION_MINOR") as? String)?.toInt() ?: 1
+val versionMinor = (project.findProperty("VERSION_MINOR") as? String)?.toInt() ?: 3
 val versionPatch = (project.findProperty("VERSION_PATCH") as? String)?.toInt() ?: 0
 val appVersionName = "$versionMajor.$versionMinor.$versionPatch"
-val appVersionCode = versionMajor * 10000 + versionMinor * 100 + versionPatch
+// 10000 offset keeps the code above the old scheme (max 2103 at 0.21.3).
+// 0.3.0 -> 10300, 0.3.10 -> 10310, 0.4.0 -> 10400, 1.0.0 -> 110000.
+val appVersionCode = 10000 + versionMajor * 100000 + versionMinor * 100 + versionPatch
 
 android {
   namespace = "io.github.elli0t0.phone"

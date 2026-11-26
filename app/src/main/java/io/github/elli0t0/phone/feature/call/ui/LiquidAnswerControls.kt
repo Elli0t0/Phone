@@ -50,6 +50,7 @@ import io.github.elli0t0.phone.core.design.CallAnswerGreen
 import io.github.elli0t0.phone.core.design.CallDeclineRed
 import io.github.elli0t0.phone.core.design.InCallControlBackgroundFlat
 import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.LocalMinimal
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.minimalLightSurface
@@ -67,6 +68,7 @@ internal fun LiquidAnswerControls(
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
     val option = LocalAppSettings.current.animationOption
+    val minimal = LocalMinimal.current
     val glass = LocalAppSettings.current.glassCallScreens
     val spacing = LocalSpacing.current
     val x = remember { Animatable(0f) }
@@ -105,10 +107,10 @@ internal fun LiquidAnswerControls(
             .height(PhoneDimens.liquidPillHeight)
             .onSizeChanged { widthPx = it.width }
             .then(
-                if (glass) {
-                    Modifier.liquidGlass(CircleShape, forceDarkGlass = true)
-                } else {
-                    Modifier.background(InCallControlBackgroundFlat, CircleShape)
+                when {
+                    minimal -> Modifier.background(Color.White.copy(alpha = 0.18f), CircleShape)
+                    glass -> Modifier.liquidGlass(CircleShape, forceDarkGlass = true)
+                    else -> Modifier.background(InCallControlBackgroundFlat, CircleShape)
                 }
             )
             .clip(CircleShape)
@@ -126,9 +128,11 @@ internal fun LiquidAnswerControls(
         Text(
             text = stringResource(id = R.string.call_action_decline),
             style = MaterialTheme.typography.bodyMedium,
-            // Minimal light: the glass track is a white surface, so
-            // white text is invisible.
-            color = if (glass && minimalLightSurface()) Color(0xFF1C1C1E) else Color.White,
+            // Minimal: the track is translucent light in both
+            // themes, so the label is always white. Glass keeps
+            // the dark tint on a light surface.
+            color = if (minimal) Color.White
+                else if (glass && minimalLightSurface()) Color(0xFF1C1C1E) else Color.White,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier
@@ -143,9 +147,11 @@ internal fun LiquidAnswerControls(
         Text(
             text = stringResource(id = R.string.call_action_answer),
             style = MaterialTheme.typography.bodyMedium,
-            // Minimal light: the glass track is a white surface, so
-            // white text is invisible.
-            color = if (glass && minimalLightSurface()) Color(0xFF1C1C1E) else Color.White,
+            // Minimal: the track is translucent light in both
+            // themes, so the label is always white. Glass keeps
+            // the dark tint on a light surface.
+            color = if (minimal) Color.White
+                else if (glass && minimalLightSurface()) Color(0xFF1C1C1E) else Color.White,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier
