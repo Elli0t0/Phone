@@ -69,10 +69,10 @@ import io.github.elli0t0.phone.core.design.InCallControlBackgroundFlat
 import io.github.elli0t0.phone.core.design.InCallEqualizerBar
 import io.github.elli0t0.phone.core.design.LiquidGlassEndCall
 import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.LocalMinimal
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.glassPress
-import io.github.elli0t0.phone.core.design.minimalLightSurface
 import io.github.elli0t0.phone.core.design.liquidGlass
 import io.github.elli0t0.phone.core.design.pressScale
 import io.github.elli0t0.phone.core.design.rememberLightHaptic
@@ -576,6 +576,7 @@ private fun InCallControlButton(
 ) {
     val controlSource = remember { MutableInteractionSource() }
     val lightHaptic = rememberLightHaptic()
+    val minimal = LocalMinimal.current
     val glassCallScreens = LocalAppSettings.current.glassCallScreens
     val controlScale = LocalAppSettings.current.controlButtonSize.scale
     // Glass press-down tick (flat branch ticks on click instead):
@@ -588,9 +589,12 @@ private fun InCallControlButton(
     }
     // Glass icon button: premium liquid glass over the call
     // background, bright (selected) when active. Flat branch keeps
-    // the solid color.
-    val controlBackground = if (glassCallScreens) {
-        Modifier.liquidGlass(
+    // the solid color. Minimal has no circle at all — the icon
+    // floats directly over the call background, incoming and
+    // outgoing alike.
+    val controlBackground = when {
+        minimal -> Modifier
+        glassCallScreens -> Modifier.liquidGlass(
             shape = CircleShape,
             tint = Color.White,
             isSelected = isActive,
@@ -598,8 +602,7 @@ private fun InCallControlButton(
             premium = true,
             tilt = tilt
         )
-    } else {
-        Modifier.background(if (isActive) InCallControlActive else InCallControlBackgroundFlat)
+        else -> Modifier.background(if (isActive) InCallControlActive else InCallControlBackgroundFlat)
     }
     Column(
         modifier = modifier,
@@ -609,18 +612,18 @@ private fun InCallControlButton(
         Box(
             modifier = Modifier
                 .size(PhoneDimens.ongoingControlButtonSize * controlScale)
-                .clip(CircleShape)
+                .then(if (minimal) Modifier else Modifier.clip(CircleShape))
                 .then(controlBackground)
                 .then(
-                    if (glassCallScreens) {
-                        Modifier.glassPress(controlSource)
-                    } else {
-                        Modifier.pressScale(controlSource)
+                    when {
+                        minimal -> Modifier.pressScale(controlSource)
+                        glassCallScreens -> Modifier.glassPress(controlSource)
+                        else -> Modifier.pressScale(controlSource)
                     }
                 )
                 .clickable(
                     interactionSource = controlSource,
-                    indication = if (glassCallScreens) null else ripple()
+                    indication = if (minimal || glassCallScreens) null else ripple()
                 ) {
                     if (!glassCallScreens) lightHaptic()
                     onClick()
@@ -631,14 +634,14 @@ private fun InCallControlButton(
             Icon(
                 painter = painterResource(id = iconRes),
                 contentDescription = label,
-                // Minimal light: the glass container is a white
-                // surface, so a white icon is invisible — dark tint.
-                tint = if (minimalLightSurface()) {
-                    Color(0xFF1C1C1E)
-                } else if (isActive) {
-                    InCallControlActiveContent
-                } else {
-                    Color.White
+                // The call background is always dark/colored, so in
+                // Minimal the icon is white; an active control keeps
+                // the same dark content tint as the other modes.
+                tint = when {
+                    minimal && isActive -> InCallControlActiveContent
+                    minimal -> Color.White
+                    isActive -> InCallControlActiveContent
+                    else -> Color.White
                 },
                 modifier = Modifier.size(PhoneDimens.ongoingControlIconSize * controlScale)
             )

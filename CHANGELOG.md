@@ -164,6 +164,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.21.4]
+
+- Minimal in-call screens: control buttons (Mute, Speaker, Bluetooth, Keypad, Hold, Record) no longer have a circle behind them on incoming calls either — incoming now looks exactly like outgoing, icons white, active ones unchanged. Normal mode glass circles are unchanged.
+- Incoming calls no longer render the first frames with default settings: the real settings are loaded before the first frame.
+
 ## [0.21.3]
 
 - Fixed the first typed character disappearing after clearing a search: the search bar now only resets on a real external clear, never on a stale empty echo, and Contacts/Recents read the ViewModel's immediate query instead of the lagging one.

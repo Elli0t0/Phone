@@ -12,11 +12,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import io.github.elli0t0.phone.core.recording.BackendStatus
 import io.github.elli0t0.phone.core.recording.RecordingSession
 import io.github.elli0t0.phone.core.recording.adb.openWirelessDebugging
 import io.github.elli0t0.phone.core.recording.adb.postPairNotification
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -95,9 +97,18 @@ class CallActivity : ComponentActivity() {
 
         val app = application as? PhoneApplication
         setContent {
-            val settings by app?.container?.settingsRepository?.settingsFlow?.collectAsStateWithLifecycle(
-                initialValue = AppSettings()
-            ) ?: remember { mutableStateOf(AppSettings()) }
+            // Load the real settings before the first frame: a cold
+            // start with AppSettings() as the initial value renders
+            // the first frames with minimalMode = false (glass
+            // circles on the in-call controls) even when the user
+            // runs Minimal mode.
+            val initialSettings = remember {
+                runBlocking { app?.container?.settingsRepository?.settingsFlow?.first() }
+                    ?: AppSettings()
+            }
+            val settings by app?.container?.settingsRepository?.settingsFlow
+                ?.collectAsStateWithLifecycle(initialValue = initialSettings)
+                ?: remember { mutableStateOf(initialSettings) }
 
             // BLUETOOTH_CONNECT only when the user opens the audio route picker
             // and Bluetooth is available. Not requested at call start.
