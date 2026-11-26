@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.21.5]
+
+- Minimal incoming calls: "Reply with message" chips are now translucent light pills with white text instead of solid black. Glass and normal modes are unchanged.
+
 ## [0.21.4]
 
 - Minimal in-call screens: control buttons (Mute, Speaker, Bluetooth, Keypad, Hold, Record) no longer have a circle behind them on incoming calls either — incoming now looks exactly like outgoing, icons white, active ones unchanged. Normal mode glass circles are unchanged.

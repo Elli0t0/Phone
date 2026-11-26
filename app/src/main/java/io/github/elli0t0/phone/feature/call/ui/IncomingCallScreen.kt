@@ -73,6 +73,7 @@ import io.github.elli0t0.phone.core.design.InCallControlBackgroundFlat
 import io.github.elli0t0.phone.core.design.InCallSwipeTrackBackground
 import io.github.elli0t0.phone.core.design.LiquidGlassChip
 import io.github.elli0t0.phone.core.design.LocalAppSettings
+import io.github.elli0t0.phone.core.design.LocalMinimal
 import io.github.elli0t0.phone.core.design.LocalSpacing
 import io.github.elli0t0.phone.core.design.PhoneDimens
 import io.github.elli0t0.phone.core.design.minimalLightSurface
@@ -300,6 +301,7 @@ private fun QuickRepliesSection(
 ) {
     if (!LocalAppSettings.current.showQuickReplies) return
     if (callerNumber.isBlank()) return
+    val minimal = LocalMinimal.current
     val glassCallScreens = LocalAppSettings.current.glassCallScreens
     val spacing = LocalSpacing.current
     Column(
@@ -321,7 +323,34 @@ private fun QuickRepliesSection(
             modifier = Modifier.fillMaxWidth()
         ) {
             quickDeclineMessages.forEachIndexed { index, message ->
-                if (glassCallScreens) {
+                when {
+                    minimal -> {
+                        // Minimal: a translucent light pill — the glass
+                        // chip would be a flat black surface here.
+                        val chipSource = remember { MutableInteractionSource() }
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .background(Color.White.copy(alpha = 0.18f))
+                                .pressScale(chipSource)
+                                .clickable(interactionSource = chipSource, indication = null) {
+                                    onDeclineWithMessage(message)
+                                }
+                                .testTag("quick_reply_$index"),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = message,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = Color.White,
+                                modifier = Modifier.padding(
+                                    horizontal = PhoneDimens.incomingChipHorizontalPadding,
+                                    vertical = PhoneDimens.incomingChipVerticalPadding
+                                )
+                            )
+                        }
+                    }
+                    glassCallScreens -> {
                     LiquidGlassChip(
                         selected = false,
                         onClick = { onDeclineWithMessage(message) },
@@ -343,7 +372,8 @@ private fun QuickRepliesSection(
                             )
                         )
                     }
-                } else {
+                    }
+                    else -> {
                     val chipSource = remember { MutableInteractionSource() }
                     AssistChip(
                         onClick = { onDeclineWithMessage(message) },
@@ -357,6 +387,7 @@ private fun QuickRepliesSection(
                             .pressScale(chipSource)
                             .testTag("quick_reply_$index")
                     )
+                    }
                 }
             }
         }
