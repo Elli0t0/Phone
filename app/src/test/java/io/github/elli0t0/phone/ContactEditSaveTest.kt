@@ -41,7 +41,10 @@ class ContactEditSaveTest {
         Dispatchers.resetMain()
     }
 
-    private class FakeContactsRepository : ContactsRepository {
+    private class FakeContactsRepository(
+        // Simulates aggregation changing the id on save.
+        var resolvedId: Long? = null
+    ) : ContactsRepository {
         var savedUpdate: ContactInput? = null
 
         override fun getContactsFlow(): Flow<List<ContactSummary>> = flowOf(emptyList())
@@ -56,9 +59,9 @@ class ContactEditSaveTest {
             contactId: Long,
             original: ContactDetail,
             updated: ContactInput
-        ): Result<Unit> {
+        ): Result<Long> {
             savedUpdate = updated
-            return Result.success(Unit)
+            return Result.success(resolvedId ?: contactId)
         }
 
         override suspend fun deleteContact(contactId: Long, lookupKey: String): Result<Unit> =
@@ -123,5 +126,23 @@ class ContactEditSaveTest {
         // label is never saved under a stock type.
         viewModel.onPhoneTypeChanged(0, Phone.TYPE_MOBILE)
         assertEquals(null, viewModel.uiState.value.phones.first().label)
+    }
+
+    @Test
+    fun editSavePassesResolvedIdWhenAggregationChangesIt() = runTest {
+        val original = ContactDetail(
+            id = 7L,
+            lookupKey = "key",
+            displayName = "Test",
+            phones = listOf(ContactPhone(number = "09123456789"))
+        )
+        val repo = FakeContactsRepository(resolvedId = 42L)
+        val viewModel = ContactEditViewModel(repo, initialContact = original)
+
+        var savedId = -1L
+        viewModel.saveContact { savedId = it }
+
+        // The re-resolved id (e.g. after a merge), not the edited one.
+        assertEquals(42L, savedId)
     }
 }

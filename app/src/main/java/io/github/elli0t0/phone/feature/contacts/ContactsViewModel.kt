@@ -59,6 +59,11 @@ class ContactsViewModel(
     val searchQueryNow: StateFlow<String> = _searchQuery.asStateFlow()
     private val _userMessageRes = MutableStateFlow<Int?>(null)
     private val _duplicateGroups = MutableStateFlow<List<DuplicateGroup>>(emptyList())
+    // Signatures of the groups the last scan actually found, before
+    // the merged-signature filter: pruning compares against this, so
+    // a merged group the provider has not applied yet is not pruned
+    // too early.
+    private var lastFoundSignatures: Set<String> = emptySet()
     // Contact ids merged this session (0.19.9): a provider slow to
     // apply a link re-emits the old group on the next scan, and the
     // banner then shows groups that are already gone. The refresh
@@ -397,6 +402,7 @@ class ContactsViewModel(
             try {
                 refreshDuplicates()
                 migrateDismissedHash(_duplicateGroups.value)
+                pruneMergedSignatures()
             } catch (_: Exception) {
                 _showDuplicates.value = false
                 _userMessageRes.value = R.string.snackbar_contact_error
@@ -431,6 +437,7 @@ class ContactsViewModel(
 
     fun showDuplicates() {
         _showDuplicates.value = true
+        pruneMergedSignatures()
     }
 
     fun dismissDuplicatesCard() {
@@ -482,6 +489,7 @@ class ContactsViewModel(
                 if (outcome != null) {
                     _pendingMergeGroup.value = null
                     removeMergedGroup(group)
+                    storeMergedSignature(group)
                     mergedIds.addAll(group.contacts.map { it.id })
                     onMergeSuccess(
                         listOf(outcome),
@@ -526,6 +534,7 @@ class ContactsViewModel(
                     if (outcome != null) {
                         mergedCount++
                         removeMergedGroup(group)
+                        storeMergedSignature(group)
                         mergedIds.addAll(group.contacts.map { it.id })
                         if (outcome.linked) {
                             linkedOutcomes.add(outcome)
@@ -588,6 +597,36 @@ class ContactsViewModel(
         _lastMergeBatch.value = MergeBatch(linkedOutcomes, mergedCount, totalCount, linkedContactIds)
     }
 
+    /**
+     * Persists a merged group's signature: a rescan that still finds
+     * the group (the provider applies links asynchronously) hides it
+     * instead of bringing the card back.
+     */
+    private fun storeMergedSignature(group: DuplicateGroup) {
+        val repo = settingsRepository ?: return
+        mergeScope.launch {
+            val current = settingsFlow.first().mergedDuplicateSignatures
+            repo.setMergedDuplicateSignatures(current + ContactMergeUtil.groupSignature(group))
+        }
+    }
+
+    /**
+     * Drops stored merged signatures whose group is no longer found:
+     * the merge is fully applied (or the group was unlinked or
+     * deleted), so the safety net is no longer needed for it.
+     * Compares against the last scan's raw signatures, so a group
+     * the provider has not applied yet is kept.
+     */
+    private fun pruneMergedSignatures() {
+        val repo = settingsRepository ?: return
+        mergeScope.launch {
+            val current = settingsFlow.first().mergedDuplicateSignatures
+            if (current.isEmpty()) return@launch
+            val pruned = current.intersect(lastFoundSignatures)
+            if (pruned != current) repo.setMergedDuplicateSignatures(pruned)
+        }
+    }
+
     /** Removes only the merged group (matched by its contact id set). */
     private fun removeMergedGroup(group: DuplicateGroup) {
         val ids = group.contacts.map { it.id }.toSet()
@@ -620,8 +659,12 @@ class ContactsViewModel(
     private suspend fun refreshDuplicates() {
         val contacts = contactsRepository.getContactsSnapshot()
         val numbers = contactsRepository.getAllContactNumbers()
-        _duplicateGroups.value = DuplicateContactFinder.findDuplicates(contacts, numbers)
+        val found = DuplicateContactFinder.findDuplicates(contacts, numbers)
+        lastFoundSignatures = found.map { ContactMergeUtil.groupSignature(it) }.toSet()
+        val mergedSignatures = settingsFlow.first().mergedDuplicateSignatures
+        _duplicateGroups.value = found
             .filterNot { group -> group.contacts.all { it.id in mergedIds } }
+            .filterNot { group -> ContactMergeUtil.groupSignature(group) in mergedSignatures }
         val latestIds = contacts.map { it.id }.toSet()
         _selectionUi.update { ui ->
             ui.copy(selection = ui.selection.copy(ids = ui.selection.ids.intersect(latestIds)))

@@ -173,6 +173,7 @@ interface SettingsRepository {
     suspend fun setMinimalMode(enabled: Boolean)
     suspend fun setDuplicatesDismissed(dismissed: Boolean)
     suspend fun setDuplicatesDismissedHash(hash: String)
+    suspend fun setMergedDuplicateSignatures(signatures: Set<String>)
     suspend fun setFavoritesHintDismissed(dismissed: Boolean)
     suspend fun resetToDefaults()
 
@@ -298,6 +299,7 @@ class DataStoreSettingsRepository(
         val VIBRATE_ON_ANSWER = booleanPreferencesKey("vibrate_on_answer")
         val DUPLICATES_DISMISSED = booleanPreferencesKey("duplicates_dismissed")
         val DUPLICATES_DISMISSED_HASH = stringPreferencesKey("duplicates_dismissed_hash")
+        val MERGED_DUPLICATE_SIGNATURES = stringSetPreferencesKey("merged_duplicate_signatures")
         val FAVORITES_HINT_DISMISSED = booleanPreferencesKey("favorites_hint_dismissed")
     }
 
@@ -559,6 +561,7 @@ class DataStoreSettingsRepository(
         val vibrateOnAnswer = prefs[Keys.VIBRATE_ON_ANSWER] ?: true
         val duplicatesDismissed = prefs[Keys.DUPLICATES_DISMISSED] ?: false
         val duplicatesDismissedHash = prefs[Keys.DUPLICATES_DISMISSED_HASH]
+        val mergedDuplicateSignatures = prefs[Keys.MERGED_DUPLICATE_SIGNATURES] ?: emptySet()
         val favoritesHintDismissed = prefs[Keys.FAVORITES_HINT_DISMISSED] ?: false
 
         AppSettings(
@@ -665,6 +668,7 @@ class DataStoreSettingsRepository(
             minimalMode = minimalMode,
             duplicatesDismissed = duplicatesDismissed,
             duplicatesDismissedHash = duplicatesDismissedHash,
+            mergedDuplicateSignatures = mergedDuplicateSignatures,
             favoritesHintDismissed = favoritesHintDismissed
         )
     }
@@ -1369,6 +1373,12 @@ class DataStoreSettingsRepository(
     override suspend fun setDuplicatesDismissedHash(hash: String) {
         dataStore.edit { prefs ->
             prefs[Keys.DUPLICATES_DISMISSED_HASH] = hash
+        }
+    }
+
+    override suspend fun setMergedDuplicateSignatures(signatures: Set<String>) {
+        dataStore.edit { prefs ->
+            prefs[Keys.MERGED_DUPLICATE_SIGNATURES] = signatures
         }
     }
 

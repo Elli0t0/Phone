@@ -17,16 +17,26 @@ import java.util.zip.CRC32
 object ContactMergeUtil {
 
     /**
-     * Stable hash of the current duplicate set: sorted contact ids per
-     * group, groups sorted, joined, CRC32 hex. Group order and contact
-     * order inside a group do not change the hash; the banner shows
-     * again only when the set itself changes.
+     * Stable identity of one duplicate group: reason + sorted
+     * normalized names + sorted normalized numbers. No contact ids:
+     * ids change after edits, merges and sync, so an id-based
+     * identity would make a dismissed group look new again.
+     */
+    fun groupSignature(g: DuplicateGroup, region: String = PhoneNumberMatcher.deviceRegionIso()): String {
+        val names = g.contacts.map { PhoneNumberMatcher.normalizeName(it.displayName) }.sorted()
+        val nums = g.contacts.mapNotNull { it.primaryNumberPreview }
+            .mapNotNull { PhoneNumberMatcher.groupingKey(it, region) }.sorted()
+        return "${g.reason.name}|${names.joinToString(",")}|${nums.joinToString(",")}"
+    }
+
+    /**
+     * Stable hash of the current duplicate set: sorted group
+     * signatures, joined, CRC32 hex. Group order and contact order
+     * inside a group do not change the hash; the banner shows again
+     * only when the set itself changes.
      */
     fun duplicateSetHash(groups: List<DuplicateGroup>): String {
-        val canonical = groups
-            .map { group -> group.contacts.map { it.id }.sorted().joinToString(",") }
-            .sorted()
-            .joinToString(";")
+        val canonical = groups.map { groupSignature(it) }.sorted().joinToString(";")
         val crc = CRC32()
         crc.update(canonical.toByteArray(Charsets.UTF_8))
         return crc.value.toString(radix = 16)

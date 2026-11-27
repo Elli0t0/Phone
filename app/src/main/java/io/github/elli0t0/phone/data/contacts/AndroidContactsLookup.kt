@@ -1,6 +1,7 @@
 package io.github.elli0t0.phone.data.contacts
 
 import android.content.ContentResolver
+import android.net.Uri
 import android.provider.ContactsContract.CommonDataKinds.Event
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import android.provider.ContactsContract.Contacts
@@ -23,20 +24,36 @@ internal fun findWritableRawContactId(contentResolver: ContentResolver, contactI
     return null
 }
 
-internal fun findDataRowId(contentResolver: ContentResolver, contactId: Long, mimeType: String): Long? {
-    val cursor = contentResolver.query(
+/**
+ * The displayed row first: on a merged contact the first row
+ * across all raw contacts is often a non-displayed one, so prefer
+ * the super-primary row, then the primary row, then the lowest id.
+ */
+internal fun findDataRowId(contentResolver: ContentResolver, contactId: Long, mimeType: String): Long? =
+    contentResolver.query(
+        Data.CONTENT_URI,
+        arrayOf(Data._ID),
+        "${Data.CONTACT_ID} = ? AND ${Data.MIMETYPE} = ?",
+        arrayOf(contactId.toString(), mimeType),
+        "${Data.IS_SUPER_PRIMARY} DESC, ${Data.IS_PRIMARY} DESC, ${Data._ID} ASC"
+    )?.use { if (it.moveToFirst()) it.getLong(0) else null }
+
+internal fun findAllDataRowIds(contentResolver: ContentResolver, contactId: Long, mimeType: String): List<Long> =
+    contentResolver.query(
         Data.CONTENT_URI,
         arrayOf(Data._ID),
         "${Data.CONTACT_ID} = ? AND ${Data.MIMETYPE} = ?",
         arrayOf(contactId.toString(), mimeType),
         null
-    )
-    cursor?.use {
-        if (it.moveToFirst()) {
-            return it.getLong(it.getColumnIndexOrThrow(Data._ID))
-        }
+    )?.use { c -> buildList { while (c.moveToNext()) add(c.getLong(0)) } } ?: emptyList()
+
+/** Re-resolves the aggregated contact id by lookup key: the id can change when contacts aggregate. */
+internal fun findContactIdByLookupKey(contentResolver: ContentResolver, lookupKey: String): Long? {
+    if (lookupKey.isBlank()) return null
+    val uri = Uri.withAppendedPath(Contacts.CONTENT_LOOKUP_URI, lookupKey)
+    return contentResolver.query(uri, arrayOf(Contacts._ID), null, null, null)?.use {
+        if (it.moveToFirst()) it.getLong(0) else null
     }
-    return null
 }
 
 /**

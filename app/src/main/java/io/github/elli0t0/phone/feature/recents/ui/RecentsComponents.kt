@@ -211,7 +211,7 @@ fun CallLogRow(
     val insetCard = LocalAppSettings.current.effectiveStyle.card == CardStyle.INSET
     val swipeEnabled = LocalAppSettings.current.swipeActionsEnabled
     // Minimal (0.18.10): taller rows (~84dp: 44dp avatar + 2x20dp
-    // padding), no swipe actions, no swipe tint.
+    // padding).
     val minimal = LocalMinimal.current
     val rowVerticalPadding = if (minimal) 20.dp else 12.dp
 
@@ -453,7 +453,7 @@ fun CallLogRow(
             }
         }
         SwipeActionRow(
-            enabled = swipeEnabled && !minimal && group.number.isNotBlank(),
+            enabled = swipeEnabled && group.number.isNotBlank(),
             suppressed = selectionActive,
             onSwipeCall = onCallClick,
             onSwipeMessage = onMessageClick

@@ -751,7 +751,7 @@ fun ContactsScreen(
                                     currentDestination = ContactsNavDestination.List
                                 } else {
                                     currentDestination = ContactsNavDestination.Detail(
-                                        dest.contact.id,
+                                        savedId,
                                         dest.contact.lookupKey
                                     )
                                 }
@@ -878,6 +878,15 @@ fun ContactsScreen(
                                         editSheet = null
                                         if (sheet.returnToList) {
                                             currentDestination = ContactsNavDestination.List
+                                        } else if (savedId != sheet.contact.id) {
+                                            // Aggregation changed the id: the
+                                            // detail underneath still shows
+                                            // the old one, so reopen it with
+                                            // the resolved id.
+                                            currentDestination = ContactsNavDestination.Detail(
+                                                savedId,
+                                                sheet.contact.lookupKey
+                                            )
                                         }
                                         coroutineScope.launch {
                                             snackbarHostState.showSnackbar(context.getString(R.string.snackbar_contact_updated))

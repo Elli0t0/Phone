@@ -35,12 +35,14 @@ interface ContactsRepository {
     /**
      * Updates an existing contact, updating changed data rows in-place by _ID,
      * inserting newly added rows, and deleting removed rows.
+     * Returns the contact's id after the update: aggregation may have
+     * changed it, so the id is re-resolved by lookup key.
      */
     suspend fun updateContact(
         contactId: Long,
         original: ContactDetail,
         updated: ContactInput
-    ): Result<Unit>
+    ): Result<Long>
 
     /**
      * Deletes a contact from the device.

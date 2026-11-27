@@ -51,7 +51,7 @@ class ViewModelsStateTest {
         override fun getContactsFlow(): Flow<List<ContactSummary>> = flowOf(initialList)
         override fun getContactDetail(lookupKey: String, contactId: Long): Flow<ContactDetail?> = flowOf(null)
         override suspend fun createContact(input: ContactInput): Result<Long> = Result.success(1L)
-        override suspend fun updateContact(contactId: Long, original: ContactDetail, updated: ContactInput): Result<Unit> = Result.success(Unit)
+        override suspend fun updateContact(contactId: Long, original: ContactDetail, updated: ContactInput): Result<Long> = Result.success(contactId)
         override suspend fun deleteContact(contactId: Long, lookupKey: String): Result<Unit> = Result.success(Unit)
     }
 

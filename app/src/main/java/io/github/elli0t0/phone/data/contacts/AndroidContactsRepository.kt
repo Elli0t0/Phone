@@ -233,24 +233,31 @@ class AndroidContactsRepository(
         contactId: Long,
         original: ContactDetail,
         updated: ContactInput
-    ): Result<Unit> = withContext(Dispatchers.IO) {
+    ): Result<Long> = withContext(Dispatchers.IO) {
         runCatching {
             val rawContactId = findWritableRawContactId(contentResolver, contactId)
                 ?: error("No writable raw contact found for contact $contactId")
 
             val ops = ArrayList<ContentProviderOperation>()
 
-            // 1. StructuredName update/insert
-            val existingNameRowId = findDataRowId(contentResolver, contactId, StructuredName.CONTENT_ITEM_TYPE)
+            // 1. StructuredName update/insert. A merged contact has
+            // one name row per raw contact: update every row, or the
+            // visible name never changes. Mark them primary so the
+            // edited name is the displayed one.
+            val existingNameRowIds = findAllDataRowIds(contentResolver, contactId, StructuredName.CONTENT_ITEM_TYPE)
             val cleanNewName = updated.displayName.trim()
-            if (existingNameRowId != null) {
+            if (existingNameRowIds.isNotEmpty()) {
                 if (cleanNewName != original.displayName.trim()) {
-                    ops.add(
-                        ContentProviderOperation.newUpdate(Data.CONTENT_URI)
-                            .withSelection("${Data._ID} = ?", arrayOf(existingNameRowId.toString()))
-                            .withValue(StructuredName.DISPLAY_NAME, cleanNewName)
-                            .build()
-                    )
+                    existingNameRowIds.forEach { rowId ->
+                        ops.add(
+                            ContentProviderOperation.newUpdate(Data.CONTENT_URI)
+                                .withSelection("${Data._ID} = ?", arrayOf(rowId.toString()))
+                                .withValue(StructuredName.DISPLAY_NAME, cleanNewName)
+                                .withValue(Data.IS_PRIMARY, 1)
+                                .withValue(Data.IS_SUPER_PRIMARY, 1)
+                                .build()
+                        )
+                    }
                 }
             } else if (cleanNewName.isNotBlank()) {
                 ops.add(
@@ -470,8 +477,22 @@ class AndroidContactsRepository(
             }
 
             if (ops.isNotEmpty()) {
-                contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
+                val results = contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
+                // A no-op update must fail loudly: without this, an
+                // update that touched no row looked like a success.
+                // Insert results always carry count 0 with a uri, so
+                // only uri-less results (updates/deletes) are checked.
+                check(results.none { it.count == 0 && it.uri == null }) {
+                    "Update affected 0 rows"
+                }
             }
+            // Aggregation may have changed the contact id; re-resolve
+            // by lookup key so the caller navigates and reloads with
+            // the live id.
+            val resolvedId = findContactIdByLookupKey(contentResolver, original.lookupKey)
+                ?: contactId
+            contentResolver.notifyChange(Contacts.CONTENT_URI, null)
+            resolvedId
         }
     }
 
@@ -749,6 +770,7 @@ class AndroidContactsRepository(
                     // Read-only accounts reject aggregation exceptions:
                     // fall back to copying every field into the kept
                     // contact, then deleting the others. Not undoable.
+                    Log.i("Phone", "mergeContacts: keep=$keepContactId copy-merge, link rejected: $e")
                     mergeByCopy(keepContactId, targets)
                     return@withContext Result.success(
                         ContactMergeOutcome(keepRawId, targetRawIds, linked = false)
@@ -770,6 +792,7 @@ class AndroidContactsRepository(
                     delay(200)
                 }
                 if (!allJoined) {
+                    Log.i("Phone", "mergeContacts: keep=$keepContactId copy-merge, link not applied")
                     mergeByCopy(keepContactId, targets)
                     return@withContext Result.success(
                         ContactMergeOutcome(keepRawId, targetRawIds, linked = false)
@@ -808,6 +831,7 @@ class AndroidContactsRepository(
                 } catch (e: Exception) {
                     Log.w("Phone", "AndroidContactsRepository.mergeContacts", e)
                 }
+                Log.i("Phone", "mergeContacts: keep=$keepContactId linked ${targetRawIds.size} raw contacts")
                 Result.success(ContactMergeOutcome(keepRawId, targetRawIds, linked = true))
             } catch (e: Exception) {
                 Result.failure(e)

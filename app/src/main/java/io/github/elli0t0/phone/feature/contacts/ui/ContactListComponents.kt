@@ -306,7 +306,6 @@ private fun ContactGroupRow(
     val swipeNumber = contact.primaryNumberPreview
     SwipeActionRow(
         enabled = LocalAppSettings.current.swipeActionsEnabled &&
-            !LocalMinimal.current &&
             onSwipeCall != null && onSwipeMessage != null &&
             !swipeNumber.isNullOrBlank(),
         suppressed = selectionActive,

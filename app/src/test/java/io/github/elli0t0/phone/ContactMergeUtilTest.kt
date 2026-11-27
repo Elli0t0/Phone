@@ -31,6 +31,34 @@ class ContactMergeUtilTest {
     }
 
     @Test
+    fun duplicateSetHash_ignoresContactIds() {
+        // Same names and numbers, different ids: the same set.
+        val a = listOf(
+            DuplicateGroup(
+                DuplicateReason.SAME_NUMBER,
+                listOf(
+                    ContactSummary(id = 1L, lookupKey = "k1", displayName = "Alice", primaryNumberPreview = "09123456789"),
+                    ContactSummary(id = 2L, lookupKey = "k2", displayName = "Alice", primaryNumberPreview = "09123456789")
+                )
+            )
+        )
+        val b = listOf(
+            DuplicateGroup(
+                DuplicateReason.SAME_NUMBER,
+                listOf(
+                    ContactSummary(id = 101L, lookupKey = "k101", displayName = "Alice", primaryNumberPreview = "+989123456789"),
+                    ContactSummary(id = 202L, lookupKey = "k202", displayName = "Alice", primaryNumberPreview = "+989123456789")
+                )
+            )
+        )
+        assertEquals(ContactMergeUtil.duplicateSetHash(a), ContactMergeUtil.duplicateSetHash(b))
+        assertEquals(
+            ContactMergeUtil.groupSignature(a.first()),
+            ContactMergeUtil.groupSignature(b.first())
+        )
+    }
+
+    @Test
     fun duplicateSetHash_differsWhenSetChanges() {
         val base = listOf(DuplicateGroup(DuplicateReason.SAME_NUMBER, listOf(summary(1), summary(2))))
         val changed = listOf(DuplicateGroup(DuplicateReason.SAME_NUMBER, listOf(summary(1), summary(3))))

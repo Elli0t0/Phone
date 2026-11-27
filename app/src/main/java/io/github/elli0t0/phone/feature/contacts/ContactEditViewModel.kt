@@ -267,16 +267,19 @@ class ContactEditViewModel(
                 )
                 val result = contactsRepository.updateContact(state.contactId, original, input)
                 if (result.isSuccess) {
+                    // Aggregation may have changed the id; the photo,
+                    // ringtone, and navigation all use the resolved id.
+                    val savedId = result.getOrNull() ?: state.contactId
                     if (state.stagedPhotoBytes != null) {
-                        contactsRepository.saveContactPhoto(state.contactId, state.stagedPhotoBytes)
+                        contactsRepository.saveContactPhoto(savedId, state.stagedPhotoBytes)
                     } else if (state.isPhotoRemoved) {
-                        contactsRepository.removeContactPhoto(state.contactId)
+                        contactsRepository.removeContactPhoto(savedId)
                     }
                     if (state.customRingtone != original.customRingtone) {
-                        contactsRepository.updateContactRingtone(state.contactId, state.customRingtone)
+                        contactsRepository.updateContactRingtone(savedId, state.customRingtone)
                     }
                     _uiState.update { it.copy(isLoading = false, isSaved = true) }
-                    onSuccess(state.contactId)
+                    onSuccess(savedId)
                 } else {
                     _uiState.update { it.copy(isLoading = false, validationErrorRes = R.string.snackbar_contact_error) }
                 }

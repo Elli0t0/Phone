@@ -701,6 +701,10 @@ data class AppSettings(
     // on the first scan, so nothing resets.
     val duplicatesDismissed: Boolean = false,
     val duplicatesDismissedHash: String? = null,
+    // Signatures of duplicate groups already merged: a rescan that
+    // still finds such a group (provider lag) hides it, so the card
+    // stays gone. Pruned when the group is no longer found.
+    val mergedDuplicateSignatures: Set<String> = emptySet(),
     val favoritesHintDismissed: Boolean = false
 ) {
     /**
