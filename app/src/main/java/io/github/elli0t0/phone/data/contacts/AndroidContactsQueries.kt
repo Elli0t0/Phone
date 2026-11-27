@@ -141,7 +141,7 @@ internal fun queryContactDetail(contentResolver: ContentResolver, contactId: Lon
             projection,
             "${Data.CONTACT_ID} = ?",
             arrayOf(contactId.toString()),
-            null
+            "${Data.IS_SUPER_PRIMARY} DESC, ${Data.IS_PRIMARY} DESC, ${Data._ID} ASC"
         )
 
         cursor?.use {
@@ -170,8 +170,11 @@ internal fun queryContactDetail(contentResolver: ContentResolver, contactId: Lon
 
                 when (mime) {
                     StructuredName.CONTENT_ITEM_TYPE -> {
+                        // First non-blank row wins (super-primary
+                        // first): on a merged contact the last row
+                        // used to overwrite the displayed name.
                         val name = it.getString(nameIdx)
-                        if (!name.isNullOrBlank()) displayName = name
+                        if (displayName.isBlank() && !name.isNullOrBlank()) displayName = name
                     }
                     Phone.CONTENT_ITEM_TYPE -> {
                         val number = it.getString(phoneNumIdx) ?: ""
@@ -230,7 +233,10 @@ internal fun queryContactDetail(contentResolver: ContentResolver, contactId: Lon
             if (it.moveToFirst()) {
                 photoUri = it.getString(it.getColumnIndexOrThrow(Contacts.PHOTO_URI))
                 val primaryName = it.getString(it.getColumnIndexOrThrow(Contacts.DISPLAY_NAME_PRIMARY))
-                if (displayName.isBlank() && !primaryName.isNullOrBlank()) {
+                // The provider's primary display name is what Contacts
+                // and Recents show; prefer it whenever it is non-blank
+                // and keep the StructuredName value as fallback only.
+                if (!primaryName.isNullOrBlank()) {
                     displayName = primaryName
                 }
                 val ringtoneIdx = it.getColumnIndex(Contacts.CUSTOM_RINGTONE)

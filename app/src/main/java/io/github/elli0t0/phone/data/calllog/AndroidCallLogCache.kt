@@ -3,6 +3,7 @@ package io.github.elli0t0.phone.data.calllog
 import android.util.Log
 import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
 import io.github.elli0t0.phone.data.calllog.model.CallType
+import io.github.elli0t0.phone.data.contacts.ContactNameIndex
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -60,8 +61,11 @@ internal fun AndroidCallLogRepository.loadCachedList() {
                 )
             }
             // Only fill when nothing fresher arrived meanwhile.
-            if (_callLogsFlow.value.isEmpty() && entries.isNotEmpty()) {
-                _callLogsFlow.value = entries
+            // Re-resolve against the index when it is ready, so stale
+            // cached names never flash on cold start.
+            val resolved = if (ContactNameIndex.ready.value) reResolveEntries(entries) else entries
+            if (_callLogsFlow.value.isEmpty() && resolved.isNotEmpty()) {
+                _callLogsFlow.value = resolved
                 _isLoadingFlow.value = false
             }
         } catch (e: Exception) {

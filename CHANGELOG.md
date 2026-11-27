@@ -164,6 +164,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keypad page now uses the same dark-mode background as the other pages (it was a lighter gray).
 
+## [0.3.3] - 2026-11-27
+
+- Recents now updates contact names immediately after renames and merges (the contact index observes Contacts changes and refreshes the call log); Contact Detail now uses the same primary display name as Contacts and Recents; merged-contact renames clear leftover structured name parts.
+
 ## [0.3.2] - 2026-11-27
 
 - Contact edits now save for merged contacts; the duplicates card no longer returns after edits, merges and updates (its dismissal no longer depends on contact IDs); swipe to call/message now works in Minimal.

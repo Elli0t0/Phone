@@ -39,6 +39,12 @@ object ContactNameIndex {
     private val _ready = MutableStateFlow(false)
     val ready: StateFlow<Boolean> = _ready.asStateFlow()
 
+    // Revision counter: incremented at the end of every successful
+    // build. The call log collects it to re-resolve names after a
+    // rename or merge without waiting for a new call.
+    private val _version = MutableStateFlow(0L)
+    val version: StateFlow<Long> = _version.asStateFlow()
+
     private val _buildFailed = MutableStateFlow(false)
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -51,6 +57,9 @@ object ContactNameIndex {
 
     @Volatile
     private var building = false
+
+    @Volatile
+    private var rebuildPending = false
 
     @Volatile
     private var contentResolver: ContentResolver? = null
@@ -84,6 +93,14 @@ object ContactNameIndex {
                 onChange()
             }
         }
+        // Both URIs: a rename updates StructuredName (Data/Contacts)
+        // and notifies Contacts.CONTENT_URI, which the Phone URI alone
+        // often never sees.
+        resolver.registerContentObserver(
+            ContactsContract.Contacts.CONTENT_URI,
+            true,
+            observer
+        )
         resolver.registerContentObserver(
             ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
             true,
@@ -142,6 +159,17 @@ object ContactNameIndex {
         }
     }
 
+    /** Immediate rebuild (e.g. right after a contact write). A call while a build runs is not dropped: the build runs once more when it finishes. */
+    fun rebuild() {
+        if (contentResolver == null) return
+        rebuildJob?.cancel()
+        if (building) {
+            rebuildPending = true
+            return
+        }
+        scope.launch { build() }
+    }
+
     private suspend fun build() {
         val resolver = contentResolver ?: return
         if (building) return
@@ -162,7 +190,9 @@ object ContactNameIndex {
                     projection,
                     null,
                     null,
-                    null
+                    "${ContactsContract.CommonDataKinds.Phone.IS_SUPER_PRIMARY} DESC, " +
+                        "${ContactsContract.CommonDataKinds.Phone.IS_PRIMARY} DESC, " +
+                        "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} ASC"
                 )?.use { cursor ->
                     val nameIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
                     val numberIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
@@ -172,13 +202,21 @@ object ContactNameIndex {
                     while (cursor.moveToNext()) {
                         val number = if (numberIdx >= 0) cursor.getString(numberIdx) ?: "" else ""
                         val mapKey = key(number)
-                        if (mapKey.isBlank() || built.containsKey(mapKey)) continue
-                        built[mapKey] = Entry(
+                        if (mapKey.isBlank()) continue
+                        val entry = Entry(
                             displayName = if (nameIdx >= 0) cursor.getString(nameIdx) else null,
                             contactId = if (idIdx >= 0) cursor.getLong(idIdx) else null,
                             lookupKey = if (lookupIdx >= 0) cursor.getString(lookupIdx) else null,
                             photoUri = if (photoIdx >= 0) cursor.getString(photoIdx) else null
                         )
+                        val existing = built[mapKey]
+                        // First row wins (super-primary first), unless
+                        // it has a blank name and this one does not.
+                        if (existing == null ||
+                            (existing.displayName.isNullOrBlank() && !entry.displayName.isNullOrBlank())
+                        ) {
+                            built[mapKey] = entry
+                        }
                     }
                 }
             } catch (e: SecurityException) {
@@ -192,12 +230,17 @@ object ContactNameIndex {
             }
             index = built
             _ready.value = true
+            _version.value = _version.value + 1L
             Log.d(
                 "PhoneBoot",
                 "contact index built in ${SystemClock.uptimeMillis() - start}ms, ${built.size} entries"
             )
         } finally {
             building = false
+            if (rebuildPending) {
+                rebuildPending = false
+                scope.launch { build() }
+            }
         }
     }
 }

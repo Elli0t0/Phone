@@ -225,7 +225,9 @@ class AndroidContactsRepository(
             val rawContactId = ContentUris.parseId(rawContactUri)
 
             // Find aggregated Contact ID from raw contact ID
-            queryContactIdFromRawContact(contentResolver, rawContactId) ?: rawContactId
+            val contactId = queryContactIdFromRawContact(contentResolver, rawContactId) ?: rawContactId
+            ContactNameIndex.rebuild()
+            contactId
         }
     }
 
@@ -242,19 +244,29 @@ class AndroidContactsRepository(
 
             // 1. StructuredName update/insert. A merged contact has
             // one name row per raw contact: update every row, or the
-            // visible name never changes. Mark them primary so the
-            // edited name is the displayed one.
-            val existingNameRowIds = findAllDataRowIds(contentResolver, contactId, StructuredName.CONTENT_ITEM_TYPE)
+            // visible name never changes. Unify even when the user
+            // saves without changing the text, so divergent rows
+            // across raw contacts cannot disagree with the detail
+            // screen. Clearing the name parts lets the provider split
+            // the display name cleanly, with no leftover parts.
+            val existingNameRows = findAllNameRows(contentResolver, contactId)
             val cleanNewName = updated.displayName.trim()
-            if (existingNameRowIds.isNotEmpty()) {
-                if (cleanNewName != original.displayName.trim()) {
-                    existingNameRowIds.forEach { rowId ->
+            if (existingNameRows.isNotEmpty()) {
+                val needsUnify = cleanNewName != original.displayName.trim() ||
+                    existingNameRows.any { it.second?.trim().orEmpty() != cleanNewName }
+                if (needsUnify) {
+                    existingNameRows.forEachIndexed { index, (rowId, _) ->
                         ops.add(
                             ContentProviderOperation.newUpdate(Data.CONTENT_URI)
                                 .withSelection("${Data._ID} = ?", arrayOf(rowId.toString()))
                                 .withValue(StructuredName.DISPLAY_NAME, cleanNewName)
-                                .withValue(Data.IS_PRIMARY, 1)
-                                .withValue(Data.IS_SUPER_PRIMARY, 1)
+                                .withValue(StructuredName.PREFIX, null)
+                                .withValue(StructuredName.GIVEN_NAME, null)
+                                .withValue(StructuredName.MIDDLE_NAME, null)
+                                .withValue(StructuredName.FAMILY_NAME, null)
+                                .withValue(StructuredName.SUFFIX, null)
+                                .withValue(Data.IS_PRIMARY, if (index == 0) 1 else 0)
+                                .withValue(Data.IS_SUPER_PRIMARY, if (index == 0) 1 else 0)
                                 .build()
                         )
                     }
@@ -492,6 +504,7 @@ class AndroidContactsRepository(
             val resolvedId = findContactIdByLookupKey(contentResolver, original.lookupKey)
                 ?: contactId
             contentResolver.notifyChange(Contacts.CONTENT_URI, null)
+            ContactNameIndex.rebuild()
             resolvedId
         }
     }
@@ -508,6 +521,7 @@ class AndroidContactsRepository(
                 // Fallback delete by ID
                 contentResolver.delete(ContentUris.withAppendedId(Contacts.CONTENT_URI, contactId), null, null)
             }
+            ContactNameIndex.rebuild()
             Unit
         }
     }
@@ -551,6 +565,7 @@ class AndroidContactsRepository(
                 runCatching { favoritesDao?.deleteFavoriteByLookupKey(key) }
                 runCatching { contactSimDao?.deleteByLookupKey(key) }
             }
+            if (deletedKeys.isNotEmpty()) ContactNameIndex.rebuild()
             DeleteContactsResult(deleted = deletedKeys.size, failed = keys.size - deletedKeys.size)
         }
 
@@ -772,6 +787,7 @@ class AndroidContactsRepository(
                     // contact, then deleting the others. Not undoable.
                     Log.i("Phone", "mergeContacts: keep=$keepContactId copy-merge, link rejected: $e")
                     mergeByCopy(keepContactId, targets)
+                    ContactNameIndex.rebuild()
                     return@withContext Result.success(
                         ContactMergeOutcome(keepRawId, targetRawIds, linked = false)
                     )
@@ -794,14 +810,30 @@ class AndroidContactsRepository(
                 if (!allJoined) {
                     Log.i("Phone", "mergeContacts: keep=$keepContactId copy-merge, link not applied")
                     mergeByCopy(keepContactId, targets)
+                    ContactNameIndex.rebuild()
                     return@withContext Result.success(
                         ContactMergeOutcome(keepRawId, targetRawIds, linked = false)
                     )
                 }
-                // The kept contact's name wins: mark its own name row
-                // primary (best effort — the merged aggregate keeps its
-                // own display name otherwise).
+                // The kept contact's name wins: clear the primary
+                // flags on the merged-away raw contacts first, or a
+                // target's longer name keeps winning
+                // DISPLAY_NAME_PRIMARY, then mark the kept row primary
+                // (best effort — the merged aggregate keeps its own
+                // display name otherwise).
                 try {
+                    for (targetRawId in targetRawIds) {
+                        val clearValues = ContentValues().apply {
+                            put(StructuredName.IS_PRIMARY, 0)
+                            put(StructuredName.IS_SUPER_PRIMARY, 0)
+                        }
+                        contentResolver.update(
+                            Data.CONTENT_URI,
+                            clearValues,
+                            "${Data.RAW_CONTACT_ID} = ? AND ${Data.MIMETYPE} = ?",
+                            arrayOf(targetRawId.toString(), StructuredName.CONTENT_ITEM_TYPE)
+                        )
+                    }
                     val nameRowId = findNameRowIdForRawContact(contentResolver, keepRawId)
                     if (nameRowId != null) {
                         val values = ContentValues().apply {
@@ -832,6 +864,7 @@ class AndroidContactsRepository(
                     Log.w("Phone", "AndroidContactsRepository.mergeContacts", e)
                 }
                 Log.i("Phone", "mergeContacts: keep=$keepContactId linked ${targetRawIds.size} raw contacts")
+                ContactNameIndex.rebuild()
                 Result.success(ContactMergeOutcome(keepRawId, targetRawIds, linked = true))
             } catch (e: Exception) {
                 Result.failure(e)
@@ -862,6 +895,7 @@ class AndroidContactsRepository(
                 } catch (e: Exception) {
                     Log.w("Phone", "AndroidContactsRepository.unlinkContacts", e)
                 }
+                ContactNameIndex.rebuild()
                 Result.success(Unit)
             } catch (e: Exception) {
                 Result.failure(e)
@@ -995,6 +1029,7 @@ class AndroidContactsRepository(
                 }
                 contentResolver.insert(Data.CONTENT_URI, values)
             }
+            ContactNameIndex.rebuild()
             Unit
         }
     }
@@ -1006,6 +1041,7 @@ class AndroidContactsRepository(
                 "${Data.CONTACT_ID} = ? AND ${Data.MIMETYPE} = ?",
                 arrayOf(contactId.toString(), Photo.CONTENT_ITEM_TYPE)
             )
+            ContactNameIndex.rebuild()
             Unit
         }
     }

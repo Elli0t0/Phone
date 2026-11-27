@@ -38,14 +38,19 @@ internal fun findDataRowId(contentResolver: ContentResolver, contactId: Long, mi
         "${Data.IS_SUPER_PRIMARY} DESC, ${Data.IS_PRIMARY} DESC, ${Data._ID} ASC"
     )?.use { if (it.moveToFirst()) it.getLong(0) else null }
 
-internal fun findAllDataRowIds(contentResolver: ContentResolver, contactId: Long, mimeType: String): List<Long> =
+/** Every StructuredName row of a contact as (row id, display name), super-primary first. */
+internal fun findAllNameRows(contentResolver: ContentResolver, contactId: Long): List<Pair<Long, String?>> =
     contentResolver.query(
         Data.CONTENT_URI,
-        arrayOf(Data._ID),
+        arrayOf(Data._ID, StructuredName.DISPLAY_NAME),
         "${Data.CONTACT_ID} = ? AND ${Data.MIMETYPE} = ?",
-        arrayOf(contactId.toString(), mimeType),
-        null
-    )?.use { c -> buildList { while (c.moveToNext()) add(c.getLong(0)) } } ?: emptyList()
+        arrayOf(contactId.toString(), StructuredName.CONTENT_ITEM_TYPE),
+        "${Data.IS_SUPER_PRIMARY} DESC, ${Data.IS_PRIMARY} DESC, ${Data._ID} ASC"
+    )?.use { c ->
+        buildList {
+            while (c.moveToNext()) add(c.getLong(0) to c.getString(1))
+        }
+    } ?: emptyList()
 
 /** Re-resolves the aggregated contact id by lookup key: the id can change when contacts aggregate. */
 internal fun findContactIdByLookupKey(contentResolver: ContentResolver, lookupKey: String): Long? {

@@ -4,7 +4,7 @@ An open-source Android dialer and contacts application with a clean, modern visu
 
 ## Project Status
 
-**Version**: `0.3.2`
+**Version**: `0.3.3`
 
 See [CHANGELOG.md](CHANGELOG.md) for version history.
 

@@ -12,6 +12,7 @@ import android.util.Log
 import io.github.elli0t0.phone.core.telecom.SimAccountInfo
 import io.github.elli0t0.phone.data.calllog.model.CallHistoryPage
 import io.github.elli0t0.phone.data.calllog.model.CallLogEntry
+import io.github.elli0t0.phone.data.contacts.ContactNameIndex
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -19,9 +20,29 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+
+/**
+ * Refreshes the contact fields of call log entries from the contact
+ * index: a rename or merge changes the name/id/lookup key/photo
+ * without a new call, so cached and live entries go stale otherwise.
+ * Unmatched numbers keep their cached name and lose the contact link.
+ */
+internal fun reResolveEntries(
+    entries: List<CallLogEntry>,
+    resolver: (String) -> ContactNameIndex.Entry? = ContactNameIndex::resolve
+): List<CallLogEntry> = entries.map { entry ->
+    val indexed = if (entry.number.isNotBlank()) resolver(entry.number) else null
+    entry.copy(
+        contactName = indexed?.displayName ?: entry.cachedName,
+        contactId = indexed?.contactId,
+        contactLookupKey = indexed?.lookupKey,
+        contactPhotoUri = indexed?.photoUri
+    )
+}
 
 class AndroidCallLogRepository(
     internal val contentResolver: ContentResolver,
@@ -53,6 +74,20 @@ class AndroidCallLogRepository(
         // Show the last resolved list instantly on cold start; the fresh
         // query refreshes it silently right after.
         scope.launch { loadCachedList() }
+        // A rename or merge rebuilds the contact index: re-resolve the
+        // live list in memory so Recents updates without a new call.
+        scope.launch {
+            ContactNameIndex.version.collect { v ->
+                if (v == 0L) return@collect
+                val current = _callLogsFlow.value
+                if (current.isEmpty()) return@collect
+                val updated = reResolveEntries(current)
+                if (updated != current) {
+                    _callLogsFlow.value = updated
+                    saveCachedList(updated)
+                }
+            }
+        }
     }
 
     override fun reload() {
